@@ -1,0 +1,492 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that torch.nn.LSTMCell API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "mean", "sum", "max", "min", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "constant", "reflect", "replicate", "circular", "nearest", "bilinear", "bicubic", "trilinear", "area", "linear"]
+
+[API Documentation]
+A long short-term memory (LSTM) cell.
+
+    .. math::
+
+        \begin{array}{ll}
+        i = \sigma(W_{ii} x + b_{ii} + W_{hi} h + b_{hi}) \\
+        f = \sigma(W_{if} x + b_{if} + W_{hf} h + b_{hf}) \\
+        g = \tanh(W_{ig} x + b_{ig} + W_{hg} h + b_{hg}) \\
+        o = \sigma(W_{io} x + b_{io} + W_{ho} h + b_{ho}) \\
+        c' = f \odot c + i \odot g \\
+        h' = o \odot \tanh(c') \\
+        \end{array}
+
+    where :math:`\sigma` is the sigmoid function, and :math:`\odot` is the Hadamard product.
+
+    Args:
+        input_size: The number of expected features in the input `x`
+        hidden_size: The number of features in the hidden state `h`
+        bias: If ``False``, then the layer does not use bias weights `b_ih` and
+            `b_hh`. Default: ``True``
+
+    Inputs: input, (h_0, c_0)
+        - **input** of shape `(batch, input_size)` or `(input_size)`: tensor containing input features
+        - **h_0** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the initial hidden state
+        - **c_0** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the initial cell state
+
+          If `(h_0, c_0)` is not provided, both **h_0** and **c_0** default to zero.
+
+    Outputs: (h_1, c_1)
+        - **h_1** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the next hidden state
+        - **c_1** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the next cell state
+
+    Attributes:
+        weight_ih: the learnable input-hidden weights, of shape
+            `(4*hidden_size, input_size)`
+        weight_hh: the learnable hidden-hidden weights, of shape
+            `(4*hidden_size, hidden_size)`
+        bias_ih: the learnable input-hidden bias, of shape `(4*hidden_size)`
+        bias_hh: the learnable hidden-hidden bias, of shape `(4*hidden_size)`
+
+    .. note::
+        All the weights and biases are initialized from :math:`\mathcal{U}(-\sqrt{k}, \sqrt{k})`
+        where :math:`k = \frac{1}{\text{hidden\_size}}`
+
+    On certain ROCm devices, when using float16 inputs this module will use :ref:`different precision<fp16_on_mi200>` for backward.
+
+    Examples::
+
+        >>> rnn = nn.LSTMCell(10, 20)  # (input_size, hidden_size)
+        >>> input = torch.randn(2, 3, 10)  # (time_steps, batch, input_size)
+        >>> hx = torch.randn(3, 20)  # (batch, hidden_size)
+        >>> cx = torch.randn(3, 20)
+        >>> output = []
+        >>> for i in range(input.size()[0]):
+        ...     hx, cx = rnn(input[i], (hx, cx))
+        ...     output.append(hx)
+        >>> output = torch.stack(output, dim=0)
+
+[API Signature] input_size: integer, hidden_size: integer, bias: boolean, input: tensor, h_0: tensor, c_0: tensor
+
+[Error Messages]
+RuntimeError: /pytorch/build/aten/src/ATen/RegisterCPU.cpp:5261: SymIntArrayRef expected to contain only concrete integers
+RuntimeError: [enforce fail at alloc_cpu.cpp:118] err == 0. DefaultCPUAllocator: can't allocate memory: you tried to allocate 2813348953984144 bytes. Error code 12 (Cannot allocate memory)
+RuntimeError: Storage size calculation overflowed with sizes=[1501777232, 1903006932]
+RuntimeError: Trying to create tensor with negative dimension -1080508320: [-1080508320, 558370809]
+RuntimeError: Trying to create tensor with negative dimension -1314682172: [-1314682172, 8955716722818981462]
+RuntimeError: Trying to create tensor with negative dimension -135838331607945911: [50228, -135838331607945911]
+RuntimeError: Trying to create tensor with negative dimension -1950605596: [-1950605596, 1482608636199712322]
+RuntimeError: Trying to create tensor with negative dimension -2027732747258955496: [-2027732747258955496, 18026]
+RuntimeError: Trying to create tensor with negative dimension -2445901771126323504: [-2445901771126323504, 418180886]
+RuntimeError: Trying to create tensor with negative dimension -4188413484697086380: [-4188413484697086380, 1922640714]
+RuntimeError: Trying to create tensor with negative dimension -44: [-44, -2124617661]
+RuntimeError: Trying to create tensor with negative dimension -729835067545235360: [-729835067545235360, 254]
+TypeError: LSTMCell.forward() takes from 2 to 3 positional arguments but 4 were given
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (input_size and hidden_size should be positive integers)
+{input_size : int, hidden_size : int} |= input_size > 0 ∧ hidden_size > 0
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that torch.nn.LSTMCell API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "mean", "sum", "max", "min", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "constant", "reflect", "replicate", "circular", "nearest", "bilinear", "bicubic", "trilinear", "area", "linear"]
+
+[API Documentation]
+A long short-term memory (LSTM) cell.
+
+    .. math::
+
+        \begin{array}{ll}
+        i = \sigma(W_{ii} x + b_{ii} + W_{hi} h + b_{hi}) \\
+        f = \sigma(W_{if} x + b_{if} + W_{hf} h + b_{hf}) \\
+        g = \tanh(W_{ig} x + b_{ig} + W_{hg} h + b_{hg}) \\
+        o = \sigma(W_{io} x + b_{io} + W_{ho} h + b_{ho}) \\
+        c' = f \odot c + i \odot g \\
+        h' = o \odot \tanh(c') \\
+        \end{array}
+
+    where :math:`\sigma` is the sigmoid function, and :math:`\odot` is the Hadamard product.
+
+    Args:
+        input_size: The number of expected features in the input `x`
+        hidden_size: The number of features in the hidden state `h`
+        bias: If ``False``, then the layer does not use bias weights `b_ih` and
+            `b_hh`. Default: ``True``
+
+    Inputs: input, (h_0, c_0)
+        - **input** of shape `(batch, input_size)` or `(input_size)`: tensor containing input features
+        - **h_0** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the initial hidden state
+        - **c_0** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the initial cell state
+
+          If `(h_0, c_0)` is not provided, both **h_0** and **c_0** default to zero.
+
+    Outputs: (h_1, c_1)
+        - **h_1** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the next hidden state
+        - **c_1** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the next cell state
+
+    Attributes:
+        weight_ih: the learnable input-hidden weights, of shape
+            `(4*hidden_size, input_size)`
+        weight_hh: the learnable hidden-hidden weights, of shape
+            `(4*hidden_size, hidden_size)`
+        bias_ih: the learnable input-hidden bias, of shape `(4*hidden_size)`
+        bias_hh: the learnable hidden-hidden bias, of shape `(4*hidden_size)`
+
+    .. note::
+        All the weights and biases are initialized from :math:`\mathcal{U}(-\sqrt{k}, \sqrt{k})`
+        where :math:`k = \frac{1}{\text{hidden\_size}}`
+
+    On certain ROCm devices, when using float16 inputs this module will use :ref:`different precision<fp16_on_mi200>` for backward.
+
+    Examples::
+
+        >>> rnn = nn.LSTMCell(10, 20)  # (input_size, hidden_size)
+        >>> input = torch.randn(2, 3, 10)  # (time_steps, batch, input_size)
+        >>> hx = torch.randn(3, 20)  # (batch, hidden_size)
+        >>> cx = torch.randn(3, 20)
+        >>> output = []
+        >>> for i in range(input.size()[0]):
+        ...     hx, cx = rnn(input[i], (hx, cx))
+        ...     output.append(hx)
+        >>> output = torch.stack(output, dim=0)
+
+[API Signature] input_size: integer, hidden_size: integer, bias: boolean, input: tensor, h_0: tensor, c_0: tensor
+
+[Error Messages]
+RuntimeError: /pytorch/build/aten/src/ATen/RegisterCPU.cpp:5261: SymIntArrayRef expected to contain only concrete integers
+RuntimeError: [enforce fail at alloc_cpu.cpp:118] err == 0. DefaultCPUAllocator: can't allocate memory: you tried to allocate 2813348953984144 bytes. Error code 12 (Cannot allocate memory)
+RuntimeError: Storage size calculation overflowed with sizes=[1501777232, 1903006932]
+RuntimeError: Trying to create tensor with negative dimension -1080508320: [-1080508320, 558370809]
+RuntimeError: Trying to create tensor with negative dimension -1314682172: [-1314682172, 8955716722818981462]
+RuntimeError: Trying to create tensor with negative dimension -135838331607945911: [50228, -135838331607945911]
+RuntimeError: Trying to create tensor with negative dimension -1950605596: [-1950605596, 1482608636199712322]
+RuntimeError: Trying to create tensor with negative dimension -2027732747258955496: [-2027732747258955496, 18026]
+RuntimeError: Trying to create tensor with negative dimension -2445901771126323504: [-2445901771126323504, 418180886]
+RuntimeError: Trying to create tensor with negative dimension -4188413484697086380: [-4188413484697086380, 1922640714]
+RuntimeError: Trying to create tensor with negative dimension -44: [-44, -2124617661]
+RuntimeError: Trying to create tensor with negative dimension -729835067545235360: [-729835067545235360, 254]
+TypeError: LSTMCell.forward() takes from 2 to 3 positional arguments but 4 were given
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (input tensor should have a batch dimension)
+{input : tensor} |= ndim(input) > 0
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that torch.nn.LSTMCell API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "mean", "sum", "max", "min", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "constant", "reflect", "replicate", "circular", "nearest", "bilinear", "bicubic", "trilinear", "area", "linear"]
+
+[API Documentation]
+A long short-term memory (LSTM) cell.
+
+    .. math::
+
+        \begin{array}{ll}
+        i = \sigma(W_{ii} x + b_{ii} + W_{hi} h + b_{hi}) \\
+        f = \sigma(W_{if} x + b_{if} + W_{hf} h + b_{hf}) \\
+        g = \tanh(W_{ig} x + b_{ig} + W_{hg} h + b_{hg}) \\
+        o = \sigma(W_{io} x + b_{io} + W_{ho} h + b_{ho}) \\
+        c' = f \odot c + i \odot g \\
+        h' = o \odot \tanh(c') \\
+        \end{array}
+
+    where :math:`\sigma` is the sigmoid function, and :math:`\odot` is the Hadamard product.
+
+    Args:
+        input_size: The number of expected features in the input `x`
+        hidden_size: The number of features in the hidden state `h`
+        bias: If ``False``, then the layer does not use bias weights `b_ih` and
+            `b_hh`. Default: ``True``
+
+    Inputs: input, (h_0, c_0)
+        - **input** of shape `(batch, input_size)` or `(input_size)`: tensor containing input features
+        - **h_0** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the initial hidden state
+        - **c_0** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the initial cell state
+
+          If `(h_0, c_0)` is not provided, both **h_0** and **c_0** default to zero.
+
+    Outputs: (h_1, c_1)
+        - **h_1** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the next hidden state
+        - **c_1** of shape `(batch, hidden_size)` or `(hidden_size)`: tensor containing the next cell state
+
+    Attributes:
+        weight_ih: the learnable input-hidden weights, of shape
+            `(4*hidden_size, input_size)`
+        weight_hh: the learnable hidden-hidden weights, of shape
+            `(4*hidden_size, hidden_size)`
+        bias_ih: the learnable input-hidden bias, of shape `(4*hidden_size)`
+        bias_hh: the learnable hidden-hidden bias, of shape `(4*hidden_size)`
+
+    .. note::
+        All the weights and biases are initialized from :math:`\mathcal{U}(-\sqrt{k}, \sqrt{k})`
+        where :math:`k = \frac{1}{\text{hidden\_size}}`
+
+    On certain ROCm devices, when using float16 inputs this module will use :ref:`different precision<fp16_on_mi200>` for backward.
+
+    Examples::
+
+        >>> rnn = nn.LSTMCell(10, 20)  # (input_size, hidden_size)
+        >>> input = torch.randn(2, 3, 10)  # (time_steps, batch, input_size)
+        >>> hx = torch.randn(3, 20)  # (batch, hidden_size)
+        >>> cx = torch.randn(3, 20)
+        >>> output = []
+        >>> for i in range(input.size()[0]):
+        ...     hx, cx = rnn(input[i], (hx, cx))
+        ...     output.append(hx)
+        >>> output = torch.stack(output, dim=0)
+
+[API Signature] input_size: integer, hidden_size: integer, bias: boolean, input: tensor, h_0: tensor, c_0: tensor
+
+[Error Messages]
+RuntimeError: /pytorch/build/aten/src/ATen/RegisterCPU.cpp:5261: SymIntArrayRef expected to contain only concrete integers
+RuntimeError: [enforce fail at alloc_cpu.cpp:118] err == 0. DefaultCPUAllocator: can't allocate memory: you tried to allocate 2813348953984144 bytes. Error code 12 (Cannot allocate memory)
+RuntimeError: Storage size calculation overflowed with sizes=[1501777232, 1903006932]
+RuntimeError: Trying to create tensor with negative dimension -1080508320: [-1080508320, 558370809]
+RuntimeError: Trying to create tensor with negative dimension -1314682172: [-1314682172, 8955716722818981462]
+RuntimeError: Trying to create tensor with negative dimension -135838331607945911: [50228, -135838331607945911]
+RuntimeError: Trying to create tensor with negative dimension -1950605596: [-1950605596, 1482608636199712322]
+RuntimeError: Trying to create tensor with negative dimension -2027732747258955496: [-2027732747258955496, 18026]
+RuntimeError: Trying to create tensor with negative dimension -2445901771126323504: [-2445901771126323504, 418180886]
+RuntimeError: Trying to create tensor with negative dimension -4188413484697086380: [-4188413484697086380, 1922640714]
+RuntimeError: Trying to create tensor with negative dimension -44: [-44, -2124617661]
+RuntimeError: Trying to create tensor with negative dimension -729835067545235360: [-729835067545235360, 254]
+TypeError: LSTMCell.forward() takes from 2 to 3 positional arguments but 4 were given
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (h_0 and c_0 tensors should have, input, input_size, input, etc.)
+{input, h_ etc, input, hidden dimension, and h_0, tensor, input. First dimension list, tensor input. First, input tensors, tensor of, int of list, of lists, input. First lists lists of of dtype, input of list of list of the, tensor of of shape input lists.
+** PARSING ERROR ** (num_failures: 1)
+

@@ -1,5 +1,5 @@
 from google import genai
-import os, subprocess, time
+import os, subprocess, time, json
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
@@ -165,9 +165,15 @@ check_valid('{api}', generated_inputs['{key}'], lib="{lib}", suffix={suffix})
         print(f"Execution of {module_name} timed out.")
         return "", "Timeout: Execution could not be completed in 30 seconds."
 
-def retry_prompt(error):
+def retry_prompt(error, api, signature, key):
+    params = ", ".join(signature.keys())
+    signature_json = json.dumps(signature, indent=2)
     prompt = f"""Error faced during execution: {error}.
-Please fix the error and retry the input generation. Only provide the code, skip any other text. Do not include verbose comments inside code. If you feel like you have added too many inputs and some of them are causing validity errors, remove them. If you do not feel confident about the error, try to generate a new input and delete the old one.
+The generated inputs must use the signature parameter names as dictionary keys. Ensure every input dictionary contains these parameters exactly: {params}.
+For reference, the signature for {api} (variation key {key}) is:
+{signature_json}
+
+Rewrite the function so it returns a list of dictionaries matching this signature and reassigns it to generated_inputs['{key}']. Only provide the code, skip any other text. Do not include verbose comments inside code. If you feel like you added too many inputs and some cause validity errors, remove them. If you do not feel confident about the error, try to generate a new input and delete the old one.
     """
     return prompt
 
@@ -175,6 +181,9 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
     print(f"{bcolors.OKBLUE}Running code generation for {api} with suffix {suffix} after 6 seconds...{bcolors.ENDC}")
     logger.info(f"[{api}] [Suffix: {suffix}].\n\n")
     time.sleep(6)
+
+    key = api if suffix == 0 else f"{api}_{suffix}"
+    signature = get_signature(api, lib=lib, suffix=suffix)
     
     if llm == "gemini":
         model = "gemini-2.0-flash"
@@ -217,7 +226,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         to_return[attempt] = 1
         print("Retrying code generation after 6 seconds...")
         # time.sleep(6)
-        prompt = retry_prompt(error)
+        prompt = retry_prompt(error, api, signature, key)
         logger.info(f"[Retry Prompt]\n\n{prompt}\n\n")
         try:
             response = chat.send_message(prompt)

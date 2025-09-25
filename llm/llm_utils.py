@@ -20,23 +20,26 @@ class OAChatWrapper:
         key = api_key or os.getenv("OLLAMA_API_KEY") or os.getenv("OPENAI_API_KEY") or "ollama"
 
         self.client = OpenAI(api_key=key, base_url=base)
-        self.previous_response_id = None
+        self.messages = []
+
     def send_message(self, prompt):
-        if self.previous_response_id is None:
-            openai_response = self.client.responses.create(
-                model=self.model,
-                input=[{"role": "user", "content": prompt}]
+        # Maintain conversation history for follow-up prompts.
+        conversation = self.messages + [{"role": "user", "content": prompt}]
+        completion = self.client.chat.completions.create(
+            model=self.model,
+            messages=conversation,
+        )
+        assistant_content = completion.choices[0].message.content
+        if isinstance(assistant_content, list):
+            # Some OpenAI-compatible servers return a list of content parts.
+            assistant_message = "".join(
+                part.get("text", "") if isinstance(part, dict) else str(part)
+                for part in assistant_content
             )
         else:
-            openai_response = self.client.responses.create(
-                model=self.model,
-                previous_response_id=self.previous_response_id,
-                input=[{"role": "user", "content": prompt}]
-            )
-        
-        self.previous_response_id = openai_response.id
-        response_object = Response(text=openai_response.output_text)
-        return response_object
+            assistant_message = assistant_content
+        self.messages = conversation + [{"role": "assistant", "content": assistant_message}]
+        return Response(text=assistant_message)
     
 def extract_code_from_response(response, llm="gemini"):
     # Use regular expression to find the code block within the markdown

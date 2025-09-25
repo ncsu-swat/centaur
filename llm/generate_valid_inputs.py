@@ -109,7 +109,7 @@ generated_inputs["tf.sets.difference"] = tf_sets_difference_inputs()
     }
     doc = extract_function_info(fetch_documentation(api), api) if lib == "torch" else get_doc_tf(api)
     signature = get_signature(api, lib=lib, suffix=suffix)
-    prefix = f'This is the documentation for the function {api}:\n\n"{doc.encode('ascii', errors='ignore').decode()}"\n\n' if doc else ""
+    prefix = f"This is the documentation for the function {api}:\n\n\"{doc.encode('ascii', errors='ignore').decode()}\"\n\n" if doc else ""
     key = api if suffix == 0 else f"{api}_{suffix}"
     with open(f"{CUR_DIR}/prompt_input_gen.md", "r", encoding="utf-8") as file:
         prompt = file.read()
@@ -182,10 +182,12 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         client = genai.Client(api_key=gemini_key)
         chat = client.chats.create(model=model)
     elif llm == "openai":
-        model = "gpt-5"
+        model = os.getenv("OLLAMA_MODEL", "qwen3:30b-a3b")
         chat = OAChatWrapper(model=model)
     else:
         raise ValueError("llm must be either 'gemini' or 'openai'")
+
+    llm_label = "Ollama" if llm == "openai" else llm.capitalize()
     
     try:
         prompt = get_prompt(api, lib=lib, suffix=suffix)
@@ -205,11 +207,11 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         time.sleep(10)
         return generate_inputs(api, suffix=suffix, max_attempts=max_attempts, lib=lib, llm=llm)
     except Exception as e:
-        print(f"{bcolors.FAIL}Error while sending message to {llm} API: {e}{bcolors.ENDC}")
+        print(f"{bcolors.FAIL}Error while sending message to {llm_label} API: {e}{bcolors.ENDC}")
         print(f"{bcolors.WARNING}Waiting 10 seconds before retrying...{bcolors.ENDC}")
         time.sleep(10)
         return generate_inputs(api, suffix=suffix, max_attempts=max_attempts, lib=lib, llm=llm)
-    print(f"Got response from {llm} API.")
+    print(f"Got response from {llm_label} API.")
     code = extract_code_from_response(response.text, llm=llm)
     output, error = save_and_run_code(api, code, suffix=suffix, lib=lib, llm=llm)
     logger.info(f"[Output]\n\n{output}\n\n")
@@ -232,11 +234,11 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
             time.sleep(10)
             continue
         except Exception as e:
-            print(f"{bcolors.FAIL}Error while sending message to Gemini API: {e}{bcolors.ENDC}")
+            print(f"{bcolors.FAIL}Error while sending message to {llm_label} API: {e}{bcolors.ENDC}")
             print(f"{bcolors.WARNING}Waiting 10 seconds before retrying...{bcolors.ENDC}")
             time.sleep(10)
             continue
-        print("Got response from Gemini API.")
+        print(f"Got response from {llm_label} API.")
         logger.info(f"[Response]\n\n{response.text}\n\n")
         code = extract_code_from_response(response.text, llm=llm)
         output, error = save_and_run_code(api, code, suffix=suffix, lib=lib, llm=llm)

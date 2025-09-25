@@ -7,9 +7,19 @@ class Response:
         self.text = text
 
 class OAChatWrapper:
-    def __init__(self, model="gpt-5"):
-        self.model = model
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    def __init__(self, model=None, base_url=None, api_key=None):
+        # Allow overriding defaults through args or environment variables.
+        self.model = model or os.getenv("OLLAMA_MODEL", "qwen3:30b-a3b")
+
+        default_base = os.getenv("OLLAMA_BASE_URL", "https://ollama.aaaab3n.moe")
+        # Ensure the client sees a /v1 suffix as required by the OpenAI SDK.
+        base = base_url or default_base
+        if not base.rstrip("/").endswith("/v1"):
+            base = base.rstrip("/") + "/v1"
+
+        key = api_key or os.getenv("OLLAMA_API_KEY") or os.getenv("OPENAI_API_KEY") or "ollama"
+
+        self.client = OpenAI(api_key=key, base_url=base)
         self.previous_response_id = None
     def send_message(self, prompt):
         if self.previous_response_id is None:

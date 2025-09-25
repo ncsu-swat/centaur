@@ -92,7 +92,7 @@ signatures["tf.signal.rfft"] = {
     else:
         doc = get_doc_tf(api)
         
-    prefix = f'This is the documentation for the function {api}:\n\n"{doc.encode('ascii', errors='ignore').decode()}"\n\n' if doc else ""
+    prefix = f"This is the documentation for the function {api}:\n\n\"{doc.encode('ascii', errors='ignore').decode()}\"\n\n" if doc else ""
     if lib == "torch":
         callables = f'This api likely returns a function, look for the parameters that can be passed to the function returned by this api. Hint: very often this information can be found under the "Shape:" section of the documentation.' if api.split('.')[-1][0].isupper() else 'This api likely does not return a function, check if that is true. If so, `inner` should be empty. Otherwise add the signature for the inner call.'
     elif lib == "tf":
@@ -119,7 +119,8 @@ def generate_signatures(api, lib="torch", llm="gemini"):
         client = genai.Client(api_key=gemini_key)
         chat = client.chats.create(model=model)
     elif llm == "openai":
-        chat = OAChatWrapper(model="gpt-5")
+        model = os.getenv("OLLAMA_MODEL", "qwen3:30b-a3b")
+        chat = OAChatWrapper(model=model)
     else:
         raise ValueError("llm must be either 'gemini' or 'openai'")
 

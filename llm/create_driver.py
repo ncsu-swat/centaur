@@ -8,7 +8,7 @@ CUR_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def get_prompt(api):
     doc = extract_function_info(fetch_documentation(api), api)
-    prefix = f'This is the documentation for the function {api}:\n\n"{doc.encode('ascii', errors='ignore').decode()}"\n\n' if doc else ""
+    prefix = f"This is the documentation for the function {api}:\n\n\"{doc.encode('ascii', errors='ignore').decode()}\"\n\n" if doc else ""
     if api in signatures:
         prefix += f"""This is the signature for this file:
         {signatures[api]}

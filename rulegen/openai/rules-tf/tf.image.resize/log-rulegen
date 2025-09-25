@@ -1,0 +1,4461 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2D_DType(dtype):_Tensor {dtype_D_Tensor} |= 6_D_Tensor_or_Tensor_data_Tensor_D_Tensor_Data_tensor_and_or_tensor_dtype_Tensor {Tensor_D_Tensor_ or_Tensor_Or_Tensor_or_Tensor_dtype_Tensor,Tensor_or_Tensor_range_Tensor}_Tensor |_Tensor_Plus_Tensor |_Tensor_Plus_or_Tensor_Range_Tensor |_ ,_Tensor_plus__DT_tensor, or_ Tensor_Range}
+_Tensor_range_plus, the_ D_tensor_ Tensor_range}range_or_plus  Tensorrange_plus} __ , __and_ ten_range_or_Tensor_data_tensor ,_ the_ range_or_or_Tensor data_ __or_tensor_or_ data_range _plus_ tensor-plus _ __or_ }_Tensor range_ __or_ }_data_ _ _ _plus_  range_or_  or_ , data_ , _DT_  _ range_ or_ tensor_ or_Tensor_ or _tensor_DT__ } Or _tensor_ the_or __tensor or_, _Ten_ Tensor_ __or} _ __,_  _Tensor , _ ___ _and_ _    or_ D_  _ ,_ data_ _,_ or_ is_ D_or ,_ and_ , _or_   ___. _ ,_or_ DT_ or_ _, _, _or _, _ and _ _ plus_ or and_ ten_ or_ } , _ __. _ ten plus_ or_, _ _ or ten_ _ plus_or  ..., ten_ _ , _ ,D_  ___ ,_  _, _ , _ tensor , _, _ or ` . _ , _ DT , _ , _`_ , _ , _, _ , _ , ` _ , ` , _, _ , ` , _ , _ , _, _ ` , _ , _ ` , _ , _ ` , _ , _ ` , _ , _` , _ ,` , ` data _ , _ `Tensor _ ` ` _ , ` ` ` _ , ` ` `s ` , _, _ plus ` , ` , data ` , plus _ , plus _ , plusTensor , plus  , _, _, ten ,  ` , plus , ten _, ` _, _, _, _, _, ` , _, _, _ , _ _ , plus _ _ , ` plus ` _, _ , plus _ , plus then _ , plus , plus _ _, then , then plus then then then , then ` then , then ` ten then , then then ` then , then then , then then Then then then , then , then and then ' then , and .Then then . and ` and . and . an and . an . ` ` then . Then . then ` , then .` then . then . then ` .` . then ` then .` then .` . then' then .` then ` Then Then ` . then then . ` . then then .` . ` then . then ' an Then ` then .' then . ` then . an then . an an  then then . ` then ` then- and . ` then . an and .. then . an .. is as .. is.. an .. as as .. as .. ` . Then is .. is as as as  an as as.. then as is as an as as . Then as . asdm asdm asdm asdm as then asdm then . asdm then .. , then . is . is . is as , is as . asdm then . asdm Then is asdm asdm asdm .. as ` is asdm then. Then asdm . then ` is asdm asdm as
+. then then ` asdm asdm  and.
+
+Rule20 (The new size: should have dtype . is `is ` .. as then ` asdm.
+
+Rule12 '20 or all then asdm.
+
+Rule1 0 is is ` ..  is 1 . then ` asdm .
+
+0 or ` is.
+
+Rule15 .
+
+Rule33 and
+
+Rule 1
+
+Rule1
+
+Rule 32715
+
+Rule4
+
+Rule6
+
+## is is ` as 71
+
+Rule119
+
+as
+
+ asdm
+
+Rule 0 Thenis asdm
+
+Rule 7
+
+## 0 Then
+
+Rule
+
+## 0 Then
+
+Rule8 all
+
+## then
+
+Rule 7 2410 then
+
+Rule7 2410 Then, and
+
+## 72 as 9 all
+
+## and1 45 as
+
+## and1
+
+## asdm 45. then,
+
+## 45 is  45
+
+## as 4..
+
+## 45 as 4..
+
+## 45 as 4..
+
+## 45 as 4..
+
+## 45 as 4..
+
+## 45 as 4..
+
+## 45 as 
+
+## 45 as 
+
+## 45 as 
+
+## 45 as 
+
+## 45 as 
+
+##  plus 
+
+## 45 as 
+
+## 45 as 
+
+## 
+
+## 45 as 
+
+## 45 as 
+
+## 45 as 
+
+## 45 as 
+
+## 45 as 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## and 
+
+## 
+
+## and 
+
+## and 41 and 
+
+## 
+
+## and 41 and 41 and 
+
+## 
+
+## and 
+
+## and 
+## 41 and 
+
+## and 
+
+## 
+
+## and 
+
+## and 
+
+## 
+
+## and 
+
+## and 
+
+## and 
+
+## 41 and 
+
+## and 
+
+## and 
+
+## and 
+
+## 
+
+## 
+
+## and 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 41 and 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+##  or 
+
+##
+
+## 
+## 
+
+## 1 and 
+
+## or 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## the 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+##  main 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## main
+## 1 and
+## 
+
+## 
+
+## 
+
+## and 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## main 
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## main
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## and 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## and 
+
+## 
+
+## 
+
+## 
+
+## and 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+
+## 
+```
+** FORMAT ERROR ** (num_failures: 1)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (images must have either 3 or 4 dimensions)
+{images: tensor} |= ndim(images) = 3 ∨ ndim(images) = 4
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (size must be a 1-D Tensor of 2 elements)
+{size: tensor} |= ndim(size) = 1 ∧ shape(size, 0) = 2
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (image tensor shape elements should not be zero)
+{images: tensor} |= ndim(images) = 3 ∧ ∀i ∈ [0, 2] : shape(images, i) > 0 ∨ ndim(images) = 4 ∧ ∀i ∈ [0, 3] : shape(images, i) > 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (size tensor elements should be positive integers)
+{size: tensor} |= ∀i ∈ [0, 1] : isinstance(size[i], int) ∧ size[i] > 0
+** PARSING ERROR ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (antialias should be a boolean)
+{antialias: bool} |= True ∨ False
+** REDUNDANT VARIABLES ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (preserve_aspect_ratio should be a boolean)
+{preserve_aspect_ratio: bool} |= True ∨ False
+** REDUNDANT VARIABLES ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (method should be a string)
+{method: str} |=   method ∈ ["bilinear", "lanczos3", "lanczos5", "bicubic", "gaussian", "nearest", "area", "mitchellcubic"]
+** PARSING ERROR ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (name should be a string)
+{name: str} |= True
+** REDUNDANT VARIABLES ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (images channels dimension should be positive)
+{images: tensor} |= ndim(images) = 3 ∧ shape(images, 2) > 0 ∨ ndim(images) = 4 ∧ shape(images, 3) > 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (size tensor should have a positive length)
+{size: tensor} |= shape(size, 0) > 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (Method string must be length > 0)
+{method: str} |= len(method) > 0
+** PARSING ERROR ** (num_failures: 7)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (images dtype must be float32, int32, int64, np.int8, np.int16, np.int32 or np.int64)
+{images: tensor} |= dtype(images) ∈ [np.float32, int32, np.int8, np.int16, np.int32, np.int64]
+** PARSING ERROR ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (image tensor dimensions must be ints)
+{images: tensor} |= ndim(images) = 3 ∧ ∀i ∈ [0, 2] : isinstance(shape(images, i), int) ∨ ndim(images) = 4 ∧ ∀i ∈ [0, 3] : isinstance(shape(images, i), int)
+** PARSING ERROR ** (num_failures: 9)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (name cannot be empty)
+{name: str} |= len(name) > 0
+** PARSING ERROR ** (num_failures: 10)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (string length should be equal to 1)
+{method: str} |= len(method) > 0
+** PARSING ERROR ** (num_failures: 11)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (preservation aspect ratio should be either true or false)
+{preserve_aspect_ratio: bool} |= True ∨ False
+** REDUNDANT VARIABLES ** (num_failures: 12)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (images tensor is not zero)
+{images: tensor} |= shape(images, 0) > 0 ∧ shape(images, 1) > 0 ∧ shape(images, 2) > 0 ∨ shape(images, 0) > 0 ∧ shape(images, 1) > 0 ∧ shape(images, 2) > 0 ∧ shape(images, 3) > 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+No valid rules detected. Please follow the expected output format for each rule.
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.image.resize API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Resize `images` to `size` using the specified `method`.
+
+  Resized images will be distorted if their original aspect ratio is not
+  the same as `size`.  To avoid distortions see
+  `tf.image.resize_with_pad`.
+
+  >>> image = tf.constant([
+  ...  [1,0,0,0,0],
+  ...  [0,1,0,0,0],
+  ...  [0,0,1,0,0],
+  ...  [0,0,0,1,0],
+  ...  [0,0,0,0,1],
+  ... ])
+  >>> # Add "batch" and "channels" dimensions
+  >>> image = image[tf.newaxis, ..., tf.newaxis]
+  >>> image.shape.as_list()  # [batch, height, width, channels]
+  [1, 5, 5, 1]
+  >>> tf.image.resize(image, [3,5])[0,...,0].numpy()
+  array([[0.6666667, 0.3333333, 0.       , 0.       , 0.       ],
+         [0.       , 0.       , 1.       , 0.       , 0.       ],
+         [0.       , 0.       , 0.       , 0.3333335, 0.6666665]],
+        dtype=float32)
+
+  It works equally well with a single image instead of a batch of images:
+
+  >>> tf.image.resize(image[0], [3,5]).shape.as_list()
+  [3, 5, 1]
+
+  When `antialias` is true, the sampling filter will anti-alias the input image
+  as well as interpolate.  When downsampling an image with [anti-aliasing](
+  https://en.wikipedia.org/wiki/Spatial_anti-aliasing) the sampling filter
+  kernel is scaled in order to properly anti-alias the input image signal.
+  `antialias` has no effect when upsampling an image:
+
+  >>> a = tf.image.resize(image, [5,10])
+  >>> b = tf.image.resize(image, [5,10], antialias=True)
+  >>> tf.reduce_max(abs(a - b)).numpy()
+  0.0
+
+  The `method` argument expects an item from the `image.ResizeMethod` enum, or
+  the string equivalent. The options are:
+
+  *   <b>`bilinear`</b>: [Bilinear interpolation.](
+    https://en.wikipedia.org/wiki/Bilinear_interpolation) If `antialias` is
+    true, becomes a hat/tent filter function with radius 1 when downsampling.
+  *   <b>`lanczos3`</b>:  [Lanczos kernel](
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 3.
+    High-quality practical filter but may have some ringing, especially on
+    synthetic images.
+  *   <b>`lanczos5`</b>: [Lanczos kernel] (
+    https://en.wikipedia.org/wiki/Lanczos_resampling) with radius 5.
+    Very-high-quality filter but may have stronger ringing.
+  *   <b>`bicubic`</b>: [Cubic interpolant](
+    https://en.wikipedia.org/wiki/Bicubic_interpolation) of Keys. Equivalent to
+    Catmull-Rom kernel. Reasonably good quality and faster than Lanczos3Kernel,
+    particularly when upsampling.
+  *   <b>`gaussian`</b>: [Gaussian kernel](
+    https://en.wikipedia.org/wiki/Gaussian_filter) with radius 3,
+    sigma = 1.5 / 3.0.
+  *   <b>`nearest`</b>: [Nearest neighbor interpolation.](
+    https://en.wikipedia.org/wiki/Nearest-neighbor_interpolation)
+    `antialias` has no effect when used with nearest neighbor interpolation.
+  *   <b>`area`</b>: Anti-aliased resampling with area interpolation.
+    `antialias` has no effect when used with area interpolation; it
+    always anti-aliases.
+  *   <b>`mitchellcubic`</b>: Mitchell-Netravali Cubic non-interpolating filter.
+    For synthetic images (especially those lacking proper prefiltering), less
+    ringing than Keys cubic kernel but less sharp.
+
+  Note: Near image edges the filtering kernel may be partially outside the
+  image boundaries. For these pixels, only input pixels inside the image will be
+  included in the filter sum, and the output value will be appropriately
+  normalized.
+
+  The return value has type `float32`, unless the `method` is
+  `ResizeMethod.NEAREST_NEIGHBOR`, then the return dtype is the dtype
+  of `images`:
+
+  >>> nn = tf.image.resize(image, [5,7], method='nearest')
+  >>> nn[0,...,0].numpy()
+  array([[1, 0, 0, 0, 0, 0, 0],
+         [0, 1, 1, 0, 0, 0, 0],
+         [0, 0, 0, 1, 0, 0, 0],
+         [0, 0, 0, 0, 1, 1, 0],
+         [0, 0, 0, 0, 0, 0, 1]], dtype=int32)
+
+  With `preserve_aspect_ratio=True`, the aspect ratio is preserved, so `size`
+  is the maximum for each dimension:
+
+  >>> max_10_20 = tf.image.resize(image, [10,20], preserve_aspect_ratio=True)
+  >>> max_10_20.shape.as_list()
+  [1, 10, 10, 1]
+
+  Args:
+    images: 4-D Tensor of shape `[batch, height, width, channels]` or 3-D Tensor
+      of shape `[height, width, channels]`.
+    size: A 1-D int32 Tensor of 2 elements: `new_height, new_width`.  The new
+      size for the images.
+    method: An `image.ResizeMethod`, or string equivalent.  Defaults to
+      `bilinear`.
+    preserve_aspect_ratio: Whether to preserve the aspect ratio. If this is set,
+      then `images` will be resized to a size that fits in `size` while
+      preserving the aspect ratio of the original image. Scales up the image if
+      `size` is bigger than the current size of the `image`. Defaults to False.
+    antialias: Whether to use an anti-aliasing filter when downsampling an
+      image.
+    name: A name for this operation (optional).
+
+  Raises:
+    ValueError: if the shape of `images` is incompatible with the
+      shape arguments to this function
+    ValueError: if `size` has an invalid shape or type.
+    ValueError: if an unsupported resize method is specified.
+
+  Returns:
+    If `images` was 4-D, a 4-D float Tensor of shape
+    `[batch, new_height, new_width, channels]`.
+    If `images` was 3-D, a 3-D float Tensor of shape
+    `[new_height, new_width, channels]`.
+
+[API Signature] images: tensor, size: tensor, method: string, preserve_aspect_ratio: boolean, antialias: boolean, name: string
+
+[Error Messages]
+ValueError: 'images' must have either 3 or 4 dimensions.
+ValueError: 'size' must be a 1-D Tensor of 2 elements: new_height, new_width
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (size must not be empty)
+{size: tensor} |= shape(size, 0) > 0
+** DUPLICATED RULE ** (num_failures: 13)
+

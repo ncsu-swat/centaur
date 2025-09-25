@@ -1,0 +1,4563 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (input must be a tensor)
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+** PARSING ERROR ** (num_failures: 1)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (sep must be string or None)
+{v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (input must be tensor)
+{v_1 : tensor} |= v_1.dtype ≠ 0
+** PARSING ERROR ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (maxsplit must be non-negative integer)
+{v_1 : int} |= v_1 ≥ 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (name must be string)
+{v_1 : str} |= True
+** REDUNDANT VARIABLES ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (input and sep tensor shapes should be compatible)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (sep tensor has scalar shape)
+{v_1 : tensor} |= shape(v_1) = []
+** PARSING ERROR ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (input tensor should have at least one dimension)
+{v_1 : tensor} |= ndim(v_1) > 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (maxsplit should be integer type)
+{v_1 : int} |= True
+** REDUNDANT VARIABLES ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (name should be string or None)
+{v_1 : str} |= True
+** REDUNDANT VARIABLES ** (num_failures: 7)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (input tensor has valid dtype)
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+** PARSING ERROR ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (sep tensor can only be a string scalar tensor)
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+** PARSING ERROR ** (num_failures: 9)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (maxsplit should be a non-negative integer)
+{v_1 : int} |= v_1 ≥ 0
+** DUPLICATED RULE ** (num_failures: 10)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (input tensor should have a valid dtype, either string or int)
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+** PARSING ERROR ** (num_failures: 11)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 :tensor_scalar_scalar_tensor(dtype) (Error: No terminal matches '_' in the current parser context, at line 1 col 13
+
+{v_1 :tensor_scalar_scalar_tensor(dtype)
+            ^
+Expected one of: 
+	* COMMA
+	* RBRACE
+	* __ANON_1
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (sep tensor should be either a string tensor(null)
+** PARSING ERROR ** (num_failures: 12)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (input tensor dtype is string)
+{v_1 : tensor} |= dtype(v_1) = 11
+** PARSING ERROR ** (num_failures: 13)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (sep tensor dtype is string)
+{v_1 : tensor} |= dtype(v_1) = 11
+** PARSING ERROR ** (num_failures: 14)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (maxsplit should be non-negative)
+{v_1 : int} |= v_1 ≥ 0
+** DUPLICATED RULE ** (num_failures: 15)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 19 (name is valid string)
+{v_1 : str} |= True
+** REDUNDANT VARIABLES ** (num_failures: 16)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 20 (sep is not None)
+{v_1 : tensor} |= v_1 ≠ None
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (input tensor is not empty)
+{v_1 : tensor} |= shape(v_1).len > 0
+** PARSING ERROR ** (num_failures: 17)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (maxsplit is within reasonable bounds)
+{v_1 : int} |= v_1 < 1000
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (sep has at most one element for efficient splitting)
+{v_1 : tensor} |= shape(v_1).len ≤ 1
+** PARSING ERROR ** (num_failures: 18)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (input tensor has rank 1 or higher)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (sep tensor has rank 0)
+{v_1 : tensor} |= ndim(v_1) = 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (input tensor and sep tensor have compatible shapes)
+{v_1 : tensor, v_2 : tensor} |= shape(v_1) = shape(v_2)
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : tensor} |= v_1.dtype = 12 ∨ v_1.dtype = 0 (Unused: v_2)
+Parse error: {v_1 : tensor} |= v_1.dtype ≠ 0 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype ≠ 0
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = []
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Redundant variables: {v_1 : int} |= True (Unused: v_1)
+Redundant variables: {v_1 : str} |= True (Unused: v_1)
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error: {v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12 (Error: No terminal matches '[' in the current parser context, at line 1 col 32
+
+{v_1 : tensor} |= shape(v_1) = [] ∧ v_1.dtype = 12
+                               ^
+Expected one of: 
+	* SIGNED_NUMBER
+	* VAR
+	* ESCAPED_STRING
+	* LPAR
+	* TRUE
+	* FUNC
+	* FALSE
+)
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Parse error: {v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12 (Error: No terminal matches '.' in the current parser context, at line 1 col 22
+
+{v_1 : tensor} |= v_1.dtype = 0 ∨ v_1.dtype = 12
+                     ^
+Expected one of: 
+	* __ANON_2
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Parse error:  (Error: Unexpected end-of-input. Expected one of: 
+	* LBRACE
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.strings.split API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Split elements of `input` based on `sep` into a `RaggedTensor`.
+
+  Let N be the size of `input` (typically N will be the batch size). Split each
+  element of `input` based on `sep` and return a `RaggedTensor` containing the
+  split tokens. Empty tokens are ignored.
+
+  Example:
+
+  >>> tf.strings.split('hello world').numpy()
+   array([b'hello', b'world'], dtype=object)
+  >>> tf.strings.split(['hello world', 'a b c'])
+  <tf.RaggedTensor [[b'hello', b'world'], [b'a', b'b', b'c']]>
+
+  If `sep` is given, consecutive delimiters are not grouped together and are
+  deemed to delimit empty strings. For example, `input` of `"1<>2<><>3"` and
+  `sep` of `"<>"` returns `["1", "2", "", "3"]`. If `sep` is None or an empty
+  string, consecutive whitespace are regarded as a single separator, and the
+  result will contain no empty strings at the start or end if the string has
+  leading or trailing whitespace.
+
+  Note that the above mentioned behavior matches python's str.split.
+
+  Args:
+    input: A string `Tensor` of rank `N`, the strings to split.  If
+      `rank(input)` is not known statically, then it is assumed to be `1`.
+    sep: `0-D` string `Tensor`, the delimiter string.
+    maxsplit: An `int`. If `maxsplit > 0`, limit of the split of the result.
+    name: A name for the operation (optional).
+
+  Raises:
+    ValueError: If sep is not a string.
+
+  Returns:
+    A `RaggedTensor` of rank `N+1`, the strings split according to the
+    delimiter.
+
+[API Signature] input: tensor, sep: tensor, maxsplit: integer, name: string
+
+[Error Messages]
+ValueError: Failed to convert a NumPy array to a Tensor (Unsupported object type bool).
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 27 (maxsplit is an integer within a reasonable range)
+{v_1 : int} |= v_1 > -1000 ∧ v_1 < 1000
+** SUCCESS **
+

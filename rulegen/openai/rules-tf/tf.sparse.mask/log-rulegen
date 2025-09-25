@@ -1,0 +1,1493 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (mask_indices must be an int or float tensor)
+{v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) = 3 ∨ dtype(v_1) = 4 ∨ dtype(v_1) = 5)
+** PARSING ERROR ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (input tensor must be a 1-dimensional tensor)
+{v_1 : tensor} |= ndim(v_1) = 1
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (mask_indices must contain valid indices)
+{v_1 : tensor} |= if shape(v_1, 0) > 0 then true else false
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (input tensor must have non-empty shape)
+{v_1 : tensor} |= shape(v_1, 0) > 0
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (mask_indices tensor shape must be a positive integer)
+{v_1 : tensor} |= shape(v_1, 0) > 0 ∧ shape(v_1, 0) = int
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (name must be a string)
+{OP> =`+,-] } {`+,-] {+,- } {+,-} {0} {+,-} {0 {V` ,{ ,0 }` , `) | ) { , } 8` : < , : < 0, | <|> ,| : {) < <|> = < )` 0 < | < + <, = , <0( |= < | | = | | | = 0 < | )|=, < | | |= < + ,/ 0 < + ] :=< | < / := [ := | : =/, -= [, := [ : | ] - = := | -=/= | -= /` := [=: = : [ /= |-: -= /=: -= | /=` : [- -= | / |= : | -= | / -= | -= =< |= :=/ -= | /- * := <: , | /=  _ — := / := ] =- |/ -= / - | /- /* -= / : /* [- ]: := /* /- ]* :=/: /* |-` :/*/* — |/* /* — |/= /* |/ / < /* :/* | |/*/* - | `) , — : ) <, -/* /- |/ / ,|: , | | ),  | ) -= : ), | | , | ) : ], | / , | =- / _ | = ), =-| / /| |- | — /- / , | / _ | , |_ | :=|/ | -- | :/_| --| / <: _- | --/ |- /- :, ://-: : -: - : - - :,- , | :_] :,_ , -/, =-| - - : ] : , : ] : -/: /- ] =- - / :,| / /,- /- - /,/: / _/_: | ] --: || |- || /- _,/|| || / || /- | || --: || /= _,- || || || || || / || || /= =- || -= -| - -=|, <- |= <-| <--<- , | <-| << =-|, / - :< : ||| <-| <- : | :- : | |-/: |= _/- | ->/ - | -|| [ -: /=
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) = 3 ∨ dtype(v_1) = 4 ∨ dtype(v_1) = 5) (Error: No terminal matches '(' in the current parser context, at line 1 col 35
+
+{v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) 
+                                  ^
+Expected one of: 
+	* __ANON_2
+	* RPAR
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {OP> =`+,-] } {`+,-] {+,- } {+,-} {0} {+,-} {0 {V` ,{ ,0 }` , `) | ) { , } 8` : < , : < 0, | <|> ,| : {) < <|> = < )` 0 < | < + <, = , <0( |= < | | = | | | = 0 < | )|=, < | | |= < + ,/ 0 < + ] :=< | < / := [ := | : =/, -= [, := [ : | ] - = := | -=/= | -= /` := [=: = : [ /= |-: -= /=: -= | /=` : [- -= | / |= : | -= | / -= | -= =< |= :=/ -= | /- * := <: , | /=  _ — := / := ] =- |/ -= / - | /- /* -= / : /* [- ]: := /* /- ]* :=/: /* |-` :/*/* — |/* /* — |/= /* |/ / < /* :/* | |/*/* - | `) , — : ) <, -/* /- |/ / ,|: , | | ),  | ) -= : ), | | , | ) : ], | / , | =- / _ | = ), =-| / /| |- | — /- / , | / _ | , |_ | :=|/ | -- | :/_| --| / <: _- | --/ |- /- :, ://-: : -: - : - - :,- , | :_] :,_ , -/, =-| - - : ] : , : ] : -/: /- ] =- - / :,| / /,- /- - /,/: / _/_: | ] --: || |- || /- _,/|| || / || /- | || --: || /= _,- || || || || || / || || /= =- || -= -| - -=|, <- |= <-| <--<- , | <-| << =-|, / - :< : ||| <-| <- : | :- : | |-/: |= _/- | ->/ - | -|| [ -: /= (Unused: OP> =`+, -])
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (mask_indices must be of integer type)
+{v_1 : tensor} |= dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) = 3 ∨ dtype(v_1) = 4
+** PARSING ERROR ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) = 3 ∨ dtype(v_1) = 4 ∨ dtype(v_1) = 5) (Error: No terminal matches '(' in the current parser context, at line 1 col 35
+
+{v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) 
+                                  ^
+Expected one of: 
+	* __ANON_2
+	* RPAR
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {OP> =`+,-] } {`+,-] {+,- } {+,-} {0} {+,-} {0 {V` ,{ ,0 }` , `) | ) { , } 8` : < , : < 0, | <|> ,| : {) < <|> = < )` 0 < | < + <, = , <0( |= < | | = | | | = 0 < | )|=, < | | |= < + ,/ 0 < + ] :=< | < / := [ := | : =/, -= [, := [ : | ] - = := | -=/= | -= /` := [=: = : [ /= |-: -= /=: -= | /=` : [- -= | / |= : | -= | / -= | -= =< |= :=/ -= | /- * := <: , | /=  _ — := / := ] =- |/ -= / - | /- /* -= / : /* [- ]: := /* /- ]* :=/: /* |-` :/*/* — |/* /* — |/= /* |/ / < /* :/* | |/*/* - | `) , — : ) <, -/* /- |/ / ,|: , | | ),  | ) -= : ), | | , | ) : ], | / , | =- / _ | = ), =-| / /| |- | — /- / , | / _ | , |_ | :=|/ | -- | :/_| --| / <: _- | --/ |- /- :, ://-: : -: - : - - :,- , | :_] :,_ , -/, =-| - - : ] : , : ] : -/: /- ] =- - / :,| / /,- /- - /,/: / _/_: | ] --: || |- || /- _,/|| || / || /- | || --: || /= _,- || || || || || / || || /= =- || -= -| - -=|, <- |= <-| <--<- , | <-| << =-|, / - :< : ||| <-| <- : | :- : | |-/: |= _/- | ->/ - | -|| [ -: /= (Unused: OP> =`+, -])
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (name must be a non-empty string)
+{v_1 : string} |= v_1 ≠ ""
+** PARSING ERROR ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) = 3 ∨ dtype(v_1) = 4 ∨ dtype(v_1) = 5) (Error: No terminal matches '(' in the current parser context, at line 1 col 35
+
+{v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) 
+                                  ^
+Expected one of: 
+	* __ANON_2
+	* RPAR
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {OP> =`+,-] } {`+,-] {+,- } {+,-} {0} {+,-} {0 {V` ,{ ,0 }` , `) | ) { , } 8` : < , : < 0, | <|> ,| : {) < <|> = < )` 0 < | < + <, = , <0( |= < | | = | | | = 0 < | )|=, < | | |= < + ,/ 0 < + ] :=< | < / := [ := | : =/, -= [, := [ : | ] - = := | -=/= | -= /` := [=: = : [ /= |-: -= /=: -= | /=` : [- -= | / |= : | -= | / -= | -= =< |= :=/ -= | /- * := <: , | /=  _ — := / := ] =- |/ -= / - | /- /* -= / : /* [- ]: := /* /- ]* :=/: /* |-` :/*/* — |/* /* — |/= /* |/ / < /* :/* | |/*/* - | `) , — : ) <, -/* /- |/ / ,|: , | | ),  | ) -= : ), | | , | ) : ], | / , | =- / _ | = ), =-| / /| |- | — /- / , | / _ | , |_ | :=|/ | -- | :/_| --| / <: _- | --/ |- /- :, ://-: : -: - : - - :,- , | :_] :,_ , -/, =-| - - : ] : , : ] : -/: /- ] =- - / :,| / /,- /- - /,/: / _/_: | ] --: || |- || /- _,/|| || / || /- | || --: || /= _,- || || || || || / || || /= =- || -= -| - -=|, <- |= <-| <--<- , | <-| << =-|, / - :< : ||| <-| <- : | :- : | |-/: |= _/- | ->/ - | -|| [ -: /= (Unused: OP> =`+, -])
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (shape of mask_indices must be positive)
+{v_1 : tensor} |= shape(v_1, 0) > 0
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) = 3 ∨ dtype(v_1) = 4 ∨ dtype(v_1) = 5) (Error: No terminal matches '(' in the current parser context, at line 1 col 35
+
+{v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) 
+                                  ^
+Expected one of: 
+	* __ANON_2
+	* RPAR
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {OP> =`+,-] } {`+,-] {+,- } {+,-} {0} {+,-} {0 {V` ,{ ,0 }` , `) | ) { , } 8` : < , : < 0, | <|> ,| : {) < <|> = < )` 0 < | < + <, = , <0( |= < | | = | | | = 0 < | )|=, < | | |= < + ,/ 0 < + ] :=< | < / := [ := | : =/, -= [, := [ : | ] - = := | -=/= | -= /` := [=: = : [ /= |-: -= /=: -= | /=` : [- -= | / |= : | -= | / -= | -= =< |= :=/ -= | /- * := <: , | /=  _ — := / := ] =- |/ -= / - | /- /* -= / : /* [- ]: := /* /- ]* :=/: /* |-` :/*/* — |/* /* — |/= /* |/ / < /* :/* | |/*/* - | `) , — : ) <, -/* /- |/ / ,|: , | | ),  | ) -= : ), | | , | ) : ], | / , | =- / _ | = ), =-| / /| |- | — /- / , | / _ | , |_ | :=|/ | -- | :/_| --| / <: _- | --/ |- /- :, ://-: : -: - : - - :,- , | :_] :,_ , -/, =-| - - : ] : , : ] : -/: /- ] =- - / :,| / /,- /- - /,/: / _/_: | ] --: || |- || /- _,/|| || / || /- | || --: || /= _,- || || || || || / || || /= =- || -= -| - -=|, <- |= <-| <--<- , | <-| << =-|, / - :< : ||| <-| <- : | :- : | |-/: |= _/- | ->/ - | -|| [ -: /= (Unused: OP> =`+, -])
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (mask_indices values must be non-negative)
+{v_1 : tensor} |= min(v_1) ≥ 0
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) = 3 ∨ dtype(v_1) = 4 ∨ dtype(v_1) = 5) (Error: No terminal matches '(' in the current parser context, at line 1 col 35
+
+{v_1 : tensor} |= v_1 ≠ 0 ∧ (dtype(v_1) = 1 ∨ dtype(v_1) = 2 ∨ dtype(v_1) 
+                                  ^
+Expected one of: 
+	* __ANON_2
+	* RPAR
+	* __ANON_7
+	* COMPOP
+	* ADDOP
+	* LSQB
+	* __ANON_3
+	* MULOP
+)
+Redundant variables: {OP> =`+,-] } {`+,-] {+,- } {+,-} {0} {+,-} {0 {V` ,{ ,0 }` , `) | ) { , } 8` : < , : < 0, | <|> ,| : {) < <|> = < )` 0 < | < + <, = , <0( |= < | | = | | | = 0 < | )|=, < | | |= < + ,/ 0 < + ] :=< | < / := [ := | : =/, -= [, := [ : | ] - = := | -=/= | -= /` := [=: = : [ /= |-: -= /=: -= | /=` : [- -= | / |= : | -= | / -= | -= =< |= :=/ -= | /- * := <: , | /=  _ — := / := ] =- |/ -= / - | /- /* -= / : /* [- ]: := /* /- ]* :=/: /* |-` :/*/* — |/* /* — |/= /* |/ / < /* :/* | |/*/* - | `) , — : ) <, -/* /- |/ / ,|: , | | ),  | ) -= : ), | | , | ) : ], | / , | =- / _ | = ), =-| / /| |- | — /- / , | / _ | , |_ | :=|/ | -- | :/_| --| / <: _- | --/ |- /- :, ://-: : -: - : - - :,- , | :_] :,_ , -/, =-| - - : ] : , : ] : -/: /- ] =- - / :,| / /,- /- - /,/: / _/_: | ] --: || |- || /- _,/|| || / || /- | || --: || /= _,- || || || || || / || || /= =- || -= -| - -=|, <- |= <-| <--<- , | <-| << =-|, / - :< : ||| <-| <- : | :- : | |-/: |= _/- | ->/ - | -|| [ -: /= (Unused: OP> =`+, -])
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.sparse.mask API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Masks elements of `IndexedSlices`.
+
+  Given an `IndexedSlices` instance `a`, returns another `IndexedSlices` that
+  contains a subset of the slices of `a`. Only the slices at indices not
+  specified in `mask_indices` are returned.
+
+  This is useful when you need to extract a subset of slices in an
+  `IndexedSlices` object.
+
+  For example:
+
+  ```python
+  # `a` contains slices at indices [12, 26, 37, 45] from a large tensor
+  # with shape [1000, 10]
+  a.indices  # [12, 26, 37, 45]
+  tf.shape(a.values)  # [4, 10]
+
+  # `b` will be the subset of `a` slices at its second and third indices, so
+  # we want to mask its first and last indices (which are at absolute
+  # indices 12, 45)
+  b = tf.sparse.mask(a, [12, 45])
+
+  b.indices  # [26, 37]
+  tf.shape(b.values)  # [2, 10]
+  ```
+
+  Args:
+    a: An `IndexedSlices` instance.
+    mask_indices: Indices of elements to mask.
+    name: A name for the operation (optional).
+
+  Returns:
+    The masked `IndexedSlices` instance.
+
+[API Signature] a: tensor, mask_indices: tensor, name: string
+
+[Error Messages]
+ValueError: Attempt to convert a value (<built-in method indices of Tensor object at 0x75f3d6f6e9e0>) with an unsupported type (<class 'builtin_function_or_method'>) to a Tensor.
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (name must contain letters or numbers)
+{v_1 : string} |= ∀ i ∈ [0, v_1.len - 1] : (v_1[i] ≥ 'a' ∧ v_1[i] ≤ 'z') ∨ (v_1[i] ≥ 'A' ∧ v_1[i] ≤ 'Z') ∨ (v_ < ∨as the preceding ones)
+** PARSING ERROR ** (num_failures: 6)
+

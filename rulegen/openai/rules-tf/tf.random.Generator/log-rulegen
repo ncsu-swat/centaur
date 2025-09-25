@@ -1,0 +1,2685 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (ensure state is a 3-dimensional tensor)
+{v_1 : tensor, v_2 : int, v_3 : str} |= ndim(v_1) = 3
+** REDUNDANT VARIABLES ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (ensure state has non-negative values)
+{v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, shape(v_1, 0) * shape(v_1, 1) * shape(v_1, 2) - 1] : v_1[i] ≥ 0
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (alg must be either philox or threefry)
+{v_1 : tensor, v_2 : int, v_3 : str} |= v_3 = "philox" ∨ v_3 = "threefry"
+** REDUNDANT VARIABLES ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (ensure integer state shape values)
+{v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : isinstance(shape(v_1, i), int)
+** REDUNDANT VARIABLES ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (Ensure state tensor has shape greater than 0)
+{v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+** REDUNDANT VARIABLES ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (state tensor entries are within int64 bounds)
+{v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, shape(v_1, 0) * shape(v_1, 1) * shape(v_1, 2) - 1] : -2**63 ≤ v_1[i] ≤ 2**63 - 1
+** REDUNDANT VARIABLES ** (num_failures: 6)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (ensure integer type of state)
+{v_1 : tensor, v_2 : int, v_3 : str} |= dtype(v_1) ∈ {1, 2, 3, 4}
+** REDUNDANT VARIABLES ** (num_failures: 7)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (ensure all shape dimensions are positive integers)
+{v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+** REDUNDANT VARIABLES ** (num_failures: 8)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (state shape must be a tuple of positive integers)
+{v_1 : tensor, v_2 : int, v_3 : str} |= shape(v_1) ∈ tuple(int)
+** REDUNDANT VARIABLES ** (num_failures: 9)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (check for valid algorithm string)
+{v_1 : tensor, v_2 : int, v_3 : str} |= v_3 ∈ {"philox", "threefry"}
+** REDUNDANT VARIABLES ** (num_failures: 10)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (ensure shape dimensions can be cast to int)
+{v_1 : int, v_v_1: tensor} |= shape(v_1, v_1) ∈ tuple(v_v_1)
+** PARSING ERROR ** (num_failures: 11)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ndim(v_1) = 3 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, shape(v_1, 0) * shape(v_1, 1) * shape(v_1, 2) - 1] : v_1[i] ≥ 0 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= v_3 = "philox" ∨ v_3 = "threefry" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : isinstance(shape(v_1, i), int) (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, shape(v_1, 0) * shape(v_1, 1) * shape(v_1, 2) - 1] : -2**63 ≤ v_1[i] ≤ 2**63 - 1 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= dtype(v_1) ∈ {1, 2, 3, 4} (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= shape(v_1) ∈ tuple(int) (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= v_3 ∈ {"philox", "threefry"} (Unused: v_1, v_2)
+Parse error: {v_1 : int, v_v_1: tensor} |= shape(v_1, v_1) ∈ tuple(v_v_1) (Error: No terminal matches '∈' in the current parser context, at line 1 col 47
+
+ int, v_v_1: tensor} |= shape(v_1, v_1) ∈ tuple(v_v_1)
+                                        ^
+Expected one of: 
+	* __ANON_2
+	* COMPOP
+	* ADDOP
+	* __ANON_3
+	* MULOP
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (state tensor must have at least 3 dimensions)
+{v_1 : tensor} |= ndim(v_1) ≥ 3
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ndim(v_1) = 3 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, shape(v_1, 0) * shape(v_1, 1) * shape(v_1, 2) - 1] : v_1[i] ≥ 0 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= v_3 = "philox" ∨ v_3 = "threefry" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : isinstance(shape(v_1, i), int) (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, shape(v_1, 0) * shape(v_1, 1) * shape(v_1, 2) - 1] : -2**63 ≤ v_1[i] ≤ 2**63 - 1 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= dtype(v_1) ∈ {1, 2, 3, 4} (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0 (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= shape(v_1) ∈ tuple(int) (Unused: v_2, v_3)
+Redundant variables: {v_1 : tensor, v_2 : int, v_3 : str} |= v_3 ∈ {"philox", "threefry"} (Unused: v_1, v_2)
+Parse error: {v_1 : int, v_v_1: tensor} |= shape(v_1, v_1) ∈ tuple(v_v_1) (Error: No terminal matches '∈' in the current parser context, at line 1 col 47
+
+ int, v_v_1: tensor} |= shape(v_1, v_1) ∈ tuple(v_v_1)
+                                        ^
+Expected one of: 
+	* __ANON_2
+	* COMPOP
+	* ADDOP
+	* __ANON_3
+	* MULOP
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.random.Generator API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Random-number generator.
+
+  Example:
+
+  Creating a generator from a seed:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.9356609 ,  1.0854305 , -0.93788373],
+         [-0.5061547 ,  1.3169702 ,  0.7137579 ]], dtype=float32)>
+
+  Creating a generator from a non-deterministic state:
+
+  >>> g = tf.random.Generator.from_non_deterministic_state()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  All the constructors allow explicitly choosing an Random-Number-Generation
+  (RNG) algorithm. Supported algorithms are `"philox"` and `"threefry"`. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(123, alg="philox")
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=
+  array([[ 0.8673864 , -0.29899067, -0.9310337 ],
+         [-1.5828488 ,  1.2481191 , -0.6770643 ]], dtype=float32)>
+
+  CPU, GPU and TPU with the same algorithm and seed will generate the same
+  integer random numbers. Float-point results (such as the output of `normal`)
+  may have small numerical discrepancies between different devices.
+
+  This class uses a `tf.Variable` to manage its internal state. Every time
+  random numbers are generated, the state of the generator will change. For
+  example:
+
+  >>> g = tf.random.Generator.from_seed(1234)
+  >>> g.state
+  <tf.Variable ... numpy=array([1234,    0,    0])>
+  >>> g.normal(shape=(2, 3))
+  <...>
+  >>> g.state
+  <tf.Variable ... numpy=array([2770,    0,    0])>
+
+  The shape of the state is algorithm-specific.
+
+  There is also a global generator:
+
+  >>> g = tf.random.get_global_generator()
+  >>> g.normal(shape=(2, 3))
+  <tf.Tensor: shape=(2, 3), dtype=float32, numpy=...>
+
+  When creating a generator inside a `tf.distribute.Strategy` scope, each
+  replica will get a different stream of random numbers.
+
+  For example, in this code:
+
+  ```
+  strat = tf.distribute.MirroredStrategy(devices=["cpu:0", "cpu:1"])
+  with strat.scope():
+    g = tf.random.Generator.from_seed(1)
+    def f():
+      return g.normal([])
+    results = strat.run(f).values
+  ```
+
+  `results[0]` and `results[1]` will have different values.
+
+  If the generator is seeded (e.g. created via `Generator.from_seed`), the
+  random numbers will be determined by the seed, even though different replicas
+  get different numbers.  One can think of a random number generated on a
+  replica as a hash of the replica ID and a "master" random number that may be
+  common to all replicas. Hence, the whole system is still deterministic.
+
+  (Note that the random numbers on different replicas are not correlated, even
+  if they are deterministically determined by the same seed. They are not
+  correlated in the sense that no matter what statistics one calculates on them,
+  there won't be any discernable correlation.)
+
+  Generators can be freely saved and restored using `tf.train.Checkpoint`. The
+  checkpoint can be restored in a distribution strategy with a different number
+  of replicas than the original strategy. If a replica ID is present in both the
+  original and the new distribution strategy, its state will be properly
+  restored (i.e. the random-number stream from the restored point will be the
+  same as that from the saving point) unless the replicas have already diverged
+  in their RNG call traces before saving (e.g. one replica has made one RNG call
+  while another has made two RNG calls). We don't have such guarantee if the
+  generator is saved in a strategy scope and restored outside of any strategy
+  scope, or vice versa.
+
+  When a generator is created within the scope of
+  `tf.distribute.experimental.ParameterServerStrategy`, the workers
+  will share the generator's state (placed on one of the parameter
+  servers). In this way the workers will still get different
+  random-number streams, as stated above. (This is similar to replicas
+  in a `tf.distribute.MirroredStrategy` sequentially accessing a
+  generator created outside the strategy.) Each RNG call on a worker
+  will incur a round-trip to a parameter server, which may have
+  performance impacts. When creating a
+  `tf.distribute.experimental.ParameterServerStrategy`, please make
+  sure that the `variable_partitioner` argument won't shard small
+  variables of shape `[2]` or `[3]` (because generator states must not
+  be sharded). Ways to avoid sharding small variables include setting
+  `variable_partitioner` to `None` or to
+  `tf.distribute.experimental.partitioners.MinSizePartitioner` with a
+  large enough `min_shard_bytes` (see
+  `tf.distribute.experimental.ParameterServerStrategy`'s documentation
+  for more details).
+
+[API Signature] copy_from: string, state: tensor, alg: string
+
+[Error Messages]
+AssertionError:
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (copy_from string must be either 'philox' or 'threefry')
+{v_1 : str} |= v_1 = "philox" ∨ v_1 = "threefry"
+** SUCCESS **
+

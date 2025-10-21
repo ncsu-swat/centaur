@@ -110,9 +110,9 @@ def save_sig(sig, lib, llm="gemini"):
         f.write(sig + '\n')
 
 def generate_signatures(api, lib="torch", llm="gemini"):
-    print("Running signature generation after 6 seconds...")
-    time.sleep(6)
-    
+    print("Running signature generation after 1 seconds...")
+    time.sleep(1)
+
     if llm == "gemini":
         model = "gemini-2.0-flash"
         gemini_key = os.getenv("gemini_key")

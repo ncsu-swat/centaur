@@ -1,5 +1,5 @@
 from openai import OpenAI
-import os, re, requests
+import os, re, requests, logging
 from bs4 import BeautifulSoup
 
 class Response:
@@ -39,8 +39,10 @@ class OAChatWrapper:
         )
         self.previous_response_id = None
         self._messages = []  # Used when interacting via chat/completions
+        self._logger = logging.getLogger(__name__)
 
     def send_message(self, prompt):
+        self._logger.info("LLM prompt: %s", prompt)
         if self._api_surface == "responses":
             if self.previous_response_id is None:
                 openai_response = self.client.responses.create(
@@ -55,6 +57,7 @@ class OAChatWrapper:
                 )
             self.previous_response_id = openai_response.id
             response_text = openai_response.output_text
+            self._log_usage(getattr(openai_response, "usage", None))
         elif self._api_surface == "chat_completions":
             self._messages.append({"role": "user", "content": prompt})
             completion = self.client.chat.completions.create(
@@ -67,19 +70,52 @@ class OAChatWrapper:
             else:
                 response_text = message_content or ""
             self._messages.append({"role": "assistant", "content": response_text})
+            self._log_usage(getattr(completion, "usage", None))
         elif self._api_surface == "completions":
             # Fallback for legacy completion endpoints – maintain a running prompt.
             self._messages.append(prompt)
+            compiled_prompt = "\n\n".join(self._messages)
+            self._logger.info("LLM compiled prompt: %s", compiled_prompt)
             completion = self.client.completions.create(
                 model=self.model,
-                prompt="\n\n".join(self._messages),
+                prompt=compiled_prompt,
             )
             response_text = completion.choices[0].text or ""
             self._messages.append(response_text)
+            self._log_usage(getattr(completion, "usage", None))
         else:
             raise ValueError(f"Unsupported OpenAI API surface: {self._api_surface}")
 
+        response_text = response_text or ""
+        self._logger.info("LLM response: %s", response_text)
         return Response(text=response_text)
+
+    def _log_usage(self, usage):
+        if usage is None:
+            self._logger.info("Token usage unavailable for the latest request.")
+            return
+
+        input_tokens = getattr(usage, "input_tokens", None)
+        if input_tokens is None:
+            input_tokens = getattr(usage, "prompt_tokens", None)
+
+        output_tokens = getattr(usage, "output_tokens", None)
+        if output_tokens is None:
+            output_tokens = getattr(usage, "completion_tokens", None)
+
+        total_tokens = getattr(usage, "total_tokens", None)
+        if total_tokens is None and input_tokens is not None and output_tokens is not None:
+            try:
+                total_tokens = input_tokens + output_tokens
+            except TypeError:
+                total_tokens = None
+
+        self._logger.info(
+            "Token usage - input: %s, output: %s, total: %s",
+            input_tokens if input_tokens is not None else "n/a",
+            output_tokens if output_tokens is not None else "n/a",
+            total_tokens if total_tokens is not None else "n/a",
+        )
     
 def extract_code_from_response(response, llm="gemini"):
     # Use regular expression to find the code block within the markdown

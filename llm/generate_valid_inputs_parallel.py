@@ -231,8 +231,8 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch"):
     while not output.endswith("Valid"):
         logger.info(f"Attempt {attempt + 1}:\n{error}")
         to_return[attempt] = 1
-        logger.info("Retrying code generation after 6 seconds...")
-        # time.sleep(6)
+        logger.info("Retrying code generation after 1 seconds...")
+        time.sleep(1)
         prompt = retry_prompt(error)
         logger.info(f"[Retry Prompt]\n\n{prompt}\n\n")
         try:

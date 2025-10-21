@@ -4,79 +4,60 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import torch, copy
-import numpy as np
+import torch, copy, numpy as np
 
 def arccosh_inputs():
     list_of_inputs = []
+    
+    input1 = np.array([1.0, 2.0, 3.0])
+    out1 = np.array([])
+    input_dict1 = {"input": input1, "out": out1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
+    
+    input2 = np.array([[1.0, 2.0], [3.0, 4.0]])
+    out2 = np.array([[0.0, 0.0], [0.0, 0.0]])
+    input_dict2 = {"input": input2, "out": out2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
+    
+    input3 = np.array([1.5, 2.5, 3.5, 4.5])
+    out3 = np.array([0.0, 0.0, 0.0, 0.0])
+    input_dict3 = {"input": input3, "out": out3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
 
-    # 1: 0-D float32 scalar
-    input = torch.tensor(1.0, dtype=torch.float32).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
+    input4 = np.array([1.0])
+    out4 = np.array([0.0])
+    input_dict4 = {"input": input4, "out": out4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
-    # 2: 1-D float64 vector
-    input = torch.tensor([1.0, 1.0001, 2.0, 3.5], dtype=torch.float64).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
+    input5 = np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+    out5 = np.array([])
+    input_dict5 = {"input": input5, "out": out5}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
 
-    # 3: 2-D float16 matrix
-    input = torch.tensor([[1.0, 2.0], [10.0, 100.0]], dtype=torch.float16).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
+    input6 = np.array([1.0, 2.0, 3.0])
+    out6 = np.array([0.0, 0.0, 0.0])
+    input_dict6 = {"input": input6, "out": out6}
+    list_of_inputs.append(copy.deepcopy(input_dict6))
+    
+    input7 = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    out7 = np.array([])
+    input_dict7 = {"input": input7, "out": out7}
+    list_of_inputs.append(copy.deepcopy(input_dict7))
 
-    # 4: 3-D float32 tensor
-    input = torch.tensor([[[1.0, 1.5, 2.0]], [[3.0, 4.0, 5.0]]], dtype=torch.float32).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
+    input8 = np.array([1.0, 2.0]).reshape(1, -1)
+    out8 = np.array([])
+    input_dict8 = {"input": input8, "out": out8}
+    list_of_inputs.append(copy.deepcopy(input_dict8))
+    
+    input9 = np.array([1.0, 2.0, 3.0])
+    out9 = np.array([0.0])
+    input_dict9 = {"input": input9, "out": out9}
+    list_of_inputs.append(copy.deepcopy(input_dict9))
 
-    # 5: 1-D complex64 vector
-    input = torch.tensor([1+0j, 0.5+0.5j, -2+3j, 4-1j], dtype=torch.complex64).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 6: 2-D complex128 matrix
-    input = torch.tensor([[1+0j, -1+2j], [3-4j, 0.1+0.2j]], dtype=torch.complex128).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 7: Empty 1-D float32
-    input = torch.empty((0,), dtype=torch.float32).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 8: Empty 3-D float64
-    input = torch.empty((2, 0, 3), dtype=torch.float64).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 9: Strided 1-D float32 (slice)
-    base = torch.linspace(1, 10, steps=10, dtype=torch.float32).numpy()
-    input = base[::2]
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 10: Includes inf and nan, float64
-    input = torch.tensor([float('inf'), 1.0, float('nan'), 2.0], dtype=torch.float64).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 11: Fortran-ordered 2-D float32
-    arr = torch.arange(1, 7, dtype=torch.float32).reshape(2, 3).numpy()
-    input = np.asfortranarray(arr)
-    out = np.empty_like(input, order='F')
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 12: 4-D float32 with varied magnitudes
-    vals = torch.tensor([1.0, 1.5, 100.0, 1e10, 2.0, 1.000001, 3.0, 5.0, 10.0, 1.0001, 7.5, 2.5], dtype=torch.float32).numpy()
-    input = vals.reshape(2, 2, 1, 3)
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    # 13: Real values including <1 to produce NaNs, float32
-    input = torch.tensor([0.5, -1.0, 0.0, 1.0, 2.0], dtype=torch.float32).numpy()
-    out = np.empty_like(input)
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
+    input10 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
+    out10 = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 0.0]])
+    input_dict10 = {"input": input10, "out": out10}
+    list_of_inputs.append(copy.deepcopy(input_dict10))
 
     return list_of_inputs
 
@@ -94,5 +75,6 @@ def check_valid(api, list_of_inputs, lib="torch", suffix=0):
 
 if 'torch.arccosh' not in generated_inputs:
     raise Exception("Output of the input generating function was not assigned to the generated_inputs dictionary to the key 'torch.arccosh'.")
+
 
 check_valid('torch.arccosh', generated_inputs['torch.arccosh'], lib="torch", suffix=0)

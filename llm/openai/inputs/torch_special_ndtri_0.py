@@ -5,68 +5,23 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import torch, copy
+import numpy as np
 
 def ndtri_inputs():
     list_of_inputs = []
-
-    inp_t = torch.tensor(0.5, dtype=torch.float32)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.tensor([1e-10, 0.2, 0.5, 0.8, 1 - 1e-10], dtype=torch.float64)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.tensor([[1e-3, 1e-2, 0.1],
-                          [0.9, 0.99, 0.999]], dtype=torch.float32)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.rand((2, 1, 3), dtype=torch.float32)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.tensor([0.0, 1.0], dtype=torch.float64)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.tensor([-0.1, 1.2, 2.0, -5.0], dtype=torch.float32)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.empty((0,), dtype=torch.float32)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    base = torch.linspace(0.0, 1.0, steps=10, dtype=torch.float64)
-    inp_t = base[::2]
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.tensor([[float('nan'), 0.3],
-                          [0.7, float('nan')]], dtype=torch.float32)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.rand((2, 2, 1, 3), dtype=torch.float64)
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
-    inp_t = torch.rand((4, 3), dtype=torch.float32).t()
-    input = inp_t.numpy()
-    out = torch.empty_like(inp_t).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input, "out": out}))
-
+    
+    input1 = np.array([0.0], dtype=np.float32)
+    input_dict1 = {"input": input1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
+    
+    input2 = np.array([0.5], dtype=np.float32)
+    input_dict2 = {"input": input2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
+    
+    input3 = np.array([-0.5], dtype=np.float32)
+    input_dict3 = {"input": input3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
+    
     return list_of_inputs
 
 generated_inputs["torch.special.ndtri"] = ndtri_inputs()

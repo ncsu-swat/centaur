@@ -4,66 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import torch, copy, numpy as np
+import torch, copy
+import numpy as np
 
 def nansum_inputs():
     list_of_inputs = []
+    
+    input1 = np.array([1.0, 2.0, np.nan, 4.0], dtype=np.float32)
+    dtype1 = torch.float64
+    input_dict1 = {"input": input1, "dtype": dtype1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
+    
+    input2 = np.array([[-1.0, np.nan, 3.0], [4.0, -np.inf, 6.0]], dtype=np.float32)
+    dtype2 = torch.float16
+    input_dict2 = {"input": input2, "dtype": dtype2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
+    
+    input3 = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+    dtype3 = torch.float32
+    input_dict3 = {"input": input3, "dtype": dtype3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
+    
+    input4 = np.array([[np.nan, 2.0], [3.0, np.nan]], dtype=np.float16)
+    dtype4 = torch.float32
+    input_dict4 = {"input": input4, "dtype": dtype4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
-    input = np.array([1.0, 2.0, np.nan, 4.0], dtype=np.float64)
-    dtype = None
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
+    input5 = np.array([1.0, np.nan, 3.0, np.nan, 5.0], dtype=np.float32)
+    dtype5 = None
+    input_dict5 = {"input": input5, "dtype": dtype5}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
+    
+    input6 = np.array([[[1.0, np.nan], [3.0, 4.0]], [[5.0, 6.0], [np.nan, 8.0]]], dtype=np.float32)
+    dtype6 = torch.float64
+    input_dict6 = {"input": input6, "dtype": dtype6}
+    list_of_inputs.append(copy.deepcopy(input_dict6))
+    
+    input7 = np.array([-1.0, -2.0, np.nan, -4.0], dtype=np.float32)
+    dtype7 = torch.float16
+    input_dict7 = {"input": input7, "dtype": dtype7}
+    list_of_inputs.append(copy.deepcopy(input_dict7))
+    
+    input8 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    dtype8 = torch.float32
+    input_dict8 = {"input": input8, "dtype": dtype8}
+    list_of_inputs.append(copy.deepcopy(input_dict8))
 
-    input = np.array([[1.0, -2.5, np.nan],
-                      [3.0, np.nan, 6.5]], dtype=np.float32)
-    dtype = torch.float64
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array([[[1.0, np.nan], [-np.inf, 2.0]],
-                      [[np.nan, 3.0], [4.0, 5.0]]], dtype=np.float16)
-    dtype = torch.float32
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array(np.nan, dtype=np.float32)
-    dtype = None
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array([], dtype=np.float64)
-    dtype = None
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.empty((2, 0, 3), dtype=np.float32)
-    dtype = None
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array([-5, 0, 7, -3], dtype=np.int32)
-    dtype = torch.int64
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array([[255, 0, 1],
-                      [2, 3, 4]], dtype=np.uint8)
-    dtype = torch.int64
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array([[[[1.0, np.nan, -1.0],
-                        [2.0, 3.0, np.nan]]],
-                      [[[np.nan, 0.0, 5.0],
-                        [6.0, -7.5, 8.0]]]], dtype=np.float64)
-    dtype = None
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array([1e20, 1e20, np.nan, -1e20], dtype=np.float32)
-    dtype = torch.float64
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    input = np.array([0.0, -0.0, np.inf, -np.inf, np.nan], dtype=np.float64)
-    dtype = None
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
-
-    arr = np.arange(24, dtype=np.float64).reshape(2, 3, 4).swapaxes(1, 2)
-    arr[0, 1, 2] = np.nan
-    input = arr
-    dtype = None
-    list_of_inputs.append(copy.deepcopy({"input": input, "dtype": dtype}))
+    input9 = np.array([1.0, 2.0, 3.0], dtype=np.float16)
+    dtype9 = torch.float64
+    input_dict9 = {"input": input9, "dtype": dtype9}
+    list_of_inputs.append(copy.deepcopy(input_dict9))
+    
+    input10 = np.array([np.nan, np.nan, np.nan], dtype=np.float32)
+    dtype10 = torch.float64
+    input_dict10 = {"input": input10, "dtype": dtype10}
+    list_of_inputs.append(copy.deepcopy(input_dict10))
 
     return list_of_inputs
 

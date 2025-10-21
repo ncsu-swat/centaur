@@ -5,58 +5,50 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import torch, copy
+import numpy as np
 
 def reshape_inputs():
     list_of_inputs = []
 
-    input = torch.arange(6, dtype=torch.float32).numpy()
-    shape = (2, 3)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input1 = torch.arange(12.).numpy()
+    shape1 = (3, 4)
+    input_dict1 = {"input": input1, "shape": shape1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
 
-    input = torch.tensor([[0, 1, 2], [3, 4, 5]], dtype=torch.int64).numpy()
-    shape = (-1,)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input2 = torch.tensor([[0, 1], [2, 3]]).numpy()
+    shape2 = (-1,)
+    input_dict2 = {"input": input2, "shape": shape2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
 
-    input = (torch.arange(24) % 2 == 0).view(2, 3, 4).numpy()
-    shape = (3, 8)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input3 = torch.randn(2, 3, 4).numpy()
+    shape3 = (6, 4)
+    input_dict3 = {"input": input3, "shape": shape3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
 
-    input = torch.tensor([1+2j, 3+4j, 5+6j, 7+8j], dtype=torch.complex64).view(1, 1, 4).numpy()
-    shape = (2, 2)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input4 = torch.tensor([1, 2, 3, 4, 5, 6]).numpy()
+    shape4 = (2, -1)
+    input_dict4 = {"input": input4, "shape": shape4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
-    input = torch.tensor([], dtype=torch.float32).numpy()
-    shape = (0, 2)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input5 = torch.randint(0, 10, (5,)).numpy()
+    shape5 = (1, 5)
+    input_dict5 = {"input": input5, "shape": shape5}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
 
-    input = torch.randn(2, 1, 3, 4, dtype=torch.float64).numpy()
-    shape = (-1, 2, 4)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input7 = torch.ones((1, 3, 2)).numpy()
+    shape7 = (3, 2)
+    input_dict7 = {"input": input7, "shape": shape7}
+    list_of_inputs.append(copy.deepcopy(input_dict7))
 
-    t = torch.arange(12, dtype=torch.int32).view(6, 2)
-    input = t[:, 0].numpy()
-    shape = (2, 3)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input8 = torch.rand(4, 4).numpy()
+    shape8 = (16,)
+    input_dict8 = {"input": input8, "shape": shape8}
+    list_of_inputs.append(copy.deepcopy(input_dict8))
 
-    input = torch.tensor([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4], dtype=torch.int16).numpy()
-    shape = (5, 2)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
-
-    input = torch.arange(32, dtype=torch.float16).view(2, 4, 4).numpy()
-    shape = (4, 2, 4)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
-
-    input = torch.tensor(5.0, dtype=torch.float32).numpy()
-    shape = (1,)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
-
-    input = torch.arange(24, dtype=torch.int32).numpy()
-    shape = (2, -1, 3)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
-
-    input = torch.tensor([[1+1j, 2+2j, 3+3j], [4+4j, 5+5j, 6+6j]], dtype=torch.complex128).numpy()
-    shape = (-1,)
-    list_of_inputs.append(copy.deepcopy({"input": input, "shape": shape}))
+    input9 = torch.tensor([1.0, 2.0, 3.0, 4.0]).numpy()
+    shape9 = (2, 2)
+    input_dict9 = {"input": input9, "shape": shape9}
+    list_of_inputs.append(copy.deepcopy(input_dict9))
 
     return list_of_inputs
 

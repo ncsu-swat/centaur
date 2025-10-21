@@ -5,12 +5,44 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import torch, copy
+import numpy as np
 
 def get_rng_state_inputs():
     list_of_inputs = []
-    input_dict = {}
-    for _ in range(12):
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    input1 = {}
+    list_of_inputs.append(copy.deepcopy(input1))
+
+    input2 = {}
+    list_of_inputs.append(copy.deepcopy(input2))
+
+    input3 = {}
+    list_of_inputs.append(copy.deepcopy(input3))
+
+    input4 = {}
+    list_of_inputs.append(copy.deepcopy(input4))
+    
+    input5 = {}
+    list_of_inputs.append(copy.deepcopy(input5))
+    
+    input6 = {}
+    list_of_inputs.append(copy.deepcopy(input6))
+
+    input7 = {}
+    list_of_inputs.append(copy.deepcopy(input7))
+
+    input8 = {}
+    list_of_inputs.append(copy.deepcopy(input8))
+
+    input9 = {}
+    list_of_inputs.append(copy.deepcopy(input9))
+    
+    input10 = {}
+    list_of_inputs.append(copy.deepcopy(input10))
+
+    input11 = {}
+    list_of_inputs.append(copy.deepcopy(input11))
+
     return list_of_inputs
 
 generated_inputs["torch.get_rng_state"] = get_rng_state_inputs()

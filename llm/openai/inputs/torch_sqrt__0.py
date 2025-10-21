@@ -7,53 +7,40 @@ generated_inputs = dict()
 import torch, copy
 import numpy as np
 
-def sqrt_inplace_inputs():
+def torch_sqrt_inputs():
     list_of_inputs = []
 
-    input = np.array([0.0, 1.0, 4.0, 9.0], dtype=np.float32)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input1 = np.array([1.0, 4.0, 9.0, 16.0])
+    input_dict1 = {"input": input1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
 
-    input = np.array([[-1.0, 0.0, 1.0],
-                      [2.0, -3.0, 16.0]], dtype=np.float64)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input2 = np.array([[-1.0, 4.0], [9.0, -16.0]])
+    input_dict2 = {"input": input2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
 
-    input = np.array([[[0.25, 1.0, 4.0],
-                       [9.0, 16.0, 25.0]],
-                      [[36.0, 49.0, 64.0],
-                       [81.0, 100.0, 121.0]]], dtype=np.float16)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input3 = np.array([0.0, 1.0, 2.0, 3.0])
+    input_dict3 = {"input": input3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
 
-    input = np.array(-4.0, dtype=np.float32)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input4 = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]])
+    input_dict4 = {"input": input4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
-    input = np.array([], dtype=np.float64)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input5 = np.array([[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]])
+    input_dict5 = {"input": input5}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
 
-    input = np.arange(12, dtype=np.float32).reshape(3, 4).T
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input6 = np.array([1.0])
+    input_dict6 = {"input": input6}
+    list_of_inputs.append(copy.deepcopy(input_dict6))
 
-    input = np.arange(24, dtype=np.float64).reshape(4, 6)[:, ::2]
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = np.array([np.inf, -np.inf, np.nan, 0.0, 100.0], dtype=np.float64)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = np.array([1+0j, -1+0j, 3-4j, 0+0j], dtype=np.complex64)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = np.array([[-1+1j, 2-3j],
-                      [4+0j, 0+5j]], dtype=np.complex128)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = (np.arange(12, dtype=np.float32).reshape(2, 1, 3, 1, 2) / 3.0) + 0.1
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = np.array([1e-45, 1e-38, 1e-20, 1e-10, 1e-5, 1.0], dtype=np.float32)
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input7 = np.array([25.0, 36.0, 49.0])
+    input_dict7 = {"input": input7}
+    list_of_inputs.append(copy.deepcopy(input_dict7))
 
     return list_of_inputs
 
-generated_inputs["torch.sqrt_"] = sqrt_inplace_inputs()
+generated_inputs["torch.sqrt_"] = torch_sqrt_inputs()
 
 def check_valid(api, list_of_inputs, lib="torch", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

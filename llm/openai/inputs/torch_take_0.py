@@ -5,74 +5,61 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import torch, copy
+import numpy as np
 
 def take_inputs():
     list_of_inputs = []
+    
+    input1 = torch.tensor([[1, 2], [3, 4]]).numpy()
+    index1 = torch.tensor([0, 2]).numpy()
+    input_dict1 = {"input": input1, "index": index1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
 
-    # Input 1
-    input_arr = torch.tensor([[4, 3, 5], [6, 7, 8]]).numpy()
-    index_arr = torch.tensor([0, 2, 5], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
+    input2 = torch.tensor([10, 20, 30, 40, 50]).numpy()
+    index2 = torch.tensor([1, 3, 4]).numpy()
+    input_dict2 = {"input": input2, "index": index2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
+    
+    input3 = torch.randn(2, 3, 4).numpy()
+    index3 = torch.tensor([0, 3, 6, 9]).numpy()
+    input_dict3 = {"input": input3, "index": index3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
 
-    # Input 2
-    input_arr = torch.arange(12, dtype=torch.int32).reshape(2, 2, 3).numpy()
-    index_arr = torch.tensor([[0, 7], [5, 10]], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
+    input4 = torch.tensor([[1, 2, 3], [4, 5, 6], [7, 8, 9]]).numpy()
+    index4 = torch.tensor([0, 4, 8]).numpy()
+    input_dict4 = {"input": input4, "index": index4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
-    # Input 3
-    input_arr = torch.tensor([-1.0, -2.5, 3.3, 0.0, 4.4], dtype=torch.float32).numpy()
-    index_arr = torch.tensor([0, 3, 4], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
+    input5 = torch.tensor([1, 2, 3, 4, 5]).numpy()
+    index5 = torch.tensor([-1, 1, 3]).numpy()
+    input_dict5 = {"input": input5, "index": index5}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
 
-    # Input 4
-    input_arr = torch.tensor([[True, False], [False, True]], dtype=torch.bool).numpy()
-    index_arr = torch.tensor([0, 3, 1, 2], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
+    input6 = torch.randn(5, 5).numpy()
+    index6 = torch.tensor([0, 0, 0, 0, 0]).numpy()
+    input_dict6 = {"input": input6, "index": index6}
+    list_of_inputs.append(copy.deepcopy(input_dict6))
+    
+    input7 = torch.tensor([[1, 2], [3, 4]]).numpy()
+    index7 = torch.tensor([1, 1]).numpy()
+    input_dict7 = {"input": input7, "index": index7}
+    list_of_inputs.append(copy.deepcopy(input_dict7))
+    
+    input8 = torch.tensor([1, 2, 3]).numpy()
+    index8 = torch.tensor([0, 1, 2]).numpy()
+    input_dict8 = {"input": input8, "index": index8}
+    list_of_inputs.append(copy.deepcopy(input_dict8))
 
-    # Input 5
-    input_arr = torch.tensor(
-        [[1+2j, 3-4j, 5+0j],
-         [0+1j, -2-2j, 7+7j],
-         [9+0j, -1+1j, 2-3j]], dtype=torch.complex64
-    ).numpy()
-    index_arr = torch.tensor([8, 0, 4, 2, 6], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
-    # Input 6
-    input_arr = torch.tensor([1.5, -2.5, 3.0, 4.5], dtype=torch.float16).numpy()
-    index_arr = torch.tensor(1, dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
-    # Input 7
-    input_arr = torch.arange(120, dtype=torch.float32).reshape(2, 3, 4, 5).numpy()
-    index_arr = torch.tensor([0, 59, 119, 24, 75], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
-    # Input 8
-    input_arr = torch.empty((0,), dtype=torch.float32).numpy()
-    index_arr = torch.empty((0,), dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
-    # Input 9
-    input_arr = torch.empty((1, 0, 2), dtype=torch.float32).numpy()
-    index_arr = torch.empty((2, 0), dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
-    # Input 10
-    input_arr = torch.tensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=torch.uint8).numpy()
-    index_arr = torch.tensor([0, 1, 2, 3, 4, 7], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
-    # Input 11
-    input_arr = torch.linspace(0, 1, steps=5, dtype=torch.float64).numpy()
-    index_arr = torch.tensor([[0, 2, 4], [1, 3, 0]], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
-    # Input 12
-    input_arr = torch.tensor(3+4j, dtype=torch.complex128).numpy()
-    index_arr = torch.tensor([0], dtype=torch.long).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input_arr, "index": index_arr}))
-
+    input9 = torch.randn(2, 2).numpy()
+    index9 = torch.tensor([3]).numpy()
+    input_dict9 = {"input": input9, "index": index9}
+    list_of_inputs.append(copy.deepcopy(input_dict9))
+    
+    input10 = torch.tensor([10, 20, 30]).numpy()
+    index10 = torch.tensor([0, 0, 0]).numpy()
+    input_dict10 = {"input": input10, "index": index10}
+    list_of_inputs.append(copy.deepcopy(input_dict10))
+    
     return list_of_inputs
 
 generated_inputs["torch.take"] = take_inputs()

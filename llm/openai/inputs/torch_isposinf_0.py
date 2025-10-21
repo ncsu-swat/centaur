@@ -4,93 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import torch, copy, numpy as np
+import torch, copy
+import numpy as np
 
 def isposinf_inputs():
     list_of_inputs = []
+    
+    input1 = np.array([float('inf'), -float('inf'), 1.0, 2.0])
+    out1 = np.empty_like(input1, dtype=bool)
+    input_dict1 = {"input": input1, "out": out1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
+    
+    input2 = np.array([[-float('inf'), float('inf')], [0.0, float('inf')]])
+    out2 = np.empty_like(input2, dtype=bool)
+    input_dict2 = {"input": input2, "out": out2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
+    
+    input3 = np.array([float('inf'), float('inf'), float('inf')])
+    out3 = np.empty_like(input3, dtype=bool)
+    input_dict3 = {"input": input3, "out": out3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
+    
+    input4 = np.array([-float('inf'), -float('inf'), -float('inf')])
+    out4 = np.empty_like(input4, dtype=bool)
+    input_dict4 = {"input": input4, "out": out4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
+    
+    input5 = np.array([1.0, 2.0, 3.0])
+    out5 = np.empty_like(input5, dtype=bool)
+    input_dict5 = {"input": input5, "out": out5}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
+    
+    input6 = np.array([float('inf')])
+    out6 = np.empty_like(input6, dtype=bool)
+    input_dict6 = {"input": input6, "out": out6}
+    list_of_inputs.append(copy.deepcopy(input_dict6))
+    
+    input7 = np.array([[-float('inf')], [float('inf')]])
+    out7 = np.empty_like(input7, dtype=bool)
+    input_dict7 = {"input": input7, "out": out7}
+    list_of_inputs.append(copy.deepcopy(input_dict7))
 
-    # Input 1
-    input = np.array([-np.inf, np.inf, 0.0], dtype=np.float32)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2
-    input = np.array([[np.inf, -np.inf, np.nan],
-                      [1.0, 2.5, 3.0]], dtype=np.float64)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3
-    input = np.array([[[np.inf, 0.0, -1.0, 5.5]],
-                      [[-np.inf, np.inf, 2.0, -3.0]]], dtype=np.float16)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4 (scalar)
-    input = np.array(np.inf, dtype=np.float64)
-    out = np.empty((), dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5 (empty 1D)
-    input = np.array([], dtype=np.float32)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6 (non-contiguous via transpose)
-    base = np.arange(12, dtype=np.float32).reshape(3, 4)
-    base[0, 0] = np.inf
-    base[1, 2] = np.inf
-    input = base.T
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7 (Fortran-ordered)
-    input = np.asfortranarray(np.array([[0.0, np.inf, -np.inf],
-                                        [np.nan, 7.0, 8.0]], dtype=np.float64))
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8 (large finite and infinities)
-    input = np.array([3.4e38, -3.4e38, np.inf, -np.inf, 1.0], dtype=np.float32)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9 (zeros, nans, inf)
-    input = np.array([[0.0, -0.0, np.nan],
-                      [np.inf, 1e-45, -1e-45]], dtype=np.float32)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10 (3D float64)
-    input = np.array([[[1.0, np.inf],
-                       [-np.inf, 0.0]],
-                      [[np.nan, 5.0],
-                       [np.inf, -10.0]]], dtype=np.float64)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11 (float16 finite only)
-    input = np.array([1.0, -2.0, 3.0, 0.0], dtype=np.float16)
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 12 (4D with a single +inf)
-    input = np.zeros((1, 2, 1, 3), dtype=np.float32)
-    input[0, 1, 0, 2] = np.inf
-    out = np.empty(input.shape, dtype=np.bool_)
-    input_dict = {"input": input, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input8 = np.array([float('nan'), float('inf'), -float('inf')])
+    out8 = np.empty_like(input8, dtype=bool)
+    input_dict8 = {"input": input8, "out": out8}
+    list_of_inputs.append(copy.deepcopy(input_dict8))
+    
+    input9 = np.array([float('inf'), float('inf')])
+    out9 = np.zeros_like(input9, dtype=bool)
+    input_dict9 = {"input": input9, "out": out9}
+    list_of_inputs.append(copy.deepcopy(input_dict9))
+    
+    input10 = np.array([float('-inf'), float('inf'), 0.0])
+    out10 = np.array([False, True, False], dtype=bool)
+    input_dict10 = {"input": input10, "out": out10}
+    list_of_inputs.append(copy.deepcopy(input_dict10))
 
     return list_of_inputs
 

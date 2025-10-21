@@ -9,41 +9,11 @@ import torch, copy
 def set_autocast_enabled_inputs():
     list_of_inputs = []
 
-    input_dict = {"enabled": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input_dict1 = {"enabled": True}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
 
-    input_dict = {"enabled": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool(1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool(0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool(-1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool(2)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool("")}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool("enabled")}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool([])}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool([1])}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool({})}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_dict = {"enabled": bool({"a": 1})}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input_dict2 = {"enabled": False}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
 
     return list_of_inputs
 

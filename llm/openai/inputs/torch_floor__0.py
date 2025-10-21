@@ -7,54 +7,28 @@ generated_inputs = dict()
 import torch, copy
 import numpy as np
 
-def floor__inputs():
+def floor_inputs():
     list_of_inputs = []
+    
+    input1 = np.array([1.2, 2.7, 3.1, 4.9])
+    input_dict1 = {"input": input1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
 
-    input = torch.tensor([1.2, -3.7, 0.0, 5.999, -0.0001], dtype=torch.float32).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input2 = np.array([-1.2, -2.7, -3.1, -4.9])
+    input_dict2 = {"input": input2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
 
-    input = torch.tensor([[1.5, 2.0, -2.1],
-                          [3.7, -4.2, 0.9]], dtype=torch.float64).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input3 = np.array([0.0, 0.5, -0.5])
+    input_dict3 = {"input": input3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
 
-    input = torch.tensor(-123.456, dtype=torch.float32).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.randn(2, 3, 4, dtype=torch.float16).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.empty((0,), dtype=torch.float32).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.tensor([-10, 0, 1, 2, 255], dtype=torch.int64).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.tensor([[0, 255],
-                          [128, 64]], dtype=torch.uint8).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.arange(-6, 6, dtype=torch.int32).reshape(2, 2, 3).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.tensor([float('nan'), float('inf'), float('-inf'), -1.001, 2.999], dtype=torch.float32).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.linspace(-5, 5, steps=24, dtype=torch.float32).reshape(2, 1, 3, 4).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.empty((0, 3), dtype=torch.float64).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.tensor([1e-7, -1e-7, 3.0000001, -3.0000001], dtype=torch.float64).numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
-
-    input = torch.tensor([[1.9, -2.9],
-                          [3.2, -4.8]], dtype=torch.float32).T.numpy()
-    list_of_inputs.append(copy.deepcopy({"input": input}))
+    input4 = np.array([[1.2, 2.7], [3.1, 4.9]])
+    input_dict4 = {"input": input4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
     return list_of_inputs
 
-generated_inputs["torch.floor_"] = floor__inputs()
+generated_inputs["torch.floor_"] = floor_inputs()
 
 def check_valid(api, list_of_inputs, lib="torch", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

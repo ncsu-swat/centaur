@@ -4,63 +4,40 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import torch, copy, numpy as np
+import torch, copy
+import numpy as np
 
-def sparse__inputs():
+def sparse_inputs():
     list_of_inputs = []
+    
+    input1 = np.random.rand(2, 3).astype(np.float32)
+    sparsity1 = 0.5
+    input_dict1 = {"tensor": input1, "sparsity": sparsity1}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
+    
+    input2 = np.random.rand(2, 2).astype(np.float64)
+    sparsity2 = 0.2
+    input_dict2 = {"tensor": input2, "sparsity": sparsity2}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
 
-    t = torch.zeros((3, 4), dtype=torch.float32).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.5, "std": 0.01}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input3 = np.random.rand(2, 5).astype(np.float16)
+    sparsity3 = 0.8
+    input_dict3 = {"tensor": input3, "sparsity": sparsity3}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
 
-    t = torch.ones((10, 10), dtype=torch.float64).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.1, "std": 0.05}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input4 = np.random.rand(2, 3).astype(np.float32)
+    sparsity4 = 0.0
+    input_dict4 = {"tensor": input4, "sparsity": sparsity4}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
-    t = torch.randn((8, 3), dtype=torch.float16).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.8, "std": 0.001}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.tensor([[1.0, -2.0, 3.0, -4.0, 5.0]], dtype=torch.float32).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.0, "std": 0.02}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.tensor([[-1.0], [2.0], [-3.0], [4.0], [-5.0]], dtype=torch.float32).numpy()
-    input_dict = {"tensor": t, "sparsity": 1.0, "std": 0.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.zeros((100, 50), dtype=torch.float32).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.95, "std": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.tensor([[0.5, -0.5], [1.5, -1.5]], dtype=torch.float32).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.25, "std": 0.1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.full((7, 7), 0.3, dtype=torch.float32).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.9, "std": 0.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    base = torch.arange(3 * 7, dtype=torch.float64).view(3, 7).numpy()
-    t = base
-    input_dict = {"tensor": t, "sparsity": 0.6, "std": 0.05}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.randn((64, 16), dtype=torch.float16).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.7, "std": 0.2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.linspace(-1, 1, steps=16, dtype=torch.float32).view(2, 8).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.99, "std": 0.0001}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.eye(32, dtype=torch.float64).numpy()
-    input_dict = {"tensor": t, "sparsity": 0.33, "std": 3.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
+    input5 = np.random.rand(2, 2).astype(np.float64)
+    sparsity5 = 1.0
+    input_dict5 = {"tensor": input5, "sparsity": sparsity5}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
+    
     return list_of_inputs
 
-generated_inputs["torch.nn.init.sparse_"] = sparse__inputs()
+generated_inputs["torch.nn.init.sparse_"] = sparse_inputs()
 
 def check_valid(api, list_of_inputs, lib="torch", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

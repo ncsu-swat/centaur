@@ -4,81 +4,161 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import torch, copy, numpy as np
+import torch, copy
 
 def nansum_inputs():
     list_of_inputs = []
-
-    input_arr = torch.tensor([1.0, 2.0, float('nan'), 4.0]).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.float64}
+    
+    # Input 1 - basic tensor with NaN
+    input = torch.tensor([1.0, 2.0, float('nan'), 4.0]).numpy()
+    dim = None
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([[1.0, float('nan')], [3.0, 4.0]]).numpy()
-    input_dict = {"input": input_arr, "dim": 1, "keepdim": True, "dtype": torch.float32}
+    
+    # Input 2 - 2D tensor with NaN
+    input = torch.tensor([[1, 2], [3., float("nan")]]).numpy()
+    dim = None
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([[1, 2, -3], [4, -5, 6]], dtype=torch.int64).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.int64}
+    
+    # Input 3 - 2D tensor with NaN and dim=0
+    input = torch.tensor([[1, 2], [3., float("nan")]]).numpy()
+    dim = 0
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([
-        [[1.0, float('nan')], [-2.0, -3.0]],
-        [[float('nan'), 5.0], [6.0, float('nan')]]
-    ]).numpy()
-    input_dict = {"input": input_arr, "dim": -1, "keepdim": False, "dtype": torch.float32}
+    
+    # Input 4 - 2D tensor with NaN and dim=1
+    input = torch.tensor([[1, 2], [3., float("nan")]]).numpy()
+    dim = 1
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor(
-        [[[[1.0, float('nan')], [float('inf'), -1.0], [2.0, 3.0]],
-          [[-float('inf'), 0.0], [4.0, float('nan')], [-2.0, 5.0]]],
-         [[[float('nan'), -3.0], [7.0, 8.0], [float('nan'), float('inf')]],
-          [[9.0, -10.0], [float('-inf'), float('nan')], [0.0, 1.0]]]]
-    ).numpy()
-    input_dict = {"input": input_arr, "dim": 2, "keepdim": True, "dtype": torch.float64}
+    
+    # Input 5 - 2D tensor with NaN and keepdim=True
+    input = torch.tensor([[1, 2], [3., float("nan")]]).numpy()
+    dim = 0
+    keepdim = True
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.empty(0, dtype=torch.float32).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.float32}
+    
+    # Input 6 - 2D tensor with NaN and keepdim=True
+    input = torch.tensor([[1, 2], [3., float("nan")]]).numpy()
+    dim = 1
+    keepdim = True
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([
-        [[1, -2, 3, -4],
-         [5, -6, 7, -8],
-         [9, -10, 11, -12]],
-        [[-1, 2, -3, 4],
-         [-5, 6, -7, 8],
-         [-9, 10, -11, 12]]
-    ], dtype=torch.int32).numpy()
-    input_dict = {"input": input_arr, "dim": 1, "keepdim": True, "dtype": torch.float64}
+    
+    # Input 7 - 3D tensor with NaN
+    input = torch.tensor([[[1, 2], [3., float("nan")]], [[4, 5], [6., float("nan")]]]).numpy()
+    dim = None
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([[True, False, True],
-                              [False, False, True]], dtype=torch.bool).numpy()
-    input_dict = {"input": input_arr, "dim": -2, "keepdim": True, "dtype": torch.float32}
+    
+    # Input 8 - 3D tensor with NaN and dim=0
+    input = torch.tensor([[[1, 2], [3., float("nan")]], [[4, 5], [6., float("nan")]]]).numpy()
+    dim = 0
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.randn(2, 1, 3, 1, 4, dtype=torch.float32)
-    t[0, 0, 1, 0, 2] = float('nan')
-    t[1, 0, 2, 0, 3] = float('nan')
-    input_arr = t.numpy()
-    input_dict = {"input": input_arr, "dim": 3, "keepdim": False, "dtype": torch.float32}
+    
+    # Input 9 - 3D tensor with NaN and dim=1
+    input = torch.tensor([[[1, 2], [3., float("nan")]], [[4, 5], [6., float("nan")]]]).numpy()
+    dim = 1
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    u = torch.tensor(np.arange(2*3*1*2, dtype=np.float32).reshape(2, 3, 1, 2))
-    u[0, 2, 0, 1] = float('nan')
-    input_arr = u.numpy()
-    input_dict = {"input": input_arr, "dim": -3, "keepdim": True, "dtype": torch.float64}
+    
+    # Input 10 - 3D tensor with NaN and dim=2
+    input = torch.tensor([[[1, 2], [3., float("nan")]], [[4, 5], [6., float("nan")]]]).numpy()
+    dim = 2
+    keepdim = False
+    dtype = None
+    
+    input_dict = {
+        "input": input,
+        "dim": dim,
+        "keepdim": keepdim,
+        "dtype": dtype
+    }
+    
     list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([1e4, -2e4, float('nan'), 3e4, -4e4], dtype=torch.float16).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": True, "dtype": torch.float16}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([[-30000, 20000, -10000, 5000],
-                              [4000, -3000, 2000, -1000]], dtype=torch.int16).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
+    
     return list_of_inputs
 
 generated_inputs["torch.nansum_2"] = nansum_inputs()

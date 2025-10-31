@@ -76,7 +76,7 @@ def generate_driver(api, max_attempts=5):
     gemini_key = os.getenv("gemini_key")
 
     print("Running code generation after 6 seconds...")
-    time.sleep(6)
+    time.sleep(0)
     client = genai.Client(api_key=gemini_key)
     chat = client.chats.create(model=model)
     response = chat.send_message(get_prompt(api))
@@ -89,7 +89,7 @@ def generate_driver(api, max_attempts=5):
         print(f"Attempt {attempt + 1}: Error occurred.\n\n{error}")
         to_return[attempt] = 1
         print("Retrying code generation after 6 seconds...")
-        time.sleep(6)
+        time.sleep(0)
         response = chat.send_message(retry_prompt(error))
         print("Got response from Gemini API.")
         code = extract_code_from_response(response.text)

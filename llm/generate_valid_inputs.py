@@ -189,7 +189,7 @@ Please fix the error and retry the input generation. Only provide the code, skip
 def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
     print(f"{bcolors.OKBLUE}Running code generation for {api} with suffix {suffix} after 6 seconds...{bcolors.ENDC}")
     logger.info(f"[{api}] [Suffix: {suffix}].\n\n")
-    time.sleep(6)
+    time.sleep(1)
     
     if llm == "gemini":
         model = "gemini-2.0-flash"
@@ -243,7 +243,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         print(f"{bcolors.OKBLUE}Attempt {attempt + 1}:{bcolors.ENDC}\n{error}")
         to_return[attempt] = 1
         print("Retrying code generation after 6 seconds...")
-        # time.sleep(6)
+        # time.sleep(1)
         prompt = retry_prompt(error)
         logger.info(f"[Retry Prompt]\n\n{prompt}\n\n")
         try:

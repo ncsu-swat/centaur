@@ -5,11 +5,11 @@ import tensorflow as tf
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_torch, np_dtype
 from z3 import *
 
-# no duplicate dims in a tuple after normalization (Rule 4)
+# dim tuple elements must be valid indices (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And([Implies(j < (v["arg2_length"] - 1 + 1), (If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"], Select(v["arg2_values"], i))) != (If(Select(v["arg2_values"], j) < 0, Select(v["arg2_values"], j) + v["arg1_ndim"], Select(v["arg2_values"], j)))) for j in range(6)])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), And([Implies(j < (v["arg2_length"] - 1 + 1), (If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"], Select(v["arg2_values"], i))) != (If(Select(v["arg2_values"], j) < 0, Select(v["arg2_values"], j) + v["arg1_ndim"], Select(v["arg2_values"], j)))) for j in range(6)])) for i in range(6)]))
+    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And(1 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= v["arg1_ndim"])) for i in range(6)])) if n else
+          And([Implies(i < (v["arg2_length"] - 1 + 1), And(1 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= v["arg1_ndim"])) for i in range(6)]))
 )
 
 def rule_4_func(arg1, arg2, solver=None, neg=False):

@@ -4,80 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import torch, copy, numpy as np
+import torch, copy
+import numpy as np
 
 def nansum_inputs():
     list_of_inputs = []
+    
+    input1 = np.array([1.0, 2.0, np.nan, 4.0], dtype=np.float32)
+    dim1 = 0
+    keepdim1 = False
+    dtype1 = torch.float64
+    
+    input_dict1 = {
+        "input": input1,
+        "dim": dim1,
+        "keepdim": keepdim1,
+        "dtype": dtype1
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict1))
+    
+    input2 = np.array([[1.0, np.nan], [3.0, 4.0]], dtype=np.float32)
+    dim2 = 1
+    keepdim2 = True
+    dtype2 = torch.float32
+    
+    input_dict2 = {
+        "input": input2,
+        "dim": dim2,
+        "keepdim": keepdim2,
+        "dtype": dtype2
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict2))
 
-    input_arr = torch.tensor([1.0, 2.0, float('nan'), 4.0]).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.float64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input3 = np.array([[-1.0, 2.0], [3.0, -np.nan]], dtype=np.float32)
+    dim3 = None
+    keepdim3 = False
+    dtype3 = torch.float32
+    
+    input_dict3 = {
+        "input": input3,
+        "dim": dim3,
+        "keepdim": keepdim3,
+        "dtype": dtype3
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict3))
+    
+    input4 = np.array([[[1.0, np.nan], [2.0, 3.0]], [[4.0, 5.0], [np.nan, 7.0]]], dtype=np.float32)
+    dim4 = (0, 1)
+    keepdim4 = False
+    dtype4 = torch.float64
+    
+    input_dict4 = {
+        "input": input4,
+        "dim": dim4,
+        "keepdim": keepdim4,
+        "dtype": dtype4
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict4))
+    
+    input5 = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+    dim5 = 0
+    keepdim5 = False
+    dtype5 = torch.float32
+    
+    input_dict5 = {
+        "input": input5,
+        "dim": dim5,
+        "keepdim": keepdim5,
+        "dtype": dtype5
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict5))
 
-    input_arr = torch.tensor([[1.0, float('nan')], [3.0, 4.0]]).numpy()
-    input_dict = {"input": input_arr, "dim": 1, "keepdim": True, "dtype": torch.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input6 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float16)
+    dim6 = None
+    keepdim6 = True
+    dtype6 = torch.float32
+    
+    input_dict6 = {
+        "input": input6,
+        "dim": dim6,
+        "keepdim": keepdim6,
+        "dtype": dtype6
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict6))
+    
+    input7 = np.array([np.nan, np.nan, np.nan], dtype=np.float32)
+    dim7 = 0
+    keepdim7 = False
+    dtype7 = torch.float32
+    
+    input_dict7 = {
+        "input": input7,
+        "dim": dim7,
+        "keepdim": keepdim7,
+        "dtype": dtype7
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict7))
 
-    input_arr = torch.tensor([[1, 2, -3], [4, -5, 6]], dtype=torch.int64).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.int64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([
-        [[1.0, float('nan')], [-2.0, -3.0]],
-        [[float('nan'), 5.0], [6.0, float('nan')]]
-    ]).numpy()
-    input_dict = {"input": input_arr, "dim": -1, "keepdim": False, "dtype": torch.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor(
-        [[[[1.0, float('nan')], [float('inf'), -1.0], [2.0, 3.0]],
-          [[-float('inf'), 0.0], [4.0, float('nan')], [-2.0, 5.0]]],
-         [[[float('nan'), -3.0], [7.0, 8.0], [float('nan'), float('inf')]],
-          [[9.0, -10.0], [float('-inf'), float('nan')], [0.0, 1.0]]]]
-    ).numpy()
-    input_dict = {"input": input_arr, "dim": 2, "keepdim": True, "dtype": torch.float64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.empty(0, dtype=torch.float32).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([
-        [[1, -2, 3, -4],
-         [5, -6, 7, -8],
-         [9, -10, 11, -12]],
-        [[-1, 2, -3, 4],
-         [-5, 6, -7, 8],
-         [-9, 10, -11, 12]]
-    ], dtype=torch.int32).numpy()
-    input_dict = {"input": input_arr, "dim": 1, "keepdim": True, "dtype": torch.float64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([[True, False, True],
-                              [False, False, True]], dtype=torch.bool).numpy()
-    input_dict = {"input": input_arr, "dim": -2, "keepdim": True, "dtype": torch.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    t = torch.randn(2, 1, 3, 1, 4, dtype=torch.float32)
-    t[0, 0, 1, 0, 2] = float('nan')
-    t[1, 0, 2, 0, 3] = float('nan')
-    input_arr = t.numpy()
-    input_dict = {"input": input_arr, "dim": 3, "keepdim": False, "dtype": torch.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    u = torch.tensor(np.arange(2*3*1*2, dtype=np.float32).reshape(2, 3, 1, 2))
-    u[0, 2, 0, 1] = float('nan')
-    input_arr = u.numpy()
-    input_dict = {"input": input_arr, "dim": -3, "keepdim": True, "dtype": torch.float64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([1e4, -2e4, float('nan'), 3e4, -4e4], dtype=torch.float16).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": True, "dtype": torch.float16}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    input_arr = torch.tensor([[-30000, 20000, -10000, 5000],
-                              [4000, -3000, 2000, -1000]], dtype=torch.int16).numpy()
-    input_dict = {"input": input_arr, "dim": 0, "keepdim": False, "dtype": torch.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input8 = np.array([[1.0, 2.0], [np.nan, 4.0]], dtype=np.float32)
+    dim8 = 1
+    keepdim8 = False
+    dtype8 = torch.float32
+    
+    input_dict8 = {
+        "input": input8,
+        "dim": dim8,
+        "keepdim": keepdim8,
+        "dtype": dtype8
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict8))
 
     return list_of_inputs
 

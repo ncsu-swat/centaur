@@ -202,7 +202,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch"):
     gemini_key = os.getenv("gemini_key")
 
     logger.info(f"[{api}] [Suffix: {suffix}].\n\n")
-    # time.sleep(6)
+    # time.sleep(0)
     client = genai.Client(api_key=gemini_key)
     chat = client.chats.create(model=model)
     try:
@@ -213,12 +213,12 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch"):
     except genai.errors.ServerError as ge:
         logger.warning(f"Server overloaded. Error: {str(ge)}")
         logger.warning(f"Waiting 10 seconds before retrying...")
-        time.sleep(10)
+        time.sleep(0)
         return generate_inputs(api, suffix=suffix, max_attempts=max_attempts, lib=lib)
     except Exception as e:
         logger.warning(f"Error while sending message to Gemini API: {e}")
         logger.warning(f"Waiting 10 seconds before retrying...")
-        time.sleep(10)
+        time.sleep(0)
         return generate_inputs(api, suffix=suffix, max_attempts=max_attempts, lib=lib)
     logger.info("Got response from Gemini API.")
     code = extract_code_from_response(response.text)    
@@ -232,7 +232,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch"):
         logger.info(f"Attempt {attempt + 1}:\n{error}")
         to_return[attempt] = 1
         logger.info("Retrying code generation after 6 seconds...")
-        # time.sleep(6)
+        # time.sleep(0)
         prompt = retry_prompt(error)
         logger.info(f"[Retry Prompt]\n\n{prompt}\n\n")
         try:
@@ -240,12 +240,12 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch"):
         except genai.errors.ServerError as ge:
             logger.warning(f"Server overloaded. Error: {str(ge)}")
             logger.warning(f"Waiting 10 seconds before retrying...")
-            time.sleep(10)
+            time.sleep(0)
             continue
         except Exception as e:
             logger.warning(f"Error while sending message to Gemini API: {e}")
             logger.warning(f"Waiting 10 seconds before retrying...")
-            time.sleep(10)
+            time.sleep(0)
             continue
         logger.info("Got response from Gemini API.")
         logger.info(f"[Response]\n\n{response.text}\n\n")

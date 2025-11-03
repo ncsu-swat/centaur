@@ -189,7 +189,7 @@ Please fix the error and retry the input generation. Only provide the code, skip
 def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
     print(f"{bcolors.OKBLUE}Running code generation for {api} with suffix {suffix} after 6 seconds...{bcolors.ENDC}")
     logger.info(f"[{api}] [Suffix: {suffix}].\n\n")
-    time.sleep(6)
+    time.sleep(0)
     
     if llm == "gemini":
         model = "gemini-2.0-flash"
@@ -224,12 +224,12 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
     except genai.errors.ServerError as ge:
         print(f"{bcolors.WARNING}Server overloaded. Error: {str(ge)}{bcolors.ENDC}")
         print(f"{bcolors.WARNING}Waiting 10 seconds before retrying...{bcolors.ENDC}")
-        time.sleep(10)
+        time.sleep(0)
         return generate_inputs(api, suffix=suffix, max_attempts=max_attempts, lib=lib, llm=llm)
     except Exception as e:
         print(f"{bcolors.FAIL}Error while sending message to {llm} API: {e}{bcolors.ENDC}")
         print(f"{bcolors.WARNING}Waiting 10 seconds before retrying...{bcolors.ENDC}")
-        time.sleep(10)
+        time.sleep(0)
         return generate_inputs(api, suffix=suffix, max_attempts=max_attempts, lib=lib, llm=llm)
     print(f"Got response from {llm} API.")
     code = extract_code_from_response(response_obj.text, llm=llm)
@@ -243,7 +243,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         print(f"{bcolors.OKBLUE}Attempt {attempt + 1}:{bcolors.ENDC}\n{error}")
         to_return[attempt] = 1
         print("Retrying code generation after 6 seconds...")
-        # time.sleep(6)
+        # time.sleep(0)
         prompt = retry_prompt(error)
         logger.info(f"[Retry Prompt]\n\n{prompt}\n\n")
         try:
@@ -251,12 +251,12 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         except genai.errors.ServerError as ge:
             print(f"{bcolors.WARNING}Server overloaded. Error: {str(ge)}{bcolors.ENDC}")
             print(f"{bcolors.WARNING}Waiting 10 seconds before retrying...{bcolors.ENDC}")
-            time.sleep(10)
+            time.sleep(0)
             continue
         except Exception as e:
             print(f"{bcolors.FAIL}Error while sending message to Gemini API: {e}{bcolors.ENDC}")
             print(f"{bcolors.WARNING}Waiting 10 seconds before retrying...{bcolors.ENDC}")
-            time.sleep(10)
+            time.sleep(0)
             continue
         if isinstance(raw_response, Response):
             response_obj = raw_response

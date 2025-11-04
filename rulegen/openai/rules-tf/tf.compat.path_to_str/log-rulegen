@@ -94,17 +94,534 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 7 (first dimension of a tensor matches second dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
 
-Rule 17 (primitive type variable must be non-negative)
-{v_1 : int ⊎ float} |= v_1 ≥ 0
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (path should be a string)
+{v_1 : str} |= true
+Token usage: input=1855, output=23, total=1878
+** REDUNDANT VARIABLES ** (num_failures: 1)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : str} |= true (Unused: v_1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (path is a non-empty string)
+{v_1 : str} |= v_1 ≠ ""
+Token usage: input=3731, output=28, total=3759
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
 
 Rule 14 (tensor should not be empty)
 {v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
 
-Rule 12 (a primitive type variable is smaller than the other)
-{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (path string contains only printable characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~'
+Token usage: input=5479, output=58, total=5537
+** PARSING ERROR ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~' (Error: No terminal matches ''' in the current parser context, at line 1 col 49
+
+tr} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~'
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (path string is not empty)
+{v_1 : str} |= v_1 ≠ ""
+Token usage: input=7638, output=26, total=7664
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str} |= v_1 ≠ ""
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
 
 Rule 1 (tensor shapes should be the same)
 {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
@@ -117,8 +634,9 @@ Rule 1 (tensor shapes should be the same)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 1 (path is a string parameter and equals itself)
-{v_1 : str} |= v_1 = v_1
+Rule 5 (path string length should be less than 256)
+{v_1 : str} |= v_1.len < 256
+Token usage: input=9493, output=37, total=9530
 ** SUCCESS **
 
 >>> PROMPT
@@ -217,20 +735,159 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 7 (first dimension of a tensor matches second dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
 
-Rule 17 (primitive type variable must be non-negative)
-{v_1 : int ⊎ float} |= v_1 ≥ 0
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
 
-Rule 14 (tensor should not be empty)
-{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (path string does not contain control characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~' ∧ v_1[i] ≠ '\n' ∧ v_1[i] ≠ '\r' ∧ v_1[i] ≠ '\t'
+Token usage: input=11324, output=95, total=11419
+** PARSING ERROR ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~' ∧ v_1[i] ≠ '\n' ∧ v_1[i] ≠ '\r' ∧ v_1[i] ≠ '\t' (Error: No terminal matches ''' in the current parser context, at line 1 col 49
+
+tr} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~' ∧ v_1[i] ≠ '\n' ∧ v_1
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
 
 Rule 12 (a primitive type variable is smaller than the other)
 {v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
 
-Rule 1 (tensor shapes should be the same)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -240,11 +897,27 @@ Rule 1 (tensor shapes should be the same)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 2 (path value may be any string token)
-{v_1 : str} |= v_1 ≠ "none" ∨ v_1 = "none"
-** SUCCESS **
+Rule 7 (path string does not contain backslashes on Linux)
+{v_1 : str} |= if "Linux" = "OS" then ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\\'
+Token usage: input=13422, output=62, total=13484
+** PARSING ERROR ** (num_failures: 5)
 
 >>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= if "Linux" = "OS" then ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\\' (Error: No terminal matches ''' in the current parser context, at line 1 col 72
+
+" then ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\\'
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
 [Rule Grammar in EBNF Notation]
 <rule> ::= "{" <binding_list> "}" "|=" <expr>
 
@@ -340,21 +1013,21 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 7 (first dimension of a tensor matches second dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
 
-Rule 17 (primitive type variable must be non-negative)
-{v_1 : int ⊎ float} |= v_1 ≥ 0
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
 
 Rule 14 (tensor should not be empty)
 {v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
 
-Rule 12 (a primitive type variable is smaller than the other)
-{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
-
-Rule 1 (tensor shapes should be the same)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
-
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
 ** IMPORTANT: Variables should be named v_1, v_2, and so on. **
@@ -363,11 +1036,27 @@ Rule 1 (tensor shapes should be the same)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 3 (path identity holds across trivial quantification)
-{v_1 : str} |= ∀i ∈ [0, 0] : v_1 = v_1
-** SUCCESS **
+Rule 8 (path string does not contain invalid characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : (v_1[i] ≥ 'a' ∧ v_1[i] ≤ 'z') ∨ (v_1[i] ≥ 'A' ∧ v_1[i] ≤ 'Z') ∨ (v_1[i] ≥ '0' ∧ v_1[i] ≤ '9') ∨ v_1[i] = '_' ∨ v_1[i] = '-' ∨ v_1[i] = '.' ∨ v_1[i] = '/' ∨ v_1[i] = '\\'
+Token usage: input=15484, output=163, total=15647
+** PARSING ERROR ** (num_failures: 6)
 
 >>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : (v_1[i] ≥ 'a' ∧ v_1[i] ≤ 'z') ∨ (v_1[i] ≥ 'A' ∧ v_1[i] ≤ 'Z') ∨ (v_1[i] ≥ '0' ∧ v_1[i] ≤ '9') ∨ v_1[i] = '_' ∨ v_1[i] = '-' ∨ v_1[i] = '.' ∨ v_1[i] = '/' ∨ v_1[i] = '\\' (Error: No terminal matches ''' in the current parser context, at line 1 col 50
+
+r} |= ∀i ∈ [0, v_1.len - 1] : (v_1[i] ≥ 'a' ∧ v_1[i] ≤ 'z') ∨ (v_1[i] ≥ 'A' ∧ v_
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
 [Rule Grammar in EBNF Notation]
 <rule> ::= "{" <binding_list> "}" "|=" <expr>
 
@@ -463,20 +1152,20 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 7 (first dimension of a tensor matches second dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
-
-Rule 17 (primitive type variable must be non-negative)
-{v_1 : int ⊎ float} |= v_1 ≥ 0
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
 
 Rule 14 (tensor should not be empty)
 {v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
 
-Rule 12 (a primitive type variable is smaller than the other)
-{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
 
-Rule 1 (tensor shapes should be the same)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -486,8 +1175,287 @@ Rule 1 (tensor shapes should be the same)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 4 (conditional on path identity yields a valid condition)
-{v_1 : str} |= if v_1 = v_1 then true else false
+Rule 9 (path string contains only alphanumeric characters, underscores, hyphens, periods, forward slashes, and backslashes)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : (v_1[i] ≥ 'a' ∧ v_1[i] ≤ 'z') ∨ (v_1[i] ≥ 'A' ∧ v_1[i] ≤ 'Z') ∨ (v_1[i] ≥ '0' ∧ v_1[i] ≤ '9') ∨ v_1[i] = '_' ∨ v_1[i] = '-' ∨ v_1[i] = '.' ∨ v_1[i] = '/' ∨ v_1[i] = '\\'
+Token usage: input=17742, output=178, total=17920
+** PARSING ERROR ** (num_failures: 7)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : (v_1[i] ≥ 'a' ∧ v_1[i] ≤ 'z') ∨ (v_1[i] ≥ 'A' ∧ v_1[i] ≤ 'Z') ∨ (v_1[i] ≥ '0' ∧ v_1[i] ≤ '9') ∨ v_1[i] = '_' ∨ v_1[i] = '-' ∨ v_1[i] = '.' ∨ v_1[i] = '/' ∨ v_1[i] = '\\' (Error: No terminal matches ''' in the current parser context, at line 1 col 50
+
+r} |= ∀i ∈ [0, v_1.len - 1] : (v_1[i] ≥ 'a' ∧ v_1[i] ≤ 'z') ∨ (v_1[i] ≥ 'A' ∧ v_
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (path string does not contain reserved characters for Windows)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ ':' ∧ v_1[i] ≠ '<' ∧ v_1[i] ≠ '>' ∧ v_1[i] ≠ '?' ∧ v_1[i] ≠ '"' ∧ v_1[i] ≠ '\\' ∧ v_1[i] ≠ '/' ∧ v_1[i] ≠ '|'
+Token usage: input=19882, output=124, total=20006
+** PARSING ERROR ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ ':' ∧ v_1[i] ≠ '<' ∧ v_1[i] ≠ '>' ∧ v_1[i] ≠ '?' ∧ v_1[i] ≠ '"' ∧ v_1[i] ≠ '\\' ∧ v_1[i] ≠ '/' ∧ v_1[i] ≠ '|' (Error: No terminal matches ''' in the current parser context, at line 1 col 49
+
+tr} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ ':' ∧ v_1[i] ≠ '<' ∧ v_1[i] ≠ '>' ∧ v_1[
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (path string length should be less than or equal to 255)
+{v_1 : str} |= v_1.len ≤ 255
+Token usage: input=22159, output=40, total=22199
 ** SUCCESS **
 
 >>> PROMPT
@@ -586,20 +1554,298 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 7 (first dimension of a tensor matches second dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
 
 Rule 17 (primitive type variable must be non-negative)
 {v_1 : int ⊎ float} |= v_1 ≥ 0
 
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (path string does not start with a period on Linux)
+{v_1 : str} |= if "Linux" = "OS" then v_1[0] ≠ '.'
+Token usage: input=23926, output=45, total=23971
+** PARSING ERROR ** (num_failures: 9)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= if "Linux" = "OS" then v_1[0] ≠ '.' (Error: No terminal matches ''' in the current parser context, at line 1 col 48
+
+str} |= if "Linux" = "OS" then v_1[0] ≠ '.'
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (path string does not start with a period on Linux)
+{v_1 : str} |= if "Linux" = "OS" then v_1[0] ≠ '.' ∨ v_1 = "."
+Token usage: input=25940, output=52, total=25992
+** PARSING ERROR ** (num_failures: 10)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= if "Linux" = "OS" then v_1[0] ≠ '.' ∨ v_1 = "." (Error: No terminal matches ''' in the current parser context, at line 1 col 48
+
+str} |= if "Linux" = "OS" then v_1[0] ≠ '.' ∨ v_1 = "."
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
+
+[API Documentation]
+Converts input which is a `PathLike` object to `str` type.
+
+  Converts from any python constant representation of a `PathLike` object to
+  a string. If the input is not a `PathLike` object, simply returns the input.
+
+  Args:
+    path: An object that can be converted to path representation.
+
+  Returns:
+    A `str` object.
+
+  Usage:
+    In case a simplified `str` version of the path is needed from an
+    `os.PathLike` object.
+
+  Examples:
+  ```python
+  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
+  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
+  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
+  $ tf.compat.path_to_str(Path('./corpus'))
+  'corpus' # Linux OS
+  $ tf.compat.path_to_str('./.././Corpus')
+  './.././Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./.././Corpus'))
+  '../Corpus' # Linux OS
+  $ tf.compat.path_to_str(Path('./..////../'))
+  '../..' # Linux OS
+
+  ```
+
+[API Signature] path: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
 Rule 14 (tensor should not be empty)
 {v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
 
-Rule 12 (a primitive type variable is smaller than the other)
-{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
 
-Rule 1 (tensor shapes should be the same)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -609,8 +1855,9 @@ Rule 1 (tensor shapes should be the same)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 5 (path identity combined with an arbitrary token check)
-{v_1 : str} |= (v_1 = v_1) ∧ (v_1 ≠ "valid" ∨ v_1 = "valid")
+Rule 14 (path string does not contain unicode characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] < 128
+Token usage: input=27923, output=50, total=27973
 ** SUCCESS **
 
 >>> PROMPT
@@ -709,20 +1956,20 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
 
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
 
-Rule 21 (primitive type variable should not be zero)
-{v_1 : int ⊎ float} |= v_1 ≠ 0
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
 
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
 
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -732,11 +1979,27 @@ Rule 9 (4D tensor with all shape dimensions positive)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 6 (path can be any string)
-{v_1 : str} |= v_1 = v_1
-** DUPLICATED RULE ** (num_failures: 1)
+Rule 15 (path string does not contain control characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~'
+Token usage: input=29668, output=59, total=29727
+** PARSING ERROR ** (num_failures: 11)
 
 >>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~' (Error: No terminal matches ''' in the current parser context, at line 1 col 49
+
+tr} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ ' ' ∧ v_1[i] ≤ '~'
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
 [Rule Grammar in EBNF Notation]
 <rule> ::= "{" <binding_list> "}" "|=" <expr>
 
@@ -832,20 +2095,20 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
 
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
 
-Rule 21 (primitive type variable should not be zero)
-{v_1 : int ⊎ float} |= v_1 ≠ 0
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
 
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
 
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -855,11 +2118,27 @@ Rule 9 (4D tensor with all shape dimensions positive)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 7 (path may be a common padding token string)
-{v_1 : str} |= v_1 = "valid" ∨ v_1 = "same" ∨ v_1 = "causal"
-** SUCCESS **
+Rule 16 (path string does not contain carriage return characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\r'
+Token usage: input=31630, output=50, total=31680
+** PARSING ERROR ** (num_failures: 12)
 
 >>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\r' (Error: No terminal matches ''' in the current parser context, at line 1 col 49
+
+tr} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\r'
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
 [Rule Grammar in EBNF Notation]
 <rule> ::= "{" <binding_list> "}" "|=" <expr>
 
@@ -955,20 +2234,20 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
-
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
-
 Rule 21 (primitive type variable should not be zero)
 {v_1 : int ⊎ float} |= v_1 ≠ 0
 
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
 
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -978,11 +2257,27 @@ Rule 9 (4D tensor with all shape dimensions positive)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 8 (path may be a channels ordering token)
-{v_1 : str} |= v_1 = "channels_last" ∨ v_1 = "channels_first"
-** SUCCESS **
+Rule 17 (path string does not contain newline characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\n'
+Token usage: input=33710, output=49, total=33759
+** PARSING ERROR ** (num_failures: 13)
 
 >>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\n' (Error: No terminal matches ''' in the current parser context, at line 1 col 49
+
+tr} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\n'
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
 [Rule Grammar in EBNF Notation]
 <rule> ::= "{" <binding_list> "}" "|=" <expr>
 
@@ -1078,20 +2373,20 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
 
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
 
-Rule 21 (primitive type variable should not be zero)
-{v_1 : int ⊎ float} |= v_1 ≠ 0
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
 
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
 
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -1101,11 +2396,27 @@ Rule 9 (4D tensor with all shape dimensions positive)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 9 (path may be a reduction token string)
-{v_1 : str} |= v_1 = "sum" ∨ v_1 = "min" ∨ v_1 = "max" ∨ v_1 = "prod"
-** SUCCESS **
+Rule 18 (path string does not contain tab characters)
+{v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\t'
+Token usage: input=35680, output=49, total=35729
+** PARSING ERROR ** (num_failures: 14)
 
 >>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : str} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\t' (Error: No terminal matches ''' in the current parser context, at line 1 col 49
+
+tr} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≠ '\t'
+                                        ^
+Expected one of: 
+	* VAR
+	* LPAR
+	* FALSE
+	* ESCAPED_STRING
+	* FUNC
+	* TRUE
+	* SIGNED_NUMBER
+)
+
 [Rule Grammar in EBNF Notation]
 <rule> ::= "{" <binding_list> "}" "|=" <expr>
 
@@ -1201,143 +2512,20 @@ Ex) Rule 21 (primitive type variable should not be zero)
     {v_1 : int ⊎ float} |= v_1 ≠ 0
 
 [Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
 
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
 
-Rule 21 (primitive type variable should not be zero)
-{v_1 : int ⊎ float} |= v_1 ≠ 0
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
 
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
 
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
-
-** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
-** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
-** IMPORTANT: Variables should be named v_1, v_2, and so on. **
-** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
-** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
-** IMPORTANT: For module classes returning instances, include rules for their parameters. **
-
-<<< RESPONSE
-Rule 10 (path may include special characters as in einsum-like strings)
-{v_1 : str} |= v_1 = "ii" ∨ v_1 = "ii->i" ∨ v_1 = "i,j->ij" ∨ v_1 = "bij,bjk->bik" ∨ v_1 = "...ij->...ji" ∨ v_1 = "bn,anm,bm->ba"
-** SUCCESS **
-
->>> PROMPT
-[Rule Grammar in EBNF Notation]
-<rule> ::= "{" <binding_list> "}" "|=" <expr>
-
-<binding_list> ::= <binding> ("," <binding>)*
-<binding> ::= <VAR> ":" <type>
-
-<type> ::= "tensor"
-         | "int"
-         | "float"
-         | "bool"
-         | "dtype"
-         | "str"
-         | "list" "(" <type> ")"
-         | "tuple" "(" <type> ")"
-         | <type> "⊎" <type>
-
-<expr> ::= <and_expr>
-<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
-<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
-<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
-               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
-               | <if_expr>
-               | <compare_expr>
-
-<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
-<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
-<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
-<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
-<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
-
-<tuple_access>  ::= "[" <expr> "]" | ".len"
-<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
-<constant> ::= <NUMBER> | "true" | "false" | <STRING>
-<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
-<ADDOP> ::= "+" | "-"
-<MULOP> ::= "*" | "/" | "%"
-<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
-<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
-<TENSORVAR> ::= same format as PRIMVAR
-<TUPLEVAR> ::= same format as PRIMVAR
-
-<VAR> ::= same format as PRIMVAR
-<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
-<STRING> ::= any quoted string (e.g., "hello", 'world')
-
-[Task Description]
-Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
-
-Type is encoded as an integer (index of the following list):
-[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
-
-String value should be selected from the following list:
-["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
-
-[API Documentation]
-Converts input which is a `PathLike` object to `str` type.
-
-  Converts from any python constant representation of a `PathLike` object to
-  a string. If the input is not a `PathLike` object, simply returns the input.
-
-  Args:
-    path: An object that can be converted to path representation.
-
-  Returns:
-    A `str` object.
-
-  Usage:
-    In case a simplified `str` version of the path is needed from an
-    `os.PathLike` object.
-
-  Examples:
-  ```python
-  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
-  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
-  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
-  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
-  $ tf.compat.path_to_str(Path('./corpus'))
-  'corpus' # Linux OS
-  $ tf.compat.path_to_str('./.././Corpus')
-  './.././Corpus' # Linux OS
-  $ tf.compat.path_to_str(Path('./.././Corpus'))
-  '../Corpus' # Linux OS
-  $ tf.compat.path_to_str(Path('./..////../'))
-  '../..' # Linux OS
-
-  ```
-
-[API Signature] path: string
-
-[Output Format]
-Rule {Number} ({Description})\n{Rule Definition}
-Ex) Rule 21 (primitive type variable should not be zero)
-    {v_1 : int ⊎ float} |= v_1 ≠ 0
-
-[Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
-
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
-
-Rule 21 (primitive type variable should not be zero)
-{v_1 : int ⊎ float} |= v_1 ≠ 0
-
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
-
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
 
 ** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
 ** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
@@ -1347,253 +2535,7 @@ Rule 9 (4D tensor with all shape dimensions positive)
 ** IMPORTANT: For module classes returning instances, include rules for their parameters. **
 
 <<< RESPONSE
-Rule 11 (conditional acceptance of the literal "none")
-{v_1 : str} |= if v_1 = "none" then v_1 = "none" else v_1 = v_1
-** SUCCESS **
 
->>> PROMPT
-[Rule Grammar in EBNF Notation]
-<rule> ::= "{" <binding_list> "}" "|=" <expr>
-
-<binding_list> ::= <binding> ("," <binding>)*
-<binding> ::= <VAR> ":" <type>
-
-<type> ::= "tensor"
-         | "int"
-         | "float"
-         | "bool"
-         | "dtype"
-         | "str"
-         | "list" "(" <type> ")"
-         | "tuple" "(" <type> ")"
-         | <type> "⊎" <type>
-
-<expr> ::= <and_expr>
-<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
-<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
-<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
-               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
-               | <if_expr>
-               | <compare_expr>
-
-<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
-<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
-<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
-<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
-<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
-
-<tuple_access>  ::= "[" <expr> "]" | ".len"
-<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
-<constant> ::= <NUMBER> | "true" | "false" | <STRING>
-<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
-<ADDOP> ::= "+" | "-"
-<MULOP> ::= "*" | "/" | "%"
-<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
-<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
-<TENSORVAR> ::= same format as PRIMVAR
-<TUPLEVAR> ::= same format as PRIMVAR
-
-<VAR> ::= same format as PRIMVAR
-<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
-<STRING> ::= any quoted string (e.g., "hello", 'world')
-
-[Task Description]
-Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
-
-Type is encoded as an integer (index of the following list):
-[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
-
-String value should be selected from the following list:
-["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
-
-[API Documentation]
-Converts input which is a `PathLike` object to `str` type.
-
-  Converts from any python constant representation of a `PathLike` object to
-  a string. If the input is not a `PathLike` object, simply returns the input.
-
-  Args:
-    path: An object that can be converted to path representation.
-
-  Returns:
-    A `str` object.
-
-  Usage:
-    In case a simplified `str` version of the path is needed from an
-    `os.PathLike` object.
-
-  Examples:
-  ```python
-  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
-  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
-  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
-  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
-  $ tf.compat.path_to_str(Path('./corpus'))
-  'corpus' # Linux OS
-  $ tf.compat.path_to_str('./.././Corpus')
-  './.././Corpus' # Linux OS
-  $ tf.compat.path_to_str(Path('./.././Corpus'))
-  '../Corpus' # Linux OS
-  $ tf.compat.path_to_str(Path('./..////../'))
-  '../..' # Linux OS
-
-  ```
-
-[API Signature] path: string
-
-[Output Format]
-Rule {Number} ({Description})\n{Rule Definition}
-Ex) Rule 21 (primitive type variable should not be zero)
-    {v_1 : int ⊎ float} |= v_1 ≠ 0
-
-[Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
-
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
-
-Rule 21 (primitive type variable should not be zero)
-{v_1 : int ⊎ float} |= v_1 ≠ 0
-
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
-
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
-
-** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
-** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
-** IMPORTANT: Variables should be named v_1, v_2, and so on. **
-** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
-** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
-** IMPORTANT: For module classes returning instances, include rules for their parameters. **
-
-<<< RESPONSE
-Rule 12 (universal quantification over a trivial range still accepts any string)
-{v_1 : str} |= ∀i ∈ [0, 0] : v_1 = v_1
-** DUPLICATED RULE ** (num_failures: 2)
-
->>> PROMPT
-[Rule Grammar in EBNF Notation]
-<rule> ::= "{" <binding_list> "}" "|=" <expr>
-
-<binding_list> ::= <binding> ("," <binding>)*
-<binding> ::= <VAR> ":" <type>
-
-<type> ::= "tensor"
-         | "int"
-         | "float"
-         | "bool"
-         | "dtype"
-         | "str"
-         | "list" "(" <type> ")"
-         | "tuple" "(" <type> ")"
-         | <type> "⊎" <type>
-
-<expr> ::= <and_expr>
-<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
-<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
-<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
-               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
-               | <if_expr>
-               | <compare_expr>
-
-<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
-<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
-<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
-<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
-<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
-
-<tuple_access>  ::= "[" <expr> "]" | ".len"
-<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
-<constant> ::= <NUMBER> | "true" | "false" | <STRING>
-<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
-<ADDOP> ::= "+" | "-"
-<MULOP> ::= "*" | "/" | "%"
-<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
-<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
-<TENSORVAR> ::= same format as PRIMVAR
-<TUPLEVAR> ::= same format as PRIMVAR
-
-<VAR> ::= same format as PRIMVAR
-<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
-<STRING> ::= any quoted string (e.g., "hello", 'world')
-
-[Task Description]
-Define rules that tensorflow.compat.path_to_str API parameters should satisfy. Refer to the API documentation. 
-
-Type is encoded as an integer (index of the following list):
-[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
-
-String value should be selected from the following list:
-["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "bn,anm,bm->ba", "none", "sum", "max", "min", "prod", "relu", "tanh", "sigmoid", "softmax", "elu", "selu", "gelu", "swish", "softplus", "linear", "valid", "same", "causal", "channels_last", "channels_first"]
-
-[API Documentation]
-Converts input which is a `PathLike` object to `str` type.
-
-  Converts from any python constant representation of a `PathLike` object to
-  a string. If the input is not a `PathLike` object, simply returns the input.
-
-  Args:
-    path: An object that can be converted to path representation.
-
-  Returns:
-    A `str` object.
-
-  Usage:
-    In case a simplified `str` version of the path is needed from an
-    `os.PathLike` object.
-
-  Examples:
-  ```python
-  $ tf.compat.path_to_str('C:\XYZ\tensorflow\./.././tensorflow')
-  'C:\XYZ\tensorflow\./.././tensorflow' # Windows OS
-  $ tf.compat.path_to_str(Path('C:\XYZ\tensorflow\./.././tensorflow'))
-  'C:\XYZ\tensorflow\..\tensorflow' # Windows OS
-  $ tf.compat.path_to_str(Path('./corpus'))
-  'corpus' # Linux OS
-  $ tf.compat.path_to_str('./.././Corpus')
-  './.././Corpus' # Linux OS
-  $ tf.compat.path_to_str(Path('./.././Corpus'))
-  '../Corpus' # Linux OS
-  $ tf.compat.path_to_str(Path('./..////../'))
-  '../..' # Linux OS
-
-  ```
-
-[API Signature] path: string
-
-[Output Format]
-Rule {Number} ({Description})\n{Rule Definition}
-Ex) Rule 21 (primitive type variable should not be zero)
-    {v_1 : int ⊎ float} |= v_1 ≠ 0
-
-[Example Rules]
-Rule 16 (shape alignment for matrix multiplication)
-{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
-
-Rule 8 (tensor must have an integer dtype: 1–5)
-{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
-
-Rule 21 (primitive type variable should not be zero)
-{v_1 : int ⊎ float} |= v_1 ≠ 0
-
-Rule 6 (last dimension of a tensor matches first dimension of the other)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
-
-Rule 9 (4D tensor with all shape dimensions positive)
-{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
-
-** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
-** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
-** IMPORTANT: Variables should be named v_1, v_2, and so on. **
-** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
-** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
-** IMPORTANT: For module classes returning instances, include rules for their parameters. **
-
-<<< RESPONSE
-Rule 13 (path may be an activation token string)
-{v_1 : str} |= ∃i ∈ [0, 1] : (v_1 = "relu" ∨ v_1 = "tanh" ∨ v_1 = "sigmoid" ∨ v_1 = "softmax" ∨ v_1 = "elu" ∨ v_1 = "selu" ∨ v_1 = "gelu" ∨ v_1 = "swish" ∨ v_1 = "softplus" ∨ v_1 = "linear")
-** SUCCESS **
+Token usage: input=37623, output=22537, total=60160
+** FORMAT ERROR ** (num_failures: 15)
 

@@ -4,78 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import tensorflow as tf
-import torch
+import numpy as np
 import copy
+
+tf.config.experimental.enable_op_determinism()
+tf.random.set_seed(42)
 
 def tf_raw_ops_real_inputs():
     list_of_inputs = []
 
-    x = np.array([-2.25 + 4.75j, 3.25 + 5.75j], dtype=np.complex64)
-    input_dict = {"Tout": np.float32, "name": "real_vec_c64", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input1 = np.array([-2.25 + 4.75j, 3.25 + 5.75j], dtype=np.complex64)
+    input_dict1 = {'input': input1, 'Tout': np.float32, 'name': 'real_part_1'}
+    list_of_inputs.append(copy.deepcopy(input_dict1))
 
-    x = np.array([[1 + 2j, -3 - 4j], [0 + 0j, 5 - 6j]], dtype=np.complex128)
-    input_dict = {"Tout": np.float64, "name": "real_matrix_c128", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input2 = np.array([1.0 - 1.0j, 2.0 + 2.0j, -3.0 - 3.0j], dtype=np.complex128)
+    input_dict2 = {'input': input2, 'Tout': np.float64, 'name': 'real_part_2'}
+    list_of_inputs.append(copy.deepcopy(input_dict2))
 
-    real = np.arange(8, dtype=np.float32).reshape(2, 2, 2)
-    imag = (-real - 0.5).astype(np.float32)
-    x = (real + 1j * imag).astype(np.complex64)
-    input_dict = {"Tout": np.dtype("float32"), "name": "real_3d_c64", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input3 = np.array([[-1.0 + 2.0j], [3.0 - 4.0j]], dtype=np.complex64)
+    input_dict3 = {'input': input3, 'Tout': np.float32, 'name': 'real_part_3'}
+    list_of_inputs.append(copy.deepcopy(input_dict3))
 
-    x = np.array(7.5 - 1.5j, dtype=np.complex64)
-    input_dict = {"Tout": np.float32, "name": "real_scalar_c64", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input4 = np.array([[[0.5 + 0.5j], [1.5 - 1.5j]], [[2.5 + 2.5j], [-3.5 - 3.5j]]], dtype=np.complex128)
+    input_dict4 = {'input': input4, 'Tout': np.float64, 'name': 'real_part_4'}
+    list_of_inputs.append(copy.deepcopy(input_dict4))
 
-    x = np.array([], dtype=np.complex128)
-    input_dict = {"Tout": np.float64, "name": "real_empty1d_c128", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input5 = np.array([-10.0 + 5.0j], dtype=np.complex64)
+    input_dict5 = {'input': input5, 'Tout': np.float32, 'name': 'real_part_5'}
+    list_of_inputs.append(copy.deepcopy(input_dict5))
 
-    real = np.linspace(-10, 10, num=24, dtype=np.float32).reshape(1, 2, 3, 4)
-    imag = np.linspace(10, -10, num=24, dtype=np.float32).reshape(1, 2, 3, 4)
-    x = (real + 1j * imag).astype(np.complex64)
-    input_dict = {"Tout": np.dtype("float32"), "name": "real_4d_c64", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input6 = np.array([100.0 - 50.0j, -200.0 + 100.0j], dtype=np.complex128)
+    input_dict6 = {'input': input6, 'Tout': np.float64, 'name': 'real_part_6'}
+    list_of_inputs.append(copy.deepcopy(input_dict6))
 
-    base_real = np.arange(12, dtype=np.float64).reshape(3, 4)
-    base_imag = np.flip(base_real, axis=1)
-    x_full = (base_real + 1j * base_imag).astype(np.complex128)
-    x = x_full[::2, ::2]
-    input_dict = {"Tout": np.float64, "name": "real_noncontig_c128", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input7 = np.array([1.0 + 0.0j, 2.0 + 0.0j, 3.0 + 0.0j], dtype=np.complex64)
+    input_dict7 = {'input': input7, 'Tout': np.float32, 'name': 'real_part_7'}
+    list_of_inputs.append(copy.deepcopy(input_dict7))
 
-    x = np.array([1e-30 + 1e-30j, -1e-40 + 2e-40j], dtype=np.complex128)
-    input_dict = {"Tout": np.dtype("float64"), "name": "real_tinyvals_c128", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input8 = np.array([[-1.0 - 1.0j, 2.0 + 2.0j], [-3.0 - 3.0j, 4.0 + 4.0j]], dtype=np.complex128)
+    input_dict8 = {'input': input8, 'Tout': np.float64, 'name': 'real_part_8'}
+    list_of_inputs.append(copy.deepcopy(input_dict8))
 
-    x = np.array([1e10 - 1e9j, -3.4e20 + 1e19j], dtype=np.complex64)
-    input_dict = {"Tout": np.float32, "name": "real_largevals_c64", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    x = np.array([np.nan + 1j, np.inf - np.inf * 1j, -np.inf + (np.nan * 1j)], dtype=np.complex128)
-    input_dict = {"Tout": np.float64, "name": "real_nan_inf_c128", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    x = np.zeros((2, 0, 3), dtype=np.complex64)
-    input_dict = {"Tout": np.float32, "name": "real_empty_axes_c64", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    x = np.array([[-0.0 + 0.0j]], dtype=np.complex128)
-    input_dict = {"Tout": np.dtype("float64"), "name": "real_singleton2d_c128", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    x = np.array([3 + 4j], dtype=np.complex64)
-    input_dict = {"Tout": np.float32, "name": "real_len1_c64", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    real = np.array([[1e-6, -2e-6, 3e-6]], dtype=np.float64)
-    imag = np.array([[4e-6, -5e-6, 6e-6]], dtype=np.float64)
-    x = (real + 1j * imag).astype(np.complex128)
-    input_dict = {"Tout": np.float64, "name": "real_small_2d_c128", "input": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    input9 = np.array([0.0 + 1.0j], dtype=np.complex64)
+    input_dict9 = {'input': input9, 'Tout': np.float32, 'name': 'real_part_9'}
+    list_of_inputs.append(copy.deepcopy(input_dict9))
+    
+    input10 = np.array([[-5.5 + 2.2j, 1.1 - 3.3j], [4.4 + 0.5j, -2.2 - 1.1j]], dtype=np.complex128)
+    input_dict10 = {'input': input10, 'Tout': np.float64, 'name': 'real_part_10'}
+    list_of_inputs.append(copy.deepcopy(input_dict10))
 
     return list_of_inputs
 

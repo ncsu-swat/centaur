@@ -1,7 +1,8 @@
 from openai import OpenAI
 import boto3
 import json
-import os, re, requests
+import os, re, requests, time
+from botocore.exceptions import BotoCoreError, ClientError
 from bs4 import BeautifulSoup
 
 class Response:
@@ -175,6 +176,8 @@ class ClaudeBedrockWrapper:
                 self.temperature = temperature
         else:
             self.temperature = temperature
+        self.max_retries = int(os.getenv("BEDROCK_MAX_RETRIES", 5))
+        self.base_backoff = float(os.getenv("BEDROCK_RETRY_BACKOFF", 5.0))
         self.messages = []
 
     def _build_payload(self):
@@ -188,9 +191,14 @@ class ClaudeBedrockWrapper:
         return payload
 
     def send_message(self, prompt):
-        self.messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+        user_msg = {"role": "user", "content": [{"type": "text", "text": prompt}]}
+        self.messages.append(user_msg)
         payload = self._build_payload()
-        response = self.client.invoke_model(modelId=self.model_arn, body=json.dumps(payload))
+        try:
+            response = self._invoke_with_retry(payload)
+        except Exception:
+            self.messages.pop()
+            raise
         body_bytes = response["body"].read()
         try:
             body = json.loads(body_bytes.decode("utf-8"))
@@ -204,6 +212,27 @@ class ClaudeBedrockWrapper:
             self.messages.append({"role": "assistant", "content": [{"type": "text", "text": content_text}]})
         usage = collect_token_usage(body.get("usage"))
         return Response(text=content_text, usage=usage)
+
+    def _invoke_with_retry(self, payload):
+        last_error = None
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                return self.client.invoke_model(modelId=self.model_arn, body=json.dumps(payload))
+            except ClientError as err:
+                code = err.response.get("Error", {}).get("Code")
+                if code in {"ThrottlingException", "ThrottledException", "TooManyRequestsException"} and attempt < self.max_retries:
+                    wait = self.base_backoff * (2 ** (attempt - 1))
+                    print(f"Claude request throttled (attempt {attempt}/{self.max_retries}). Retrying in {wait:.1f}s...")
+                    time.sleep(wait)
+                    last_error = err
+                    continue
+                raise
+            except BotoCoreError as err:
+                last_error = err
+                break
+        if last_error:
+            raise last_error
+        raise RuntimeError("ClaudeBedrockWrapper failed without an error recorded.")
     
 def extract_code_from_response(response, llm="gemini"):
     # Use regular expression to find the code block within the markdown

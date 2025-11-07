@@ -9,6 +9,7 @@ from utils.new_api_utils import get_n_variations, get_signature, get_doc_tf, get
 from utils.misc import read_file_in_root, bcolors
 from llm.llm_utils import (
     OAChatWrapper,
+    ClaudeBedrockWrapper,
     fetch_documentation,
     extract_code_from_response,
     extract_function_info,
@@ -198,8 +199,10 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         chat = client.chats.create(model=model)
     elif llm == "openai":
         chat = OAChatWrapper()
+    elif llm == "claude":
+        chat = ClaudeBedrockWrapper()
     else:
-        raise ValueError("llm must be either 'gemini' or 'openai'")
+        raise ValueError("llm must be one of: 'gemini', 'openai', 'claude'")
     
     try:
         prompt = get_prompt(api, lib=lib, suffix=suffix)
@@ -326,8 +329,15 @@ def main():
             import llm.openai.valid_inputs_tf as valid_inputs
         else:
             raise ValueError("lib must be either 'torch' or 'tf'")
+    elif llm == "claude":
+        if lib == "torch":
+            import llm.claude.valid_inputs_torch as valid_inputs
+        elif lib == "tf":
+            import llm.claude.valid_inputs_tf as valid_inputs
+        else:
+            raise ValueError("lib must be either 'torch' or 'tf'")
     else:
-        raise ValueError("llm must be either 'gemini' or 'openai'")
+        raise ValueError("llm must be one of: 'gemini', 'openai', 'claude'")
     
     generated_inputs = valid_inputs.generated_inputs
     existing_inputs = set(generated_inputs.keys())

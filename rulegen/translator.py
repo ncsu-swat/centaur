@@ -131,10 +131,10 @@ def main():
 
     if llm == "gemini":
         base_dir = os.path.abspath(f"../rules-{lib}")
-    elif llm == "openai":
+    elif llm in ("openai", "claude"):
         base_dir = os.path.abspath(f"{llm}/rules-{lib}")
     else:
-        print("llm must be either 'gemini' or 'openai'")
+        print("llm must be one of: 'gemini', 'openai', 'claude'")
         sys.exit(1)
     
     rules_file = "rules-ebnf"

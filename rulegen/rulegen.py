@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from collections import defaultdict
 from utils.defaults import list_of_string_values_torch, list_of_string_values_tf
 from utils.new_api_utils import get_signature, get_n_variations
-from llm.llm_utils import OAChatWrapper, Response, collect_token_usage
+from llm.llm_utils import OAChatWrapper, ClaudeBedrockWrapper, Response, collect_token_usage
 
 with open("grammar.lark", "r", encoding="utf-8") as f:
     grammar = f.read()
@@ -126,8 +126,10 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
         chat = model.start_chat(history=[])
     elif llm == "openai":
         chat = OAChatWrapper()
+    elif llm == "claude":
+        chat = ClaudeBedrockWrapper()
     else:
-        raise ValueError("Unsupported LLM. Choose 'gemini' or 'openai'.")
+        raise ValueError("Unsupported LLM. Choose 'gemini', 'openai', or 'claude'.")
 
     feedback = ""
     base_time = time.time()
@@ -338,7 +340,7 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ("torch", "tf"):
-        print("Usage: python rulegen.py [torch|tf] [gemini|openai]")
+        print("Usage: python rulegen.py [torch|tf] [gemini|openai|claude]")
         sys.exit(1)
 
     lib = sys.argv[1]

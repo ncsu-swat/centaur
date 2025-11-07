@@ -1,4 +1,6 @@
 from openai import OpenAI
+import boto3
+import json
 import os, re, requests
 from bs4 import BeautifulSoup
 
@@ -145,6 +147,63 @@ class OAChatWrapper:
             raise ValueError(f"Unsupported OpenAI API surface: {self._api_surface}")
 
         return Response(text=response_text, usage=usage)
+
+
+class ClaudeBedrockWrapper:
+    """
+    Lightweight Bedrock wrapper for Anthropic Claude models.
+    Mirrors invoke_bedrock.py so we have a consistent entry point.
+    """
+
+    DEFAULT_MODEL_ARN = (
+        "arn:aws:bedrock:us-east-2:445527450773:inference-profile/"
+        "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
+    DEFAULT_VERSION = "bedrock-2023-05-31"
+
+    def __init__(self, model_arn=None, region=None, max_tokens=None, temperature=None):
+        self.model_arn = model_arn or os.getenv("BEDROCK_INFERENCE_PROFILE") or self.DEFAULT_MODEL_ARN
+        region_name = region or os.getenv("AWS_DEFAULT_REGION", "us-east-2")
+        self.client = boto3.client("bedrock-runtime", region_name=region_name)
+        self.anthropic_version = os.getenv("BEDROCK_ANTHROPIC_VERSION", self.DEFAULT_VERSION)
+        self.max_tokens = int(os.getenv("BEDROCK_MAX_TOKENS", max_tokens or 1024))
+        temp_env = os.getenv("BEDROCK_TEMPERATURE")
+        if temp_env is not None:
+            try:
+                self.temperature = float(temp_env)
+            except ValueError:
+                self.temperature = temperature
+        else:
+            self.temperature = temperature
+        self.messages = []
+
+    def _build_payload(self):
+        payload = {
+            "anthropic_version": self.anthropic_version,
+            "messages": self.messages,
+            "max_tokens": self.max_tokens,
+        }
+        if self.temperature is not None:
+            payload["temperature"] = self.temperature
+        return payload
+
+    def send_message(self, prompt):
+        self.messages.append({"role": "user", "content": [{"type": "text", "text": prompt}]})
+        payload = self._build_payload()
+        response = self.client.invoke_model(modelId=self.model_arn, body=json.dumps(payload))
+        body_bytes = response["body"].read()
+        try:
+            body = json.loads(body_bytes.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            body = {}
+        content_text = ""
+        for block in body.get("content", []):
+            if isinstance(block, dict) and block.get("type") == "text":
+                content_text += block.get("text", "")
+        if content_text:
+            self.messages.append({"role": "assistant", "content": [{"type": "text", "text": content_text}]})
+        usage = collect_token_usage(body.get("usage"))
+        return Response(text=content_text, usage=usage)
     
 def extract_code_from_response(response, llm="gemini"):
     # Use regular expression to find the code block within the markdown
@@ -157,7 +216,7 @@ def extract_code_from_response(response, llm="gemini"):
 
     if llm == "gemini":
         return ""
-    elif llm == "openai":
+    elif llm in ("openai", "claude"):
         return response
 
 def fetch_documentation(function_name):

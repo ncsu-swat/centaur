@@ -4,7 +4,12 @@ lib=${1:-"torch"}  # Default to "torch" if not provided
 llm=${2:-"gemini"}  # Default to "gemini" if not provided
 
 if [ "$lib" != "torch" ] && [ "$lib" != "tf" ]; then
-    echo "Usage: $0 [torch|tf] [LLM (Default: gemini)]"
+    echo "Usage: $0 [torch|tf] [LLM (gemini|openai|claude)]"
+    exit 1
+fi
+
+if [ "$llm" != "gemini" ] && [ "$llm" != "openai" ] && [ "$llm" != "claude" ]; then
+    echo "Unsupported LLM '$llm'. Supported options: gemini, openai, claude."
     exit 1
 fi
 

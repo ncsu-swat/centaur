@@ -2,6 +2,7 @@ from google import genai
 import os, time
 from llm.llm_utils import (
     OAChatWrapper,
+    ClaudeBedrockWrapper,
     fetch_documentation,
     extract_code_from_response,
     extract_function_info,
@@ -135,8 +136,10 @@ def generate_signatures(api, lib="torch", llm="gemini"):
         chat = client.chats.create(model=model)
     elif llm == "openai":
         chat = OAChatWrapper()
+    elif llm == "claude":
+        chat = ClaudeBedrockWrapper()
     else:
-        raise ValueError("llm must be either 'gemini' or 'openai'")
+        raise ValueError("llm must be one of: 'gemini', 'openai', 'claude'")
 
     try:
         prompt = get_prompt(api, lib=lib)
@@ -186,8 +189,11 @@ def main():
     elif llm == "openai":
         from llm.openai.tf_signatures import signatures as tf_signatures
         from llm.openai.torch_signatures import signatures as torch_signatures
+    elif llm == "claude":
+        from llm.claude.tf_signatures import signatures as tf_signatures
+        from llm.claude.torch_signatures import signatures as torch_signatures
     else:
-        raise ValueError("llm must be either 'gemini' or 'openai'")
+        raise ValueError("llm must be one of: 'gemini', 'openai', 'claude'")
 
     signatures = torch_signatures if lib == "torch" else tf_signatures
     completed = set()

@@ -17,8 +17,11 @@ def main():
     elif llm == "openai":
         from llm.openai.tf_signatures import signatures as tf_signatures
         from llm.openai.torch_signatures import signatures as torch_signatures
+    elif llm == "claude":
+        from llm.claude.tf_signatures import signatures as tf_signatures
+        from llm.claude.torch_signatures import signatures as torch_signatures
     else:
-        raise ValueError("llm must be either 'gemini' or 'openai'")
+        raise ValueError("llm must be one of: 'gemini', 'openai', 'claude'")
     
     signatures = tf_signatures if lib == "tf" else torch_signatures
     original_apis = read_file_in_root(f"{lib}_apis.txt")

@@ -4,8 +4,6 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${REPO_ROOT}"
 
-export AWS_BEARER_TOKEN_BEDROCK=<your token here>
-
 # Bedrock auth/config; export these before running or inject here.
 : "${AWS_BEARER_TOKEN_BEDROCK:?Set AWS_BEARER_TOKEN_BEDROCK}"
 : "${AWS_DEFAULT_REGION:=us-east-2}"
@@ -14,4 +12,4 @@ export AWS_BEARER_TOKEN_BEDROCK=<your token here>
 lib="${1:-torch}"          # torch|tf
 llm="claude"
 
-./scripts/llm_pipeline.sh "${lib}" "${llm}"
+./scripts/llm_new_pipeline.sh "${lib}" "${llm}"

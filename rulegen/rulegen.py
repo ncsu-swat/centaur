@@ -352,7 +352,11 @@ def main():
         lib_apis = [api for api in api_list if api.startswith("tf.")]
     
     for api in lib_apis:
-        generate_rules(api, lib, llm=llm)
+        try:
+            print(f"Generating rules for {api}")
+            generate_rules(api, lib, llm=llm)
+        except Exception as e:
+            print(f"Fail to generate rule for {api}: {e}")
 
 if __name__ == "__main__":
     main()

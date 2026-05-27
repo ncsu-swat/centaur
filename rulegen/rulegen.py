@@ -3,10 +3,11 @@ import os, re, time, random, json, sys
 from google import genai
 import torch, inspect, pkgutil, types, inspect
 import tensorflow as tf
+import jax, jax.numpy as jnp
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from collections import defaultdict
-from utils.defaults import list_of_string_values_torch, list_of_string_values_tf
+from utils.defaults import list_of_string_values_torch, list_of_string_values_tf, list_of_string_values_jax
 from utils.new_api_utils import get_signature, get_n_variations
 from llm.llm_utils import OAChatWrapper, Response, collect_token_usage
 
@@ -30,7 +31,7 @@ def list_all_apis(signature_path="../signatures.json"):
     return apis 
 
 def load_api_errors(lib):
-    filename = "err_messages_torch" if lib == "torch" else "err_messages_tf"
+    filename = ("err_messages_torch" if lib == "torch" else "err_messages_tf" if lib == "tf" else "err_messages_jax")
     err_file = os.path.join(os.path.dirname(__file__), filename)
     api_to_errors = defaultdict(list)
 
@@ -96,8 +97,13 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
     num_rules = 1
     rule_defs = set()
 
-    if llm == "gemini":
-        dir_path = os.path.join("../rules-torch" if lib == "torch" else "../rules-tf", api)
+    if llm == "gemini": #for now only modifying this part for gemini since not using JAX on other llms yet
+        if lib == "torch":
+            dir_path = os.path.join("../rules-torch", api)
+        elif lib == "tf":
+            dir_path = os.path.join("../rules-tf", api)
+        elif lib == "jax":
+            dir_path = os.path.join("../rules-jax", api)
     else:
         dir_path = os.path.join(f"{llm}/rules-torch" if lib == "torch" else f"{llm}/rules-tf", api)
 
@@ -122,7 +128,7 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
 
     if llm == "gemini":
         genai.configure(api_key=os.getenv("gemini_key"))
-        model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+        model = genai.GenerativeModel(model_name="gemini-3.5-flash") #newest model 
         chat = model.start_chat(history=[])
     elif llm == "openai":
         chat = OAChatWrapper()
@@ -209,7 +215,7 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
         prompt += "[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, "
         prompt += "np.complex64, np.complex128, str, np.dtype]\n\n"
         prompt += "String value should be selected from the following list:\n"
-        string_values = list_of_string_values_torch if lib == "torch" else list_of_string_values_tf
+        string_values = (list_of_string_values_torch if lib == "torch" else list_of_string_values_tf if lib == "tf" else list_of_string_values_jax)
         prompt += json.dumps(string_values) + "\n\n"
 
         doc_str = get_doc_by_name(api)
@@ -337,8 +343,8 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
         feedback = "\n".join(feedback_messages)
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ("torch", "tf"):
-        print("Usage: python rulegen.py [torch|tf] [gemini|openai]")
+    if len(sys.argv) < 2 or sys.argv[1] not in ("torch", "tf", "jax"):
+        print("Usage: python rulegen.py [torch|tf][jax] [gemini|openai]")
         sys.exit(1)
 
     lib = sys.argv[1]
@@ -346,8 +352,10 @@ def main():
 
     if lib == "torch":
         lib_apis = [api for api in api_list if api.startswith("torch.")]
-    else:
+    else if lib == "tf":
         lib_apis = [api for api in api_list if api.startswith("tf.")]
+    else:
+        lib_apis = [api for api in api_list if api.startswith("jax.")]
     
     for api in lib_apis:
         generate_rules(api, lib, llm=llm)

@@ -9,7 +9,7 @@ if [ "$#" -eq 0 ]; then
   exit 1
 fi
 
-lib=$1        # Library (torch or tf)
+lib=$1        # Library (torch or tf or jax)
 retry=${2:-0} # Retry flag (0 means no retry, 1 means retry cancelled jobs)
 reduce=${3:-1} # 1 means reduce ruleset, 0 means do not reduce ruleset
 save_to=${4:-default} # Output directory for saving results
@@ -57,8 +57,11 @@ if [ "$compute_cov" -eq 1 ]; then
     docker run --memory=${max_memory_docker} --cpus=${max_parallel} --cpuset-cpus="0-$((${max_parallel}-1))" --name tf_216_instr tf_216_instr_im bash -c "cd /workspace/repo && bash scripts/coverage_parallel.sh 0 tf ${max_parallel} html False"
     docker cp tf_216_instr:/workspace/repo/.tmp/coverage_tf.csv .tmp/coverage_tf.csv
     docker rm -f tf_216_instr
+  elif [ "$lib" = "jax" ]; then 
+    echo "Coverage collection for JAX not yet implemented."
+    echo "Skipping coverage step." #not sure abt the code cov part yet so leaving it out for now don't need for poc
   else
-    echo "Error: Unsupported library '$lib'. Supported libraries are 'torch' and 'tf'."
+    echo "Error: Unsupported library '$lib'. Supported libraries are 'torch', 'tf', and 'jax'."
     exit 1
   fi
 else

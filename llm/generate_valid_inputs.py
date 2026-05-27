@@ -5,7 +5,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import numpy as np
-from utils.new_api_utils import get_n_variations, get_signature, get_doc_tf, get_api_suffix
+from utils.new_api_utils import get_n_variations, get_signature, get_doc_tf, get_api_suffix, get_doc_by_name
 from utils.misc import read_file_in_root, bcolors
 from llm.llm_utils import (
     OAChatWrapper,
@@ -120,9 +120,52 @@ def tf_sets_difference_inputs():
     return list_of_inputs
 
 generated_inputs["tf.sets.difference"] = tf_sets_difference_inputs()
+""",
+"jax": """
+```python
+import numpy as np
+import copy
+
+def matmul_inputs():
+    list_of_inputs = []
+
+    # Input 1, valid — small square matrices
+    a = np.random.randn(4, 8).astype(np.float32)
+    b = np.random.randn(8, 16).astype(np.float32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2, valid — different sizes
+    a = np.random.randn(2, 3).astype(np.float32)
+    b = np.random.randn(3, 5).astype(np.float32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3, valid — float64
+    a = np.random.randn(8, 8).astype(np.float64)
+    b = np.random.randn(8, 8).astype(np.float64)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4, valid — larger dimensions
+    a = np.random.randn(16, 32).astype(np.float32)
+    b = np.random.randn(32, 64).astype(np.float32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.numpy.matmul"] = matmul_inputs()
+```
 """
     }
-    doc = extract_function_info(fetch_documentation(api), api) if lib == "torch" else get_doc_tf(api)
+    doc = ""
+    if lib == "torch":
+        doc = extract_function_info(fetch_documentation(api), api)
+    elif lib == "tf":
+        doc = get_doc_tf(api)
+    else:
+        doc = get_doc_by_name(api)  # already in rulegen.py, same getattr traversal
     signature = get_signature(api, lib=lib, suffix=suffix)
     prefix = f'This is the documentation for the function {api}:\n\n"{doc.encode('ascii', errors='ignore').decode()}"\n\n' if doc else ""
     key = api if suffix == 0 else f"{api}_{suffix}"
@@ -192,7 +235,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
     time.sleep(6)
     
     if llm == "gemini":
-        model = "gemini-2.0-flash"
+        model = "gemini-3.5-flash"
         gemini_key = os.getenv("gemini_key")
         client = genai.Client(api_key=gemini_key)
         chat = client.chats.create(model=model)
@@ -312,13 +355,15 @@ def main():
         filemode="a"                                            # Append/Write mode
     )
     
-    if llm == "gemini":
+    if llm == "gemini": #only considering gemini and jax rn (NOTE)
         if lib == "torch":
             import llm.gemini.valid_inputs_torch as valid_inputs
         elif lib == "tf":
             import llm.gemini.valid_inputs_tf as valid_inputs
+        elif lib == "jax":
+            import llm.gemini.valid_inputs_jax as valid_inputs
         else:
-            raise ValueError("lib must be either 'torch' or 'tf'")
+            raise ValueError("lib must be either 'torch' or 'tf' or 'jax'")
     elif llm == "openai":
         if lib == "torch":
             import llm.openai.valid_inputs_torch as valid_inputs

@@ -14,6 +14,7 @@ def get_lib_version(api, lib="torch"):
     if lib == "torch" and not api.startswith("torch"):
         _, driver_to_torch = map_torch_to_driver()
         return driver_to_torch[api] if api in driver_to_torch else api
+    # no driver remapping for jax either 
     return api
 
 def get_n_variations(api, lib="torch"):
@@ -169,6 +170,7 @@ def get_func(api, lib="torch"):
 
     if lib == "tf" and api.startswith("tf."):
         api = api.replace("tf.", "tensorflow.")
+    # jax: no renaming needed, jax.* imports directly
 
     # Split module path and function name
     module_path, func_name = api.rsplit('.', 1)
@@ -232,6 +234,20 @@ def to_tf(x, device="cpu"):
         
         return x
 
+def to_jax(x, device="cpu"):
+    if isinstance(x, np.ndarray):
+        return jnp.array(x)
+    elif isinstance(x, jnp.ndarray):
+        return x
+    elif isinstance(x, np.dtype):
+        # map numpy dtype to jax dtype
+        return jnp.array([], dtype=x).dtype
+    elif isinstance(x, list):
+        return [to_jax(elem) for elem in x]
+    elif isinstance(x, tuple):
+        return tuple(to_jax(list(x)))
+    return x
+
 def to_numpy(x, device="cpu"):
     # tensor
     if isinstance(x, torch.Tensor):
@@ -264,7 +280,7 @@ def get_input(api, input_dict, cpu=True, lib="torch"):
     torch tensors if lib is torch.
     """
     api = get_lib_version(api, lib=lib)
-    to_lib = to_torch if lib == "torch" else to_tf
+    to_lib = to_torch if lib == "torch" else (to_tf if lib == "tf" else to_jax)
     device = "cpu" if cpu else "cuda"
     original_signature = get_signature_of_input(api, input_dict, lib=lib)
     true_input = {
@@ -317,12 +333,15 @@ def run_api(api, input_dict, cpu=True, lib="torch"):
     elif lib == "tf":
         tf.config.experimental.enable_op_determinism()
         tf.random.set_seed(42)
+    # jax: no global determinism flag needed, ops are pure by default
 
     if lib == "torch":
         result = func(*inp["args"], **inp["kwargs"])
     elif lib == "tf":
         with tf.device(tf_device):
             result = func(*inp["args"], **inp["kwargs"])
+    elif lib == "jax":
+        result = func(*inp["args"], **inp["kwargs"])
 
     if callable(result):
         if len(inp["inner"]) == 0:

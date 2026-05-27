@@ -45,6 +45,15 @@ list_of_string_values_tf = [
     "channels_last", "channels_first"
 ]
 
+# For JAX
+list_of_string_values_jax = [
+    "ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji",
+    "none", "sum", "max", "min", "mean",
+    "relu", "tanh", "sigmoid", "softmax", "gelu",
+    "NHWC", "NCHW", "HWIO", "OIHW",
+    "valid", "same",
+]
+
 domain_limits_torch = {
     'tensor': [0, MAX_SZ_DIM, 1, MAX_N_DIM],
     'tensor_dtype': [0, len(list_of_available_dtypes)-3, 1, 1], # except str
@@ -98,6 +107,8 @@ domain_limits_tf = {
     'dtype_dtype': [len(list_of_available_dtypes)-1, len(list_of_available_dtypes)-1, 1, 1],   # only dtype
     'dtype_value_range': [0, len(list_of_available_dtypes)-2, 2, 2],
 }
+
+domain_limits_jax = domain_limits_jax = domain_limits_torch.copy() #for now just copy torch 
 
 def np_dtype(dtype):
     try:

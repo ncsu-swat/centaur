@@ -9,7 +9,7 @@ from llm.llm_utils import (
     collect_token_usage,
 )
 from utils.misc import read_file_in_root
-from utils.new_api_utils import get_doc_tf, get_api_suffix
+from utils.new_api_utils import get_doc_tf, get_api_suffix, get_doc_by_name
 import sys
 import logging
 
@@ -99,19 +99,46 @@ signatures["tf.signal.rfft"] = {
     "inner": {}
 }
 ```
+""",
+"jax": """
+```python
+signatures["jax.numpy.matmul"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.concatenate"] = {
+    "args": {
+        "arrays": "list(tensor)"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+```
 """
     }
 
-    if lib == "torch":
+    doc = ""
+    if lib == "torch": 
         doc = extract_function_info(fetch_documentation(api), api)
-    else:
+    elif lib == "tf":
         doc = get_doc_tf(api)
+    else:
+        doc = get_doc_by_name(api)
         
     prefix = f'This is the documentation for the function {api}:\n\n"{doc.encode('ascii', errors='ignore').decode()}"\n\n' if doc else ""
     if lib == "torch":
         callables = f'This api likely returns a function, look for the parameters that can be passed to the function returned by this api. Hint: very often this information can be found under the "Shape:" section of the documentation.' if api.split('.')[-1][0].isupper() else 'This api likely does not return a function, check if that is true. If so, `inner` should be empty. Otherwise add the signature for the inner call.'
     elif lib == "tf":
         callables = ""
+    elif lib == "jax":
+        callables = ""
+    
     with open(f"{CUR_DIR}/prompt_signature_gen.md", "r", encoding="utf-8") as file:
         prompt = file.read()
         prompt = prompt.replace("{api}", api)
@@ -129,7 +156,7 @@ def generate_signatures(api, lib="torch", llm="gemini"):
     time.sleep(6)
     
     if llm == "gemini":
-        model = "gemini-2.0-flash"
+        model = "gemini-3.5-flash"
         gemini_key = os.getenv("gemini_key")
         client = genai.Client(api_key=gemini_key)
         chat = client.chats.create(model=model)
@@ -180,16 +207,23 @@ def main():
 
     apis = read_file_in_root(f"{lib}_apis.txt")
 
-    if llm == "gemini":
+    if llm == "gemini": #only jax rn for gemini
         from llm.gemini.tf_signatures import signatures as tf_signatures
         from llm.gemini.torch_signatures import signatures as torch_signatures
+        from llm.gemini.jax_signatures import signatures as jax_signatures
     elif llm == "openai":
         from llm.openai.tf_signatures import signatures as tf_signatures
         from llm.openai.torch_signatures import signatures as torch_signatures
     else:
         raise ValueError("llm must be either 'gemini' or 'openai'")
 
-    signatures = torch_signatures if lib == "torch" else tf_signatures
+    signatures = {}
+    if lib == "torch":
+        signatures = torch_signatures
+    elif lib == "tf":
+        signatures = tf_signatures
+    elif lib == "jax":
+        signatures = jax_signatures
     completed = set()
     for variation in signatures.keys():
         api, suffix = get_api_suffix(variation)

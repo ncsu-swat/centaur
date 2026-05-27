@@ -12,7 +12,13 @@ def gen_ran_ll(domain, rng=np.random.default_rng(42), lib="torch"):
         For tensors, if the generated tensor is larger than MAX_SZ_TENSOR,
         try again.
     '''
-    domain_limits = domain_limits_torch if lib == "torch" else domain_limits_tf
+    if lib == "torch":
+        domain_limits = domain_limits_torch
+    elif lib == "tf":
+        domain_limits = domain_limits_tf
+    else:
+        domain_limits = domain_limits_jax #now accounting for jax will later change domain limits to be diff than torch
+        
     if domain not in domain_limits or f'{domain}_dtype' not in domain_limits or f'{domain}_value_range' not in domain_limits:
         raise NotImplementedError(f"Limits not implemented for {domain}")
     

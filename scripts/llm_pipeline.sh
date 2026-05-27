@@ -3,8 +3,8 @@
 lib=${1:-"torch"}  # Default to "torch" if not provided
 llm=${2:-"gemini"}  # Default to "gemini" if not provided
 
-if [ "$lib" != "torch" ] && [ "$lib" != "tf" ]; then
-    echo "Usage: $0 [torch|tf] [LLM (Default: gemini)]"
+if [ "$lib" != "torch" ] && [ "$lib" != "tf" ] && [ "$lib" != "jax" ]; then
+    echo "Usage: $0 [torch|tf|jax] [LLM (Default: gemini)]"
     exit 1
 fi
 
@@ -34,6 +34,10 @@ if [ ! -f llm/"$llm/tf_signatures.py" ]; then
     echo "signatures = {}" > llm/"$llm/tf_signatures.py"
 fi
 
+if [ ! -f llm/"$llm/jax_signatures.py" ]; then
+    echo "signatures = {}" > llm/"$llm/jax_signatures.py"
+fi
+
 # Check if llm/<llm>/valid_inputs_<lib>.py file exists, if not create it with generated_inputs = {}
 if [ ! -f llm/"$llm/valid_inputs_torch.py" ]; then
     echo "generated_inputs = {}" > llm/"$llm/valid_inputs_torch.py"
@@ -41,6 +45,10 @@ fi
 
 if [ ! -f llm/"$llm/valid_inputs_tf.py" ]; then
     echo "generated_inputs = {}" > llm/"$llm/valid_inputs_tf.py"
+fi
+
+if [ ! -f llm/"$llm/valid_inputs_jax.py" ]; then
+    echo "generated_inputs = {}" > llm/"$llm/valid_inputs_jax.py"
 fi
 
 # Step 1: Generate signatures and sync APIs with signatures

@@ -6,10 +6,11 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
 
 import numpy as np
-from utils.new_api_utils import get_n_variations, get_signature, get_doc_tf, get_api_suffix
+from utils.new_api_utils import get_n_variations, get_signature, get_doc_tf, get_api_suffix, get_doc_by_name
 from utils.misc import read_file_in_root, bcolors
 import llm.valid_inputs_torch as valid_inputs_torch
 import llm.valid_inputs_tf as valid_inputs_tf
+import llm.gemini.valid_inputs_jax as valid_inputs_jax
 from llm.create_driver import fetch_documentation, extract_code_from_response, extract_function_info
 import logging
 import sys
@@ -121,9 +122,52 @@ def tf_sets_difference_inputs():
     return list_of_inputs
 
 generated_inputs["tf.sets.difference"] = tf_sets_difference_inputs()
+""",
+"jax": """
+```python
+import numpy as np
+import copy
+
+def matmul_inputs():
+    list_of_inputs = []
+
+    # Input 1, valid — small square matrices
+    a = np.random.randn(4, 8).astype(np.float32)
+    b = np.random.randn(8, 16).astype(np.float32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2, valid — different sizes
+    a = np.random.randn(2, 3).astype(np.float32)
+    b = np.random.randn(3, 5).astype(np.float32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3, valid — float64
+    a = np.random.randn(8, 8).astype(np.float64)
+    b = np.random.randn(8, 8).astype(np.float64)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4, valid — larger dimensions
+    a = np.random.randn(16, 32).astype(np.float32)
+    b = np.random.randn(32, 64).astype(np.float32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.numpy.matmul"] = matmul_inputs()
+```
 """
     }
-    doc = extract_function_info(fetch_documentation(api), api) if lib == "torch" else get_doc_tf(api)
+    doc = ""
+    if lib == "torch":
+        doc = extract_function_info(fetch_documentation(api), api)
+    elif lib == "tf":
+        doc = get_doc_tf(api)
+    else:
+        doc = get_doc_by_name(api)
     signature = get_signature(api, lib=lib, suffix=suffix)
     prefix = f'This is the documentation for the function {api}:\n\n"{doc.encode('ascii', errors='ignore').decode()}"\n\n' if doc else ""
     key = api if suffix == 0 else f"{api}_{suffix}"
@@ -198,7 +242,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch"):
     logging.basicConfig(handlers=[file_handler])
     logger = logging.getLogger("generate_valid_inputs")
 
-    model = "gemini-2.5-pro"
+    model = "gemini-3.5-flash" #should i make this pro again?
     gemini_key = os.getenv("gemini_key")
 
     logger.info(f"[{api}] [Suffix: {suffix}].\n\n")
@@ -282,6 +326,8 @@ def main():
         valid_inputs = valid_inputs_torch
     elif lib == "tf":
         valid_inputs = valid_inputs_tf
+    elif lib == "jax":
+        valid_inputs = valid_inputs_jax
     else:
         raise ValueError(f"Invalid library: {lib}")
     

@@ -11,16 +11,23 @@ def main():
     lib = sys.argv[1] if len(sys.argv) > 1 else "torch"
     llm = sys.argv[2] if len(sys.argv) > 2 else "gemini"
 
-    if llm == "gemini":
+    if llm == "gemini": #only gemini support for jax
         from llm.gemini.tf_signatures import signatures as tf_signatures
         from llm.gemini.torch_signatures import signatures as torch_signatures
+        from llm.gemini.jax_signatures import signatures as jax_signatures
     elif llm == "openai":
         from llm.openai.tf_signatures import signatures as tf_signatures
         from llm.openai.torch_signatures import signatures as torch_signatures
     else:
         raise ValueError("llm must be either 'gemini' or 'openai'")
     
-    signatures = tf_signatures if lib == "tf" else torch_signatures
+    signatures = {}
+    if lib == "tf":
+        signatures = tf_signatures
+    elif lib == "jax":
+        signatures = jax_signatures
+    else:
+        signatures = torch_signatures
     original_apis = read_file_in_root(f"{lib}_apis.txt")
     variations = set(signatures.keys())
 

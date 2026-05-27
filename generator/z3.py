@@ -378,7 +378,7 @@ def run_model_gen(variant, duration, n_max, lib, seed, regen, use_reference=Fals
             print(f"- {rule_name},{arity},{args}")
         print('-----' * 20)
     
-    corpus_dir = "corpus_tf" if lib == "tf" else "corpus_torch"
+    corpus_dir = "corpus_tf" if lib == "tf" else ("corpus_jax" if lib == "jax" else "corpus_torch")
     corpus_dir = os.path.join(get_dir_in_root(corpus_dir), f"{api}_{suffix}" if suffix > 0 else api)
     z3_args = create_z3_args(definition["signature"])
     if os.path.exists(f"{corpus_dir}/abstract_inputs.jsonl") and not regen:

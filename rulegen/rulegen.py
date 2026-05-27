@@ -352,7 +352,7 @@ def main():
 
     if lib == "torch":
         lib_apis = [api for api in api_list if api.startswith("torch.")]
-    else if lib == "tf":
+    elif lib == "tf":
         lib_apis = [api for api in api_list if api.startswith("tf.")]
     else:
         lib_apis = [api for api in api_list if api.startswith("jax.")]

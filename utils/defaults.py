@@ -108,7 +108,7 @@ domain_limits_tf = {
     'dtype_value_range': [0, len(list_of_available_dtypes)-2, 2, 2],
 }
 
-domain_limits_jax = domain_limits_jax = domain_limits_torch.copy() #for now just copy torch 
+domain_limits_jax = domain_limits_torch.copy() #for now just copy torch 
 
 def np_dtype(dtype):
     try:

@@ -113,7 +113,7 @@ def parition_solvers(solver, signature, z3_args, lib="torch", trial=5, rng=np.ra
     return solvers
 
 def initial_constraints(solver, signature, z3_args, lib="torch"):
-    domain_limits = domain_limits_torch if lib == "torch" else domain_limits_tf
+    domain_limits = domain_limits_torch if lib == "torch" else (domain_limits_tf if lib == "tf" else domain_limits_jax) #needed to add jax
     for param_name, z3_var in z3_args.items():
         param_type = signature[param_name]
 
@@ -240,7 +240,7 @@ def get_abstract_from_dict(json_dict, signature, lib="torch"):
     """
     Convert the saved JSON object to an abstract input.
     """
-    list_of_string_values = list_of_string_values_torch if lib == "torch" else list_of_string_values_tf
+    list_of_string_values = list_of_string_values_torch if lib == "torch" else (list_of_string_values_tf if lib == "tf" else list_of_string_values_jax)
     abstract_input = {}
     for key, value in json_dict.items():
         if key in signature:
@@ -272,7 +272,7 @@ def instantiate_args(model, signature, z3_args, seed=42, lib="torch", sample_ran
     abstract_args = {}
     rng = np.random.default_rng(seed)
 
-    list_of_string_values = list_of_string_values_torch if lib == "torch" else list_of_string_values_tf
+    list_of_string_values = list_of_string_values_torch if lib == "torch" else (list_of_string_values_tf if lib == "tf" else list_of_string_values_jax)
 
     for param_name, z3_var in z3_args.items():
         param_type = signature[param_name]

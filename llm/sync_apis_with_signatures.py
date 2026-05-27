@@ -25,7 +25,10 @@ def main():
     if lib == "tf":
         signatures = tf_signatures
     elif lib == "jax":
-        signatures = jax_signatures
+        if llm == "gemini":
+            signatures = jax_signatures
+        else: #for now!
+            raise ValueError("JAX is only supported with gemini LLM")
     else:
         signatures = torch_signatures
     original_apis = read_file_in_root(f"{lib}_apis.txt")

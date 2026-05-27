@@ -3,6 +3,12 @@ import numpy as np
 import inspect
 import tensorflow as tf
 
+try: #don't want to break existing functionality
+    import jax
+    import jax.numpy as jnp
+except ImportError:
+    pass
+
 from utils.misc import map_torch_to_driver, read_file_in_root, save_file_in_root
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
@@ -113,7 +119,8 @@ def match_signature_to_input(input_dict, signature, match_type=False):
             if arg == "out" and value is None:
                 continue  # out can be None, so we skip it
             if signature[arg] in ["tensor", "tensor_list"]:
-                if value is not None and not isinstance(value, (torch.Tensor, np.ndarray, tf.Tensor)):
+                jax_array_type = (jax.Array,) if 'jax' in dir() else () #guard in case jax not imported cuz tf and torch rn don't use it
+                if value is not None and not isinstance(value, (torch.Tensor, np.ndarray, tf.Tensor) + jax_array_type):
                     return False
             elif signature[arg] == "dtype":
                 if value is not None and not isinstance(value, (np.dtype, torch.dtype, tf.dtypes.DType, type)):
@@ -237,10 +244,9 @@ def to_tf(x, device="cpu"):
 def to_jax(x, device="cpu"):
     if isinstance(x, np.ndarray):
         return jnp.array(x)
-    elif isinstance(x, jnp.ndarray):
+    elif isinstance(x, jax.Array):  # not jnp.ndarray
         return x
     elif isinstance(x, np.dtype):
-        # map numpy dtype to jax dtype
         return jnp.array([], dtype=x).dtype
     elif isinstance(x, list):
         return [to_jax(elem) for elem in x]
@@ -255,6 +261,8 @@ def to_numpy(x, device="cpu"):
     elif isinstance(x, tf.Tensor):
         # Convert TensorFlow tensor to numpy array
         return x.numpy()
+    elif 'jax' in dir() and isinstance(x, jax.Array):  # guard for when JAX not installed, but need to accoutn for jnp
+        return np.array(x)
     # dtype
     elif isinstance(x, torch.dtype):
         return torch.tensor([], dtype=x).numpy(force=True).dtype
@@ -280,7 +288,7 @@ def get_input(api, input_dict, cpu=True, lib="torch"):
     torch tensors if lib is torch.
     """
     api = get_lib_version(api, lib=lib)
-    to_lib = to_torch if lib == "torch" else (to_tf if lib == "tf" else to_jax)
+    to_lib = to_torch if lib == "torch" else (to_tf if lib == "tf" else to_jax) #rn jax for cpu only but will need to handle gpu later
     device = "cpu" if cpu else "cuda"
     original_signature = get_signature_of_input(api, input_dict, lib=lib)
     true_input = {
@@ -333,6 +341,7 @@ def run_api(api, input_dict, cpu=True, lib="torch"):
     elif lib == "tf":
         tf.config.experimental.enable_op_determinism()
         tf.random.set_seed(42)
+    
     # jax: no global determinism flag needed, ops are pure by default
 
     if lib == "torch":
@@ -341,7 +350,10 @@ def run_api(api, input_dict, cpu=True, lib="torch"):
         with tf.device(tf_device):
             result = func(*inp["args"], **inp["kwargs"])
     elif lib == "jax":
-        result = func(*inp["args"], **inp["kwargs"])
+        if cpu:
+            result = func(*inp["args"], **inp["kwargs"])   # eager
+        else:
+            result = jax.jit(func)(*inp["args"], **inp["kwargs"])  # JIT — this is the oracle
 
     if callable(result):
         if len(inp["inner"]) == 0:
@@ -355,6 +367,7 @@ def run_api(api, input_dict, cpu=True, lib="torch"):
         elif lib == "tf":
             with tf.device(tf_device):
                 result = result(*inp["inner"]["args"], **inp["inner"]["kwargs"])
+        # Note shouldn't be a problem/triggered with JAX run but leaving comment here in case
 
     result_dict = {}
     if isinstance(result, tuple) or isinstance(result, list):

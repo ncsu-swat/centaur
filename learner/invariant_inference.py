@@ -245,6 +245,8 @@ def infer_invariants(api, print_details=False, regen=False, lib="torch", time_bu
                 import llm.valid_inputs_torch as valid_inputs
             elif lib == "tf":
                 import llm.valid_inputs_tf as valid_inputs
+            elif lib == "jax": # JAX uses gemini only rn; valid_inputs_jax.py lives under llm/gemini/
+                import llm.gemini.valid_inputs_jax as valid_inputs
             else:
                 raise ValueError(f"Invalid library: {lib}")
             

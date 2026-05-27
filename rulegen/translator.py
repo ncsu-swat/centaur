@@ -18,6 +18,8 @@ def create_py(header: str, directory: str = "../rules", lib="torch"):
         f.write(f'''import numpy as np
 import torch 
 import tensorflow as tf
+import jax
+import jax.numpy as jnp
 
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_{lib}, np_dtype
 from z3 import *
@@ -42,8 +44,8 @@ def create_func_template(rule_number, var_map, var_types, filename):
                 checks.append(f"isinstance({arg}, (float, np.floating))")
             elif t == "bool":
                 checks.append(f"isinstance({arg}, bool)")
-            elif t == "dtype":
-                checks.append(f"(isinstance({arg}, torch.dtype) or isinstance({arg}, tf.dtypes.DType))")
+            elif t == "dtype": #jax is np.dtype so added that here
+                checks.append(f"(isinstance({arg}, torch.dtype) or isinstance({arg}, tf.dtypes.DType) or isinstance({arg}, np.dtype))")
             elif t == "str":
                 checks.append(f"isinstance({arg}, str)")
             elif (t.startswith("tuple(") and t.endswith(")")) or (t.startswith("list(") and t.endswith(")")):

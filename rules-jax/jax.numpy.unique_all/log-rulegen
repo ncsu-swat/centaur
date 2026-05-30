@@ -1,0 +1,3066 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (size parameter must be greater than zero)
+{v_2 : int} |= v_2 > 0
+Token usage: input=2442, output=265, total=5308
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (fill_value tensor must be 0-dimensional)
+{v_3 : tensor} |= ndim(v_3) = 0
+Token usage: input=2442, output=265, total=5308
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (fill_value tensor must have the same dtype as the input tensor)
+{v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+Token usage: input=2442, output=265, total=5308
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (input tensor must be at least 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=2442, output=265, total=5308
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (input tensor must be of float type if fill_value is a float)
+{v_1 : tensor, v_3 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8
+Token usage: input=2442, output=265, total=5308
+** REDUNDANT VARIABLES ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (input tensor must be of integer type if fill_value is an integer)
+{v_1 : tensor, v_3 : int} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5
+Token usage: input=2442, output=265, total=5308
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_3 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_3)
+Redundant variables: {v_1 : tensor, v_3 : int} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 (Unused: v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (size parameter must be greater than zero)
+{v_2 : int} |= v_2 > 0
+Token usage: input=7947, output=319, total=12172
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_3 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_3)
+Redundant variables: {v_1 : tensor, v_3 : int} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 (Unused: v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (fill_value tensor must be 0-dimensional)
+{v_3 : tensor} |= ndim(v_3) = 0
+Token usage: input=7947, output=319, total=12172
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_3 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_3)
+Redundant variables: {v_1 : tensor, v_3 : int} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 (Unused: v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (fill_value tensor must have the same dtype as the input tensor)
+{v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+Token usage: input=7947, output=319, total=12172
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_3 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_3)
+Redundant variables: {v_1 : tensor, v_3 : int} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 (Unused: v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (input tensor must be at least 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=7947, output=319, total=12172
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_3 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_3)
+Redundant variables: {v_1 : tensor, v_3 : int} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 (Unused: v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (input tensor must be of float type if fill_value is a float)
+{v_1 : tensor, v_3 : float} |= (dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8) ∧ (v_3 ≥ min(v_1) ∨ v_3 ≤ min(v_1))
+Token usage: input=7947, output=319, total=12172
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_3 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_3)
+Redundant variables: {v_1 : tensor, v_3 : int} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 (Unused: v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (input tensor must be of integer type if fill_value is an integer)
+{v_1 : tensor, v_3 : int} |= (dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5) ∧ (v_3 ≥ min(v_1) ∨ v_3 ≤ min(v_1))
+Token usage: input=7947, output=319, total=12172
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : int} |= v_2 > 0
+Duplicated rule: {v_3 : tensor} |= ndim(v_3) = 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (constraints on size and scalar fill_value tensor matching the input tensor)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= ndim(v_1) ≥ 1 ∧ v_2 > 0 ∧ ndim(v_3) = 0 ∧ dtype_(v_1) = dtype_(v_3)
+Token usage: input=14924, output=307, total=17785
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : int} |= v_2 > 0
+Duplicated rule: {v_3 : tensor} |= ndim(v_3) = 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (constraints on size and float fill_value matching float input tensor)
+{v_1 : tensor, v_2 : int, v_3 : float} |= ndim(v_1) ≥ 1 ∧ v_2 > 0 ∧ (dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8) ∧ (v_3 ≥ min(v_1) ∨ v_3 ≤ min(v_1))
+Token usage: input=14924, output=307, total=17785
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : int} |= v_2 > 0
+Duplicated rule: {v_3 : tensor} |= ndim(v_3) = 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (constraints on size and integer fill_value matching integer input tensor)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) ≥ 1 ∧ v_2 > 0 ∧ (dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5) ∧ (v_3 ≥ min(v_1) ∨ v_3 ≤ min(v_1))
+Token usage: input=14924, output=307, total=17785
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (size and tensor fill_value constraints on unique_all)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= ndim(v_1) ≥ 1 ∧ v_2 > 0 ∧ ndim(v_3) = 0 ∧ dtype_(v_1) = dtype_(v_3)
+Token usage: input=20126, output=264, total=22848
+** DUPLICATED RULE ** (num_failures: 7)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (size and float fill_value constraints on unique_all)
+{v_1 : tensor, v_2 : int, v_3 : float} |= ndim(v_1) ≥ 1 ∧ v_2 > 0 ∧ dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 8 ∧ v_3 * 0.0 = 0.0
+Token usage: input=20126, output=264, total=22848
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.unique_all API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return unique values from x, along with indices, inverse indices, and counts.
+
+  JAX implementation of :func:`numpy.unique_all`; this is equivalent to calling
+  :func:`jax.numpy.unique` with `return_index`, `return_inverse`, `return_counts`,
+  and `equal_nan` set to True.
+
+  Because the size of the output of ``unique_all`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.unique`` to be used in such contexts.
+
+  Args:
+    x: N-dimensional array from which unique values will be extracted.
+    size: if specified, return only the first ``size`` sorted unique elements. If there are fewer
+      unique elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum unique value.
+
+  Returns:
+    A tuple ``(values, indices, inverse_indices, counts)``, with the following properties:
+
+    - ``values``:
+        an array of shape ``(n_unique,)`` containing the unique values from ``x``.
+    - ``indices``:
+        An array of shape ``(n_unique,)``. Contains the indices of the first occurrence of
+        each unique value in ``x``. For 1D inputs, ``x[indices]`` is equivalent to ``values``.
+    - ``inverse_indices``:
+        An array of shape ``x.shape``. Contains the indices within ``values`` of each value
+        in ``x``. For 1D inputs, ``values[inverse_indices]`` is equivalent to ``x``.
+    - ``counts``:
+        An array of shape ``(n_unique,)``. Contains the number of occurrences of each unique
+        value in ``x``.
+
+  See also:
+    - :func:`jax.numpy.unique`: general function for computing unique values.
+    - :func:`jax.numpy.unique_values`: compute only ``values``.
+    - :func:`jax.numpy.unique_counts`: compute only ``values`` and ``counts``.
+    - :func:`jax.numpy.unique_inverse`: compute only ``values`` and ``inverse``.
+
+  Examples:
+    Here we compute the unique values in a 1D array:
+
+    >>> x = jnp.array([3, 4, 1, 3, 1])
+    >>> result = jnp.unique_all(x)
+
+    The result is a :class:`~typing.NamedTuple` with four named attributes.
+    The ``values`` attribute contains the unique values from the array:
+
+    >>> result.values
+    Array([1, 3, 4], dtype=int32)
+
+    The ``indices`` attribute contains the indices of the unique ``values`` within
+    the input array:
+
+    >>> result.indices
+    Array([2, 0, 1], dtype=int32)
+    >>> jnp.all(result.values == x[result.indices])
+    Array(True, dtype=bool)
+
+    The ``inverse_indices`` attribute contains the indices of the input within ``values``:
+
+    >>> result.inverse_indices
+    Array([1, 2, 0, 1, 0], dtype=int32)
+    >>> jnp.all(x == result.values[result.inverse_indices])
+    Array(True, dtype=bool)
+
+    The ``counts`` attribute contains the counts of each unique value in the input:
+
+    >>> result.counts
+    Array([2, 2, 1], dtype=int32)
+
+    For examples of the ``size`` and ``fill_value`` arguments, see :func:`jax.numpy.unique`.
+
+[Possible API Signatures]
+ - x: tensor, size: integer, fill_value: tensor
+ - x: tensor, size: integer, fill_value: integer
+ - x: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (size and integer fill_value constraints on unique_all)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) ≥ 1 ∧ v_2 > 0 ∧ dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 ∧ v_3 * 0 = 0
+Token usage: input=20126, output=264, total=22848
+** SUCCESS **
+

@@ -16,6 +16,15 @@ signature_file = os.path.join(cur_dir, "../signatures.json")
 with open(signature_file, "r") as f:
     original_signatures = json.load(f)
 
+def get_doc_by_name(api):
+    """Fetch documentation for a JAX (or generic) API by its dotted name."""
+    try:
+        func = get_func(api)
+        signature = f"{api}{str(inspect.signature(func))}"
+        return signature + '\n' + func.__doc__ if func.__doc__ else signature
+    except Exception:
+        return ""
+
 def get_lib_version(api, lib="torch"):
     if lib == "torch" and not api.startswith("torch"):
         _, driver_to_torch = map_torch_to_driver()

@@ -8,11 +8,12 @@ if [ "$lib" != "torch" ] && [ "$lib" != "tf" ] && [ "$lib" != "jax" ]; then
     exit 1
 fi
 
-# Setup environment
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-pip install -r llm/requirements.txt
+#just commenting out for now for my jax tests
+# # Setup environment
+# python3 -m venv venv
+# source venv/bin/activate
+# pip install -r requirements.txt
+# pip install -r llm/requirements.txt
 
 # Check if llm/<llm> directory exists, if not create it
 mkdir -p llm/"$llm"

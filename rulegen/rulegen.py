@@ -126,10 +126,13 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
                     if len(block) == 2:
                         rule_defs.add(block[1])
 
-    if llm == "gemini":
-        genai.configure(api_key=os.getenv("gemini_key"))
-        model = genai.GenerativeModel(model_name="gemini-3.5-flash") #newest model 
-        chat = model.start_chat(history=[])
+    if llm == "gemini": #i think this outdated but will confirm
+        # genai.configure(api_key=os.getenv("gemini_key"))
+        # model = genai.GenerativeModel(model_name="gemini-3.5-flash") #newest model 
+        # chat = model.start_chat(history=[])
+        gemini_key = os.getenv("gemini_key")
+        client = genai.Client(api_key=gemini_key)
+        chat = client.chats.create(model="gemini-3.5-flash")
     elif llm == "openai":
         chat = OAChatWrapper()
     else:

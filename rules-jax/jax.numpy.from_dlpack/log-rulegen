@@ -1,0 +1,2361 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (The number of dimensions of input tensor x must be non-negative)
+{v_1 : tensor} |= ndim(v_1) ≥ 0
+Token usage: input=2074, output=218, total=5891
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (The input tensor x should have at most 64 dimensions)
+{v_1 : tensor} |= ndim(v_1) ≤ 64
+Token usage: input=2074, output=218, total=5891
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (The size of each dimension of the input tensor x must be non-negative)
+{v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+Token usage: input=2074, output=218, total=5891
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (The input tensor x must have a valid numerical or boolean data type)
+{v_1 : tensor} |= dtype_(v_1) ≥ 0 ∧ dtype_(v_1) ≤ 10
+Token usage: input=2074, output=218, total=5891
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (The copy parameter must be a boolean value)
+{v_2 : bool} |= v_2 = true ∨ v_2 = false
+Token usage: input=2074, output=218, total=5891
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (The input tensor x must have a valid data type, excluding string and np.dtype)
+{v_1 : tensor} |= dtype_(v_1) ≥ 0 ∧ dtype_(v_1) ≤ 10
+Token usage: input=8016, output=344, total=12748
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (The input tensor x must have a valid number of dimensions between 0 and 64)
+{v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 64
+Token usage: input=8016, output=344, total=12748
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (The size of each dimension of the input tensor x must be non-negative)
+{v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+Token usage: input=8016, output=344, total=12748
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (If the input tensor has an unsigned 8-bit integer data type, its minimum value must be non-negative)
+{v_1 : tensor} |= if dtype_(v_1) = 5 then min(v_1) ≥ 0
+Token usage: input=8016, output=344, total=12748
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (The minimum value of the input tensor x must be less than or equal to its maximum value, unless it is empty)
+{v_1 : tensor} |= (∃ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = 0) ∨ min(v_1) ≤ max(v_1)
+Token usage: input=8016, output=344, total=12748
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (The copy parameter must be a boolean value)
+{v_2 : bool} |= v_2 = true ∨ v_2 = false
+Token usage: input=8016, output=344, total=12748
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 0 ∧ dtype_(v_1) ≤ 10
+Duplicated rule: {v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+Duplicated rule: {v_2 : bool} |= v_2 = true ∨ v_2 = false
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (The input tensor x must have a rank of at most 8)
+{v_1 : tensor} |= ndim(v_1) ≤ 8
+Token usage: input=14979, output=286, total=18855
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 0 ∧ dtype_(v_1) ≤ 10
+Duplicated rule: {v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+Duplicated rule: {v_2 : bool} |= v_2 = true ∨ v_2 = false
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (The data type of input tensor x must be a valid numeric or boolean type)
+{v_1 : tensor} |= dtype_(v_1) < 11
+Token usage: input=14979, output=286, total=18855
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 0 ∧ dtype_(v_1) ≤ 10
+Duplicated rule: {v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+Duplicated rule: {v_2 : bool} |= v_2 = true ∨ v_2 = false
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (The size of each dimension of input tensor x must be strictly positive if it is not 0-dimensional)
+{v_1 : tensor} |= if ndim(v_1) > 0 then ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+Token usage: input=14979, output=286, total=18855
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 0 ∧ dtype_(v_1) ≤ 10
+Duplicated rule: {v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+Duplicated rule: {v_2 : bool} |= v_2 = true ∨ v_2 = false
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (The minimum value of input tensor x is at most its maximum value, unless it has an empty dimension)
+{v_1 : tensor} |= (∃ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = 0) ∨ min(v_1) ≤ max(v_1)
+Token usage: input=14979, output=286, total=18855
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 0 ∧ dtype_(v_1) ≤ 10
+Duplicated rule: {v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+Duplicated rule: {v_2 : bool} |= v_2 = true ∨ v_2 = false
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.from_dlpack API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Construct a JAX array via DLPack.
+
+  JAX implementation of :func:`numpy.from_dlpack`.
+
+  Args:
+    x: An object that implements the DLPack_ protocol via the ``__dlpack__``
+      and ``__dlpack_device__`` methods, or a legacy DLPack tensor on either
+      CPU or GPU.
+    device: An optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`,
+      representing the single device onto which the returned array should be placed.
+      If given, then the result is committed to the device. If unspecified,
+      the resulting array will be unpacked onto the same device it originated from.
+      Setting ``device`` to a device different from the source of ``external_array``
+      will require a copy, meaning ``copy`` must be set to either ``True`` or ``None``.
+    copy: An optional boolean, controlling whether or not a copy is performed.
+      If ``copy=True`` then a copy is always performed, even if unpacked onto the
+      same device. If ``copy=False`` then the copy is never performed and will raise
+      an error if necessary. When ``copy=None`` (default) then a copy may be performed
+      if needed for a device transfer.
+
+  Returns:
+    A JAX array of the input buffer.
+
+  Note:
+    While JAX arrays are always immutable, dlpack buffers cannot be marked as
+    immutable, and it is possible for processes external to JAX to mutate them
+    in-place. If a JAX Array is constructed from a dlpack buffer without copying
+    and the source buffer is later modified in-place, it may lead to undefined
+    behavior when using the associated JAX array.
+
+  Examples:
+    Passing data between NumPy and JAX via DLPack_:
+
+    >>> import numpy as np
+    >>> rng = np.random.default_rng(42)
+    >>> x_numpy = rng.random(4, dtype='float32')
+    >>> print(x_numpy)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_numpy, "__dlpack__")  # NumPy supports the DLPack interface
+    True
+
+    >>> import jax.numpy as jnp
+    >>> x_jax = jnp.from_dlpack(x_numpy)
+    >>> print(x_jax)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+    >>> hasattr(x_jax, "__dlpack__")  # JAX supports the DLPack interface
+    True
+
+    >>> x_numpy_round_trip = np.from_dlpack(x_jax)
+    >>> print(x_numpy_round_trip)
+    [0.08925092 0.773956   0.6545715  0.43887842]
+
+  .. _DLPack: https://dmlc.github.io/dlpack
+
+[API Signature] x: tensor, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (For a boolean input tensor x, the maximum value must be at most 1)
+{v_1 : tensor} |= if dtype_(v_1) = 0 then max(v_1) ≤ 1
+Token usage: input=14979, output=286, total=18855
+** SUCCESS **
+

@@ -1,0 +1,1815 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (integer axis must be within valid dimensions and refer to a dimension of size 1)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) > 0 ∧ v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1) ∧ shape(v_1, if v_2 < 0 then ndim(v_1) + v_2 else v_2) = 1
+Token usage: input=2064, output=402, total=6206
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (axes in a tuple must be within valid dimensions and refer to dimensions of size 1)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+Token usage: input=2064, output=402, total=6206
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (axes in a list must be within valid dimensions and refer to dimensions of size 1)
+{v_1 : tensor, v_2 : list(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+Token usage: input=2064, output=402, total=6206
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (when squeezing with an integer axis, the axis must be within the valid range of dimensions and have a size of 1)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) > 0 ∧ v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1) ∧ shape(v_1, if v_2 < 0 then ndim(v_1) + v_2 else v_2) = 1
+Token usage: input=8334, output=430, total=13555
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (when squeezing with a tuple of integer axes, all specified axes must be within the valid range of dimensions and have a size of 1)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+Token usage: input=8334, output=430, total=13555
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (when squeezing with a list of integer axes, all specified axes must be within the valid range of dimensions and have a size of 1)
+{v_1 : tensor, v_2 : list(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+Token usage: input=8334, output=430, total=13555
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : int} |= ndim(v_1) > 0 ∧ v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1) ∧ shape(v_1, if v_2 < 0 then ndim(v_1) + v_2 else v_2) = 1
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (when squeezing with an integer axis, the axis must be valid and its dimension must equal 1)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) > 0 ∧ ((v_2 ≥ 0 ∧ v_2 < ndim(v_1) ∧ shape(v_1, v_2) = 1) ∨ (v_2 < 0 ∧ v_2 ≥ 0 - ndim(v_1) ∧ shape(v_1, ndim(v_1) + v_2) = 1))
+Token usage: input=15912, output=486, total=21035
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : int} |= ndim(v_1) > 0 ∧ v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1) ∧ shape(v_1, if v_2 < 0 then ndim(v_1) + v_2 else v_2) = 1
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (when squeezing with a tuple of integer axes, each axis must be valid and refer to a dimension of size 1)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : ((v_2[i] ≥ 0 ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, v_2[i]) = 1) ∨ (v_2[i] < 0 ∧ v_2[i] ≥ 0 - ndim(v_1) ∧ shape(v_1, ndim(v_1) + v_2[i]) = 1))
+Token usage: input=15912, output=486, total=21035
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : int} |= ndim(v_1) > 0 ∧ v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1) ∧ shape(v_1, if v_2 < 0 then ndim(v_1) + v_2 else v_2) = 1
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) = 1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (when squeezing with a list of integer axes, each axis must be valid and refer to a dimension of size 1)
+{v_1 : tensor, v_2 : list(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : ((v_2[i] ≥ 0 ∧ v_2[i] < ndim(v_1) ∧ shape(v_1, v_2[i]) = 1) ∨ (v_2[i] < 0 ∧ v_2[i] ≥ 0 - ndim(v_1) ∧ shape(v_1, ndim(v_1) + v_2[i]) = 1))
+Token usage: input=15912, output=486, total=21035
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (all specified axes in a tuple must be unique, taking negative indexing into account)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : (if i ≠ j then (if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) ≠ (if v_2[j] < 0 then ndim(v_1) + v_2[j] else v_2[j]))
+Token usage: input=22995, output=403, total=29888
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (all specified axes in a list must be unique, taking negative indexing into account)
+{v_1 : tensor, v_2 : list(int)} |= ndim(v_1) > 0 ∧ ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : (if i ≠ j then (if v_2[i] < 0 then ndim(v_1) + v_2[i] else v_2[i]) ≠ (if v_2[j] < 0 then ndim(v_1) + v_2[j] else v_2[j]))
+Token usage: input=22995, output=403, total=29888
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.squeeze API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Remove one or more length-1 axes from array
+
+  JAX implementation of :func:`numpy.sqeeze`, implemented via :func:`jax.lax.squeeze`.
+
+  Args:
+    a: input array
+    axis: integer or sequence of integers specifying axes to remove. If any specified
+      axis does not have a length of 1, an error is raised. If not specified, squeeze
+      all length-1 axes in ``a``.
+
+  Returns:
+    copy of ``a`` with length-1 axes removed.
+
+  Notes:
+    Unlike :func:`numpy.squeeze`, :func:`jax.numpy.squeeze` will return a copy rather
+    than a view of the input array. However, under JIT, the compiler will optimize-away
+    such copies when possible, so this doesn't have performance impacts in practice.
+
+  See Also:
+    - :func:`jax.numpy.expand_dims`: the inverse of ``squeeze``: add dimensions of length 1.
+    - :meth:`jax.Array.squeeze`: equivalent functionality via an array method.
+    - :func:`jax.lax.squeeze`: equivalent XLA API.
+    - :func:`jax.numpy.ravel`: flatten an array into a 1D shape.
+    - :func:`jax.numpy.reshape`: general array reshape.
+
+  Examples:
+    >>> x = jnp.array([[[0]], [[1]], [[2]]])
+    >>> x.shape
+    (3, 1, 1)
+
+    Squeeze all length-1 dimensions:
+
+    >>> jnp.squeeze(x)
+    Array([0, 1, 2], dtype=int32)
+    >>> _.shape
+    (3,)
+
+    Equivalent while specifying the axes explicitly:
+
+    >>> jnp.squeeze(x, axis=(1, 2))
+    Array([0, 1, 2], dtype=int32)
+
+    Attempting to squeeze a non-unit axis results in an error:
+
+    >>> jnp.squeeze(x, axis=0)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ValueError: cannot select an axis to squeeze out which has size not equal to one, got shape=(3, 1, 1) and dimensions=(0,)
+
+    For convenience, this functionality is also available via the
+    :meth:`jax.Array.squeeze` method:
+
+    >>> x.squeeze()
+    Array([0, 1, 2], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer
+ - a: tensor, axis: tuple
+ - a: tensor, axis: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (the size of the dimension specified by the integer axis must be 1)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) > 0 ∧ (if v_2 < 0 then shape(v_1, ndim(v_1) + v_2) else shape(v_1, v_2)) = 1
+Token usage: input=22995, output=403, total=29888
+** SUCCESS **
+

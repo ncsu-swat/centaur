@@ -1,0 +1,4206 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (axis parameter must be within the valid range of the input tensor's dimensions)
+{v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (input tensor must have at least 1 dimension to be split)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (if indices_or_sections is an integer, it must be positive and must evenly divide the size of the dimension along the specified axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= v_2 > 0 ∧ (if v_3 ≥ 0 then (v_3 < ndim(v_1) ∧ shape(v_1, v_3) % v_2 = 0) else (v_3 ≥ 0 - ndim(v_1) ∧ shape(v_1, v_3 + ndim(v_1)) % v_2 = 0))
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (if indices_or_sections is a 1-D tensor, its dtype must be integer)
+{v_2 : tensor} |= ndim(v_2) = 1 ∧ (dtype_(v_2) = 1 ∨ dtype_(v_2) = 2 ∨ dtype_(v_2) = 3 ∨ dtype_(v_2) = 4 ∨ dtype_(v_2) = 5)
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (if indices_or_sections is a list of integers, it should be sorted in ascending order)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 2] : v_2[i] ≤ v_2[i+1]
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (if indices_or_sections is a tuple of integers, it should be sorted in ascending order)
+{v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 2] : v_2[i] ≤ v_2[i+1]
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (all indices in the list indices_or_sections must be non-negative)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (all indices in the tuple indices_or_sections must be non-negative)
+{v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (all elements in the 1-D tensor indices_or_sections must be non-negative)
+{v_2 : tensor} |= ndim(v_2) = 1 ∧ min(v_2) ≥ 0
+Token usage: input=2184, output=667, total=7677
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (when splitting by a single integer, the number of sections must be greater than zero)
+{v_2 : int} |= v_2 > 0
+Token usage: input=9932, output=634, total=15853
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (axis must be within the valid range of dimensions of the input tensor)
+{v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Token usage: input=9932, output=634, total=15853
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (if indices_or_sections is an integer, it must evenly divide the dimension along the split axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= if v_3 ≥ 0 then (v_3 < ndim(v_1) ∧ shape(v_1, v_3) % v_2 = 0) else (v_3 ≥ 0 - ndim(v_1) ∧ shape(v_1, v_3 + ndim(v_1)) % v_2 = 0)
+Token usage: input=9932, output=634, total=15853
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (if indices_or_sections is a tensor, it must be a 1-D tensor)
+{v_2 : tensor} |= ndim(v_2) = 1
+Token usage: input=9932, output=634, total=15853
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (elements of list indices_or_sections should be sorted in ascending order)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 2] : v_2[i] ≤ v_2[i + 1]
+Token usage: input=9932, output=634, total=15853
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (elements of tuple indices_or_sections should be sorted in ascending order)
+{v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 2] : v_2[i] ≤ v_2[i + 1]
+Token usage: input=9932, output=634, total=15853
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (tensor of indices should have an integer type)
+{v_2 : tensor} |= dtype_(v_2) = 1 ∨ dtype_(v_2) = 2 ∨ dtype_(v_2) = 3 ∨ dtype_(v_2) = 4 ∨ dtype_(v_2) = 5
+Token usage: input=9932, output=634, total=15853
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (input tensor must be at least 1-dimensional to be split)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=9932, output=634, total=15853
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (all split indices in list must be non-negative)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=9932, output=634, total=15853
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 19 (all split indices in tuple must be non-negative)
+{v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=9932, output=634, total=15853
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 20 (the number of split indices in list format should not exceed the size of the tensor along the split axis)
+{v_1 : tensor, v_2 : list(int), v_3 : int} |= if v_3 ≥ 0 then (v_3 < ndim(v_1) ∧ v_2.len ≤ shape(v_1, v_3)) else (v_3 ≥ 0 - ndim(v_1) ∧ v_2.len ≤ shape(v_1, v_3 + ndim(v_1)))
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (the number of split indices in tuple format should not exceed the size of the tensor along the split axis)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int} |= if v_3 ≥ 0 then (v_3 < ndim(v_1) ∧ v_2.len ≤ shape(v_1, v_3)) else (v_3 ≥ 0 - ndim(v_1) ∧ v_2.len ≤ shape(v_1, v_3 + ndim(v_1)))
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (the number of split indices in 1-D tensor format should not exceed the size of the tensor along the split axis)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= ndim(v_2) = 1 ∧ (if v_3 ≥ 0 then (v_3 < ndim(v_1) ∧ shape(v_2, 0) ≤ shape(v_1, v_3)) else (v_3 ≥ 0 - ndim(v_1) ∧ shape(v_2, 0) ≤ shape(v_1, v_3 + ndim(v_1))))
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (axis parameter must be a valid axis index for the input tensor)
+{v_1 : tensor, v_3 : int} |= v_3 < ndim(v_1) ∧ v_3 ≥ 0 - ndim(v_1)
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (the maximum split index in the list indices_or_sections should not exceed the size of the tensor along the split axis)
+{v_1 : tensor, v_2 : list(int), v_3 : int} |= if v_2.len > 0 then (if v_3 ≥ 0 then (v_3 < ndim(v_1) ∧ v_2[v_2.len - 1] ≤ shape(v_1, v_3)) else (v_3 ≥ 0 - ndim(v_1) ∧ v_2[v_2.len - 1] ≤ shape(v_1, v_3 + ndim(v_1))))
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (the maximum split index in the tuple indices_or_sections should not exceed the size of the tensor along the split axis)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int} |= if v_2.len > 0 then (if v_3 ≥ 0 then (v_3 < ndim(v_1) ∧ v_2[v_2.len - 1] ≤ shape(v_1, v_3)) else (v_3 ≥ 0 - ndim(v_1) ∧ v_2[v_2.len - 1] ≤ shape(v_1, v_3 + ndim(v_1))))
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (indices in list indices_or_sections should be strictly increasing to avoid empty slices)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 2] : v_2[i] < v_2[i + 1]
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) ∨ (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1))
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.split API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Split an array into sub-arrays.
+
+  JAX implementation of :func:`numpy.split`.
+
+  Args:
+    ary: N-dimensional array-like object to split
+    indices_or_sections: either a single integer or a sequence of indices.
+
+      - if ``indices_or_sections`` is an integer *N*, then *N* must evenly divide
+        ``ary.shape[axis]`` and ``ary`` will be divided into *N* equally-sized
+        chunks along ``axis``.
+      - if ``indices_or_sections`` is a sequence of integers, then these integers
+        specify the boundary between unevenly-sized chunks along ``axis``; see
+        examples below.
+
+    axis: the axis along which to split; defaults to 0.
+
+  Returns:
+    A list of arrays. If ``indices_or_sections`` is an integer *N*, then the list is
+    of length *N*. If ``indices_or_sections`` is a sequence *seq*, then the list is
+    is of length *len(seq) + 1*.
+
+  Examples:
+    Splitting a 1-dimensional array:
+
+    >>> x = jnp.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+    Split into three equal sections:
+
+    >>> chunks = jnp.split(x, 3)
+    >>> print(*chunks)
+    [1 2 3] [4 5 6] [7 8 9]
+
+    Split into sections by index:
+
+    >>> chunks = jnp.split(x, [2, 7])  # [x[0:2], x[2:7], x[7:]]
+    >>> print(*chunks)
+    [1 2] [3 4 5 6 7] [8 9]
+
+    Splitting a two-dimensional array along axis 1:
+
+    >>> x = jnp.array([[1, 2, 3, 4],
+    ...                [5, 6, 7, 8]])
+    >>> x1, x2 = jnp.split(x, 2, axis=1)
+    >>> print(x1)
+    [[1 2]
+     [5 6]]
+    >>> print(x2)
+    [[3 4]
+     [7 8]]
+
+  See also:
+    - :func:`jax.numpy.array_split`: like ``split``, but allows ``indices_or_sections``
+      to be an integer that does not evenly divide the size of the array.
+    - :func:`jax.numpy.vsplit`: split vertically, i.e. along axis=0
+    - :func:`jax.numpy.hsplit`: split horizontally, i.e. along axis=1
+    - :func:`jax.numpy.dsplit`: split depth-wise, i.e. along axis=2
+
+[Possible API Signatures]
+ - ary: tensor, indices_or_sections: integer, axis: integer
+ - ary: tensor, indices_or_sections: list, axis: integer
+ - ary: tensor, indices_or_sections: tuple, axis: integer
+ - ary: tensor, indices_or_sections: tensor, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 27 (indices in tuple indices_or_sections should be strictly increasing to avoid empty slices)
+{v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 2] : v_2[i] < v_2[i + 1]
+Token usage: input=18102, output=917, total=23844
+** SUCCESS **
+

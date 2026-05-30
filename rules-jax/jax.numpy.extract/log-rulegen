@@ -1,0 +1,3558 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (size must be a non-negative integer)
+{v_3 : int} |= v_3 ≥ 0
+Token usage: input=2028, output=305, total=7168
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (condition tensor must have all positive shape dimensions)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+Token usage: input=2028, output=305, total=7168
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (arr tensor must have all positive shape dimensions)
+{v_2 : tensor} |= ∀i ∈ [0, ndim(v_2) - 1] : shape(v_2, i) > 0
+Token usage: input=2028, output=305, total=7168
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (fill_value tensor must be a 0-dimensional scalar)
+{v_4 : tensor} |= ndim(v_4) = 0
+Token usage: input=2028, output=305, total=7168
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (the data type of fill_value must match the data type of arr)
+{v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+Token usage: input=2028, output=305, total=7168
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (condition tensor must have a boolean or integer data type)
+{v_1 : tensor} |= dtype_(v_1) ≤ 5
+Token usage: input=2028, output=305, total=7168
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (if the condition tensor is 1-dimensional, its size must be positive)
+{v_1 : tensor} |= if ndim(v_1) = 1 then shape(v_1, 0) > 0
+Token usage: input=2028, output=305, total=7168
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (size parameter must be non-negative)
+{v_3 : int} |= v_3 ≥ 0
+Token usage: input=9277, output=291, total=11613
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (fill_value must be a 0-dimensional scalar tensor)
+{v_4 : tensor} |= ndim(v_4) = 0
+Token usage: input=9277, output=291, total=11613
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (condition dimensions must be positive if ndim is greater than 0)
+{v_1 : tensor} |= if ndim(v_1) > 0 then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0)
+Token usage: input=9277, output=291, total=11613
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (array dimensions must be positive if ndim is greater than 0)
+{v_2 : tensor} |= if ndim(v_2) > 0 then (∀i ∈ [0, ndim(v_2) - 1] : shape(v_2, i) > 0)
+Token usage: input=9277, output=291, total=11613
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (the data type of fill_value must match the data type of the input array)
+{v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+Token usage: input=9277, output=291, total=11613
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (condition tensor must have a valid boolean or numeric dtype)
+{v_1 : tensor} |= dtype_(v_1) ≤ 10
+Token usage: input=9277, output=291, total=11613
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+Duplicated rule: {v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (condition and arr dimensions must be non-zero if they are both 1-dimensional)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) > 0 ∧ shape(v_2, 0) > 0
+Token usage: input=13976, output=353, total=17941
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+Duplicated rule: {v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (fill_value must be a scalar or 1-dimensional tensor)
+{v_4 : tensor} |= ndim(v_4) < 2
+Token usage: input=13976, output=353, total=17941
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+Duplicated rule: {v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (the dtype category of fill_value should match the dtype category of arr)
+{v_2 : tensor, v_4 : tensor} |= if dtype_(v_2) ≤ 5 then dtype_(v_4) ≤ 5 else dtype_(v_4) ≥ 6
+Token usage: input=13976, output=353, total=17941
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+Duplicated rule: {v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (the minimum value of the array must not exceed its maximum value for numeric dtypes)
+{v_2 : tensor} |= if 1 ≤ dtype_(v_2) ∧ dtype_(v_2) ≤ 8 then min(v_2) ≤ max(v_2)
+Token usage: input=13976, output=353, total=17941
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+Duplicated rule: {v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (the static size of the output must be at least 1)
+{v_3 : int} |= 1 ≤ v_3
+Token usage: input=13976, output=353, total=17941
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+Duplicated rule: {v_2 : tensor, v_4 : tensor} |= dtype_(v_2) = dtype_(v_4)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 19 (the condition tensor's values are bounded between 0 and 1 if it is boolean)
+{v_1 : tensor} |= if dtype_(v_1) = 0 then min(v_1) ≥ 0 ∧ max(v_1) ≤ 1
+Token usage: input=13976, output=353, total=17941
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 20 (for 2D input array, both dimensions must be positive)
+{v_2 : tensor} |= if ndim(v_2) = 2 then shape(v_2, 0) > 0 ∧ shape(v_2, 1) > 0
+Token usage: input=20000, output=328, total=21961
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (static output size must be at least the length of the 1D input array to avoid data loss)
+{v_2 : tensor, v_3 : int} |= if ndim(v_2) = 1 then v_3 ≥ shape(v_2, 0)
+Token usage: input=20000, output=328, total=21961
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (for 2D condition tensor, both dimensions must be positive)
+{v_1 : tensor} |= if ndim(v_1) = 2 then shape(v_1, 0) > 0 ∧ shape(v_1, 1) > 0
+Token usage: input=20000, output=328, total=21961
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (if the fill_value has an integer dtype, its minimum value is less than or equal to its maximum value)
+{v_4 : tensor} |= if dtype_(v_4) ≤ 5 then min(v_4) ≤ max(v_4)
+Token usage: input=20000, output=328, total=21961
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.extract API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same"]
+
+[API Documentation]
+Return the elements of an array that satisfy a condition.
+
+  JAX implementation of :func:`numpy.extract`.
+
+  Args:
+    condition: array of conditions. Will be converted to boolean and flattened to 1D.
+    arr: array of values to extract. Will be flattened to 1D.
+    size: optional static size for output. Must be specified in order for ``extract``
+      to be compatible with JAX transformations like :func:`~jax.jit` or :func:`~jax.vmap`.
+    fill_value: if ``size`` is specified, fill padded entries with this value (default: 0).
+
+  Returns:
+    1D array of extracted entries . If ``size`` is specified, the result will have shape
+    ``(size,)`` and be right-padded with ``fill_value``. If ``size`` is not specified,
+    the output shape will depend on the number of True entries in ``condition``.
+
+  Notes:
+    This function does not require strict shape agreement between ``condition`` and ``arr``.
+    If ``condition.size > arr.size``, then ``condition`` will be truncated, and if
+    ``arr.size > condition.size``, then ``arr`` will be truncated.
+
+  See also:
+    :func:`jax.numpy.compress`: multi-dimensional version of ``extract``.
+
+  Examples:
+     Extract values from a 1D array:
+
+     >>> x = jnp.array([1, 2, 3, 4, 5, 6])
+     >>> mask = (x % 2 == 0)
+     >>> jnp.extract(mask, x)
+     Array([2, 4, 6], dtype=int32)
+
+     In the simplest case, this is equivalent to boolean indexing:
+
+     >>> x[mask]
+     Array([2, 4, 6], dtype=int32)
+
+     For use with JAX transformations, you can pass the ``size`` argument to
+     specify a static shape for the output, along with an optional ``fill_value``
+     that defaults to zero:
+
+     >>> jnp.extract(mask, x, size=len(x), fill_value=0)
+     Array([2, 4, 6, 0, 0, 0], dtype=int32)
+
+     Notice that unlike with boolean indexing, ``extract`` does not require strict
+     agreement between the sizes of the array and condition, and will effectively
+     truncate both to the minimum size:
+
+     >>> short_mask = jnp.array([False, True])
+     >>> jnp.extract(short_mask, x)
+     Array([2], dtype=int32)
+     >>> long_mask = jnp.array([True, False, True, False, False, False, False, False])
+     >>> jnp.extract(long_mask, x)
+     Array([1, 3], dtype=int32)
+
+[API Signature] condition: tensor, arr: tensor, size: integer, fill_value: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (if the array has a floating-point dtype, its minimum value is less than or equal to its maximum value)
+{v_2 : tensor} |= if dtype_(v_2) ≥ 6 ∧ dtype_(v_2) ≤ 8 then min(v_2) ≤ max(v_2)
+Token usage: input=20000, output=328, total=21961
+** SUCCESS **
+

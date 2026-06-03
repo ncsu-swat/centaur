@@ -84,9 +84,9 @@ def create_func_body(rule_number, rule_def, var_map, var_types, filename, lib="t
         elif typ == "bool":
             if "value" in entries:
                 lines.append(f"{eindent}{arg}_value = Bool('{arg}_value')")
-        elif typ == "str":
+        elif typ == "str" or typ == "dimension_numbers":
             if "value" in entries:
-                lines.append(f"{eindent}{arg}_value = String('{arg}_value')") 
+                lines.append(f"{eindent}solver.add({arg}_value == list_of_string_values_{lib}.index({arg}))")
         elif (typ.startswith("tuple(") and typ.endswith(")")) or (typ.startswith("list(") and typ.endswith(")")):
             is_tuple = typ.startswith("tuple(")
             inner = typ[typ.index("(")+1:-1]

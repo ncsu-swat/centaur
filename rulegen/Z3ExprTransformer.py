@@ -3,7 +3,7 @@ import sys
 from lark import Transformer
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils.defaults import MAX_N_DIM, list_of_string_values_torch, list_of_string_values_tf
+from utils.defaults import MAX_N_DIM, list_of_string_values_torch, list_of_string_values_tf, list_of_string_values_jax
 
 '''
 # For TensorFlow
@@ -18,8 +18,13 @@ class Z3ExprTransformer(Transformer):
     def __init__(self, var_map, var_types, lib="torch"):
         self.var_map = var_map
         self.var_types = var_types
-        self.list_of_string_values = list_of_string_values_torch if lib == "torch" else list_of_string_values_tf
-
+        if lib == "torch":
+            self.list_of_string_values = list_of_string_values_torch
+        elif lib == "tf":
+            self.list_of_string_values = list_of_string_values_tf
+        else:  # jax
+            self.list_of_string_values = list_of_string_values_jax
+            
     def start(self, items):
         return items[0]
 
@@ -40,6 +45,8 @@ class Z3ExprTransformer(Transformer):
     def bool_type(self, _): return "bool"
     def dtype_type(self, _): return "dtype"
     def str_type(self, _): return "str"
+    def dimension_numbers_type(self, _): return "dimension_numbers"
+
 
     def tuple_type(self, items):
         inner_type = items[0]
@@ -165,10 +172,10 @@ class Z3ExprTransformer(Transformer):
             return v
         elif "⊎" in typ:
             member_types = [t.strip() for t in typ.split("⊎")]
-            allowed_types = {"int", "float", "bool", "str", "dtype"}
+            allowed_types = {"int", "float", "bool", "str", "dtype", "dimension_numbers"}
             if not all(t in allowed_types for t in member_types):
                 raise Exception(f" Expected union of primitive types for '{v}', got '{typ}'")
-        elif typ not in {"int", "float", "bool", "str", "dtype"}:
+        elif typ not in {"int", "float", "bool", "str", "dtype", "dimension_numbers"}:
             raise Exception(f" Expected primitive type for '{v}', got '{typ}'")
         return f'v["{self.var_map[v]}_value"]'
 

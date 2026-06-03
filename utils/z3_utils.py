@@ -58,6 +58,11 @@ def create_z3_args(signature):
             z3_args[param] = {
                 "value": Int(f"{param}_value")
             }
+        elif typ == "dimension_numbers":
+            z3_args[param] = {
+                "value": Int(f"{param}_value"),  # index into list_of_string_values_jax
+                "dtype": Int(f"{param}_dtype")
+            }
         else:
             raise ValueError(f"Unsupported type: {typ}")
     return z3_args
@@ -143,7 +148,7 @@ def initial_constraints(solver, signature, z3_args, lib="torch"):
                 for i in range(MAX_N_DIM)
             ]))
         
-        elif param_type in ["integer", "float", "string"]:
+        elif param_type in ["integer", "float", "string", "dimension_numbers"]:
             value, dtype = z3_var['value'], z3_var['dtype']
             solver.add(And(value >= domain_limits[f'{param_type}_value_range'][0], value <= domain_limits[f'{param_type}_value_range'][1]))
             solver.add(And(dtype >= domain_limits[f'{param_type}_dtype'][0], dtype <= domain_limits[f'{param_type}_dtype'][1]))
@@ -214,7 +219,7 @@ def model_to_abs(model, signature, z3_args):
             dtype = model.eval(z3_var['dtype'], model_completion=True).as_long()
             value = [value.numerator, value.denominator]
             
-        elif param_type in ["string", "dtype"]:
+        elif param_type in ["string", "dtype", "dimension_numbers"]:
             value = model.eval(z3_var['value'], model_completion=True).as_long()
             
         elif param_type == "boolean":
@@ -254,7 +259,7 @@ def get_abstract_from_dict(json_dict, signature, lib="torch"):
             elif domain == "float":
                 val = value[0][0]/value[0][1] if value[0][1] > 0 else 0
                 abstract_input[key] = [[val], [value[1]], [val, val]]
-            elif domain == "string":
+            elif domain in ["string", "dimension_numbers"]:
                 abstract_input[key] = [[list_of_string_values[value[0]]], [list_of_available_dtypes.index(str)], [list_of_string_values[value[0]], list_of_string_values[value[0]]]]
             elif domain == "dtype":
                 abstract_input[key] = [[list_of_available_dtypes[value[0]]], [list_of_available_dtypes.index(np.dtype)], [list_of_available_dtypes[value[0]], list_of_available_dtypes[value[0]]]]
@@ -322,7 +327,7 @@ def instantiate_args(model, signature, z3_args, seed=42, lib="torch", sample_ran
             value = model.eval(z3_var['value'], model_completion=True).as_fraction()
             dtype = model.eval(z3_var['dtype'], model_completion=True).as_long()
             concrete_args[param_name] = list_of_available_dtypes[dtype](value.numerator/value.denominator)
-        elif param_type == "string":
+        elif param_type in ["string", "dimension_numbers"]:
             value = model.eval(z3_var['value'], model_completion=True).as_long()
             dtype = model.eval(z3_var['dtype'], model_completion=True).as_long()
             concrete_args[param_name] = list_of_available_dtypes[dtype](list_of_string_values[value])

@@ -39,14 +39,16 @@ export TF_FORCE_GPU_ALLOW_GROWTH=true
 export TF_CPP_MIN_LOG_LEVEL=2
 
 if [ $setup_env -eq 1 ]; then
-    # Creating virtual environment
-    if ! command -v python3.12 &> /dev/null; then
-        echo "Error: python3.12 is not installed. Please install it before running this script."
-        exit 1
-    fi
-    python3.12 -m venv venv
-    source venv/bin/activate
-    pip install -r $PROJECT_DIR/requirements.txt
+    # Creating virtual environment -- for now skipping this and using my own
+    # if ! command -v python3.12 &> /dev/null; then
+    #     echo "Error: python3.12 is not installed. Please install it before running this script."
+    #     exit 1
+    # fi
+    # python3.12 -m venv venv
+    # source venv/bin/activate
+    # pip install -r $PROJECT_DIR/requirements.txt
+    source /share/apps/software/anaconda3/etc/profile.d/conda.sh
+    conda activate /home/asv48/envs/jax_centaur
 fi
 
 # Running random generation
@@ -63,10 +65,11 @@ for element in "${elements[@]}"; do
     wrap_cmd="${cmd} ${element} ${@:3}"
     # Run sbatch with a timeout of 2 hour
     sbatch -c 1 \
-        --job-name=${job_name}-${i} \
-        --output="logs/${element}_${job_name}.out" \
-        --time=$slurm_time \
-        --wrap="${wrap_cmd}"
+    --job-name=${job_name}-${i} \
+    --output="logs/${element}_${job_name}.out" \
+    --time=$slurm_time \
+    --partition=dutta \
+    --wrap="${wrap_cmd}"
 
     # limit number of running jobs
     while (( $(squeue --user=$USER | grep -vE "JOBID" | grep "${job_name}" | wc -l) >= max_parallel )); do

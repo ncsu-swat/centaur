@@ -11,7 +11,8 @@ supported_paramtypes = [
     "string",
     "tuple",
     "list",
-    "dtype"
+    "dtype",
+    "dimension_numbers"  # new - for jax.lax APIs
 ]
 
 MAX_N_DIM=6
@@ -51,8 +52,19 @@ list_of_string_values_jax = [
     "none", "sum", "max", "min", "mean",
     "relu", "tanh", "sigmoid", "softmax", "gelu",
     "NHWC", "NCHW", "HWIO", "OIHW",
-    "valid", "same",
-]
+    "valid", "same", 
+    
+    # NEW: additional conv dimension formats for conv_general_dilated, conv_transpose
+    "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH",
+    # NEW: additional padding for conv
+    "SAME_LOWER",
+    # NEW: FFT types for jax.lax.fft
+    "FFT", "IFFT", "RFFT", "IRFFT",
+    # NEW: scatter/gather modes
+    "promise_in_bounds", "clip", "drop", "fill",
+    # NEW: precision strings for dot_general, conv
+    "highest", "float32", "bfloat16",
+] #extending jax list strings further to accomodate more apis
 
 domain_limits_torch = {
     'tensor': [0, MAX_SZ_DIM, 1, MAX_N_DIM],
@@ -109,6 +121,10 @@ domain_limits_tf = {
 }
 
 domain_limits_jax = domain_limits_torch.copy() #for now just copy torch 
+domain_limits_jax['dimension_numbers'] = [0, len(list_of_string_values_jax)-2, 1, 1]
+domain_limits_jax['dimension_numbers_dtype'] = [len(list_of_available_dtypes)-2, len(list_of_available_dtypes)-2, 1, 1]
+domain_limits_jax['dimension_numbers_value_range'] = [0, len(list_of_string_values_jax)-1, 2, 2]
+
 
 def np_dtype(dtype):
     try:

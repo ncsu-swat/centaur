@@ -1,5 +1,5 @@
 import numpy as np
-from utils.defaults import domain_limits_torch, domain_limits_tf, list_of_available_dtypes, MAX_SZ_TENSOR
+from utils.defaults import domain_limits_torch, domain_limits_tf, domain_limits_jax, list_of_available_dtypes, MAX_SZ_TENSOR
 from utils.misc import get_tensor_size
 
 def gen_ran_ll(domain, rng=np.random.default_rng(42), lib="torch"):
@@ -49,7 +49,7 @@ def get_ll(domain, value):
         domain = "tensor"   # hack until tensor_list is supported
     
     ll = []
-    if domain in ["integer", "float", "string", "boolean", "dtype"]: # primitives and dtype
+    if domain in ["integer", "float", "string", "boolean", "dtype", "dimension_numbers"]: # primitives and dtype
         list_val = [value]
         dtype_val = [list_of_available_dtypes.index(np.dtype(type(value)))]
         range_val = [value, value]  # for cohesion, not really needed
@@ -103,7 +103,7 @@ def gen_concrete_input(domain, ll, arg="", rng=np.random.default_rng(42)):
         Generate a concrete input given a list of lists. If the domain is tensor,
         the provided rng will be used to generate the concrete input.
     '''    
-    if domain in ["integer", "float", "string", "boolean", "dtype"]: # primitives and dtype
+    if domain in ["integer", "float", "string", "boolean", "dtype", "dimension_numbers"]: # primitives and dtype
         return list_of_available_dtypes[ll[1][0]](ll[0][0]) if ll[0][0] is not None else None
     elif domain == "tensor" or domain == "tensor_list": # tensors, uses the rng passed to the function        
         # Check high > low

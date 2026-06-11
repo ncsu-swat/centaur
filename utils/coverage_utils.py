@@ -9,6 +9,8 @@ from bs4 import BeautifulSoup
 from .misc import get_tmp_dir, create_subdir, get_dir_in_root
 from .process_lcov import analyze_lcov
 
+JAX_XLA_SOURCE_DIR = "/app/jax/bazel-jax/external/xla/xla"
+
 def monitor_memory(proc, limit=16000):
     """
     For using with subprocess.Popen, this function monitors the memory usage of the process.
@@ -131,6 +133,12 @@ def gen_cov(cmd_line, lib="torch", prefix="default", capture_output=True, gen_lc
         TF_BUILD_DIR = os.path.dirname(inspect.getfile(tf))
         print(f"Using tensorflow from {TF_BUILD_DIR}")
         LIB1 = f"{TF_BUILD_DIR}/libtensorflow_cc.so.2"
+    elif lib == "jax":
+        import jaxlib
+        JAXLIB_BUILD_DIR = os.path.dirname(inspect.getfile(jaxlib))
+        print(f"Using jaxlib from {JAXLIB_BUILD_DIR}")
+        LIB1 = f"{JAXLIB_BUILD_DIR}/_jaxlib.so"
+        # XLA source path for JAX: external/xla/xla (NOT external/local_xla/xla like TF)
     else:
         raise Exception(f"Unsupported library {lib}, choose torch or tf")
 
@@ -246,9 +254,14 @@ def gen_cov(cmd_line, lib="torch", prefix="default", capture_output=True, gen_lc
                             f"-output-dir={cov_dir}/{prefix}"
                         ]            
             if native_only:
-                instrumentation_dir = get_dir_in_root('instrumented_torch')
-                filter_dir = f"{instrumentation_dir}/pytorch/aten/src/ATen/native/"
-                print(f"Filtering to only the native folder at {filter_dir}")
+                if lib == "torch":
+                    instrumentation_dir = get_dir_in_root('instrumented_torch')
+                    filter_dir = f"{instrumentation_dir}/pytorch/aten/src/ATen/native/"
+                elif lib == "jax":
+                    filter_dir = JAX_XLA_SOURCE_DIR
+                elif lib == "tf":
+                    filter_dir = "/app/tensorflow/bazel-tensorflow/external/local_xla/xla"
+                print(f"Filtering to {filter_dir}")
                 cmd_html.append(filter_dir)
 
             return_obj = subprocess.run(cmd_html, capture_output=True)

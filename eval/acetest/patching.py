@@ -20,6 +20,8 @@ def patch_code(code, api, output_dir, lib="torch"):
         lib_import = "import torch"
     elif lib == "tf":
         lib_import = "import tensorflow as tf"
+    elif lib == "jax":
+        lib_import = "import jax\nimport jax.numpy as jnp"
     else:
         raise Exception(f"Unsupported library {lib}")
 
@@ -46,6 +48,8 @@ def driver(api, output_dir, lib="torch"):
         lib_import = "import torch"
     elif lib == "tf":
         lib_import = "import tensorflow as tf"
+    elif lib == "jax":
+        lib_import = "import jax\nimport jax.numpy as jnp"
     else:
         raise Exception(f"Unsupported library {lib}")
 

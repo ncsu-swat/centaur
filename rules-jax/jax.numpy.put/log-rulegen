@@ -8736,3 +8736,3263 @@ Rule 52 (mode must be 'clip' and inplace must be false)
 Token usage: input=18521, output=806, total=23351
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 53 (the inplace parameter must be set to False)
+{v_5 : bool} |= v_5 = false
+Token usage: input=2351, output=634, total=10007
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 54 (the mode parameter must be either "clip" or "promise_in_bounds")
+{v_4 : str} |= v_4 = "clip" ∨ v_4 = "promise_in_bounds"
+Token usage: input=2351, output=634, total=10007
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 55 (the input tensor a must have at least one dimension)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=2351, output=634, total=10007
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (if mode is promise_in_bounds and input tensor is 1D, all indices in tensor ind must be within bounds)
+{v_1 : tensor, v_2 : tensor, v_4 : str} |= if ndim(v_1) = 1 ∧ v_4 = "promise_in_bounds" then min(v_2) ≥ 0 ∧ max(v_2) ≤ shape(v_1, 0) - 1
+Token usage: input=2351, output=634, total=10007
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (if mode is promise_in_bounds, input tensor is 1D, and ind is a list of integers, all elements of ind must be within bounds)
+{v_1 : tensor, v_2 : list(int), v_4 : str} |= if ndim(v_1) = 1 ∧ v_4 = "promise_in_bounds" then ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] ≤ shape(v_1, 0) - 1
+Token usage: input=2351, output=634, total=10007
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (if mode is promise_in_bounds, input tensor is 1D, and ind is a tuple of integers, all elements of ind must be within bounds)
+{v_1 : tensor, v_2 : tuple(int), v_4 : str} |= if ndim(v_1) = 1 ∧ v_4 = "promise_in_bounds" then ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] ≤ shape(v_1, 0) - 1
+Token usage: input=2351, output=634, total=10007
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (the indices list must not be empty)
+{v_2 : list(int)} |= v_2.len > 0
+Token usage: input=2351, output=634, total=10007
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (the indices tuple must not be empty)
+{v_2 : tuple(int)} |= v_2.len > 0
+Token usage: input=2351, output=634, total=10007
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 61 (the values list must not be empty)
+{v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Token usage: input=2351, output=634, total=10007
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 62 (the values tensor and input tensor should have matching data types)
+{v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+Token usage: input=2351, output=634, total=10007
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 63 (indices in list must be within flattened size of 2D tensor a)
+{v_1 : tensor, v_2 : list(int)} |= if ndim(v_1) = 2 then ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] < shape(v_1, 0) * shape(v_1, 1)
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 64 (indices in tuple must be within flattened size of 2D tensor a)
+{v_1 : tensor, v_2 : tuple(int)} |= if ndim(v_1) = 2 then ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] < shape(v_1, 0) * shape(v_1, 1)
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 65 (indices in tensor must be within flattened size of 2D tensor a if mode is promise_in_bounds)
+{v_1 : tensor, v_2 : tensor, v_4 : str} |= if ndim(v_1) = 2 ∧ v_4 = "promise_in_bounds" then min(v_2) ≥ 0 ∧ max(v_2) < shape(v_1, 0) * shape(v_1, 1)
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 66 (indices in list must be within size of 1D tensor a)
+{v_1 : tensor, v_2 : list(int)} |= if ndim(v_1) = 1 then ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] < shape(v_1, 0)
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 67 (indices in tuple must be within size of 1D tensor a)
+{v_1 : tensor, v_2 : tuple(int)} |= if ndim(v_1) = 1 then ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] < shape(v_1, 0)
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 68 (the mode parameter must be clip or promise_in_bounds and inplace must be false)
+{v_4 : str, v_5 : bool} |= (v_4 = "clip" ∨ v_4 = "promise_in_bounds") ∧ v_5 = false
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 69 (both indices list and values list must contain at least one element)
+{v_2 : list(int), v_3 : list(int)} |= v_2.len ≥ 1 ∧ v_3.len ≥ 1
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 70 (both indices tuple and values tuple must contain at least one element)
+{v_2 : tuple(int), v_3 : tuple(float)} |= v_2.len ≥ 1 ∧ v_3.len ≥ 1
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 71 (the input tensor a must be at least 1D and the index tensor ind must be 1D or 2D)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ (ndim(v_2) = 1 ∨ ndim(v_2) = 2)
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : bool} |= v_5 = false
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : list(int)} |= v_2.len > 0
+Duplicated rule: {v_2 : tuple(int)} |= v_2.len > 0
+Duplicated rule: {v_3 : list(int) ⊎ list(float)} |= v_3.len > 0
+Duplicated rule: {v_1 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_3)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.put API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Put elements into an array at given indices.
+
+  JAX implementation of :func:`numpy.put`.
+
+  The semantics of :func:`numpy.put` are to modify arrays in-place, which
+  is not possible for JAX's immutable arrays. The JAX version returns a modified
+  copy of the input, and adds the ``inplace`` parameter which must be set to
+  `False`` by the user as a reminder of this API difference.
+
+  Args:
+    a: array into which values will be placed.
+    ind: array of indices over the flattened array at which to put values.
+    v: array of values to put into the array.
+    mode: string specifying how to handle out-of-bound indices. Supported values:
+
+      - ``"clip"`` (default): clip out-of-bound indices to the final index.
+      - ``"wrap"``: wrap out-of-bound indices to the beginning of the array.
+
+    inplace: must be set to False to indicate that the input is not modified
+      in-place, but rather a modified copy is returned.
+
+  Returns:
+    A copy of ``a`` with specified entries updated.
+
+  See Also:
+    - :func:`jax.numpy.place`: place elements into an array via boolean mask.
+    - :func:`jax.numpy.ndarray.at`: array updates using NumPy-style indexing.
+    - :func:`jax.numpy.take`: extract values from an array at given indices.
+
+  Examples:
+    >>> x = jnp.zeros(5, dtype=int)
+    >>> indices = jnp.array([0, 2, 4])
+    >>> values = jnp.array([10, 20, 30])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    This is equivalent to the following :attr:`jax.numpy.ndarray.at` indexing syntax:
+
+    >>> x.at[indices].set(values)
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    There are two modes for handling out-of-bound indices. By default they are
+    clipped:
+
+    >>> indices = jnp.array([0, 2, 6])
+    >>> jnp.put(x, indices, values, inplace=False, mode='clip')
+    Array([10,  0, 20,  0, 30], dtype=int32)
+
+    Alternatively, they can be wrapped to the beginning of the array:
+
+    >>> jnp.put(x, indices, values, inplace=False, mode='wrap')
+    Array([10,  30, 20,  0, 0], dtype=int32)
+
+    For N-dimensional inputs, the indices refer to the flattened array:
+
+    >>> x = jnp.zeros((3, 5), dtype=int)
+    >>> indices = jnp.array([0, 7, 14])
+    >>> jnp.put(x, indices, values, inplace=False)
+    Array([[10,  0,  0,  0,  0],
+           [ 0,  0, 20,  0,  0],
+           [ 0,  0,  0,  0, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, ind: tensor, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: list, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tuple, v: tensor, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: list, mode: string, inplace: boolean
+ - a: tensor, ind: tensor, v: tuple, mode: string, inplace: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 72 (if indices and values tensors have the same number of dimensions, their shapes should match)
+{v_2 : tensor, v_3 : tensor} |= if ndim(v_2) = ndim(v_3) then ∀i ∈ [0, ndim(v_2) - 1] : shape(v_2, i) = shape(v_3, i)
+Token usage: input=12702, output=855, total=19677
+** SUCCESS **
+

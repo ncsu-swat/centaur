@@ -41,6 +41,9 @@ if [ "$lib" = "torch" ]; then
 elif [ "$lib" = "tf" ]; then
     lib_v=2.16.1
     lib_ins="tensorflow==${lib_v}"
+elif [ "$lib" = "jax" ]; then
+    lib_v=0.4.35
+    lib_ins="jax==${lib_v}"
 fi
 
 PROJECT_DIR=`dirname "$(realpath "$0")"`/..
@@ -81,14 +84,22 @@ if [ "$lib" = "torch" ]; then
         exit 1
     fi
     pip install $PROJECT_DIR/instrumented_pytorch/torch-${lib_v}* --force-reinstall
-    export OMP_NUM_THREADS=1    # To prevent issues with coverage collection due to multithreading
-else
+    export OMP_NUM_THREADS=1
+elif [ "$lib" = "tf" ]; then
     # Install instrumented tensorflow
     if [ ! -f ${PROJECT_DIR}/instrumented_tf/tensorflow-${lib_v}* ]; then  
         echo "Error: Instrumented tensorflow not found. Please copy the wheel file to ${PROJECT_DIR}/instrumented_tf/."
         exit 1
     fi
     pip install $PROJECT_DIR/instrumented_tf/tensorflow-${lib_v}* --force-reinstall
+elif [ "$lib" = "jax" ]; then
+    # Install instrumented jaxlib
+    if [ ! -f ${PROJECT_DIR}/instrumented_jax/jaxlib-* ]; then
+        echo "Error: Instrumented jaxlib not found. Please build instrumented_jax/Dockerfile first."
+        exit 1
+    fi
+    pip install ${PROJECT_DIR}/instrumented_jax/jaxlib-* --force-reinstall
+    pip install "jax==${lib_v}" --force-reinstall
 fi
 
 job_name=cov

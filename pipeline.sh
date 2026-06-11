@@ -57,9 +57,14 @@ if [ "$compute_cov" -eq 1 ]; then
     docker run --memory=${max_memory_docker} --cpus=${max_parallel} --cpuset-cpus="0-$((${max_parallel}-1))" --name tf_216_instr tf_216_instr_im bash -c "cd /workspace/repo && bash scripts/coverage_parallel.sh 0 tf ${max_parallel} html False"
     docker cp tf_216_instr:/workspace/repo/.tmp/coverage_tf.csv .tmp/coverage_tf.csv
     docker rm -f tf_216_instr
-  elif [ "$lib" = "jax" ]; then 
-    echo "Coverage collection for JAX not yet implemented."
-    echo "Skipping coverage step." #not sure abt the code cov part yet so leaving it out for now don't need for poc
+  elif [ "$lib" = "jax" ]; then #see if this works for jax code coverage
+    docker build -t jax_instr_im . -f instrumented_jax/Dockerfile
+    docker run --memory=${max_memory_docker} --cpus=${max_parallel} \
+        --cpuset-cpus="0-$((${max_parallel}-1))" --name jax_instr \
+        jax_instr_im bash -c \
+        "cd /workspace/repo && bash scripts/coverage_parallel.sh 0 jax ${max_parallel} html False"
+    docker cp jax_instr:/workspace/repo/.tmp/coverage_jax.csv .tmp/coverage_jax.csv
+    docker rm -f jax_instr
   else
     echo "Error: Unsupported library '$lib'. Supported libraries are 'torch', 'tf', and 'jax'."
     exit 1

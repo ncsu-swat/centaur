@@ -9099,3 +9099,3803 @@ Rule 46 (For boolean input, it must evaluate consistently)
 Token usage: input=17507, output=404, total=19895
 ** DUPLICATED RULE ** (num_failures: 10)
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 41 (The input tensor can have any number of dimensions, which is always non-negative)
+{v_1 : tensor} |= ndim(v_1) ≥ 0
+Token usage: input=2443, output=226, total=6250
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 42 (The dtype of the input tensor must be one of the valid encoded type indices)
+{v_1 : tensor} |= 0 ≤ dtype_(v_1) ∧ dtype_(v_1) ≤ 12
+Token usage: input=2443, output=226, total=6250
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 43 (The input dtype must be a valid type index from the supported types list)
+{v_1 : dtype} |= 0 ≤ v_1 ∧ v_1 ≤ 12
+Token usage: input=2443, output=226, total=6250
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 44 (The input list can have any non-negative number of elements)
+{v_1 : list(int)} |= v_1.len ≥ 0
+Token usage: input=2443, output=226, total=6250
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 45 (An input of union type of int or float must satisfy basic ordering)
+{v_1 : int ⊎ float} |= if v_1 > 0 then v_1 ≥ 0 else v_1 ≤ 0
+Token usage: input=2443, output=226, total=6250
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0
+Duplicated rule: {v_1 : dtype} |= 0 ≤ v_1 ∧ v_1 ≤ 12
+Duplicated rule: {v_1 : list(int)} |= v_1.len ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 46 (For any tensor input, if it has a non-zero number of dimensions, its first dimension must be positive)
+{v_1 : tensor} |= if ndim(v_1) > 0 then shape(v_1, 0) > 0
+Token usage: input=8771, output=312, total=12196
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0
+Duplicated rule: {v_1 : dtype} |= 0 ≤ v_1 ∧ v_1 ≤ 12
+Duplicated rule: {v_1 : list(int)} |= v_1.len ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 47 (The dtype parameter, representing a supported data type index, must be strictly within the range of defined dtypes)
+{v_1 : dtype} |= 0 ≤ v_1 ∧ v_1 < 13
+Token usage: input=8771, output=312, total=12196
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0
+Duplicated rule: {v_1 : dtype} |= 0 ≤ v_1 ∧ v_1 ≤ 12
+Duplicated rule: {v_1 : list(int)} |= v_1.len ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 48 (For a tuple input, if it is not empty, its first element must have a valid integer value)
+{v_1 : tuple(int)} |= if v_1.len > 0 then v_1[0] ≥ 0 ∨ v_1[0] < 0
+Token usage: input=8771, output=312, total=12196
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0
+Duplicated rule: {v_1 : dtype} |= 0 ≤ v_1 ∧ v_1 ≤ 12
+Duplicated rule: {v_1 : list(int)} |= v_1.len ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 49 (For an input that is either an int or a float, doubling a positive value results in a larger value)
+{v_1 : int ⊎ float} |= if v_1 > 0 then v_1 * 2 > v_1
+Token usage: input=8771, output=312, total=12196
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0
+Duplicated rule: {v_1 : dtype} |= 0 ≤ v_1 ∧ v_1 ≤ 12
+Duplicated rule: {v_1 : list(int)} |= v_1.len ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 50 (For a list of integers, every element must be either non-negative or negative)
+{v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∨ v_1[i] < 0
+Token usage: input=8771, output=312, total=12196
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= if ndim(v_1) > 0 then shape(v_1, 0) > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 51 (The minimum value of a tensor is always less than or equal to its maximum value)
+{v_1 : tensor} |= min(v_1) ≤ max(v_1)
+Token usage: input=14744, output=287, total=18380
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= if ndim(v_1) > 0 then shape(v_1, 0) > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 52 (The dtype parameter must be within the valid range of supported type indices)
+{v_1 : dtype} |= v_1 ≤ 12 ∧ 0 ≤ v_1
+Token usage: input=14744, output=287, total=18380
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= if ndim(v_1) > 0 then shape(v_1, 0) > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 53 (For a list of floats, multiplying any element by zero results in zero)
+{v_1 : list(float)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] * 0 = 0
+Token usage: input=14744, output=287, total=18380
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= if ndim(v_1) > 0 then shape(v_1, 0) > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 54 (For an input of union type of int or float, adding or subtracting one strictly changes its value in the expected direction)
+{v_1 : int ⊎ float} |= if v_1 ≥ 0 then v_1 + 1 > v_1 else v_1 - 1 < v_1
+Token usage: input=14744, output=287, total=18380
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= if ndim(v_1) > 0 then shape(v_1, 0) > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 55 (For a tuple of integers, adding one to each element results in a value strictly greater than the original element)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] + 1 > v_1[i]
+Token usage: input=14744, output=287, total=18380
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (The input tensor's data type must be one of the valid encoded type indices between 0 and 12)
+{v_1 : tensor} |= 0 ≤ dtype_(v_1) ∧ dtype_(v_1) ≤ 12
+Token usage: input=20834, output=318, total=23589
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (For an input of union type of int or float, scaling by 2 preserves the sign and ordering relative to the original value)
+{v_1 : int ⊎ float} |= if v_1 > 0 then v_1 * 2 > v_1 else if v_1 < 0 then v_1 * 2 < v_1 else v_1 = 0
+Token usage: input=20834, output=318, total=23589
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (For a list of integers, every element is strictly greater than itself minus one)
+{v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ v_1[i] - 1
+Token usage: input=20834, output=318, total=23589
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (For a tuple of floats, multiplying any of its elements by zero yields zero)
+{v_1 : tuple(float)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] * 0 = 0
+Token usage: input=20834, output=318, total=23589
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.isscalar API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return True if the input is a scalar.
+
+  JAX implementation of :func:`numpy.isscalar`. JAX's implementation differs
+  from NumPy's in that it considers zero-dimensional arrays to be scalars; see
+  the *Note* below for more details.
+
+  Args:
+    element: input object to check; any type is valid input.
+
+  Returns:
+    True if ``element`` is a scalar value or an array-like object with zero
+    dimensions, False otherwise.
+
+  Note:
+    JAX and NumPy differ in their representation of scalar values. NumPy has
+    special scalar objects (e.g. ``np.int32(0)``) which are distinct from
+    zero-dimensional arrays (e.g. ``np.array(0)``), and :func:`numpy.isscalar`
+    returns ``True`` for the former and ``False`` for the latter.
+
+    JAX does not define special scalar objects, but rather represents scalars as
+    zero-dimensional arrays. As such, :func:`jax.numpy.isscalar` returns ``True``
+    for both scalar objects (e.g. ``0.0`` or ``np.float32(0.0)``) and array-like
+    objects with zero dimensions (e.g. ``jnp.array(0.0)``, ``np.array(0.0)``).
+
+    One reason for the different conventions in ``isscalar`` is to maintain
+    JIT-invariance: i.e. the property that the result of a function should not
+    change when it is JIT-compiled. Because scalar inputs are cast to
+    zero-dimensional JAX arrays at JIT boundaries, the semantics of
+    :func:`numpy.isscalar` are such that the result changes under JIT:
+
+    >>> np.isscalar(1.0)
+    True
+    >>> jax.jit(np.isscalar)(1.0)
+    Array(False, dtype=bool)
+
+    By treating zero-dimensional arrays as scalars, :func:`jax.numpy.isscalar`
+    avoids this issue:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jax.jit(jnp.isscalar)(1.0)
+    Array(True, dtype=bool)
+
+  Examples:
+    In JAX, both scalars and zero-dimensional array-like objects are considered
+    scalars:
+
+    >>> jnp.isscalar(1.0)
+    True
+    >>> jnp.isscalar(1 + 1j)
+    True
+    >>> jnp.isscalar(jnp.array(1))  # zero-dimensional JAX array
+    True
+    >>> jnp.isscalar(jnp.int32(1))  # JAX scalar constructor
+    True
+    >>> jnp.isscalar(np.array(1.0))  # zero-dimensional NumPy array
+    True
+    >>> jnp.isscalar(np.int32(1))  # NumPy scalar type
+    True
+
+    Arrays with one or more dimension are not considered scalars:
+
+    >>> jnp.isscalar(jnp.array([1]))
+    False
+    >>> jnp.isscalar(np.array([1]))
+    False
+
+    Compare this to :func:`numpy.isscalar`, which returns ``True`` for
+    scalar-typed objects, and ``False`` for *all* arrays, even those with
+    zero dimensions:
+
+    >>> np.isscalar(np.int32(1))  # scalar object
+    True
+    >>> np.isscalar(np.array(1))  # zero-dimensional array
+    False
+
+    In JAX, as in NumPy, objects which are not array-like are not considered
+    scalars:
+
+    >>> jnp.isscalar(None)
+    False
+    >>> jnp.isscalar([1])
+    False
+    >>> jnp.isscalar(())
+    False
+    >>> jnp.isscalar(slice(10))
+    False
+
+[Possible API Signatures]
+ - element: tensor
+ - element: integer
+ - element: float
+ - element: boolean
+ - element: string
+ - element: list
+ - element: tuple
+ - element: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (The dtype parameter must map to a valid integer index within the range of supported data types)
+{v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 < 13
+Token usage: input=20834, output=318, total=23589
+** SUCCESS **
+

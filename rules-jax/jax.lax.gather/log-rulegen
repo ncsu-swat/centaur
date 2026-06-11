@@ -1,0 +1,2590 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (slice_sizes must have length equal to the rank of operand and its elements must be between 0 and the operand's shape in that dimension)
+{v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= v_4.len = ndim(v_1) ∧ (∀i ∈ [0, v_4.len - 1] : (v_4[i] ≥ 0 ∧ v_4[i] ≤ shape(v_1, i)))
+Token usage: input=2706, output=368, total=5985
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (mode must be a valid gather scatter mode string)
+{v_7 : str} |= v_7 = "clip" ∨ v_7 = "fill" ∨ v_7 = "drop" ∨ v_7 = "promise_in_bounds"
+Token usage: input=2706, output=368, total=5985
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (start_indices must be an integer tensor)
+{v_2 : tensor} |= dtype_(v_2) = 1 ∨ dtype_(v_2) = 2 ∨ dtype_(v_2) = 3 ∨ dtype_(v_2) = 4 ∨ dtype_(v_2) = 5
+Token usage: input=2706, output=368, total=5985
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (if fill_value is a float, the operand must be of float type)
+{v_1 : tensor, v_8 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8
+Token usage: input=2706, output=368, total=5985
+** REDUNDANT VARIABLES ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (if fill_value is a boolean, the operand must be of boolean type)
+{v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0
+Token usage: input=2706, output=368, total=5985
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_8 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_8)
+Redundant variables: {v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0 (Unused: v_8)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (slice_sizes must have length equal to the rank of operand and its elements must be between 0 and the operand's shape in that dimension)
+{v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= v_4.len = ndim(v_1) ∧ (∀i ∈ [0, v_4.len - 1] : (v_4[i] ≥ 0 ∧ v_4[i] ≤ shape(v_1, i)))
+Token usage: input=8806, output=472, total=16066
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_8 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_8)
+Redundant variables: {v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0 (Unused: v_8)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (mode must be a valid gather scatter mode string)
+{v_7 : str} |= v_7 = "clip" ∨ v_7 = "fill" ∨ v_7 = "drop" ∨ v_7 = "promise_in_bounds"
+Token usage: input=8806, output=472, total=16066
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_8 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_8)
+Redundant variables: {v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0 (Unused: v_8)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (start_indices must be an integer tensor and its index vector dimension size must be less than or equal to the rank of operand)
+{v_1 : tensor, v_2 : tensor} |= (dtype_(v_2) = 1 ∨ dtype_(v_2) = 2 ∨ dtype_(v_2) = 3 ∨ dtype_(v_2) = 4 ∨ dtype_(v_2) = 5) ∧ (if ndim(v_2) > 0 then shape(v_2, ndim(v_2) - 1) ≤ ndim(v_1) else ndim(v_1) ≥ 1)
+Token usage: input=8806, output=472, total=16066
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_8 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_8)
+Redundant variables: {v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0 (Unused: v_8)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (if fill_value is a float, the operand must be of float type)
+{v_1 : tensor, v_8 : float} |= (dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8) ∧ v_8 = v_8
+Token usage: input=8806, output=472, total=16066
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_8 : float} |= dtype_(v_1) = 6 ∨ dtype_(v_1) = 7 ∨ dtype_(v_1) = 8 (Unused: v_8)
+Redundant variables: {v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0 (Unused: v_8)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (if fill_value is a boolean, the operand must be of boolean type)
+{v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0 ∧ (v_8 = true ∨ v_8 = false)
+Token usage: input=8806, output=472, total=16066
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= v_4.len = ndim(v_1) ∧ (∀i ∈ [0, v_4.len - 1] : (v_4[i] ≥ 0 ∧ v_4[i] ≤ shape(v_1, i)))
+Duplicated rule: {v_7 : str} |= v_7 = "clip" ∨ v_7 = "fill" ∨ v_7 = "drop" ∨ v_7 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (slice_sizes must have length equal to the rank of operand and each element must not exceed the operand's shape in that dimension)
+{v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_4.len ∧ ∀i ∈ [0, v_4.len - 1] : v_4[i] ≤ shape(v_1, i)
+Token usage: input=18926, output=413, total=26052
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= v_4.len = ndim(v_1) ∧ (∀i ∈ [0, v_4.len - 1] : (v_4[i] ≥ 0 ∧ v_4[i] ≤ shape(v_1, i)))
+Duplicated rule: {v_7 : str} |= v_7 = "clip" ∨ v_7 = "fill" ∨ v_7 = "drop" ∨ v_7 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (mode must be one of the allowed string values: clip, fill, drop, or promise_in_bounds)
+{v_7 : str} |= if v_7 = "clip" then true else if v_7 = "fill" then true else if v_7 = "drop" then true else v_7 = "promise_in_bounds"
+Token usage: input=18926, output=413, total=26052
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= v_4.len = ndim(v_1) ∧ (∀i ∈ [0, v_4.len - 1] : (v_4[i] ≥ 0 ∧ v_4[i] ≤ shape(v_1, i)))
+Duplicated rule: {v_7 : str} |= v_7 = "clip" ∨ v_7 = "fill" ∨ v_7 = "drop" ∨ v_7 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (start_indices must have an integer data type and its last dimension must not exceed the rank of operand)
+{v_1 : tensor, v_2 : tensor} |= (dtype_(v_2) ≥ 1 ∧ dtype_(v_2) ≤ 5) ∧ ndim(v_2) ≥ 1 ∧ shape(v_2, ndim(v_2) - 1) ≤ ndim(v_1)
+Token usage: input=18926, output=413, total=26052
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= v_4.len = ndim(v_1) ∧ (∀i ∈ [0, v_4.len - 1] : (v_4[i] ≥ 0 ∧ v_4[i] ≤ shape(v_1, i)))
+Duplicated rule: {v_7 : str} |= v_7 = "clip" ∨ v_7 = "fill" ∨ v_7 = "drop" ∨ v_7 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (if fill_value is a float, the operand must be a floating-point tensor)
+{v_1 : tensor, v_8 : float} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 8 ∧ v_8 = v_8
+Token usage: input=18926, output=413, total=26052
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_4 : tuple(int) ⊎ list(int)} |= v_4.len = ndim(v_1) ∧ (∀i ∈ [0, v_4.len - 1] : (v_4[i] ≥ 0 ∧ v_4[i] ≤ shape(v_1, i)))
+Duplicated rule: {v_7 : str} |= v_7 = "clip" ∨ v_7 = "fill" ∨ v_7 = "drop" ∨ v_7 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.gather API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Gather operator.
+
+  Wraps `XLA's Gather operator
+  <https://www.openxla.org/xla/operation_semantics#gather>`_.
+
+  :func:`gather` is a low-level operator with complicated semantics, and most JAX
+  users will never need to call it directly. Instead, you should prefer using
+  `Numpy-style indexing`_, and/or :func:`jax.numpy.ndarray.at`, perhaps in combination
+  with :func:`jax.vmap`.
+
+  Args:
+    operand: an array from which slices should be taken
+    start_indices: the indices at which slices should be taken
+    dimension_numbers: a `lax.GatherDimensionNumbers` object that describes
+      how dimensions of `operand`, `start_indices` and the output relate.
+    slice_sizes: the size of each slice. Must be a sequence of non-negative
+      integers with length equal to `ndim(operand)`.
+    indices_are_sorted: whether `indices` is known to be sorted. If
+      true, may improve performance on some backends.
+    unique_indices: whether the elements gathered from ``operand`` are
+      guaranteed not to overlap with each other. If ``True``, this may improve
+      performance on some backends. JAX does not check this promise: if
+      the elements overlap the behavior is undefined.
+    mode: how to handle indices that are out of bounds: when set to ``'clip'``,
+      indices are clamped so that the slice is within bounds, and when
+      set to ``'fill'`` or ``'drop'`` gather returns a slice full of
+      ``fill_value`` for the affected slice. The behavior for out-of-bounds
+      indices when set to ``'promise_in_bounds'`` is implementation-defined.
+    fill_value: the fill value to return for out-of-bounds slices when `mode`
+      is ``'fill'``. Ignored otherwise. Defaults to ``NaN`` for inexact types,
+      the largest negative value for signed types, the largest positive value
+      for unsigned types, and ``True`` for booleans.
+
+  Returns:
+    An array containing the gather output.
+
+  Examples:
+    As mentioned above, you should basically never use :func:`gather` directly,
+    and instead use NumPy-style indexing expressions to gather values from
+    arrays.
+
+    For example, here is how you can extract values at particular indices using
+    straightforward indexing semantics, which will lower to XLA's Gather operator:
+
+    >>> import jax.numpy as jnp
+    >>> x = jnp.array([10, 11, 12])
+    >>> indices = jnp.array([0, 1, 1, 2, 2, 2])
+
+    >>> x[indices]
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    For control over settings like ``indices_are_sorted``, ``unique_indices``, ``mode``,
+    and ``fill_value``, you can use the :attr:`jax.numpy.ndarray.at` syntax:
+
+    >>> x.at[indices].get(indices_are_sorted=True, mode="promise_in_bounds")
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+    By comparison, here is the equivalent function call using :func:`gather` directly,
+    which is not something typical users should ever need to do:
+
+    >>> from jax import lax
+    >>> lax.gather(x, indices[:, None], slice_sizes=(1,),
+    ...            dimension_numbers=lax.GatherDimensionNumbers(
+    ...                offset_dims=(),
+    ...                collapsed_slice_dims=(0,),
+    ...                start_index_map=(0,)),
+    ...            indices_are_sorted=True,
+    ...            mode=lax.GatherScatterMode.PROMISE_IN_BOUNDS)
+    Array([10, 11, 11, 12, 12, 12], dtype=int32)
+
+  .. _Numpy-style indexing: https://numpy.org/doc/stable/reference/arrays.indexing.html
+
+[Possible API Signatures]
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: tuple, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: float
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: integer
+ - operand: tensor, start_indices: tensor, dimension_numbers: tuple, slice_sizes: list, unique_indices: boolean, indices_are_sorted: boolean, mode: string, fill_value: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (if fill_value is a boolean, the operand must be a boolean tensor)
+{v_1 : tensor, v_8 : bool} |= dtype_(v_1) = 0 ∧ (v_8 = true ∨ v_8 = false)
+Token usage: input=18926, output=413, total=26052
+** DUPLICATED RULE ** (num_failures: 5)
+

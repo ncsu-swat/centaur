@@ -10,8 +10,8 @@ from z3 import *
 # axis can be an integer or the string "none" (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 6, True, And(-20 <= v["arg1_value"], v["arg1_value"] <= 20))) if n else
-          If(v["arg1_value"] == 6, True, And(-20 <= v["arg1_value"], v["arg1_value"] <= 20)))
+    s.add(Not(If(v["arg1_value"] == 5, True, And(-20 <= v["arg1_value"], v["arg1_value"] <= 20))) if n else
+          If(v["arg1_value"] == 5, True, And(-20 <= v["arg1_value"], v["arg1_value"] <= 20)))
 )
 
 def rule_5_func(arg1, solver=None, neg=False):

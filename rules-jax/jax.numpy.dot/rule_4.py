@@ -10,8 +10,8 @@ from z3 import *
 # precision tuple parameter constraint (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 6), Select(v["arg1_values"], 1) == 6)) if n else
-          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 6), Select(v["arg1_values"], 1) == 6))
+    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 5), Select(v["arg1_values"], 1) == 5)) if n else
+          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 5), Select(v["arg1_values"], 1) == 5))
 )
 
 def rule_4_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_4_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 4
-        rule_4(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_4(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_4(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_4(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

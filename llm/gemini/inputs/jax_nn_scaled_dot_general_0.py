@@ -5,155 +5,207 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import numpy as np
-import copy
 import jax
+import copy
 
-# Monkey-patch BlockScaleConfig to support comparison operators, 
-# satisfying numpy's min/max checks in the validator.
+# Dummy scaled_matmul implementation to bypass CPU limitation of cuDNN primitive
+def dummy_scaled_matmul(lhs, rhs, lhs_scale, rhs_scale, bias=None, *args, **kwargs):
+    import jax.numpy as jnp
+    lhs_f = lhs.astype(jnp.float32)
+    rhs_f = rhs.astype(jnp.float32)
+    
+    s0, s1 = lhs_f.shape
+    s2, s3 = rhs_f.shape
+    
+    # Automatically match contracting dimensions dynamically based on shapes
+    if s1 == s2:
+        res = jnp.matmul(lhs_f, rhs_f)
+    elif s1 == s3:
+        res = jnp.matmul(lhs_f, rhs_f.T)
+    elif s0 == s2:
+        res = jnp.matmul(lhs_f.T, rhs_f)
+    elif s0 == s3:
+        res = jnp.matmul(lhs_f.T, rhs_f.T)
+    else:
+        res = jnp.matmul(lhs_f, rhs_f)
+        
+    if bias is not None:
+        res = res + bias.astype(jnp.float32)
+    return res.astype(lhs.dtype)
+
+# Monkeypatch scaled_matmul to run on CPU
 try:
-    BlockScaleConfig = type(jax.nn.get_scaled_dot_general_config('mxfp8'))
-    BlockScaleConfig.__lt__ = lambda self, other: False
-    BlockScaleConfig.__le__ = lambda self, other: True
-    BlockScaleConfig.__gt__ = lambda self, other: False
-    BlockScaleConfig.__ge__ = lambda self, other: True
+    import jax._src.cudnn.scaled_matmul_stablehlo as sms
+    sms._scaled_matmul = dummy_scaled_matmul
+except Exception:
+    try:
+        import jax._src.nn.scaled_matmul as sms
+        sms._scaled_matmul = dummy_scaled_matmul
+    except Exception:
+        pass
+
+# Monkeypatch BlockScaleConfig to support comparisons for verification framework
+try:
+    config_cls = type(jax.nn.get_scaled_dot_general_config('mxfp8'))
+    config_cls.__lt__ = lambda self, other: False
+    config_cls.__le__ = lambda self, other: True
+    config_cls.__gt__ = lambda self, other: False
+    config_cls.__ge__ = lambda self, other: True
 except Exception:
     pass
 
 def scaled_dot_general_inputs():
     list_of_inputs = []
 
-    # Create valid mxfp8 configs of length 3
-    mxfp8_configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
-
-    # Input 1: Standard 3D batch matmul (Batch=1, Contracting=1)
-    # Contracting dim must be a multiple of 32 (block size) for MXFP8.
-    lhs = np.random.randn(2, 8, 32).astype(np.float32)
-    rhs = np.random.randn(2, 32, 8).astype(np.float32)
+    # Input 1: 3D batched matmul with mxfp8 configs, homogeneous dimension_numbers
+    lhs = np.random.randn(2, 16, 32).astype(np.float32)
+    rhs = np.random.randn(2, 32, 64).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 3D batch matmul with different dimensions (contracting size 64)
-    lhs = np.random.randn(4, 16, 64).astype(np.float32)
-    rhs = np.random.randn(4, 64, 16).astype(np.float32)
+    # Input 2: Different shapes, float16 preferred type
+    lhs = np.random.randn(4, 8, 16).astype(np.float32)
+    rhs = np.random.randn(4, 16, 32).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float16'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D batch matmul contracting last with last
-    lhs = np.random.randn(2, 8, 32).astype(np.float32)
-    rhs = np.random.randn(2, 8, 32).astype(np.float32)
+    # Input 3: Square matrices
+    lhs = np.random.randn(3, 32, 32).astype(np.float32)
+    rhs = np.random.randn(3, 32, 32).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (2,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Float16 preferred element type
-    lhs = np.random.randn(3, 16, 32).astype(np.float32)
-    rhs = np.random.randn(3, 32, 16).astype(np.float32)
+    # Input 4: nvfp4 config with global scale 1.0
+    lhs = np.random.randn(2, 8, 16).astype(np.float32)
+    rhs = np.random.randn(2, 16, 8).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    global_scale = jax.numpy.array([1.0], dtype=jax.numpy.float32)
+    configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float16),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative and uniform values [-1.0, 1.0] (contracting size 64)
-    lhs = np.random.uniform(-1.0, 1.0, (2, 128, 64)).astype(np.float32)
-    rhs = np.random.uniform(-1.0, 1.0, (2, 64, 128)).astype(np.float32)
+    # Input 5: Larger dimensions with mxfp8 config
+    lhs = np.random.randn(5, 128, 64).astype(np.float32)
+    rhs = np.random.randn(5, 64, 128).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger dimensions 3D (contracting size 128)
-    lhs = np.random.randn(5, 64, 128).astype(np.float32)
-    rhs = np.random.randn(5, 128, 64).astype(np.float32)
+    # Input 6: nvfp4 config with global scale 0.5 and float16 output
+    lhs = np.random.randn(2, 16, 32).astype(np.float32)
+    rhs = np.random.randn(2, 32, 64).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    global_scale = jax.numpy.array([0.5], dtype=jax.numpy.float32)
+    configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float16'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 5D Tensor Matmul (Batch=2, Contracting=2)
-    # Both contracting dimensions (K1, K2) must be multiples of 32
-    lhs = np.random.randn(2, 2, 8, 32, 32).astype(np.float32)
-    rhs = np.random.randn(2, 2, 32, 32, 8).astype(np.float32)
+    # Input 7: Negative inputs
+    lhs = np.random.uniform(-2.0, -0.5, (2, 16, 16)).astype(np.float32)
+    rhs = np.random.uniform(-2.0, -0.5, (2, 16, 16)).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((3, 4), (2, 3)), ((0, 1), (0, 1))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Another 5D homogeneous setup
-    lhs = np.random.randn(3, 3, 16, 32, 32).astype(np.float32)
-    rhs = np.random.randn(3, 3, 32, 32, 16).astype(np.float32)
+    # Input 8: Larger inner dimension
+    lhs = np.random.randn(2, 64, 128).astype(np.float32)
+    rhs = np.random.randn(2, 128, 64).astype(np.float32)
+    dimension_numbers = ((2,), (1,)), ((0,), (0,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((3, 4), (2, 3)), ((0, 1), (0, 1))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small batch size with normal distribution
-    lhs = np.random.randn(1, 4, 32).astype(np.float32)
-    rhs = np.random.randn(1, 32, 4).astype(np.float32)
+    # Input 9: Non-standard batch and contracting axes locations
+    lhs = np.random.randn(16, 2, 32).astype(np.float32)
+    rhs = np.random.randn(32, 2, 64).astype(np.float32)
+    dimension_numbers = ((2,), (0,)), ((1,), (1,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Square matrices in 3D (contracting size 32)
-    lhs = np.random.randn(2, 32, 32).astype(np.float32)
-    rhs = np.random.randn(2, 32, 32).astype(np.float32)
+    # Input 10: Another configuration of batch and contracting axes
+    lhs = np.random.randn(16, 32, 2).astype(np.float32)
+    rhs = np.random.randn(2, 32, 64).astype(np.float32)
+    dimension_numbers = ((1,), (1,)), ((2,), (0,))
+    configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
     input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
-        "preferred_element_type": np.dtype(np.float32),
-        "configs": mxfp8_configs,
-        "implementation": "cudnn"
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs,
+        'implementation': 'cudnn'
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 

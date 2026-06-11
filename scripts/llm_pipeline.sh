@@ -35,7 +35,7 @@ if [ ! -f llm/"$llm/tf_signatures.py" ]; then
     echo "signatures = {}" > llm/"$llm/tf_signatures.py"
 fi
 
-if [ ! -f llm/"$llm/jax_signatures.py" ]; then
+if [ ! -s llm/"$llm/jax_signatures.py" ]; then
     echo "signatures = {}" > llm/"$llm/jax_signatures.py"
 fi
 
@@ -48,7 +48,7 @@ if [ ! -f llm/"$llm/valid_inputs_tf.py" ]; then
     echo "generated_inputs = {}" > llm/"$llm/valid_inputs_tf.py"
 fi
 
-if [ ! -f llm/"$llm/valid_inputs_jax.py" ]; then
+if [ ! -s llm/"$llm/valid_inputs_jax.py" ]; then
     echo "generated_inputs = {}" > llm/"$llm/valid_inputs_jax.py"
 fi
 

@@ -3360,3 +3360,3831 @@ Rule 19 (correction value should be less than the size of the axis along which v
 Token usage: input=16512, output=936, total=23540
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 20 (valid range of axis as integer)
+{v_1 : tensor, v_2 : int} |= v_2 + ndim(v_1) ≥ 0 ∧ v_2 < ndim(v_1)
+Token usage: input=2606, output=641, total=8776
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (valid range of axis elements when axis is a tuple)
+{v_1 : tensor, v_2 : tuple(int)} |= v_2.len ≤ ndim(v_1) ∧ ∀i ∈ [0, v_2.len - 1] : (v_2[i] + ndim(v_1) ≥ 0 ∧ v_2[i] < ndim(v_1))
+Token usage: input=2606, output=641, total=8776
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (where tensor shape must match the input shape if their dimensions are equal)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i)
+Token usage: input=2606, output=641, total=8776
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (ddof must be less than the size of the reduction axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= v_2 ≥ 0 ∧ (if (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) then v_2 < shape(v_1, v_3)) ∧ (if (v_3 < 0 ∧ v_3 + ndim(v_1) ≥ 0) then v_2 < shape(v_1, v_3 + ndim(v_1)))
+Token usage: input=2606, output=641, total=8776
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (correction must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+Token usage: input=2606, output=641, total=8776
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (if keepdims is true and axis is non-negative, the mean tensor's shape at that axis must be 1)
+{v_1 : tensor, v_2 : tensor, v_3 : bool, v_4 : int} |= if (v_3 = true ∧ v_4 ≥ 0 ∧ v_4 < ndim(v_1) ∧ ndim(v_2) = ndim(v_1)) then shape(v_2, v_4) = 1
+Token usage: input=2606, output=641, total=8776
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (if keepdims is false and we reduce along a single axis, the rank of the mean tensor is ndim(a) - 1)
+{v_1 : tensor, v_2 : tensor, v_3 : bool, v_4 : int} |= if (v_3 = false ∧ v_4 ≥ 0 ∧ v_4 < ndim(v_1) ∧ ndim(v_1) > 1) then ndim(v_2) = ndim(v_1) - 1
+Token usage: input=2606, output=641, total=8776
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 27 (Where tensor must be a boolean tensor)
+{v_1 : tensor} |= dtype_(v_1) = 0
+Token usage: input=11443, output=362, total=15358
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 28 (Dtype of output cannot be string type)
+{v_1 : dtype} |= v_1 ≠ 11
+Token usage: input=11443, output=362, total=15358
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 29 (DDOF and Correction cannot be both provided)
+{v_1 : int, v_2 : int ⊎ float} |= v_1 = 0 ∨ v_2 = 0
+Token usage: input=11443, output=362, total=15358
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 30 (Mean tensor dimensions must not exceed input tensor dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_2) ≤ ndim(v_1)
+Token usage: input=11443, output=362, total=15358
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 31 (Correction parameter must be non-negative)
+{v_1 : float} |= v_1 ≥ 0
+Token usage: input=11443, output=362, total=15358
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 32 (Axes specified in a tuple must not contain duplicates)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : (∀j ∈ [0, v_1.len - 1] : (if i ≠ j then v_1[i] ≠ v_1[j]))
+Token usage: input=11443, output=362, total=15358
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 33 (DDOF must be less than the size of the reduced dimension when a single axis is provided in a tuple)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int} |= if v_2.len = 1 ∧ v_2[0] ≥ 0 ∧ v_2[0] < ndim(v_1) then v_3 < shape(v_1, v_2[0])
+Token usage: input=11443, output=362, total=15358
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 34 (mean tensor must be a float or complex type)
+{v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 35 (if input is 1D, ddof must be less than the size of the array)
+{v_1 : tensor, v_2 : int} |= if ndim(v_1) = 1 then v_2 < shape(v_1, 0)
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 36 (dtype of variance output must be a numeric/complex type)
+{v_1 : dtype} |= v_1 ≥ 1 ∧ v_1 ≤ 10
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 37 (when keepdims is true and mean is provided, mean must have the same number of dimensions as input)
+{v_1 : tensor, v_2 : bool, v_3 : tensor} |= if v_2 = true then ndim(v_3) = ndim(v_1)
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 38 (tuple axis length must not exceed input tensor dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= v_2.len ≤ ndim(v_1)
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 39 (if correction is provided as a non-zero value, ddof must be 0)
+{v_1 : int, v_2 : int ⊎ float} |= if v_2 > 0 then v_1 = 0
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 40 (axis must be in valid range [-ndim, ndim-1])
+{v_1 : tensor, v_2 : int} |= v_2 < ndim(v_1) ∧ v_2 + ndim(v_1) ≥ 0
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.var API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the variance along a given axis.
+
+  JAX implementation of :func:`numpy.var`.
+
+  Args:
+    a: input array.
+    axis: optional, int or sequence of ints, default=None. Axis along which the
+      variance is computed. If None, variance is computed along all the axes.
+    dtype: The type of the output array. Default=None.
+    ddof: int, default=0. Degrees of freedom. The divisor in the variance computation
+      is ``N-ddof``, ``N`` is number of elements along given axis.
+    keepdims: bool, default=False. If true, reduced axes are left in the result
+      with size 1.
+    where: optional, boolean array, default=None. The elements to be used in the
+      variance. Array should be broadcast compatible to the input.
+    mean: optional, mean of the input array, computed along the given axis.
+      If provided, it will be used to compute the variance instead of
+      computing it from the input array. If specified, mean must be broadcast-compatible
+      with the input array. In the general case, this can be achieved by computing the mean with
+      ``keepdims=True`` and ``axis`` matching this function's ``axis`` argument.
+    correction: int or float, default=None. Alternative name for ``ddof``.
+      Both ddof and correction can't be provided simultaneously.
+    out: Unused by JAX.
+
+  Returns:
+    An array of the variance along the given axis.
+
+  See also:
+    - :func:`jax.numpy.mean`: Compute the mean of array elements over a given axis.
+    - :func:`jax.numpy.std`: Compute the standard deviation of array elements over
+      given axis.
+    - :func:`jax.numpy.nanvar`: Compute the variance along a given axis, ignoring
+      NaNs values.
+    - :func:`jax.numpy.nanstd`: Computed the standard deviation of a given axis,
+      ignoring NaN values.
+
+  Examples:
+    By default, ``jnp.var`` computes the variance along all axes.
+
+    >>> x = jnp.array([[1, 3, 4, 2],
+    ...                [5, 2, 6, 3],
+    ...                [8, 4, 2, 9]])
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   jnp.var(x)
+    Array(5.74, dtype=float32)
+
+    If ``axis=1``, variance is computed along axis 1.
+
+    >>> jnp.var(x, axis=1)
+    Array([1.25  , 2.5   , 8.1875], dtype=float32)
+
+    To preserve the dimensions of input, you can set ``keepdims=True``.
+
+    >>> jnp.var(x, axis=1, keepdims=True)
+    Array([[1.25  ],
+           [2.5   ],
+           [8.1875]], dtype=float32)
+
+    If ``ddof=1``:
+
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, ddof=1))
+    [[ 1.67]
+     [ 3.33]
+     [10.92]]
+
+    To include specific elements of the array to compute variance, you can use
+    ``where``.
+
+    >>> where = jnp.array([[1, 0, 1, 0],
+    ...                    [0, 1, 1, 0],
+    ...                    [1, 1, 1, 0]], dtype=bool)
+    >>> with jnp.printoptions(precision=2, suppress=True):
+    ...   print(jnp.var(x, axis=1, keepdims=True, where=where))
+    [[2.25]
+     [4.  ]
+     [6.22]]
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: integer
+ - a: tensor, axis: integer, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+ - a: tensor, axis: tuple, dtype: dtype, ddof: integer, keepdims: boolean, where: tensor, mean: tensor, correction: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 41 (all axes in a tuple must be in valid range [-ndim, ndim-1])
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : (v_2[i] < ndim(v_1) ∧ v_2[i] + ndim(v_1) ≥ 0)
+Token usage: input=17914, output=480, total=22721
+** SUCCESS **
+

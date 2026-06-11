@@ -3438,3 +3438,1887 @@ Rule 22 (if fill value is a float, the input tensor should have a floating-point
 Token usage: input=24761, output=226, total=28359
 ** REDUNDANT VARIABLES ** (num_failures: 9)
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (input arrays must be 1-dimensional tensors)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 1 ∧ ndim(v_2) = 1
+Token usage: input=2464, output=183, total=5945
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (size parameter must be non-negative)
+{v_3 : int} |= v_3 ≥ 0
+Token usage: input=2464, output=183, total=5945
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (input arrays must have the same data type)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Token usage: input=2464, output=183, total=5945
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (fill value tensor must be a scalar with the same data type as the input array)
+{v_1 : tensor, v_4 : tensor} |= ndim(v_4) = 0 ∧ dtype_(v_1) = dtype_(v_4)
+Token usage: input=2464, output=183, total=5945
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 1 ∧ ndim(v_2) = 1
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (At least one input array should be non-empty to avoid a trivial empty union)
+{v_1 : tensor, v_2 : tensor} |= shape(v_1, 0) > 0 ∨ shape(v_2, 0) > 0
+Token usage: input=8418, output=251, total=13596
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 1 ∧ ndim(v_2) = 1
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (If fill_value is a float, the input array should be of a floating-point or complex type to prevent precision loss during padding)
+{v_1 : tensor, v_4 : float} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+Token usage: input=8418, output=251, total=13596
+** REDUNDANT VARIABLES ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 1 ∧ ndim(v_2) = 1
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 27 (If fill_value is a tensor, it must be a 0-dimensional scalar tensor)
+{v_4 : tensor} |= ndim(v_4) = 0
+Token usage: input=8418, output=251, total=13596
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 1 ∧ ndim(v_2) = 1
+Duplicated rule: {v_3 : int} |= v_3 ≥ 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 28 (The size of the output, if specified, should be reasonably bounded by the maximum possible union size to avoid excessive padding)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= v_3 ≤ shape(v_1, 0) + shape(v_2, 0) + 10
+Token usage: input=8418, output=251, total=13596
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_4 : float} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10 (Unused: v_4)
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 29 (The combined dimension count of both input tensors must be at least 2)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) + ndim(v_2) ≥ 2
+Token usage: input=16036, output=261, total=20313
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_4 : float} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10 (Unused: v_4)
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 30 (If size is specified as a very large number, the integer fill value should be non-zero to be easily distinguishable)
+{v_3 : int, v_4 : int} |= if v_3 > 100 then v_4 ≠ 0
+Token usage: input=16036, output=261, total=20313
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_4 : float} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10 (Unused: v_4)
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 31 (The fill value tensor must have a lower dimension than the input array, ensuring it is a scalar)
+{v_1 : tensor, v_4 : tensor} |= ndim(v_4) < ndim(v_1)
+Token usage: input=16036, output=261, total=20313
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : tensor, v_4 : float} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10 (Unused: v_4)
+Duplicated rule: {v_4 : tensor} |= ndim(v_4) = 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.union1d API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the set union of two 1D arrays.
+
+  JAX implementation of :func:`numpy.union1d`.
+
+  Because the size of the output of ``union1d`` is data-dependent, the function
+  is not typically compatible with :func:`~jax.jit` and other JAX transformations.
+  The JAX version adds the optional ``size`` argument which must be specified
+  statically for ``jnp.union1d`` to be used in such contexts.
+
+  Args:
+    ar1: first array of elements to be unioned.
+    ar2: second array of elements to be unioned
+    size: if specified, return only the first ``size`` sorted elements. If there are fewer
+      elements than ``size`` indicates, the return value will be padded with ``fill_value``.
+    fill_value: when ``size`` is specified and there are fewer than the indicated number of
+      elements, fill the remaining entries ``fill_value``. Defaults to the minimum value.
+
+  Returns:
+    an array containing the union of elements in the input array.
+
+  See also:
+    - :func:`jax.numpy.intersect1d`: the set intersection of two 1D arrays.
+    - :func:`jax.numpy.setxor1d`: the set XOR of two 1D arrays.
+    - :func:`jax.numpy.setdiff1d`: the set difference of two 1D arrays.
+
+  Examples:
+    Computing the union of two arrays:
+
+    >>> ar1 = jnp.array([1, 2, 3, 4])
+    >>> ar2 = jnp.array([3, 4, 5, 6])
+    >>> jnp.union1d(ar1, ar2)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    Because the output shape is dynamic, this will fail under :func:`~jax.jit` and other
+    transformations:
+
+    >>> jax.jit(jnp.union1d)(ar1, ar2)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+       ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[4].
+    The error occurred while tracing the function union1d at /Users/vanderplas/github/jax-ml/jax/jax/_src/numpy/setops.py:101 for jit. This concrete value was not available in Python because it depends on the value of the argument ar1.
+
+    In order to ensure statically-known output shapes, you can pass a static ``size``
+    argument:
+
+    >>> jit_union1d = jax.jit(jnp.union1d, static_argnames=['size'])
+    >>> jit_union1d(ar1, ar2, size=6)
+    Array([1, 2, 3, 4, 5, 6], dtype=int32)
+
+    If ``size`` is too small, the union is truncated:
+
+    >>> jit_union1d(ar1, ar2, size=4)
+    Array([1, 2, 3, 4], dtype=int32)
+
+    If ``size`` is too large, then the output is padded with ``fill_value``:
+
+    >>> jit_union1d(ar1, ar2, size=8, fill_value=0)
+    Array([1, 2, 3, 4, 5, 6, 0, 0], dtype=int32)
+
+[Possible API Signatures]
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: tensor
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: integer
+ - ar1: tensor, ar2: tensor, size: integer, fill_value: float
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 32 (If size is greater than the size of the first input array, the float fill value should be within a standard practical range)
+{v_1 : tensor, v_3 : int, v_4 : float} |= if v_3 > shape(v_1, 0) then v_4 ≥ -100000 ∧ v_4 ≤ 100000
+Token usage: input=16036, output=261, total=20313
+** SUCCESS **
+

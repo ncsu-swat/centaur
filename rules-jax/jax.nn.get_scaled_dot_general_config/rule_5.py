@@ -10,8 +10,8 @@ from z3 import *
 # if mode is "none", global_scale must have positive elements (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 6, Select(v["arg2_range"], 0) > 0, True)) if n else
-          If(v["arg1_value"] == 6, Select(v["arg2_range"], 0) > 0, True))
+    s.add(Not(If(v["arg1_value"] == 5, Select(v["arg2_range"], 0) > 0, True)) if n else
+          If(v["arg1_value"] == 5, Select(v["arg2_range"], 0) > 0, True))
 )
 
 def rule_5_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_5_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments

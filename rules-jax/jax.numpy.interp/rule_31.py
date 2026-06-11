@@ -10,8 +10,8 @@ from z3 import *
 # if left is a string, it must be selected from the valid list (Rule 31)
 
 rule_31 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 6, v["arg1_value"] == 22)) if n else
-          Or(v["arg1_value"] == 6, v["arg1_value"] == 22))
+    s.add(Not(Or(v["arg1_value"] == 5, v["arg1_value"] == 20)) if n else
+          Or(v["arg1_value"] == 5, v["arg1_value"] == 20))
 )
 
 def rule_31_func(arg1, solver=None, neg=False):
@@ -24,7 +24,7 @@ def rule_31_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

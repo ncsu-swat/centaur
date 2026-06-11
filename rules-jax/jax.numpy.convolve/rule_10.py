@@ -10,8 +10,8 @@ from z3 import *
 # mode parameter must be selected from the valid string options same or valid (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 22, v["arg1_value"] == 21)) if n else
-          Or(v["arg1_value"] == 22, v["arg1_value"] == 21))
+    s.add(Not(Or(v["arg1_value"] == 20, v["arg1_value"] == 19)) if n else
+          Or(v["arg1_value"] == 20, v["arg1_value"] == 19))
 )
 
 def rule_10_func(arg1, solver=None, neg=False):
@@ -24,7 +24,7 @@ def rule_10_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

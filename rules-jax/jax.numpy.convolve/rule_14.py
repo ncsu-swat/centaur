@@ -10,8 +10,8 @@ from z3 import *
 # mode parameter must be a valid option and the first input tensor must have a positive size (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And((Or(v["arg2_value"] == 21, v["arg2_value"] == 22)), Select(v["arg1_shape"], 0) > 0)) if n else
-          And((Or(v["arg2_value"] == 21, v["arg2_value"] == 22)), Select(v["arg1_shape"], 0) > 0))
+    s.add(Not(And((Or(v["arg2_value"] == 19, v["arg2_value"] == 20)), Select(v["arg1_shape"], 0) > 0)) if n else
+          And((Or(v["arg2_value"] == 19, v["arg2_value"] == 20)), Select(v["arg1_shape"], 0) > 0))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):
@@ -28,7 +28,7 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
-        arg2_value = String('arg2_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         for i in range(arg1.ndim):

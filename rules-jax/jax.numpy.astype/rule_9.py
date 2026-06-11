@@ -10,8 +10,8 @@ from z3 import *
 # Casting with target dtype specified as dtype or string (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 0, v["arg2_value"] == 6)))) if n else
-          And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 0, v["arg2_value"] == 6))))
+    s.add(Not(And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 0, v["arg2_value"] == 5)))) if n else
+          And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 0, v["arg2_value"] == 5))))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):

@@ -10,8 +10,8 @@ from z3 import *
 # If the first input is the string "same", the second input string must not be "none" (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 22, v["arg2_value"] != 6, True)) if n else
-          If(v["arg1_value"] == 22, v["arg2_value"] != 6, True))
+    s.add(Not(If(v["arg1_value"] == 20, v["arg2_value"] != 5, True)) if n else
+          If(v["arg1_value"] == 20, v["arg2_value"] != 5, True))
 )
 
 def rule_19_func(arg1, arg2, solver=None, neg=False):
@@ -27,8 +27,8 @@ def rule_19_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
-        arg2_value = String('arg2_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

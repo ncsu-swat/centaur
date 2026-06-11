@@ -10,8 +10,8 @@ from z3 import *
 # The order parameter should not be set to typical padding or default mode strings (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_value"] != 22, v["arg1_value"] != 21), v["arg1_value"] != 6)) if n else
-          And(And(v["arg1_value"] != 22, v["arg1_value"] != 21), v["arg1_value"] != 6))
+    s.add(Not(And(And(v["arg1_value"] != 20, v["arg1_value"] != 19), v["arg1_value"] != 5)) if n else
+          And(And(v["arg1_value"] != 20, v["arg1_value"] != 19), v["arg1_value"] != 5))
 )
 
 def rule_12_func(arg1, solver=None, neg=False):
@@ -24,7 +24,7 @@ def rule_12_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

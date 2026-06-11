@@ -10,8 +10,8 @@ from z3 import *
 # Result type of a string specifier and a boolean value (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(And((Or(v["arg1_value"] == 6, v["arg1_value"] == 22)), v["arg2_value"] == True)) if n else
-          And((Or(v["arg1_value"] == 6, v["arg1_value"] == 22)), v["arg2_value"] == True))
+    s.add(Not(And((Or(v["arg1_value"] == 5, v["arg1_value"] == 20)), v["arg2_value"] == True)) if n else
+          And((Or(v["arg1_value"] == 5, v["arg1_value"] == 20)), v["arg2_value"] == True))
 )
 
 def rule_19_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_19_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_value = Bool('arg2_value')
 
         # Value assignments

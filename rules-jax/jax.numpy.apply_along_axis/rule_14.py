@@ -10,8 +10,8 @@ from z3 import *
 # If the function is an activation like relu, sigmoid, or softmax, the input tensor cannot have a boolean or string data type (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(If(Or(Or(v["arg1_value"] == 11, v["arg1_value"] == 13), v["arg1_value"] == 14), And(v["arg2_dtype"] != 0, v["arg2_dtype"] != 11), True)) if n else
-          If(Or(Or(v["arg1_value"] == 11, v["arg1_value"] == 13), v["arg1_value"] == 14), And(v["arg2_dtype"] != 0, v["arg2_dtype"] != 11), True))
+    s.add(Not(If(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 12), v["arg1_value"] == 13), And(v["arg2_dtype"] != 0, v["arg2_dtype"] != 11), True)) if n else
+          If(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 12), v["arg1_value"] == 13), And(v["arg2_dtype"] != 0, v["arg2_dtype"] != 11), True))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_dtype = Int('arg2_dtype')
 
         # Value assignments

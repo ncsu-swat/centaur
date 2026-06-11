@@ -10,8 +10,8 @@ from z3 import *
 # Activation functions require floating-point or complex input tensor types (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(Or(Or(Or(Or(v["arg1_value"] == 11, v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14), v["arg1_value"] == 17), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 10), True)) if n else
-          If(Or(Or(Or(Or(v["arg1_value"] == 11, v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14), v["arg1_value"] == 17), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 10), True))
+    s.add(Not(If(Or(Or(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 11), v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 10), True)) if n else
+          If(Or(Or(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 11), v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 10), True))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_dtype = Int('arg2_dtype')
 
         # Value assignments

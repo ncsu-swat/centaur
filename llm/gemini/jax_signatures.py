@@ -9319,3 +9319,1052 @@ signatures["jax.nn.tanh_3"] = {
     "kwargs": {},
     "inner": {}
 }
+signatures["jax.lax.conv_1"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "window_strides": "list",
+        "padding": "string"
+    },
+    "kwargs": {
+        "precision": "string",  # Can be Precision enum (mapped to string) or tuple of enums
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.conv_2"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "window_strides": "tuple",
+        "padding": "string"
+    },
+    "kwargs": {
+        "precision": "tuple",
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.lax.conv_general_dilated_1"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "window_strides": "list",
+        "padding": "string"
+    },
+    "kwargs": {
+        "lhs_dilation": "list",
+        "rhs_dilation": "list",
+        "dimension_numbers": "tuple",
+        "feature_group_count": "integer",
+        "batch_group_count": "integer",
+        "precision": "string",
+        "preferred_element_type": "dtype",
+        "out_sharding": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.conv_general_dilated_2"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "window_strides": "list",
+        "padding": "list"
+    },
+    "kwargs": {
+        "lhs_dilation": "list",
+        "rhs_dilation": "list",
+        "dimension_numbers": "tuple",
+        "feature_group_count": "integer",
+        "batch_group_count": "integer",
+        "precision": "string",
+        "preferred_element_type": "dtype",
+        "out_sharding": "string"
+    },
+    "inner": {}
+}
+signatures["jax.lax.conv_transpose_1"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "strides": "tuple",
+        "padding": "string"
+    },
+    "kwargs": {
+        "rhs_dilation": "tuple",
+        "dimension_numbers": "tuple",
+        "transpose_kernel": "boolean",
+        "precision": "string",
+        "preferred_element_type": "dtype",
+        "use_consistent_padding": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.conv_transpose_2"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "strides": "list",
+        "padding": "list"
+    },
+    "kwargs": {
+        "rhs_dilation": "list",
+        "dimension_numbers": "tuple",
+        "transpose_kernel": "boolean",
+        "precision": "string",
+        "preferred_element_type": "dtype",
+        "use_consistent_padding": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.conv_transpose_3"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "strides": "tuple",
+        "padding": "tuple"
+    },
+    "kwargs": {
+        "rhs_dilation": "tuple",
+        "dimension_numbers": "tuple",
+        "transpose_kernel": "boolean",
+        "precision": "string",
+        "preferred_element_type": "dtype",
+        "use_consistent_padding": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.dot_1"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor"
+    },
+    "kwargs": {
+        "dimension_numbers": "tuple",
+        "precision": "string",  # Precision can be a string (e.g., 'default', 'high', 'highest')
+        "preferred_element_type": "dtype",
+        "out_sharding": "tuple"  # Sharding specification mapped to tuple
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dot_2"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor"
+    },
+    "kwargs": {
+        "dimension_numbers": "tuple",
+        "precision": "tuple",  # Precision can also be a tuple of two Precision enums
+        "preferred_element_type": "dtype",
+        "out_sharding": "tuple"  # Sharding specification mapped to tuple
+    },
+    "inner": {}
+}
+signatures["jax.lax.dot_general_1"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "dimension_numbers": "tuple"  # Expected: ((lhs_contracting, rhs_contracting), (lhs_batch, rhs_batch))
+    },
+    "kwargs": {
+        "precision": "string",
+        "preferred_element_type": "dtype",
+        "out_sharding": "tuple"  # Expected: Sharding object or None, mapped to tuple as closest match
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dot_general_2"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor",
+        "dimension_numbers": "tuple"
+    },
+    "kwargs": {
+        "precision": "tuple",
+        "preferred_element_type": "dtype",
+        "out_sharding": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.lax.batch_matmul_1"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor"
+    },
+    "kwargs": {
+        "precision": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.batch_matmul_2"] = {
+    "args": {
+        "lhs": "tensor",
+        "rhs": "tensor"
+    },
+    "kwargs": {
+        "precision": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.lax.reduce_sum_1"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_sum_2"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reduce_max_1"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_max_2"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reduce_min_1"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_min_2"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reduce_prod_1"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_prod_2"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.gather_1"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tensor",
+        "dimension_numbers": "tuple",  # GatherDimensionNumbers is a namedtuple
+        "slice_sizes": "tuple"
+    },
+    "kwargs": {
+        "unique_indices": "boolean",
+        "indices_are_sorted": "boolean",
+        "mode": "string",
+        "fill_value": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.gather_2"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tensor",
+        "dimension_numbers": "tuple",  # GatherDimensionNumbers is a namedtuple
+        "slice_sizes": "tuple"
+    },
+    "kwargs": {
+        "unique_indices": "boolean",
+        "indices_are_sorted": "boolean",
+        "mode": "string",
+        "fill_value": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.gather_3"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tensor",
+        "dimension_numbers": "tuple",  # GatherDimensionNumbers is a namedtuple
+        "slice_sizes": "tuple"
+    },
+    "kwargs": {
+        "unique_indices": "boolean",
+        "indices_are_sorted": "boolean",
+        "mode": "string",
+        "fill_value": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.gather_4"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tensor",
+        "dimension_numbers": "tuple",  # GatherDimensionNumbers is a namedtuple
+        "slice_sizes": "list"
+    },
+    "kwargs": {
+        "unique_indices": "boolean",
+        "indices_are_sorted": "boolean",
+        "mode": "string",
+        "fill_value": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.gather_5"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tensor",
+        "dimension_numbers": "tuple",  # GatherDimensionNumbers is a namedtuple
+        "slice_sizes": "list"
+    },
+    "kwargs": {
+        "unique_indices": "boolean",
+        "indices_are_sorted": "boolean",
+        "mode": "string",
+        "fill_value": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.gather_6"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tensor",
+        "dimension_numbers": "tuple",  # GatherDimensionNumbers is a namedtuple
+        "slice_sizes": "list"
+    },
+    "kwargs": {
+        "unique_indices": "boolean",
+        "indices_are_sorted": "boolean",
+        "mode": "string",
+        "fill_value": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.scatter"] = {
+    "args": {
+        "operand": "tensor",
+        "scatter_indices": "tensor",
+        "updates": "tensor",
+        "dimension_numbers": "tuple"  # Actually a lax.ScatterDimensionNumbers object, which resembles a tuple/struct of dimension mappings
+    },
+    "kwargs": {
+        "indices_are_sorted": "boolean",
+        "unique_indices": "boolean",
+        "mode": "string"  # Can be a string or GatherScatterMode enum
+    },
+    "inner": {}
+}
+signatures["jax.lax.scatter_add"] = {
+    "args": {
+        "operand": "tensor",
+        "scatter_indices": "tensor",
+        "updates": "tensor",
+        "dimension_numbers": "tuple"  # closest type for ScatterDimensionNumbers
+    },
+    "kwargs": {
+        "indices_are_sorted": "boolean",
+        "unique_indices": "boolean",
+        "mode": "string"  # can be string or GatherScatterMode enum
+    },
+    "inner": {}
+}
+signatures["jax.lax.scatter_mul"] = {
+    "args": {
+        "operand": "tensor",
+        "scatter_indices": "tensor",
+        "updates": "tensor",
+        "dimension_numbers": "tuple" # ScatterDimensionNumbers is a structured tuple-like object
+    },
+    "kwargs": {
+        "indices_are_sorted": "boolean",
+        "unique_indices": "boolean",
+        "mode": "string"
+    },
+    "inner": {}
+}
+signatures["jax.lax.dynamic_slice_1"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tuple",
+        "slice_sizes": "tuple"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_slice_2"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "list",
+        "slice_sizes": "list"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_slice_3"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tensor",
+        "slice_sizes": "tuple"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.dynamic_update_slice_1"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "list"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_2"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "tuple"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_3"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "tensor"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_4"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "list"
+    },
+    "kwargs": {
+        "allow_negative_indices": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_5"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "tuple"
+    },
+    "kwargs": {
+        "allow_negative_indices": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_6"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "tensor"
+    },
+    "kwargs": {
+        "allow_negative_indices": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_7"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "list"
+    },
+    "kwargs": {
+        "allow_negative_indices": "tuple"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_8"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "tuple"
+    },
+    "kwargs": {
+        "allow_negative_indices": "tuple"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_9"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_indices": "tensor"
+    },
+    "kwargs": {
+        "allow_negative_indices": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.lax.pad_1"] = {
+    "args": {
+        "operand": "tensor",
+        "padding_value": "tensor",
+        "padding_config": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.pad_2"] = {
+    "args": {
+        "operand": "tensor",
+        "padding_value": "tensor",
+        "padding_config": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.broadcast_in_dim_1"] = {
+    "args": {
+        "operand": "tensor",
+        "shape": "tuple",
+        "broadcast_dimensions": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.broadcast_in_dim_2"] = {
+    "args": {
+        "operand": "tensor",
+        "shape": "tuple",
+        "broadcast_dimensions": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.broadcast_in_dim_3"] = {
+    "args": {
+        "operand": "tensor",
+        "shape": "list",
+        "broadcast_dimensions": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.broadcast_in_dim_4"] = {
+    "args": {
+        "operand": "tensor",
+        "shape": "list",
+        "broadcast_dimensions": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reshape_1"] = {
+    "args": {
+        "operand": "tensor",
+        "new_sizes": "tuple",
+        "dimensions": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reshape_2"] = {
+    "args": {
+        "operand": "tensor",
+        "new_sizes": "tuple",
+        "dimensions": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reshape_3"] = {
+    "args": {
+        "operand": "tensor",
+        "new_sizes": "list",
+        "dimensions": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reshape_4"] = {
+    "args": {
+        "operand": "tensor",
+        "new_sizes": "list",
+        "dimensions": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.transpose_1"] = {
+    "args": {
+        "operand": "tensor",
+        "permutation": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.transpose_2"] = {
+    "args": {
+        "operand": "tensor",
+        "permutation": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.transpose_3"] = {
+    "args": {
+        "operand": "tensor",
+        "permutation": "tensor"  # np.ndarray mapped to tensor
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.concatenate_1"] = {
+    "args": {
+        "operands": "tensor_list",
+        "dimension": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.concatenate_2"] = {
+    "args": {
+        "operands": "tensor",
+        "dimension": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.slice_1"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "list",
+        "limit_indices": "list",
+    },
+    "kwargs": {
+        "strides": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.slice_2"] = {
+    "args": {
+        "operand": "tensor",
+        "start_indices": "tuple",
+        "limit_indices": "tuple",
+    },
+    "kwargs": {
+        "strides": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.lax.select"] = {
+    "args": {
+        "pred": "tensor",
+        "on_true": "tensor",
+        "on_false": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.top_k"] = {
+    "args": {
+        "operand": "tensor",
+        "k": "integer"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.lax.sort_1"] = {
+    "args": {
+        "operand": "tensor"
+    },
+    "kwargs": {
+        "dimension": "integer",
+        "is_stable": "boolean",
+        "num_keys": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.sort_2"] = {
+    "args": {
+        "operand": "tensor_list"
+    },
+    "kwargs": {
+        "dimension": "integer",
+        "is_stable": "boolean",
+        "num_keys": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.lax.sort_key_val"] = {
+    "args": {
+        "keys": "tensor",
+        "values": "tensor"
+    },
+    "kwargs": {
+        "dimension": "integer",
+        "is_stable": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.convert_element_type_1"] = {
+    "args": {
+        "operand": "tensor",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.convert_element_type_2"] = {
+    "args": {
+        "operand": "integer",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.convert_element_type_3"] = {
+    "args": {
+        "operand": "float",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.convert_element_type_4"] = {
+    "args": {
+        "operand": "boolean",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.clamp_1"] = {
+    "args": {
+        "min": "tensor",
+        "x": "tensor",
+        "max": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.clamp_2"] = {
+    "args": {
+        "min": "float",
+        "x": "tensor",
+        "max": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.clamp_3"] = {
+    "args": {
+        "min": "integer",
+        "x": "tensor",
+        "max": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.rsqrt_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # AccuracyMode representing implementation choice
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.rsqrt_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # lax.Tolerance which is a named tuple of floats
+    },
+    "inner": {}
+}
+signatures["jax.lax.integer_pow"] = {
+    "args": {
+        "x": "tensor",
+        "y": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.sqrt"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # Should be lax.Tolerance or lax.AccuracyMode custom object
+    },
+    "inner": {}
+}
+signatures["jax.lax.exp_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # AccuracyMode representing the implementation mode
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.exp_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # Tolerance object (typically represented as a tuple of floats)
+    },
+    "inner": {}
+}
+signatures["jax.lax.log_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # For lax.AccuracyMode enum
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.log_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # For lax.Tolerance (relative, absolute) tolerance pair
+    },
+    "inner": {}
+}
+signatures["jax.lax.tanh"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # accuracy can be Tolerance or AccuracyMode. Choosing "string" as a close match for AccuracyMode enums.
+    },
+    "inner": {}
+}
+signatures["jax.lax.erf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erf_4"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.lgamma_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.lgamma_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.lgamma_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.lgamma_4"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.digamma_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.digamma_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.digamma_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.digamma_4"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.igamma"] = {
+    "args": {
+        "a": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.fft_1"] = {
+    "args": {
+        "x": "tensor",
+        "fft_type": "string",
+        "fft_lengths": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.fft_2"] = {
+    "args": {
+        "x": "tensor",
+        "fft_type": "string",
+        "fft_lengths": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.cumsum"] = {
+    "args": {
+        "operand": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "reverse": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.cumprod"] = {
+    "args": {
+        "operand": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "reverse": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.iota"] = {
+    "args": {
+        "dtype": "dtype",
+        "size": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}

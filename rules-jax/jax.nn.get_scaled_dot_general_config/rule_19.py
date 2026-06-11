@@ -10,8 +10,8 @@ from z3 import *
 # if mode is none, then the maximum value of global_scale must be greater than 0 (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 6, Select(v["arg2_range"], 1) > 0, True)) if n else
-          If(v["arg1_value"] == 6, Select(v["arg2_range"], 1) > 0, True))
+    s.add(Not(If(v["arg1_value"] == 5, Select(v["arg2_range"], 1) > 0, True)) if n else
+          If(v["arg1_value"] == 5, Select(v["arg2_range"], 1) > 0, True))
 )
 
 def rule_19_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_19_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments

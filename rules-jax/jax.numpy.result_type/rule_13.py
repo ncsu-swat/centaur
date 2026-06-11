@@ -10,8 +10,8 @@ from z3 import *
 # Result type of a string parameter and a tensor (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(And((Or(v["arg1_value"] == 6, v["arg1_value"] == 22)), v["arg2_ndim"] > 0)) if n else
-          And((Or(v["arg1_value"] == 6, v["arg1_value"] == 22)), v["arg2_ndim"] > 0))
+    s.add(Not(And((Or(v["arg1_value"] == 5, v["arg1_value"] == 20)), v["arg2_ndim"] > 0)) if n else
+          And((Or(v["arg1_value"] == 5, v["arg1_value"] == 20)), v["arg2_ndim"] > 0))
 )
 
 def rule_13_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_13_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_ndim = Int('arg2_ndim')
 
         # Value assignments

@@ -10,8 +10,8 @@ from z3 import *
 # matching tensor dtype with target dtype under same casting (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 22, v["arg1_dtype"] == v["arg2_value"], And(v["arg1_ndim"] >= 0, v["arg2_value"] == v["arg2_value"]))) if n else
-          If(v["arg3_value"] == 22, v["arg1_dtype"] == v["arg2_value"], And(v["arg1_ndim"] >= 0, v["arg2_value"] == v["arg2_value"])))
+    s.add(Not(If(v["arg3_value"] == 20, v["arg1_dtype"] == v["arg2_value"], And(v["arg1_ndim"] >= 0, v["arg2_value"] == v["arg2_value"]))) if n else
+          If(v["arg3_value"] == 20, v["arg1_dtype"] == v["arg2_value"], And(v["arg1_ndim"] >= 0, v["arg2_value"] == v["arg2_value"])))
 )
 
 def rule_15_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -33,7 +33,7 @@ def rule_15_func(arg1, arg2, arg3, solver=None, neg=False):
         arg1_ndim = Int('arg1_ndim')
         arg1_dtype = Int('arg1_dtype')
         arg2_value = Int('arg2_value')
-        arg3_value = String('arg3_value')
+        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
@@ -42,9 +42,9 @@ def rule_15_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
+        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)
+        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)

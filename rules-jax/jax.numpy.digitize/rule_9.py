@@ -10,8 +10,8 @@ from z3 import *
 # valid options for the right and method arguments (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And((Or(v["arg1_value"] == True, v["arg1_value"] == False)), v["arg2_value"] == 6)) if n else
-          And((Or(v["arg1_value"] == True, v["arg1_value"] == False)), v["arg2_value"] == 6))
+    s.add(Not(And((Or(v["arg1_value"] == True, v["arg1_value"] == False)), v["arg2_value"] == 5)) if n else
+          And((Or(v["arg1_value"] == True, v["arg1_value"] == False)), v["arg2_value"] == 5))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):
@@ -28,7 +28,7 @@ def rule_9_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_value = Bool('arg1_value')
-        arg2_value = String('arg2_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_value == arg1)

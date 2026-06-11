@@ -3394,3 +3394,2817 @@ Rule 22 (Dimension numbers tuple must contain elements)
 Token usage: input=17038, output=326, total=20313
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (ndim of lhs must be at least 1)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=2265, output=231, total=7303
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (ndim of rhs must be at least 1)
+{v_2 : tensor} |= ndim(v_2) ≥ 1
+Token usage: input=2265, output=231, total=7303
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (lhs and rhs must have the same data type)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Token usage: input=2265, output=231, total=7303
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (preferred_element_type must be a floating-point type)
+{v_4 : dtype} |= v_4 = 6 ∨ v_4 = 7 ∨ v_4 = 8
+Token usage: input=2265, output=231, total=7303
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 27 (dimension_numbers tuple length must be 2)
+{v_3 : tuple(tuple(list(int)))} |= v_3.len = 2
+Token usage: input=2265, output=231, total=7303
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 28 (configs list must have exactly 3 elements)
+{v_5 : list(tensor)} |= v_5.len = 3
+Token usage: input=2265, output=231, total=7303
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Duplicated rule: {v_4 : dtype} |= v_4 = 6 ∨ v_4 = 7 ∨ v_4 = 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 29 (if both inputs are 1D, their shapes must be equal)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
+Token usage: input=9718, output=325, total=15145
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Duplicated rule: {v_4 : dtype} |= v_4 = 6 ∨ v_4 = 7 ∨ v_4 = 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 30 (if lhs has at least 1 dimension, dimension_numbers tuple length must be 2)
+{v_1 : tensor, v_3 : tuple(tuple(list(int)))} |= if ndim(v_1) ≥ 1 then v_3.len = 2
+Token usage: input=9718, output=325, total=15145
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Duplicated rule: {v_4 : dtype} |= v_4 = 6 ∨ v_4 = 7 ∨ v_4 = 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 31 (if the input lhs is a floating-point type, preferred_element_type should also be a floating-point type)
+{v_1 : tensor, v_4 : dtype} |= if dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 8 then v_4 ≥ 6 ∧ v_4 ≤ 8
+Token usage: input=9718, output=325, total=15145
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Duplicated rule: {v_4 : dtype} |= v_4 = 6 ∨ v_4 = 7 ∨ v_4 = 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 32 (configs list length must be at most 3)
+{v_5 : list(tensor)} |= v_5.len ≤ 3
+Token usage: input=9718, output=325, total=15145
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Duplicated rule: {v_4 : dtype} |= v_4 = 6 ∨ v_4 = 7 ∨ v_4 = 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 33 (implementation parameter must be "none")
+{v_6 : str} |= v_6 = "none"
+Token usage: input=9718, output=325, total=15145
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Duplicated rule: {v_4 : dtype} |= v_4 = 6 ∨ v_4 = 7 ∨ v_4 = 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 34 (lhs dimension count must be at most 8)
+{v_1 : tensor} |= ndim(v_1) ≤ 8
+Token usage: input=9718, output=325, total=15145
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_6 : str} |= v_6 = "none"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 35 (matrix multiplication shape compatibility when both inputs are 2D)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 2 then shape(v_1, 1) = shape(v_2, 0)
+Token usage: input=17457, output=356, total=23315
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_6 : str} |= v_6 = "none"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 36 (input tensors must not be complex numbers since quantization is for real/float types)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) < 9 ∧ dtype_(v_2) < 9
+Token usage: input=17457, output=356, total=23315
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_6 : str} |= v_6 = "none"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 37 (if the input is a floating-point type, the preferred output element type must be a valid floating-point type)
+{v_1 : tensor, v_4 : dtype} |= if dtype_(v_1) ≥ 6 then v_4 ≥ 6 ∧ v_4 ≤ 8
+Token usage: input=17457, output=356, total=23315
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_6 : str} |= v_6 = "none"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 38 (if the input tensor has dimensions, the dimension_numbers tuple must specify two components)
+{v_1 : tensor, v_3 : tuple(tuple(list(int)))} |= if ndim(v_1) > 0 then v_3.len = 2
+Token usage: input=17457, output=356, total=23315
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_6 : str} |= v_6 = "none"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 39 (configs list must either be empty or have exactly 3 scaling configurations)
+{v_5 : list(tensor)} |= v_5.len = 0 ∨ v_5.len = 3
+Token usage: input=17457, output=356, total=23315
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_6 : str} |= v_6 = "none"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.scaled_dot_general API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot general operation.
+
+  Performs a generalized dot product with block-scaled quantization on the
+  lhs and rhs inputs. This operation extends `lax.dot_general` to support
+  user-defined scaling configurations.
+
+  Essentially, the operation follows::
+
+      a, a_scales = quantize(lhs, configs[0])
+      b, b_scales = quantize(rhs, configs[1])
+      c = jax.nn.scaled_matmul(a, b, a_scales, b_scales)
+
+  Args:
+    lhs (ArrayLike): Input array.
+    rhs (ArrayLike): Input array.
+    dimension_numbers (DotDimensionNumbers): A tuple of two tuples specifying
+      the contraction and batch dimensions:
+      `((lhs_contracting_dims, rhs_contracting_dims), (lhs_batch_dims, rhs_batch_dims))`.
+    preferred_element_type (DTypeLike, optional): Output data type of the dot
+      product. Defaults to `jnp.float32`. Other valid types include
+      `jnp.bfloat16` and `jnp.float16`.
+    configs (list of BlockScaleConfig, optional): Scaling configurations for
+      lhs, rhs, and gradients. Users can obtain valid configurations via
+      `jax.nn.get_scaled_dot_general_config`. Currently, `nvfp4` and `mxfp8`
+      are supported. If `None`, falls back to `lax.dot_general`.
+    implementation: str
+      (Deprecated) Backend selector, now ignored. The system chooses the backend
+      automatically. Scheduled for removal in future releases.
+
+  Returns:
+    Array: The resulting tensor, with batch dimensions first, followed by
+    non-contracting/non-batch dimensions of lhs, and then those of rhs.
+
+  See Also:
+    - :func:`jax.nn.scaled_matmul`: Scaled matmul function.
+    - :func:`jax.lax.dot_general`: General dot product operator.
+
+  Notes:
+    - Unlike `nn.scaled_matmul`, which assumes quantized low-precision
+      inputs with explicit scaling factors, this operator takes high-precision
+      inputs, applies quantization internally, and handles the backward pass.
+
+  Examples:
+
+    Creating config for mxfp8:
+
+    >>> configs = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+
+    Creating config for nvfp4:
+
+    >>> global_scale = jnp.array([0.5], jnp.float32)
+    >>> configs = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+
+    Using scaled_dot_general with the configs:
+
+    >>> import functools
+    >>> scaled_dot_general_fn = functools.partial(jax.nn.scaled_dot_general, configs=configs)
+    >>> lhs = jax.random.normal(jax.random.PRNGKey(1), (3, 128, 64))
+    >>> rhs = jax.random.normal(jax.random.PRNGKey(2), (3, 128, 64))
+    >>> out = scaled_dot_general_fn(lhs, rhs, (((2,), (2,)), ((0,), (0,))))  # doctest: +SKIP
+
+[API Signature] lhs: tensor, rhs: tensor, dimension_numbers: tuple, preferred_element_type: dtype, configs: list, implementation: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 40 (the number of dimensions of the first input tensor must not exceed 8)
+{v_1 : tensor} |= ndim(v_1) ≤ 8
+Token usage: input=17457, output=356, total=23315
+** DUPLICATED RULE ** (num_failures: 7)
+

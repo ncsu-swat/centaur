@@ -10,8 +10,8 @@ from z3 import *
 # equivalence comparison of union types based on casting constraint (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], v["arg1_value"] != v["arg2_value"])) if n else
-          If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], v["arg1_value"] != v["arg2_value"]))
+    s.add(Not(If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], v["arg1_value"] != v["arg2_value"])) if n else
+          If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], v["arg1_value"] != v["arg2_value"]))
 )
 
 def rule_14_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -30,7 +30,7 @@ def rule_14_func(arg1, arg2, arg3, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg3_value = String('arg3_value')
+        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Value assignments
         solver.add(arg3_value == list_of_string_values_jax.index(arg3))

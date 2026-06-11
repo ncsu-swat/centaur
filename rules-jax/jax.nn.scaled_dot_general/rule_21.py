@@ -10,8 +10,8 @@ from z3 import *
 # Backend selection string options (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 6, v["arg1_value"] == 0)) if n else
-          Or(v["arg1_value"] == 6, v["arg1_value"] == 0))
+    s.add(Not(Or(v["arg1_value"] == 5, v["arg1_value"] == 0)) if n else
+          Or(v["arg1_value"] == 5, v["arg1_value"] == 0))
 )
 
 def rule_21_func(arg1, solver=None, neg=False):
@@ -24,7 +24,7 @@ def rule_21_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

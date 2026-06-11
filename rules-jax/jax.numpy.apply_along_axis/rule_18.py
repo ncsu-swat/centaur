@@ -10,8 +10,8 @@ from z3 import *
 # If the reduction or activation function is relu, the input tensor must not be a complex number data type (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 11, v["arg2_dtype"] < 9, True)) if n else
-          If(v["arg1_value"] == 11, v["arg2_dtype"] < 9, True))
+    s.add(Not(If(v["arg1_value"] == 10, v["arg2_dtype"] < 9, True)) if n else
+          If(v["arg1_value"] == 10, v["arg2_dtype"] < 9, True))
 )
 
 def rule_18_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_18_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_dtype = Int('arg2_dtype')
 
         # Value assignments

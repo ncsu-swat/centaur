@@ -10,8 +10,8 @@ from z3 import *
 # for valid mode, the first input length should be greater than or equal to the second input length (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 21, Select(v["arg1_shape"], 0) >= Select(v["arg2_shape"], 0), True)) if n else
-          If(v["arg3_value"] == 21, Select(v["arg1_shape"], 0) >= Select(v["arg2_shape"], 0), True))
+    s.add(Not(If(v["arg3_value"] == 19, Select(v["arg1_shape"], 0) >= Select(v["arg2_shape"], 0), True)) if n else
+          If(v["arg3_value"] == 19, Select(v["arg1_shape"], 0) >= Select(v["arg2_shape"], 0), True))
 )
 
 def rule_6_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -32,7 +32,7 @@ def rule_6_func(arg1, arg2, arg3, solver=None, neg=False):
         solver = Solver()
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_shape = Array('arg2_shape', IntSort(), IntSort())
-        arg3_value = String('arg3_value')
+        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Value assignments
         for i in range(arg1.ndim):

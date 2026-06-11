@@ -10,8 +10,8 @@ from z3 import *
 # preferred element type, if specified as a string, must be "none" (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == 6) if n else
-          v["arg1_value"] == 6)
+    s.add(Not(v["arg1_value"] == 5) if n else
+          v["arg1_value"] == 5)
 )
 
 def rule_5_func(arg1, solver=None, neg=False):
@@ -24,7 +24,7 @@ def rule_5_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

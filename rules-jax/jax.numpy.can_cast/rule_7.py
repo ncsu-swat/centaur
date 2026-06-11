@@ -10,8 +10,8 @@ from z3 import *
 # source and destination types as string are equal if casting is same (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"])) if n else
-          If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"]))
+    s.add(Not(If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"])) if n else
+          If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"]))
 )
 
 def rule_7_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -30,9 +30,9 @@ def rule_7_func(arg1, arg2, arg3, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
-        arg2_value = String('arg2_value')
-        arg3_value = String('arg3_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

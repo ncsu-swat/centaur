@@ -10,8 +10,8 @@ from z3 import *
 # Converting a string input with str dtype (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] == 6, v["arg2_value"] == 11)) if n else
-          And(v["arg1_value"] == 6, v["arg2_value"] == 11))
+    s.add(Not(And(v["arg1_value"] == 5, v["arg2_value"] == 11)) if n else
+          And(v["arg1_value"] == 5, v["arg2_value"] == 11))
 )
 
 def rule_20_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_20_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_value = Int('arg2_value')
 
         # Value assignments

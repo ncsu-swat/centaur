@@ -10,8 +10,8 @@ from z3 import *
 # Optimize parameter can be a boolean or a specific string option (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == True, True, If(v["arg1_value"] == False, True, Or(v["arg1_value"] == 6, v["arg1_value"] == 7)))) if n else
-          If(v["arg1_value"] == True, True, If(v["arg1_value"] == False, True, Or(v["arg1_value"] == 6, v["arg1_value"] == 7))))
+    s.add(Not(If(v["arg1_value"] == True, True, If(v["arg1_value"] == False, True, Or(v["arg1_value"] == 5, v["arg1_value"] == 6)))) if n else
+          If(v["arg1_value"] == True, True, If(v["arg1_value"] == False, True, Or(v["arg1_value"] == 5, v["arg1_value"] == 6))))
 )
 
 def rule_18_func(arg1, solver=None, neg=False):

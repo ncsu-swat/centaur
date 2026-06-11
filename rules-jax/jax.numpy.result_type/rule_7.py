@@ -10,8 +10,8 @@ from z3 import *
 # Result type with a string and a tensor where string must be none (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] == 6, v["arg2_ndim"] >= 1)) if n else
-          And(v["arg1_value"] == 6, v["arg2_ndim"] >= 1))
+    s.add(Not(And(v["arg1_value"] == 5, v["arg2_ndim"] >= 1)) if n else
+          And(v["arg1_value"] == 5, v["arg2_ndim"] >= 1))
 )
 
 def rule_7_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_7_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_ndim = Int('arg2_ndim')
 
         # Value assignments

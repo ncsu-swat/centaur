@@ -10,8 +10,8 @@ from z3 import *
 # order parameter must be "none" if provided as a string (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == 6) if n else
-          v["arg1_value"] == 6)
+    s.add(Not(v["arg1_value"] == 5) if n else
+          v["arg1_value"] == 5)
 )
 
 def rule_6_func(arg1, solver=None, neg=False):
@@ -24,7 +24,7 @@ def rule_6_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

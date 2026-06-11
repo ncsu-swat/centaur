@@ -30,7 +30,7 @@ def rule_5_func(arg1, arg2, arg3, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_ndim = Int('arg2_ndim')
         arg2_shape = Array('arg2_shape', IntSort(), IntSort())
         arg3_ndim = Int('arg3_ndim')
@@ -46,9 +46,9 @@ def rule_5_func(arg1, arg2, arg3, solver=None, neg=False):
             arg3_shape = Store(arg3_shape, i, arg3.shape[i])
 
         # Constraints for rule 5
-        rule_5(solver, {'arg1_value': arg1_value, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim, 'arg3_shape': arg3_shape, 'arg3_ndim': arg3_ndim})
+        rule_5(solver, {'arg1_value': arg1_value, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_ndim': arg3_ndim, 'arg3_shape': arg3_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_5(solver, {'arg1_value': arg1['value'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim'], 'arg3_shape': arg3['shape'], 'arg3_ndim': arg3['ndim']}, neg)
+        rule_5(solver, {'arg1_value': arg1['value'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_ndim': arg3['ndim'], 'arg3_shape': arg3['shape']}, neg)

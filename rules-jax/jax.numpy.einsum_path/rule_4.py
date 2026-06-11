@@ -30,7 +30,7 @@ def rule_4_func(arg1, arg2, arg3, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_ndim = Int('arg2_ndim')
         arg3_ndim = Int('arg3_ndim')
 

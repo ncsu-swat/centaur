@@ -10,8 +10,8 @@ from z3 import *
 # Validation of preferred element type represented as a union of dtype and string (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(Or((Or(Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), v["arg1_value"] == 9), v["arg1_value"] == 10)), (v["arg1_value"] == 6))) if n else
-          Or((Or(Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), v["arg1_value"] == 9), v["arg1_value"] == 10)), (v["arg1_value"] == 6)))
+    s.add(Not(Or((Or(Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), v["arg1_value"] == 9), v["arg1_value"] == 10)), (v["arg1_value"] == 5))) if n else
+          Or((Or(Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), v["arg1_value"] == 9), v["arg1_value"] == 10)), (v["arg1_value"] == 5)))
 )
 
 def rule_10_func(arg1, solver=None, neg=False):

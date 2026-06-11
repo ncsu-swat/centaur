@@ -10,8 +10,8 @@ from z3 import *
 # The first input is a valid string specifier, and the second is a valid non-complex dtype (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_value"] != 22, 0 <= v["arg2_value"]), v["arg2_value"] <= 8)) if n else
-          And(And(v["arg1_value"] != 22, 0 <= v["arg2_value"]), v["arg2_value"] <= 8))
+    s.add(Not(And(And(v["arg1_value"] != 20, 0 <= v["arg2_value"]), v["arg2_value"] <= 8)) if n else
+          And(And(v["arg1_value"] != 20, 0 <= v["arg2_value"]), v["arg2_value"] <= 8))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_value = Int('arg2_value')
 
         # Value assignments

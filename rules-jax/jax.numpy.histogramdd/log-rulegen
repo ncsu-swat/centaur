@@ -2385,3 +2385,2997 @@ Rule 16 (sample must be a 2D tensor with a numeric data type)
 Token usage: input=15342, output=387, total=21273
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (sample and weights must have compatible shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, 0) = shape(v_2, 0)
+Token usage: input=2242, output=387, total=7181
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (bins list length must equal the number of dimensions of the sample)
+{v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1)
+Token usage: input=2242, output=387, total=7181
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 19 (sample must be a 2-dimensional tensor)
+{v_1 : tensor} |= ndim(v_1) = 2
+Token usage: input=2242, output=387, total=7181
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 20 (bins as a single integer must be positive)
+{v_1 : int} |= v_1 > 0
+Token usage: input=2242, output=387, total=7181
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (elements of bins list must be positive)
+{v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+Token usage: input=2242, output=387, total=7181
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (sample must be of real numeric type)
+{v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 8
+Token usage: input=2242, output=387, total=7181
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (weights must be of real numeric type)
+{v_2 : tensor} |= dtype_(v_2) ≥ 1 ∧ dtype_(v_2) ≤ 8
+Token usage: input=2242, output=387, total=7181
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (range list length must match sample dimension)
+{v_1 : tensor, v_2 : list(tuple(float))} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1)
+Token usage: input=2242, output=387, total=7181
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) = 2
+Duplicated rule: {v_1 : int} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (sample and weights must have compatible types and matching size along the first dimension)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 8 ∧ dtype_(v_2) ≥ 1 ∧ dtype_(v_2) ≤ 8 ∧ shape(v_1, 0) = shape(v_2, 0)
+Token usage: input=9607, output=480, total=16060
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) = 2
+Duplicated rule: {v_1 : int} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (bins as a list of integers must have length equal to sample's second dimension and contain positive values)
+{v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Token usage: input=9607, output=480, total=16060
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) = 2
+Duplicated rule: {v_1 : int} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 27 (bins as a tuple of integers must have length equal to sample's second dimension and contain positive values)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Token usage: input=9607, output=480, total=16060
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) = 2
+Duplicated rule: {v_1 : int} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 28 (bins as a list of tensors of edges must match sample dimension)
+{v_1 : tensor, v_2 : list(tensor)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1)
+Token usage: input=9607, output=480, total=16060
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) = 2
+Duplicated rule: {v_1 : int} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 29 (range as a list of lists of floats must match sample dimension)
+{v_1 : tensor, v_2 : list(list(float))} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1)
+Token usage: input=9607, output=480, total=16060
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) = 2
+Duplicated rule: {v_1 : int} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 30 (range as a tuple of lists of floats must match sample dimension)
+{v_1 : tensor, v_2 : tuple(list(float))} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1)
+Token usage: input=9607, output=480, total=16060
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 31 (sample and weights must have compatible types and matching size along the first dimension)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 8 ∧ dtype_(v_2) ≥ 1 ∧ dtype_(v_2) ≤ 8 ∧ shape(v_1, 0) = shape(v_2, 0)
+Token usage: input=18424, output=441, total=25609
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 32 (bins as a tensor of edges must be 1D and have at least 2 elements)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ shape(v_2, 0) ≥ 2
+Token usage: input=18424, output=441, total=25609
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 33 (range as a list of tuples must have length equal to sample's second dimension)
+{v_1 : tensor, v_2 : list(tuple(float))} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1)
+Token usage: input=18424, output=441, total=25609
+** DUPLICATED RULE ** (num_failures: 7)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 34 (range as a tuple of lists must have length equal to sample's second dimension)
+{v_1 : tensor, v_2 : tuple(list(float))} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1)
+Token usage: input=18424, output=441, total=25609
+** DUPLICATED RULE ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 35 (bins as an integer must be positive, and sample must be 2D)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) = 2 ∧ v_2 ≥ 1
+Token usage: input=18424, output=441, total=25609
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = 2 ∧ v_2.len = shape(v_1, 1) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.histogramdd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute an N-dimensional histogram.
+
+  JAX implementation of :func:`numpy.histogramdd`.
+
+  Args:
+    sample: input array of shape ``(N, D)`` representing ``N`` points in
+      ``D`` dimensions.
+    bins: Specify the number of bins in each dimension of the histogram.
+      (default: 10). May also be a length-D sequence of integers or arrays
+      of bin edges.
+    range: Length-D sequence of pairs specifying the range for each dimension.
+      If not specified, the range is inferred from the data.
+    weights: An optional shape ``(N,)`` array specifying the weights of the
+      data points.
+      Should be the same shape as ``sample``. If not specified, each
+      data point is weighted equally.
+    density: If True, return the normalized histogram in units of counts
+      per unit volume. If False (default) return the (weighted) counts per bin.
+
+  Returns:
+    A tuple of arrays ``(histogram, bin_edges)``, where ``histogram`` contains
+    the aggregated data, and ``bin_edges`` specifies the boundaries of the bins.
+
+  See Also:
+    - :func:`jax.numpy.histogram`: Compute the histogram of a 1D array.
+    - :func:`jax.numpy.histogram2d`: Compute the histogram of a 2D array.
+    - :func:`jax.numpy.histogram_bin_edges`: Compute the bin edges for a histogram.
+
+  Examples:
+    A histogram over 100 points in three dimensions
+
+    >>> key = jax.random.key(42)
+    >>> a = jax.random.normal(key, (100, 3))
+    >>> counts, bin_edges = jnp.histogramdd(a, bins=6,
+    ...                                     range=[(-3, 3), (-3, 3), (-3, 3)])
+    >>> counts.shape
+    (6, 6, 6)
+    >>> bin_edges  # doctest: +SKIP
+    [Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32),
+     Array([-3., -2., -1.,  0.,  1.,  2.,  3.], dtype=float32)]
+
+    Using ``density=True`` returns a normalized histogram:
+
+    >>> density, bin_edges = jnp.histogramdd(a, density=True)
+    >>> bin_widths = map(jnp.diff, bin_edges)
+    >>> dx, dy, dz = jnp.meshgrid(*bin_widths, indexing='ij')
+    >>> normed = jnp.sum(density * dx * dy * dz)
+    >>> jnp.allclose(normed, 1.0)
+    Array(True, dtype=bool)
+
+[Possible API Signatures]
+ - sample: tensor, bins: integer, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tensor, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: list, range: list, weights: tensor, density: boolean
+ - sample: tensor, bins: tuple, range: tuple, weights: tensor, density: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 36 (weights tensor must be 1-dimensional and of floating-point type)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 2 ∧ ndim(v_2) = 1 ∧ dtype_(v_2) ≥ 6 ∧ dtype_(v_2) ≤ 8
+Token usage: input=18424, output=441, total=25609
+** SUCCESS **
+

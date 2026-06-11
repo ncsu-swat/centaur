@@ -2323,3 +2323,1855 @@ Rule 15 (condition must be at least 1-dimensional when size and fill_value are s
 Token usage: input=14716, output=405, total=23085
 ** REDUNDANT VARIABLES ** (num_failures: 5)
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (condition tensor must have boolean data type)
+{v_1 : tensor} |= dtype_(v_1) = 0
+Token usage: input=2333, output=298, total=6618
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (size parameter must be a positive integer)
+{v_1 : int} |= v_1 > 0
+Token usage: input=2333, output=298, total=6618
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (x and y tensors must be broadcast-compatible when they have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
+Token usage: input=2333, output=298, total=6618
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (condition and x tensors must be broadcast-compatible when they have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
+Token usage: input=2333, output=298, total=6618
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 19 (size parameter must be a positive integer)
+{v_1 : int} |= v_1 ≥ 1
+Token usage: input=9103, output=248, total=13062
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 20 (condition, x, and y must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor, v_3 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ndim(v_2) = ndim(v_3)
+Token usage: input=9103, output=248, total=13062
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (tensors x and y must have the same data type)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
+Token usage: input=9103, output=248, total=13062
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (the first dimension of x and y must be compatible)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 1 then shape(v_1, 0) = shape(v_2, 0) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 0) = 1
+Token usage: input=9103, output=248, total=13062
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (condition tensor must have boolean data type)
+{v_1 : tensor} |= dtype_(v_1) < 1
+Token usage: input=15377, output=274, total=18783
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (tensors x and y must have matching number of dimensions and matching data types)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ dtype_(v_1) = dtype_(v_2)
+Token usage: input=15377, output=274, total=18783
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (the size parameter must be non-negative)
+{v_1 : int, v_2 : int} |= v_1 ≥ 0
+Token usage: input=15377, output=274, total=18783
+** REDUNDANT VARIABLES ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.where API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Select elements from two arrays based on a condition.
+
+  JAX implementation of :func:`numpy.where`.
+
+  .. note::
+     when only ``condition`` is provided, ``jnp.where(condition)`` is equivalent
+     to ``jnp.nonzero(condition)``. For that case, refer to the documentation of
+     :func:`jax.numpy.nonzero`. The docstring below focuses on the case where
+     ``x`` and ``y`` are specified.
+
+  The three-term version of ``jnp.where`` lowers to :func:`jax.lax.select`.
+
+  Args:
+    condition: boolean array. Must be broadcast-compatible with ``x`` and ``y`` when
+      they are specified.
+    x: arraylike. Should be broadcast-compatible with ``condition`` and ``y``, and
+      typecast-compatible with ``y``.
+    y: arraylike. Should be broadcast-compatible with ``condition`` and ``x``, and
+      typecast-compatible with ``x``.
+    size: integer, only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+    fill_value: only referenced when ``x`` and ``y`` are ``None``. For details,
+      see :func:`jax.numpy.nonzero`.
+
+  Returns:
+    An array of dtype ``jnp.result_type(x, y)`` with values drawn from ``x`` where ``condition``
+    is True, and from ``y`` where condition is ``False``. If ``x`` and ``y`` are ``None``, the
+    function behaves differently; see :func:`jax.numpy.nonzero` for a description of the return
+    type.
+
+  See Also:
+    - :func:`jax.numpy.nonzero`
+    - :func:`jax.numpy.argwhere`
+    - :func:`jax.lax.select`
+
+  Notes:
+    Special care is needed when the ``x`` or ``y`` input to :func:`jax.numpy.where` could
+    have a value of NaN. Specifically, when a gradient is taken with :func:`jax.grad`
+    (reverse-mode differentiation), a NaN in either ``x`` or ``y`` will propagate into the
+    gradient, regardless of the value of ``condition``.  More information on this behavior
+    and workarounds is available in the `JAX FAQ
+    <https://docs.jax.dev/en/latest/faq.html#gradients-contain-nan-where-using-where>`_.
+
+  Examples:
+    When ``x`` and ``y`` are not provided, ``where`` behaves equivalently to
+    :func:`jax.numpy.nonzero`:
+
+    >>> x = jnp.arange(10)
+    >>> jnp.where(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+    >>> jnp.nonzero(x > 4)
+    (Array([5, 6, 7, 8, 9], dtype=int32),)
+
+    When ``x`` and ``y`` are provided, ``where`` selects between them based on
+    the specified condition:
+
+    >>> jnp.where(x > 4, x, 0)
+    Array([0, 0, 0, 0, 0, 5, 6, 7, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - condition: tensor, x: tensor, y: tensor
+ - condition: tensor, size: integer, fill_value: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (the last dimension of two broadcast-compatible tensors must match or be equal to 1)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) > 0 ∧ ndim(v_2) > 0 then shape(v_1, ndim(v_1) - 1) = shape(v_2, ndim(v_2) - 1) ∨ shape(v_1, ndim(v_1) - 1) = 1 ∨ shape(v_2, ndim(v_2) - 1) = 1
+Token usage: input=15377, output=274, total=18783
+** SUCCESS **
+

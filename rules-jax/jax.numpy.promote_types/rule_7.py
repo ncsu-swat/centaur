@@ -10,8 +10,8 @@ from z3 import *
 # Both string inputs must be non-trivial and not equal to "none" (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] != 6, v["arg2_value"] != 6)) if n else
-          And(v["arg1_value"] != 6, v["arg2_value"] != 6))
+    s.add(Not(And(v["arg1_value"] != 5, v["arg2_value"] != 5)) if n else
+          And(v["arg1_value"] != 5, v["arg2_value"] != 5))
 )
 
 def rule_7_func(arg1, arg2, solver=None, neg=False):
@@ -27,8 +27,8 @@ def rule_7_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
-        arg2_value = String('arg2_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

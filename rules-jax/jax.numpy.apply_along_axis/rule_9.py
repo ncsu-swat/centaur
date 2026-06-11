@@ -10,8 +10,8 @@ from z3 import *
 # If the function is softmax or sigmoid, the input tensor must have a floating-point data type (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg1_value"] == 14, v["arg1_value"] == 13), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 8), True)) if n else
-          If(Or(v["arg1_value"] == 14, v["arg1_value"] == 13), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 8), True))
+    s.add(Not(If(Or(v["arg1_value"] == 13, v["arg1_value"] == 12), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 8), True)) if n else
+          If(Or(v["arg1_value"] == 13, v["arg1_value"] == 12), And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 8), True))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_9_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_dtype = Int('arg2_dtype')
 
         # Value assignments

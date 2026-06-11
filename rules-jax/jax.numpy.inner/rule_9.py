@@ -10,8 +10,8 @@ from z3 import *
 # precision tuple must have length 2 and contain valid precision strings (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 6), Select(v["arg1_values"], 1) == 6)) if n else
-          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 6), Select(v["arg1_values"], 1) == 6))
+    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 5), Select(v["arg1_values"], 1) == 5)) if n else
+          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 5), Select(v["arg1_values"], 1) == 5))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_9_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_9(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_9(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

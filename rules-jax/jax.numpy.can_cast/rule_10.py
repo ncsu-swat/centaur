@@ -10,8 +10,8 @@ from z3 import *
 # casting compatibility on union types when casting type is "same" (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"])) if n else
-          If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"]))
+    s.add(Not(If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"])) if n else
+          If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg1_value"]))
 )
 
 def rule_10_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -30,7 +30,7 @@ def rule_10_func(arg1, arg2, arg3, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg3_value = String('arg3_value')
+        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Value assignments
         solver.add(arg3_value == list_of_string_values_jax.index(arg3))

@@ -10,8 +10,8 @@ from z3 import *
 # if global_scale has one or more dimensions, then the mode must be none (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_ndim"] > 0, v["arg1_value"] == 6, True)) if n else
-          If(v["arg2_ndim"] > 0, v["arg1_value"] == 6, True))
+    s.add(Not(If(v["arg2_ndim"] > 0, v["arg1_value"] == 5, True)) if n else
+          If(v["arg2_ndim"] > 0, v["arg1_value"] == 5, True))
 )
 
 def rule_25_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_25_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_ndim = Int('arg2_ndim')
 
         # Value assignments

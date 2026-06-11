@@ -28,7 +28,7 @@ def rule_8_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_value = Int('arg1_value')
-        arg2_value = String('arg2_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))

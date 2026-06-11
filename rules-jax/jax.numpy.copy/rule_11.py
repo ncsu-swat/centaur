@@ -10,8 +10,8 @@ from z3 import *
 # The input tensor must have at most 8 dimensions and the order parameter must be "none" (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] <= 8, v["arg2_value"] == 6)) if n else
-          And(v["arg1_ndim"] <= 8, v["arg2_value"] == 6))
+    s.add(Not(And(v["arg1_ndim"] <= 8, v["arg2_value"] == 5)) if n else
+          And(v["arg1_ndim"] <= 8, v["arg2_value"] == 5))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):
@@ -28,7 +28,7 @@ def rule_11_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_value = String('arg2_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)

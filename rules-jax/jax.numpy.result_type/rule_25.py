@@ -10,8 +10,8 @@ from z3 import *
 # Result type of a string specifier and a tensor, where the tensor must be at least 1-dimensional if string matches valid (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 21, v["arg2_ndim"] > 0, v["arg2_ndim"] >= 0)) if n else
-          If(v["arg1_value"] == 21, v["arg2_ndim"] > 0, v["arg2_ndim"] >= 0))
+    s.add(Not(If(v["arg1_value"] == 19, v["arg2_ndim"] > 0, v["arg2_ndim"] >= 0)) if n else
+          If(v["arg1_value"] == 19, v["arg2_ndim"] > 0, v["arg2_ndim"] >= 0))
 )
 
 def rule_25_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_25_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_ndim = Int('arg2_ndim')
 
         # Value assignments

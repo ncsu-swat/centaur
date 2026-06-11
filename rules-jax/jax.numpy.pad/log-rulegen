@@ -4178,3 +4178,4263 @@ Rule 20 (tensor must have a valid numeric or boolean data type)
 Token usage: input=13783, output=639, total=20164
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (array must have at least 1 dimension)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=3211, output=508, total=7275
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (pad_width as integer must be non-negative)
+{v_2 : int} |= v_2 ≥ 0
+Token usage: input=3211, output=508, total=7275
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (pad_width as tuple must only contain non-negative elements)
+{v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=3211, output=508, total=7275
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (pad_width as list must only contain non-negative elements)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=3211, output=508, total=7275
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (pad_width tuple length must match 1, 2, or twice the array dimension)
+{v_1 : tensor, v_2 : tuple(int)} |= v_2.len = 1 ∨ v_2.len = 2 ∨ v_2.len = 2 * ndim(v_1)
+Token usage: input=3211, output=508, total=7275
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 26 (pad_width list length must match 1, 2, or twice the array dimension)
+{v_1 : tensor, v_2 : list(int)} |= v_2.len = 1 ∨ v_2.len = 2 ∨ v_2.len = 2 * ndim(v_1)
+Token usage: input=3211, output=508, total=7275
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 27 (stat_length as integer must be non-negative)
+{v_5 : int} |= v_5 ≥ 0
+Token usage: input=3211, output=508, total=7275
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 28 (stat_length as tuple must only contain non-negative elements)
+{v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+Token usage: input=3211, output=508, total=7275
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 29 (mode string must be a supported padding mode from the allowed values)
+{v_3 : str} |= v_3 = "mean" ∨ v_3 = "min" ∨ v_3 = "max" ∨ v_3 = "none"
+Token usage: input=3211, output=508, total=7275
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 30 (constant_values tuple length must be at least 1)
+{v_4 : tuple(float)} |= v_4.len ≥ 1
+Token usage: input=3211, output=508, total=7275
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 31 (The length of the pad_width tuple must be 1, 2, or twice the tensor dimension)
+{v_1 : tensor, v_2 : tuple(int)} |= v_2.len = 1 ∨ v_2.len = 2 ∨ v_2.len = 2 * ndim(v_1)
+Token usage: input=10573, output=592, total=18245
+** DUPLICATED RULE ** (num_failures: 7)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 32 (The length of the pad_width list must be 1, 2, or twice the tensor dimension)
+{v_1 : tensor, v_2 : list(int)} |= v_2.len = 1 ∨ v_2.len = 2 ∨ v_2.len = 2 * ndim(v_1)
+Token usage: input=10573, output=592, total=18245
+** DUPLICATED RULE ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 33 (The padding mode must be a valid string selected from the allowed list)
+{v_3 : str} |= v_3 = "none" ∨ v_3 = "mean" ∨ v_3 = "max" ∨ v_3 = "min"
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 34 (The input tensor must not have any dimension with size zero)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 35 (The length of the stat_length tuple must not exceed the dimension of the input array)
+{v_1 : tensor, v_5 : tuple(int)} |= v_5.len ≤ ndim(v_1)
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 36 (Each value in the stat_length tuple must be greater than zero)
+{v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] > 0
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 37 (The statistic length must be a positive integer and must not exceed the first dimension of the tensor)
+{v_1 : tensor, v_5 : int} |= ndim(v_1) > 0 ∧ v_5 ≤ shape(v_1, 0)
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 38 (For tuple pad_width, the length must not exceed twice the array dimension)
+{v_1 : tensor, v_2 : tuple(int)} |= v_2.len ≤ 2 * ndim(v_1)
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 39 (For list pad_width, the length must not exceed twice the array dimension)
+{v_1 : tensor, v_2 : list(int)} |= v_2.len ≤ 2 * ndim(v_1)
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_2 : int} |= v_2 ≥ 0
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Duplicated rule: {v_5 : int} |= v_5 ≥ 0
+Duplicated rule: {v_5 : tuple(int)} |= ∀i ∈ [0, v_5.len - 1] : v_5[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.pad API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Add padding to an array.
+
+  JAX implementation of :func:`numpy.pad`.
+
+  Args:
+    array: array to pad.
+    pad_width: specify the pad width for each dimension of an array. Padding widths
+      may be separately specified for *before* and *after* the array. Options are:
+
+      - ``int`` or ``(int,)``: pad each array dimension with the same number of values
+        both before and after.
+      - ``(before, after)``: pad each array with ``before`` elements before, and ``after``
+        elements after
+      - ``((before_1, after_1), (before_2, after_2), ... (before_N, after_N))``: specify
+        distinct ``before`` and ``after`` values for each array dimension.
+
+    mode: a string or callable. Supported pad modes are:
+
+      - ``'constant'`` (default): pad with a constant value, which defaults to zero.
+      - ``'empty'``: pad with empty values (i.e. zero)
+      - ``'edge'``: pad with the edge values of the array.
+      - ``'wrap'``: pad by wrapping the array.
+      - ``'linear_ramp'``: pad with a linear ramp to specified ``end_values``.
+      - ``'maximum'``: pad with the maximum value.
+      - ``'mean'``: pad with the mean value.
+      - ``'median'``: pad with the median value.
+      - ``'minimum'``: pad with the minimum value.
+      - ``'reflect'``: pad by reflection.
+      - ``'symmetric'``: pad by symmetric reflection.
+      - ``<callable>``: a callable function. See Notes below.
+
+    constant_values: referenced for ``mode = 'constant'``. Specify the constant value
+      to pad with.
+    stat_length: referenced for ``mode in ['maximum', 'mean', 'median', 'minimum']``.
+      An integer or tuple specifying the number of edge values to use when calculating
+      the statistic.
+    end_values: referenced for ``mode = 'linear_ramp'``. Specify the end values to
+      ramp the padding values to.
+    reflect_type: referenced for ``mode in ['reflect', 'symmetric']``. Specify whether
+      to use even or odd reflection.
+
+  Returns:
+    A padded copy of ``array``.
+
+  Notes:
+    When ``mode`` is callable, it should have the following signature::
+
+      def pad_func(row: Array, pad_width: tuple[int, int],
+                   iaxis: int, kwargs: dict) -> Array:
+        ...
+
+    Here ``row`` is a 1D slice of the padded array along axis ``iaxis``, with the pad
+    values filled with zeros. ``pad_width`` is a tuple specifying the ``(before, after)``
+    padding sizes, and ``kwargs`` are any additional keyword arguments passed to the
+    :func:`jax.numpy.pad` function.
+
+    Note that while in NumPy, the function should modify ``row`` in-place, in JAX the
+    function should return the modified ``row``. In JAX, the custom padding function
+    will be mapped across the padded axis using the :func:`jax.vmap` transformation.
+
+  See also:
+    - :func:`jax.numpy.resize`: resize an array
+    - :func:`jax.numpy.tile`: create a larger array by tiling a smaller array.
+    - :func:`jax.numpy.repeat`: create a larger array by repeating values of a smaller array.
+
+  Examples:
+
+    Pad a 1-dimensional array with zeros:
+
+    >>> x = jnp.array([10, 20, 30, 40])
+    >>> jnp.pad(x, 2)
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0], dtype=int32)
+    >>> jnp.pad(x, (2, 4))
+    Array([ 0,  0, 10, 20, 30, 40,  0,  0,  0,  0], dtype=int32)
+
+    Pad a 1-dimensional array with specified values:
+
+    >>> jnp.pad(x, 2, constant_values=99)
+    Array([99, 99, 10, 20, 30, 40, 99, 99], dtype=int32)
+
+    Pad a 1-dimensional array with the mean array value:
+
+    >>> jnp.pad(x, 2, mode='mean')
+    Array([25, 25, 10, 20, 30, 40, 25, 25], dtype=int32)
+
+    Pad a 1-dimensional array with reflected values:
+
+    >>> jnp.pad(x, 2, mode='reflect')
+    Array([30, 20, 10, 20, 30, 40, 30, 20], dtype=int32)
+
+    Pad a 2-dimensional array with different paddings in each dimension:
+
+    >>> x = jnp.array([[1, 2, 3],
+    ...                [4, 5, 6]])
+    >>> jnp.pad(x, ((1, 2), (3, 0)))
+    Array([[0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 1, 2, 3],
+           [0, 0, 0, 4, 5, 6],
+           [0, 0, 0, 0, 0, 0],
+           [0, 0, 0, 0, 0, 0]], dtype=int32)
+
+    Pad a 1-dimensional array with a custom padding function:
+
+    >>> def custom_pad(row, pad_width, iaxis, kwargs):
+    ...   # row represents a 1D slice of the zero-padded array.
+    ...   before, after = pad_width
+    ...   before_value = kwargs.get('before_value', 0)
+    ...   after_value = kwargs.get('after_value', 0)
+    ...   row = row.at[:before].set(before_value)
+    ...   return row.at[len(row) - after:].set(after_value)
+    >>> x = jnp.array([2, 3, 4])
+    >>> jnp.pad(x, 2, custom_pad, before_value=-10, after_value=10)
+    Array([-10, -10,   2,   3,   4,  10,  10], dtype=int32)
+
+[Possible API Signatures]
+ - array: tensor, pad_width: integer, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+ - array: tensor, pad_width: tuple, mode: string, constant_values: float, stat_length: tuple, end_values: float, reflect_type: string
+ - array: tensor, pad_width: list, mode: string, constant_values: float, stat_length: integer, end_values: float, reflect_type: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 40 (The input tensor must have a numeric or boolean datatype)
+{v_1 : tensor} |= dtype_(v_1) ≤ 10
+Token usage: input=10573, output=592, total=18245
+** SUCCESS **
+

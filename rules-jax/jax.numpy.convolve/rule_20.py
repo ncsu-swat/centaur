@@ -10,8 +10,8 @@ from z3 import *
 # conditional constraint on the size of the arrays based on the mode (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 22, Select(v["arg1_shape"], 0) > 0, Select(v["arg2_shape"], 0) > 0)) if n else
-          If(v["arg3_value"] == 22, Select(v["arg1_shape"], 0) > 0, Select(v["arg2_shape"], 0) > 0))
+    s.add(Not(If(v["arg3_value"] == 20, Select(v["arg1_shape"], 0) > 0, Select(v["arg2_shape"], 0) > 0)) if n else
+          If(v["arg3_value"] == 20, Select(v["arg1_shape"], 0) > 0, Select(v["arg2_shape"], 0) > 0))
 )
 
 def rule_20_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -32,7 +32,7 @@ def rule_20_func(arg1, arg2, arg3, solver=None, neg=False):
         solver = Solver()
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_shape = Array('arg2_shape', IntSort(), IntSort())
-        arg3_value = String('arg3_value')
+        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Value assignments
         for i in range(arg1.ndim):

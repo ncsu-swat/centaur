@@ -10,8 +10,8 @@ from z3 import *
 # right and method parameter relationship consistency check (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == True, v["arg2_value"] == 6, v["arg2_value"] == 6)) if n else
-          If(v["arg1_value"] == True, v["arg2_value"] == 6, v["arg2_value"] == 6))
+    s.add(Not(If(v["arg1_value"] == True, v["arg2_value"] == 5, v["arg2_value"] == 5)) if n else
+          If(v["arg1_value"] == True, v["arg2_value"] == 5, v["arg2_value"] == 5))
 )
 
 def rule_12_func(arg1, arg2, solver=None, neg=False):
@@ -28,7 +28,7 @@ def rule_12_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_value = Bool('arg1_value')
-        arg2_value = String('arg2_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_value == arg1)

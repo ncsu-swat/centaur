@@ -10,8 +10,8 @@ from z3 import *
 # If the order parameter is none and the tensor is at least 1D, then the first dimension must be positive (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg2_value"] == 6, v["arg1_ndim"] >= 1), Select(v["arg1_shape"], 0) > 0, True)) if n else
-          If(And(v["arg2_value"] == 6, v["arg1_ndim"] >= 1), Select(v["arg1_shape"], 0) > 0, True))
+    s.add(Not(If(And(v["arg2_value"] == 5, v["arg1_ndim"] >= 1), Select(v["arg1_shape"], 0) > 0, True)) if n else
+          If(And(v["arg2_value"] == 5, v["arg1_ndim"] >= 1), Select(v["arg1_shape"], 0) > 0, True))
 )
 
 def rule_16_func(arg1, arg2, solver=None, neg=False):
@@ -29,7 +29,7 @@ def rule_16_func(arg1, arg2, solver=None, neg=False):
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
-        arg2_value = String('arg2_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
@@ -38,9 +38,9 @@ def rule_16_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 16
-        rule_16(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_16(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_16(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_16(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

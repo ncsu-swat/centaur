@@ -10,8 +10,8 @@ from z3 import *
 # The bitorder parameter must not be "none" or "sum" (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] != 6, v["arg1_value"] != 7)) if n else
-          And(v["arg1_value"] != 6, v["arg1_value"] != 7))
+    s.add(Not(And(v["arg1_value"] != 5, v["arg1_value"] != 6)) if n else
+          And(v["arg1_value"] != 5, v["arg1_value"] != 6))
 )
 
 def rule_13_func(arg1, solver=None, neg=False):
@@ -24,7 +24,7 @@ def rule_13_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))

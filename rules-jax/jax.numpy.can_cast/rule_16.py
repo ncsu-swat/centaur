@@ -10,8 +10,8 @@ from z3 import *
 # source and destination dtypes are compared based on casting rules (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], And(v["arg1_value"] == v["arg1_value"], v["arg2_value"] == v["arg2_value"]))) if n else
-          If(v["arg3_value"] == 22, v["arg1_value"] == v["arg2_value"], And(v["arg1_value"] == v["arg1_value"], v["arg2_value"] == v["arg2_value"])))
+    s.add(Not(If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], And(v["arg1_value"] == v["arg1_value"], v["arg2_value"] == v["arg2_value"]))) if n else
+          If(v["arg3_value"] == 20, v["arg1_value"] == v["arg2_value"], And(v["arg1_value"] == v["arg1_value"], v["arg2_value"] == v["arg2_value"])))
 )
 
 def rule_16_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -32,7 +32,7 @@ def rule_16_func(arg1, arg2, arg3, solver=None, neg=False):
         solver = Solver()
         arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
-        arg3_value = String('arg3_value')
+        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
 
         # Value assignments
         solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))

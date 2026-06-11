@@ -10,8 +10,8 @@ from z3 import *
 # The string input must not be "none", and the dtype input must be a valid index (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_value"] != 6, 0 <= v["arg2_value"]), v["arg2_value"] <= 10)) if n else
-          And(And(v["arg1_value"] != 6, 0 <= v["arg2_value"]), v["arg2_value"] <= 10))
+    s.add(Not(And(And(v["arg1_value"] != 5, 0 <= v["arg2_value"]), v["arg2_value"] <= 10)) if n else
+          And(And(v["arg1_value"] != 5, 0 <= v["arg2_value"]), v["arg2_value"] <= 10))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):
@@ -27,7 +27,7 @@ def rule_9_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_value = String('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_value = Int('arg2_value')
 
         # Value assignments

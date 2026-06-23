@@ -6,17 +6,43 @@ generated_inputs = dict()
 
 import numpy as np
 import copy
-import os
-
-os.environ["JAX_PLATFORMS"] = "cpu"
 
 def jax_lax_erf_inputs():
     list_of_inputs = []
-    
-    values = [0.0, 1.0, -1.0, 0.5, -0.5, 2.0, -2.0, 3.0, -3.0, 0.1]
-    for val in values:
-        list_of_inputs.append({"x": np.float32(val)})
-        
+
+    # Input 1: Standard positive float
+    list_of_inputs.append({"x": 1.0})
+
+    # Input 2: Standard negative float
+    list_of_inputs.append({"x": -1.0})
+
+    # Input 3: Zero
+    list_of_inputs.append({"x": 0.0})
+
+    # Input 4: Large positive float
+    list_of_inputs.append({"x": 5.0})
+
+    # Input 5: Large negative float
+    list_of_inputs.append({"x": -5.0})
+
+    # Input 6: Very small positive float
+    list_of_inputs.append({"x": 1e-6})
+
+    # Input 7: Numpy float32 scalar
+    list_of_inputs.append({"x": np.float32(0.5)})
+
+    # Input 8: Numpy float64 scalar
+    list_of_inputs.append({"x": np.float64(-2.5)})
+
+    # Input 9: Numpy float16 scalar
+    list_of_inputs.append({"x": np.float16(1.5)})
+
+    # Input 10: Large numpy float
+    list_of_inputs.append({"x": np.float32(10.0)})
+
+    # Input 11: Very small negative numpy float
+    list_of_inputs.append({"x": np.float64(-1e-8)})
+
     return list_of_inputs
 
 generated_inputs["jax.lax.erf_2"] = jax_lax_erf_inputs()

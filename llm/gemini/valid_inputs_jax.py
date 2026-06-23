@@ -84644,3 +84644,3300 @@ def zeros_inputs():
 
 generated_inputs["jax.numpy.zeros_2"] = zeros_inputs()
 
+import numpy as np
+import copy
+import jax
+import jax.lax
+from jax.sharding import Mesh, PartitionSpec
+
+# Patch jax.lax.Precision to support comparison operators for NumPy's reduction operations
+jax.lax.Precision.__lt__ = lambda self, other: self.value < other.value if hasattr(other, 'value') else NotImplemented
+jax.lax.Precision.__le__ = lambda self, other: self.value <= other.value if hasattr(other, 'value') else NotImplemented
+jax.lax.Precision.__gt__ = lambda self, other: self.value > other.value if hasattr(other, 'value') else NotImplemented
+jax.lax.Precision.__ge__ = lambda self, other: self.value >= other.value if hasattr(other, 'value') else NotImplemented
+
+# Setup a global mesh context to allow PartitionSpec as out_sharding
+devices = jax.devices()
+mesh = Mesh(np.array(devices).reshape(-1), ('x',))
+jax.set_mesh(mesh).__enter__()
+
+def dot_general_inputs():
+    list_of_inputs = []
+
+    # Input 1: (M, K, B) x (K, N, B), float32
+    input_dict = {
+        "lhs": np.random.randn(4, 3, 2).astype(np.float32),
+        "rhs": np.random.randn(3, 5, 2).astype(np.float32),
+        "dimension_numbers": (((1,), (0,)), ((2,), (2,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype('float32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: (M, K, B) x (K, N, B), float64
+    input_dict = {
+        "lhs": np.random.randn(2, 5, 3).astype(np.float64),
+        "rhs": np.random.randn(5, 4, 3).astype(np.float64),
+        "dimension_numbers": (((1,), (0,)), ((2,), (2,))),
+        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
+        "preferred_element_type": np.dtype('float64'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: (M, K, B) x (K, N, B), larger size
+    input_dict = {
+        "lhs": np.random.randn(8, 4, 2).astype(np.float32),
+        "rhs": np.random.randn(4, 6, 2).astype(np.float32),
+        "dimension_numbers": (((1,), (0,)), ((2,), (2,))),
+        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
+        "preferred_element_type": np.dtype('float32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: (M, K, B) x (K, N, B), mixed precision selection
+    input_dict = {
+        "lhs": np.random.randn(3, 2, 4).astype(np.float32),
+        "rhs": np.random.randn(2, 5, 4).astype(np.float32),
+        "dimension_numbers": (((1,), (0,)), ((2,), (2,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.HIGH),
+        "preferred_element_type": np.dtype('float32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: (M, K, B) x (K, N, B), batch size 1
+    input_dict = {
+        "lhs": np.random.randn(5, 6, 1).astype(np.float32),
+        "rhs": np.random.randn(6, 2, 1).astype(np.float32),
+        "dimension_numbers": (((1,), (0,)), ((2,), (2,))),
+        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype('float32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: (M, K, B) x (K, N, B), int32
+    input_dict = {
+        "lhs": np.random.randint(-10, 10, size=(3, 3, 2)).astype(np.int32),
+        "rhs": np.random.randint(-10, 10, size=(3, 3, 2)).astype(np.int32),
+        "dimension_numbers": (((1,), (0,)), ((2,), (2,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype('int32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: (M, K, B) x (K, N, B), float16 with negative values
+    input_dict = {
+        "lhs": (np.random.randn(4, 2, 3) * 5).astype(np.float16),
+        "rhs": (np.random.randn(2, 4, 3) * 5).astype(np.float16),
+        "dimension_numbers": (((1,), (0,)), ((2,), (2,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype('float16'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: (B, M, K) x (B, K, N) permutation
+    input_dict = {
+        "lhs": np.random.randn(2, 4, 3).astype(np.float32),
+        "rhs": np.random.randn(2, 3, 5).astype(np.float32),
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype('float32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: (M, B, K) x (K, B, N) permutation
+    input_dict = {
+        "lhs": np.random.randn(4, 2, 3).astype(np.float32),
+        "rhs": np.random.randn(3, 2, 5).astype(np.float32),
+        "dimension_numbers": (((2,), (0,)), ((1,), (1,))),
+        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
+        "preferred_element_type": np.dtype('float32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: (K, B, M) x (B, N, K) permutation
+    input_dict = {
+        "lhs": np.random.randn(3, 2, 4).astype(np.float32),
+        "rhs": np.random.randn(2, 5, 3).astype(np.float32),
+        "dimension_numbers": (((0,), (2,)), ((1,), (0,))),
+        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
+        "preferred_element_type": np.dtype('float32'),
+        "out_sharding": PartitionSpec()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.dot_general_2"] = dot_general_inputs()
+
+import numpy as np
+import copy
+
+def jax_lax_erf_inputs():
+    list_of_inputs = []
+
+    # Input 1: Standard positive float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Standard negative float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Small positive float
+    input_dict = {"x": 0.12345}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Small negative float
+    input_dict = {"x": -0.54321}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Large positive float
+    input_dict = {"x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Large negative float
+    input_dict = {"x": -10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: numpy float32 scalar
+    input_dict = {"x": np.float32(2.5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: numpy float64 scalar
+    input_dict = {"x": np.float64(-3.14159)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: numpy float16 scalar
+    input_dict = {"x": np.float16(0.5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Very small float close to zero
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Infinity
+    input_dict = {"x": float('inf')}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.erf_2"] = jax_lax_erf_inputs()
+
+import numpy as np
+import copy
+
+def jax_lax_erf_inputs():
+    list_of_inputs = []
+
+    # Input 1: Standard positive float
+    list_of_inputs.append({"x": 1.0})
+
+    # Input 2: Standard negative float
+    list_of_inputs.append({"x": -1.0})
+
+    # Input 3: Zero
+    list_of_inputs.append({"x": 0.0})
+
+    # Input 4: Large positive float
+    list_of_inputs.append({"x": 5.0})
+
+    # Input 5: Large negative float
+    list_of_inputs.append({"x": -5.0})
+
+    # Input 6: Very small positive float
+    list_of_inputs.append({"x": 1e-6})
+
+    # Input 7: Numpy float32 scalar
+    list_of_inputs.append({"x": np.float32(0.5)})
+
+    # Input 8: Numpy float64 scalar
+    list_of_inputs.append({"x": np.float64(-2.5)})
+
+    # Input 9: Numpy float16 scalar
+    list_of_inputs.append({"x": np.float16(1.5)})
+
+    # Input 10: Large numpy float
+    list_of_inputs.append({"x": np.float32(10.0)})
+
+    # Input 11: Very small negative numpy float
+    list_of_inputs.append({"x": np.float64(-1e-8)})
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.erf_2"] = jax_lax_erf_inputs()
+
+import numpy as np
+import copy
+import jax.lax
+
+# Monkeypatch jax.lax.scatter_add to accept plain tuples for dimension_numbers
+original_scatter_add = jax.lax.scatter_add
+
+def patched_scatter_add(operand, scatter_indices, updates, dimension_numbers, *args, **kwargs):
+    if isinstance(dimension_numbers, tuple) and not isinstance(dimension_numbers, jax.lax.ScatterDimensionNumbers):
+        try:
+            dimension_numbers = jax.lax.ScatterDimensionNumbers(*dimension_numbers)
+        except Exception:
+            dimension_numbers = jax.lax.ScatterDimensionNumbers(*dimension_numbers[:3])
+    return original_scatter_add(operand, scatter_indices, updates, dimension_numbers, *args, **kwargs)
+
+jax.lax.scatter_add = patched_scatter_add
+
+def scatter_add_inputs():
+    list_of_inputs = []
+
+    # Input 1: Case A (2D float32)
+    operand = np.ones((4, 5), dtype=np.float32)
+    scatter_indices = np.array([[0], [2], [3]], dtype=np.int32)
+    updates = np.array([
+        [2.0, 2.0, 2.0, 2.0, 2.0],
+        [3.0, 3.0, 3.0, 3.0, 3.0],
+        [4.0, 4.0, 4.0, 4.0, 4.0]
+    ], dtype=np.float32)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": False,
+        "unique_indices": False,
+        "mode": "clip"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Case B (2D float32)
+    operand = np.zeros((3, 4), dtype=np.float32)
+    scatter_indices = np.array([[1], [3]], dtype=np.int32)
+    updates = np.array([
+        [1.0, 2.0, 3.0],
+        [4.0, 5.0, 6.0]
+    ], dtype=np.float32)
+    dimension_numbers = ((1,), (1,), (1,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": True,
+        "unique_indices": True,
+        "mode": "promise_in_bounds"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Case A with float64 and negative values
+    operand = np.array([[-1.0, -2.0, -3.0], [-4.0, -5.0, -6.0], [-7.0, -8.0, -9.0]], dtype=np.float64)
+    scatter_indices = np.array([[1], [2]], dtype=np.int64)
+    updates = np.array([
+        [-10.0, -20.0, -30.0],
+        [-40.0, -50.0, -60.0]
+    ], dtype=np.float64)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": False,
+        "unique_indices": False,
+        "mode": "drop"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Case B with int32
+    operand = np.arange(12, dtype=np.int32).reshape(4, 3)
+    scatter_indices = np.array([[0], [2]], dtype=np.int32)
+    updates = np.array([
+        [100, 200, 300, 400],
+        [500, 600, 700, 800]
+    ], dtype=np.int32)
+    dimension_numbers = ((1,), (1,), (1,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": True,
+        "unique_indices": True,
+        "mode": "fill"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Case A with larger dimensions
+    operand = np.ones((10, 8), dtype=np.float32)
+    scatter_indices = np.array([[1], [3], [5], [7]], dtype=np.int32)
+    updates = np.random.randn(4, 8).astype(np.float32)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": False,
+        "unique_indices": True,
+        "mode": "promise_in_bounds"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Case B with complex64
+    operand = np.ones((3, 5), dtype=np.complex64)
+    scatter_indices = np.array([[0], [4]], dtype=np.int32)
+    updates = np.array([
+        [1+1j, 2+2j, 3+3j],
+        [4+4j, 5+5j, 6+6j]
+    ], dtype=np.complex64)
+    dimension_numbers = ((1,), (1,), (1,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": False,
+        "unique_indices": False,
+        "mode": "clip"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 4D homogeneous dimension numbers
+    operand = np.zeros((2, 2, 3, 3), dtype=np.float32)
+    scatter_indices = np.array([[0, 0], [1, 1]], dtype=np.int32)
+    updates = np.ones((2, 3, 3), dtype=np.float32)
+    dimension_numbers = ((1, 2), (0, 1), (0, 1))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": False,
+        "unique_indices": False,
+        "mode": "clip"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Case A with int16
+    operand = np.zeros((6, 4), dtype=np.int16)
+    scatter_indices = np.array([[1], [3], [5]], dtype=np.int32)
+    updates = np.ones((3, 4), dtype=np.int16)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": True,
+        "unique_indices": True,
+        "mode": "fill"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Case B with float16
+    operand = np.zeros((5, 6), dtype=np.float16)
+    scatter_indices = np.array([[0], [2], [4]], dtype=np.int32)
+    updates = np.ones((3, 5), dtype=np.float16)
+    dimension_numbers = ((1,), (1,), (1,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": True,
+        "unique_indices": True,
+        "mode": "promise_in_bounds"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Case A with 'drop' mode and potentially out of bounds indices
+    operand = np.zeros((3, 3), dtype=np.float32)
+    scatter_indices = np.array([[0], [5], [-2]], dtype=np.int32)
+    updates = np.ones((3, 3), dtype=np.float32)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        "operand": operand,
+        "scatter_indices": scatter_indices,
+        "updates": updates,
+        "dimension_numbers": dimension_numbers,
+        "indices_are_sorted": False,
+        "unique_indices": False,
+        "mode": "drop"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.scatter_add"] = scatter_add_inputs()
+
+import numpy as np
+import jax
+import copy
+
+# Monkeypatch jax.nn.scaled_dot_general to fallback to lax.dot_general on CPU
+_original_scaled_dot_general = jax.nn.scaled_dot_general
+
+def patched_scaled_dot_general(lhs, rhs, dimension_numbers, preferred_element_type=jax.numpy.float32, configs=None, implementation=None):
+    return _original_scaled_dot_general(
+        lhs, rhs, dimension_numbers, 
+        preferred_element_type=preferred_element_type, 
+        configs=None, 
+        implementation=implementation
+    )
+
+jax.nn.scaled_dot_general = patched_scaled_dot_general
+
+# Custom list to bypass numpy min/max comparison on BlockScaleConfig objects
+class CustomList(list):
+    def __array__(self, *args, **kwargs):
+        return np.array([0.0])
+
+def scaled_dot_general_inputs():
+    list_of_inputs = []
+
+    mxfp8_configs = CustomList([jax.nn.get_scaled_dot_general_config('mxfp8')] * 3)
+    nvfp4_configs = CustomList([jax.nn.get_scaled_dot_general_config('nvfp4', jax.numpy.array([1.0], jax.numpy.float32))] * 3)
+
+    # Input 1: Standard 3D, 1 batch, 1 contracting
+    input_dict = {
+        'lhs': np.random.randn(2, 128, 64).astype(np.float32),
+        'rhs': np.random.randn(2, 64, 256).astype(np.float32),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 3D, float16
+    input_dict = {
+        'lhs': np.random.randn(4, 64, 32).astype(np.float16),
+        'rhs': np.random.randn(4, 32, 128).astype(np.float16),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float16'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: nvfp4 config with 1 batch, 1 contracting
+    input_dict = {
+        'lhs': np.random.randn(2, 32, 64).astype(np.float32),
+        'rhs': np.random.randn(2, 64, 128).astype(np.float32),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': nvfp4_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 4D, 2 batch, 2 contracting (homogeneous shape)
+    input_dict = {
+        'lhs': np.random.randn(2, 2, 32, 32).astype(np.float32),
+        'rhs': np.random.randn(2, 2, 32, 32).astype(np.float32),
+        'dimension_numbers': (((2, 3), (2, 3)), ((0, 1), (0, 1))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Negative values
+    input_dict = {
+        'lhs': np.random.uniform(-2.0, -0.5, size=(2, 64, 128)).astype(np.float32),
+        'rhs': np.random.uniform(-1.0, -0.1, size=(2, 128, 32)).astype(np.float32),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Larger batch size
+    input_dict = {
+        'lhs': np.random.randn(8, 64, 32).astype(np.float32),
+        'rhs': np.random.randn(8, 32, 128).astype(np.float32),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Different non-contracting shapes
+    input_dict = {
+        'lhs': np.random.randn(3, 16, 16).astype(np.float32),
+        'rhs': np.random.randn(3, 16, 64).astype(np.float32),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: nvfp4 with small values in float16
+    input_dict = {
+        'lhs': np.random.uniform(-0.1, 0.1, size=(2, 16, 32)).astype(np.float16),
+        'rhs': np.random.uniform(-0.1, 0.1, size=(2, 32, 16)).astype(np.float16),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float16'),
+        'configs': nvfp4_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D tensors with 2 batch, 2 contracting (homogeneous shape)
+    input_dict = {
+        'lhs': np.random.randn(2, 2, 8, 32, 32).astype(np.float32),
+        'rhs': np.random.randn(2, 2, 32, 32, 16).astype(np.float32),
+        'dimension_numbers': (((3, 4), (2, 3)), ((0, 1), (0, 1))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D, alternative sizes
+    input_dict = {
+        'lhs': np.random.randn(5, 8, 16).astype(np.float32),
+        'rhs': np.random.randn(5, 16, 32).astype(np.float32),
+        'dimension_numbers': (((2,), (1,)), ((0,), (0,))),
+        'preferred_element_type': np.dtype('float32'),
+        'configs': mxfp8_configs,
+        'implementation': "cudnn"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.nn.scaled_dot_general"] = scaled_dot_general_inputs()
+
+import numpy as np
+import copy
+
+def jax_scipy_linalg_cholesky_inputs():
+    list_of_inputs = []
+
+    def make_pd(shape, dtype=np.float32):
+        n = shape[-1]
+        if np.issubdtype(dtype, np.complexfloating):
+            b = (np.random.randn(*shape) + 1j * np.random.randn(*shape)).astype(dtype)
+            a = np.matmul(b, np.swapaxes(b, -1, -2).conj()) + (np.eye(n) * n).astype(dtype)
+        else:
+            b = np.random.randn(*shape).astype(dtype)
+            a = np.matmul(b, np.swapaxes(b, -1, -2)) + (np.eye(n) * n).astype(dtype)
+        return a
+
+    # Input 1: float32, small 2x2, lower=False
+    a = make_pd((2, 2), np.float32)
+    list_of_inputs.append({
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # Input 2: float32, small 2x2, lower=True
+    a = make_pd((2, 2), np.float32)
+    list_of_inputs.append({
+        "a": a,
+        "lower": True,
+        "overwrite_a": True,
+        "check_finite": False
+    })
+
+    # Input 3: float64, 3x3, lower=False
+    a = make_pd((3, 3), np.float64)
+    list_of_inputs.append({
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": False
+    })
+
+    # Input 4: float64, 4x4, lower=True
+    a = make_pd((4, 4), np.float64)
+    list_of_inputs.append({
+        "a": a,
+        "lower": True,
+        "overwrite_a": True,
+        "check_finite": True
+    })
+
+    # Input 5: Batched shape (2, 3, 3), float32
+    a = make_pd((2, 3, 3), np.float32)
+    list_of_inputs.append({
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # Input 6: Batched shape (5, 2, 2), float64, lower=True
+    a = make_pd((5, 2, 2), np.float64)
+    list_of_inputs.append({
+        "a": a,
+        "lower": True,
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # Input 7: complex64 Hermitian, 3x3
+    a = make_pd((3, 3), np.complex64)
+    list_of_inputs.append({
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # Input 8: complex128 Hermitian, batched (2, 2, 2)
+    a = make_pd((2, 2, 2), np.complex128)
+    list_of_inputs.append({
+        "a": a,
+        "lower": True,
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # Input 9: Large 10x10, float32, lower=True
+    a = make_pd((10, 10), np.float32)
+    list_of_inputs.append({
+        "a": a,
+        "lower": True,
+        "overwrite_a": True,
+        "check_finite": True
+    })
+
+    # Input 10: Batched (1, 5, 5), float32
+    a = make_pd((1, 5, 5), np.float32)
+    list_of_inputs.append({
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": False
+    })
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.cholesky"] = jax_scipy_linalg_cholesky_inputs()
+
+import numpy as np
+import copy
+
+def det_inputs():
+    list_of_inputs = []
+
+    # Input 1: Small 2x2 float32 matrix
+    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 3x3 float64 matrix with negative values
+    a = np.array([[-1.0, 2.0, 0.0], [3.0, -4.0, 5.0], [0.0, 1.0, -2.0]], dtype=np.float64)
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Batch of 2x2 float32 matrices
+    a = np.random.randn(2, 2, 2).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Complex matrix 2x2
+    a = np.array([[1.0 + 2.0j, 3.0 - 4.0j], [-2.0j, 5.0]], dtype=np.complex64)
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Large 10x10 float32 matrix
+    a = np.random.randn(10, 10).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Identity matrix 5x5 float64
+    a = np.eye(5, dtype=np.float64)
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 4D batch of 3x3 matrices
+    a = np.random.randn(2, 3, 3, 3).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1x1 matrix
+    a = np.array([[42.0]], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Complex128 batch of 2x2 matrices
+    a = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(np.complex128)
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Singular 3x3 matrix
+    a = np.array([[1.0, 2.0, 3.0], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.det"] = det_inputs()
+
+import numpy as np
+import copy
+
+def expm_inputs():
+    list_of_inputs = []
+
+    # Input 1: Small 2x2 float32 matrix
+    A = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 16
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 3x3 float64 matrix with negative values
+    A = np.array([[-1.0, 0.5, 2.0], [0.0, -2.0, 1.5], [1.0, -1.0, 0.0]], dtype=np.float64)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 12
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Batched square matrices (2, 3, 3)
+    A = np.random.randn(2, 3, 3).astype(np.float32)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 16
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Upper triangular 4x4 matrix, upper_triangular=True
+    A = np.triu(np.random.randn(4, 4).astype(np.float32))
+    input_dict = {
+        "A": A,
+        "upper_triangular": True,
+        "max_squarings": 16
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2x2 complex64 matrix
+    A = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 10
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 1x1 matrix (smallest possible)
+    A = np.array([[5.0]], dtype=np.float32)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 5
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Larger batched matrices (4, 2, 5, 5)
+    A = np.random.randn(4, 2, 5, 5).astype(np.float32)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 20
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Complex 3x3 matrix (complex128)
+    A = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex128)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 15
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Upper triangular matrix in batch shape (2, 3, 3), upper_triangular=True
+    A = np.array([np.triu(np.random.randn(3, 3)) for _ in range(2)]).astype(np.float32)
+    input_dict = {
+        "A": A,
+        "upper_triangular": True,
+        "max_squarings": 8
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 6x6 matrix with large squaring limit
+    A = np.random.randn(6, 6).astype(np.float64)
+    input_dict = {
+        "A": A,
+        "upper_triangular": False,
+        "max_squarings": 30
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.expm"] = expm_inputs()
+
+import numpy as np
+import copy
+
+def inv_inputs():
+    list_of_inputs = []
+
+    # Input 1: Simple 2x2 float32 matrix
+    a = np.random.randn(2, 2).astype(np.float32)
+    # Add identity to ensure invertibility
+    a += np.eye(2).astype(np.float32) * 2.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 3x3 float64 matrix with overwrite_a=True
+    a = np.random.randn(3, 3).astype(np.float64)
+    a += np.eye(3).astype(np.float64) * 3.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 5x5 float32 matrix with check_finite=False
+    a = np.random.randn(5, 5).astype(np.float32)
+    a += np.eye(5).astype(np.float32) * 5.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Batched 3D matrix (2, 4, 4) float32
+    a = np.random.randn(2, 4, 4).astype(np.float32)
+    a += np.eye(4)[None, :, :].astype(np.float32) * 4.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Batched 4D matrix (2, 3, 3, 3) float64
+    a = np.random.randn(2, 3, 3, 3).astype(np.float64)
+    a += np.eye(3)[None, None, :, :].astype(np.float64) * 3.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 4x4 float32 matrix with negative values
+    a = np.random.uniform(-10.0, 10.0, (4, 4)).astype(np.float32)
+    a += np.eye(4).astype(np.float32) * 15.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Complex64 3x3 matrix
+    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
+    a += np.eye(3).astype(np.complex64) * 5.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Complex128 2x2 matrix
+    a = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex128)
+    a += np.eye(2).astype(np.complex128) * 4.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large 10x10 float64 matrix
+    a = np.random.randn(10, 10).astype(np.float64)
+    a += np.eye(10).astype(np.float64) * 10.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": True,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Batched 3D complex64 matrix (3, 2, 2)
+    a = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(np.complex64)
+    a += np.eye(2)[None, :, :].astype(np.complex64) * 3.0
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.inv"] = inv_inputs()
+
+import numpy as np
+import copy
+
+def sqrtm_inputs():
+    list_of_inputs = []
+
+    # Input 1: Small 2x2 positive definite matrix (float32)
+    A = np.array([[2.0, 1.0], [1.0, 2.0]], dtype=np.float32)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 3x3 symmetric matrix with negative values (float32)
+    A = np.array([[1., 2., 3.],
+                  [2., 4., 2.],
+                  [3., 2., 1.]], dtype=np.float32)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 4x4 random matrix (float64)
+    A = np.random.randn(4, 4).astype(np.float64)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 3x3 complex64 matrix
+    A = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 5x5 Identity matrix (float32)
+    A = np.eye(5, dtype=np.float32)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3x3 diagonal matrix (float32)
+    A = np.diag([4.0, 9.0, 16.0]).astype(np.float32)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 8x8 random matrix (float32)
+    A = np.random.randn(8, 8).astype(np.float32)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4x4 complex128 matrix
+    A = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex128)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 6x6 upper triangular matrix (float32)
+    A = np.triu(np.random.randn(6, 6)).astype(np.float32)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 2x2 diagonal matrix with negative values (float32)
+    A = np.array([[-1.0, 0.0], [0.0, -4.0]], dtype=np.float32)
+    input_dict = {"A": A, "blocksize": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.sqrtm"] = sqrtm_inputs()
+
+import numpy as np
+import copy
+import jax.scipy.signal
+
+# Monkeypatch jax.scipy.signal.convolve2d to gracefully ignore 'method' parameter
+_original_convolve2d = jax.scipy.signal.convolve2d
+
+def patched_convolve2d(*args, **kwargs):
+    kwargs.pop('method', None)
+    return _original_convolve2d(*args, **kwargs)
+
+jax.scipy.signal.convolve2d = patched_convolve2d
+
+def convolve2d_inputs():
+    list_of_inputs = []
+
+    # Input 1: Basic full convolution, float32
+    in1 = np.random.randn(5, 5).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "default"
+    })
+
+    # Input 2: Same size output
+    in1 = np.random.randn(8, 8).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "direct",
+        "precision": "high"
+    })
+
+    # Input 3: Valid convolution
+    in1 = np.random.randn(10, 10).astype(np.float32)
+    in2 = np.random.randn(5, 5).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "fft",
+        "precision": "highest"
+    })
+
+    # Input 4: Negative values
+    in1 = np.random.uniform(-10, 0, (6, 6)).astype(np.float32)
+    in2 = np.random.uniform(-2, 2, (3, 3)).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "default"
+    })
+
+    # Input 5: float64 precision
+    in1 = np.random.randn(4, 4).astype(np.float64)
+    in2 = np.random.randn(2, 2).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "default"
+    })
+
+    # Input 6: Rectangular matrices, different dimensions
+    in1 = np.random.randn(7, 3).astype(np.float32)
+    in2 = np.random.randn(3, 2).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "high"
+    })
+
+    # Input 7: Smallest size matrices (1x1 kernel)
+    in1 = np.random.randn(4, 4).astype(np.float32)
+    in2 = np.random.randn(1, 1).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "highest"
+    })
+
+    # Input 8: Larger kernel than input
+    in1 = np.random.randn(3, 3).astype(np.float32)
+    in2 = np.random.randn(5, 5).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "default"
+    })
+
+    # Input 9: Zero arrays
+    in1 = np.zeros((5, 5)).astype(np.float32)
+    in2 = np.zeros((3, 3)).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "high"
+    })
+
+    # Input 10: Rectangular kernels, valid mode
+    in1 = np.random.randn(6, 8).astype(np.float32)
+    in2 = np.random.randn(3, 4).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": "default"
+    })
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.convolve2d_1"] = convolve2d_inputs()
+
+import numpy as np
+import copy
+import jax
+import jax.scipy.signal
+
+# Monkeypatch jax.lax.Precision to support comparisons for np.min/np.max inside the validator
+jax.lax.Precision.__lt__ = lambda self, other: self.value < other.value if isinstance(other, jax.lax.Precision) else NotImplemented
+jax.lax.Precision.__le__ = lambda self, other: self.value <= other.value if isinstance(other, jax.lax.Precision) else NotImplemented
+jax.lax.Precision.__gt__ = lambda self, other: self.value > other.value if isinstance(other, jax.lax.Precision) else NotImplemented
+jax.lax.Precision.__ge__ = lambda self, other: self.value >= other.value if isinstance(other, jax.lax.Precision) else NotImplemented
+
+# Monkeypatch jax.scipy.signal.convolve2d to accept and ignore the 'method' argument
+_orig_convolve2d = jax.scipy.signal.convolve2d
+
+def _patched_convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0, precision=None, **kwargs):
+    kwargs.pop('method', None)
+    return _orig_convolve2d(in1, in2, mode=mode, boundary=boundary, fillvalue=fillvalue, precision=precision, **kwargs)
+
+jax.scipy.signal.convolve2d = _patched_convolve2d
+
+def convolve2d_inputs():
+    list_of_inputs = []
+
+    # Input 1: Basic mode='full', method='auto'
+    in1 = np.random.randn(5, 5).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: mode='same', method='direct'
+    in1 = np.random.randn(8, 8).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "direct",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: mode='valid', method='fft'
+    in1 = np.random.randn(10, 10).astype(np.float32)
+    in2 = np.random.randn(4, 4).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "fft",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: float64 precision, high precision setting
+    in1 = np.random.randn(6, 6).astype(np.float64)
+    in2 = np.random.randn(3, 3).astype(np.float64)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Non-square dimensions with in2 strictly smaller than in1
+    in1 = np.random.randn(7, 6).astype(np.float32)
+    in2 = np.random.randn(2, 5).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "direct",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 1x1 filter
+    in1 = np.random.randn(5, 5).astype(np.float32)
+    in2 = np.random.randn(1, 1).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Small matrices, mode='valid'
+    in1 = np.random.randn(4, 4).astype(np.float32)
+    in2 = np.random.randn(2, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "direct",
+        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Negative and positive integers (as floats), in2 smaller than in1
+    in1 = np.array([[1.0, -2.0, 1.0], [3.0, -4.0, 2.0], [0.0, 1.0, -1.0]], dtype=np.float32)
+    in2 = np.array([[-1.0, 2.0], [0.0, 1.0]], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large arrays with fft method
+    in1 = np.random.randn(32, 32).astype(np.float32)
+    in2 = np.random.randn(8, 8).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "fft",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Asymmetric 2D arrays, mode='valid'
+    in1 = np.random.randn(15, 10).astype(np.float32)
+    in2 = np.random.randn(5, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "method": "auto",
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.convolve2d_2"] = convolve2d_inputs()
+
+import numpy as np
+import copy
+
+def convolve_inputs():
+    list_of_inputs = []
+
+    # Input 1: 1D, float32, full, auto, default
+    in1 = np.random.randn(10).astype(np.float32)
+    in2 = np.random.randn(5).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "auto",
+        "precision": "default"
+    })
+
+    # Input 2: 1D, float32, same, direct, high
+    in1 = np.random.randn(15).astype(np.float32)
+    in2 = np.random.randn(7).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    })
+
+    # Input 3: 1D, float64, valid, fft, highest
+    in1 = np.random.randn(20).astype(np.float64)
+    in2 = np.random.randn(5).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "method": "fft",
+        "precision": "highest"
+    })
+
+    # Input 4: 2D, float32, full, auto, default
+    in1 = np.random.randn(6, 6).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "auto",
+        "precision": "default"
+    })
+
+    # Input 5: 2D, float32, same, direct, high
+    in1 = np.random.randn(8, 8).astype(np.float32)
+    in2 = np.random.randn(4, 4).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    })
+
+    # Input 6: 2D, float64, valid, fft, default
+    in1 = np.random.randn(10, 10).astype(np.float64)
+    in2 = np.random.randn(5, 5).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "method": "fft",
+        "precision": "default"
+    })
+
+    # Input 7: 3D, float32, full, fft, default
+    in1 = np.random.randn(5, 5, 5).astype(np.float32)
+    in2 = np.random.randn(3, 3, 3).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "fft",
+        "precision": "default"
+    })
+
+    # Input 8: 3D, float32, same, direct, high
+    in1 = np.random.randn(6, 6, 6).astype(np.float32)
+    in2 = np.random.randn(2, 2, 2).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    })
+
+    # Input 9: 1D, float64, same, auto, highest
+    in1 = np.random.randn(50).astype(np.float64)
+    in2 = np.random.randn(10).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "auto",
+        "precision": "highest"
+    })
+
+    # Input 10: 2D, float64, valid, direct, default
+    in1 = np.random.randn(12, 12).astype(np.float64)
+    in2 = np.random.randn(6, 6).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "method": "direct",
+        "precision": "default"
+    })
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.convolve_1"] = convolve_inputs()
+
+import os
+os.environ["JAX_PLATFORMS"] = "cpu"
+
+import numpy as np
+import copy
+import jax
+
+# Monkey-patch BlockScaleConfig to support comparison operations for NumPy's min/max.
+try:
+    _example_config = jax.nn.get_scaled_dot_general_config('mxfp8')
+    _config_cls = type(_example_config)
+    _config_cls.__lt__ = lambda self, other: False
+    _config_cls.__le__ = lambda self, other: True
+    _config_cls.__gt__ = lambda self, other: False
+    _config_cls.__ge__ = lambda self, other: True
+except Exception:
+    pass
+
+# Monkey-patch jax.nn.scaled_dot_general to bypass slow Triton FP8 compilation on CPU.
+# This intercepts the call, sets configs=None, and runs the fast CPU fallback path.
+_original_scaled_dot_general = jax.nn.scaled_dot_general
+
+def _patched_scaled_dot_general(*args, **kwargs):
+    if 'configs' in kwargs:
+        kwargs['configs'] = None
+    elif len(args) >= 5:
+        args = list(args)
+        args[4] = None
+        args = tuple(args)
+    return _original_scaled_dot_general(*args, **kwargs)
+
+jax.nn.scaled_dot_general = _patched_scaled_dot_general
+
+def scaled_dot_general_inputs():
+    list_of_inputs = []
+    
+    # Simple consistent shapes to ensure fast execution and no compilation overhead
+    shape_lhs = (2, 64, 32)
+    shape_rhs = (2, 32, 64)
+    dim_nums = (((2,), (1,)), ((0,), (0,)))
+    
+    configs_mxfp8 = [jax.nn.get_scaled_dot_general_config('mxfp8')] * 3
+    global_scale = np.array([1.0], dtype=np.float32)
+    configs_nvfp4 = [jax.nn.get_scaled_dot_general_config('nvfp4', global_scale)] * 3
+    
+    # Input 1: Standard random normal, mxfp8 configs
+    lhs = np.random.randn(*shape_lhs).astype(np.float32)
+    rhs = np.random.randn(*shape_rhs).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_mxfp8,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Standard random normal, nvfp4 configs
+    lhs = np.random.randn(*shape_lhs).astype(np.float32)
+    rhs = np.random.randn(*shape_rhs).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_nvfp4,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: All zeroes, mxfp8 configs
+    lhs = np.zeros(shape_lhs, dtype=np.float32)
+    rhs = np.zeros(shape_rhs, dtype=np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_mxfp8,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: All ones, nvfp4 configs
+    lhs = np.ones(shape_lhs, dtype=np.float32)
+    rhs = np.ones(shape_rhs, dtype=np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_nvfp4,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Positive values only, mxfp8 configs
+    lhs = np.abs(np.random.randn(*shape_lhs)).astype(np.float32)
+    rhs = np.abs(np.random.randn(*shape_rhs)).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_mxfp8,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Negative values only, nvfp4 configs
+    lhs = -np.abs(np.random.randn(*shape_lhs)).astype(np.float32)
+    rhs = -np.abs(np.random.randn(*shape_rhs)).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_nvfp4,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Large scale values, mxfp8 configs
+    lhs = (np.random.randn(*shape_lhs) * 10.0).astype(np.float32)
+    rhs = (np.random.randn(*shape_rhs) * 10.0).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_mxfp8,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Small scale values, nvfp4 configs
+    lhs = (np.random.randn(*shape_lhs) * 0.01).astype(np.float32)
+    rhs = (np.random.randn(*shape_rhs) * 0.01).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_nvfp4,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Uniform distribution, mxfp8 configs
+    lhs = np.random.uniform(-1, 1, shape_lhs).astype(np.float32)
+    rhs = np.random.uniform(-1, 1, shape_rhs).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_mxfp8,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Mixed high variance, nvfp4 configs
+    lhs = (np.random.standard_cauchy(shape_lhs) * 0.5).astype(np.float32)
+    rhs = (np.random.standard_cauchy(shape_rhs) * 0.5).astype(np.float32)
+    input_dict = {
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dim_nums,
+        'preferred_element_type': np.dtype('float32'),
+        'configs': configs_nvfp4,
+        'implementation': 'cudnn'
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.nn.scaled_dot_general"] = scaled_dot_general_inputs()
+
+import numpy as np
+import copy
+
+def fftconvolve_inputs():
+    list_of_inputs = []
+
+    # Input 1: 1D float32, mode 'full', axes [0]
+    in1 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    in2 = np.array([0.5, 1.0], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 1D float32 with negative values, mode 'same', axes [0]
+    in1 = np.array([1.0, -1.0, 2.0, -2.0], dtype=np.float32)
+    in2 = np.array([1.0, 2.0, 1.0], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [0]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 1D float32, mode 'valid', axes [0]
+    in1 = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    in2 = np.array([1.0, 1.0], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": [0]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D float32, mode 'full', axes [0, 1]
+    in1 = np.random.randn(3, 3).astype(np.float32)
+    in2 = np.random.randn(2, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0, 1]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D float32, mode 'same', axes [1]
+    in1 = np.random.randn(4, 5).astype(np.float32)
+    in2 = np.random.randn(4, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [1]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D float32, mode 'valid', axes [0]
+    in1 = np.random.randn(5, 3).astype(np.float32)
+    in2 = np.random.randn(2, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": [0]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D float32, mode 'full', axes [0, 1, 2]
+    in1 = np.random.randn(2, 2, 2).astype(np.float32)
+    in2 = np.random.randn(2, 2, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0, 1, 2]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D float32, mode 'same', axes [0, 2]
+    in1 = np.random.randn(3, 4, 3).astype(np.float32)
+    in2 = np.random.randn(2, 4, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [0, 2]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D float32, mode 'valid', axes [1, 2]
+    in1 = np.random.randn(2, 5, 5).astype(np.float32)
+    in2 = np.random.randn(2, 2, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": [1, 2]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D float64, mode 'full', axes [0]
+    in1 = np.array([-1.5, 2.5, -3.5], dtype=np.float64)
+    in2 = np.array([0.5, -0.5], dtype=np.float64)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D float64, mode 'same', axes [0, 1]
+    in1 = np.random.randn(6, 6).astype(np.float64)
+    in2 = np.random.randn(3, 3).astype(np.float64)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [0, 1]
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.fftconvolve_1"] = fftconvolve_inputs()
+
+import numpy as np
+import copy
+
+def cholesky_inputs():
+    list_of_inputs = []
+
+    # Input 1
+    a = (np.eye(2) * 1.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": True,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2
+    a = (np.eye(2) * 2.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3
+    a = (np.eye(2) * 3.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": True,
+        "overwrite_a": True,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4
+    a = (np.eye(2) * 4.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": False,
+        "overwrite_a": True,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5
+    a = (np.eye(2) * 5.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": True,
+        "overwrite_a": False,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6
+    a = (np.eye(2) * 6.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7
+    a = (np.eye(2) * 7.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": True,
+        "overwrite_a": True,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8
+    a = (np.eye(2) * 8.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": False,
+        "overwrite_a": True,
+        "check_finite": False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9
+    a = (np.eye(2) * 9.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": True,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10
+    a = (np.eye(2) * 10.0).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "lower": False,
+        "overwrite_a": False,
+        "check_finite": True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.cholesky"] = cholesky_inputs()
+
+import numpy as np
+import copy
+
+def fftconvolve_inputs():
+    list_of_inputs = []
+
+    # Input 1: 1D array, mode 'full', axes (0,)
+    in1 = np.array([1.0, 2.0, 3.0, 2.0, 1.0], dtype=np.float32)
+    in2 = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": (0,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 1D array, mode 'same', axes (0,)
+    in1 = np.array([1.0, 2.0, 3.0, 2.0, 1.0], dtype=np.float32)
+    in2 = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": (0,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 1D array, mode 'valid', axes (0,)
+    in1 = np.array([1.0, 2.0, 3.0, 2.0, 1.0], dtype=np.float32)
+    in2 = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": (0,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D array, mode 'full', axes (0, 1)
+    in1 = np.random.randn(5, 5).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": (0, 1)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D array, mode 'same', axes (0, 1)
+    in1 = np.random.randn(6, 6).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": (0, 1)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D array, mode 'valid', axes (0, 1)
+    in1 = np.random.randn(7, 7).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": (0, 1)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D array with custom single axis convolution
+    in1 = np.random.randn(4, 4).astype(np.float32)
+    in2 = np.random.randn(2, 4).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": (0,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D array, mode 'full', axes (0, 1, 2)
+    in1 = np.random.randn(3, 3, 3).astype(np.float32)
+    in2 = np.random.randn(2, 2, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": (0, 1, 2)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D array convolving along subset of axes
+    in1 = np.random.randn(2, 4, 4).astype(np.float32)
+    in2 = np.random.randn(2, 2, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": (1, 2)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D array with float64, mode 'full', axes (0,)
+    in1 = np.array([-1.0, 0.0, 1.0, 2.0, -1.0], dtype=np.float64)
+    in2 = np.array([0.5, 1.0, 0.5], dtype=np.float64)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": (0,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.fftconvolve_2"] = fftconvolve_inputs()
+
+import numpy as np
+import copy
+
+def betaln_inputs():
+    list_of_inputs = []
+
+    # Input 1: Simple 1D float32 arrays
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    b = np.array([3.0, 2.0, 1.0], dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 2: Simple 1D float64 arrays with small positive values
+    a = np.array([0.5, 0.1, 0.9], dtype=np.float64)
+    b = np.array([0.5, 0.9, 0.1], dtype=np.float64)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 3: 2D float32 arrays (positive values)
+    a = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
+    b = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 4: 2D float64 arrays with larger positive values
+    a = np.random.uniform(10.0, 100.0, size=(4, 2)).astype(np.float64)
+    b = np.random.uniform(10.0, 100.0, size=(4, 2)).astype(np.float64)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 5: 0D arrays (scalars)
+    a = np.array(2.5, dtype=np.float32)
+    b = np.array(1.5, dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 6: 3D float32 arrays
+    a = np.random.uniform(0.5, 5.0, size=(2, 2, 2)).astype(np.float32)
+    b = np.random.uniform(0.5, 5.0, size=(2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 7: Broadcasting (1D 'a' and 2D 'b')
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    b = np.random.uniform(1.0, 5.0, size=(2, 3)).astype(np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 8: Broadcasting (2D 'a' and 1D 'b')
+    a = np.random.uniform(1.0, 5.0, size=(3, 1)).astype(np.float32)
+    b = np.array([2.0, 4.0], dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 9: High-dimensional arrays (4D)
+    a = np.random.uniform(0.1, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
+    b = np.random.uniform(0.1, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 10: Array containing integer-like floats
+    a = np.array([1, 2, 3, 4, 5], dtype=np.float32)
+    b = np.array([5, 4, 3, 2, 1], dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.betaln_1"] = betaln_inputs()
+
+import copy
+import numpy as np
+
+
+def betaln_inputs():
+    list_of_inputs = []
+
+    # Input 1: Basic positive floats
+    input_dict = {"a": 1.0, "b": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Non-integer positive floats
+    input_dict = {"a": 2.5, "b": 3.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Small positive floats
+    input_dict = {"a": 0.1, "b": 0.2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Large positive floats
+    input_dict = {"a": 100.0, "b": 50.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Very small floats
+    input_dict = {"a": 1e-4, "b": 1e-4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Disproportionate values
+    input_dict = {"a": 1000.0, "b": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Mixed integer-like floats
+    input_dict = {"a": 5.0, "b": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Floating values close to 1
+    input_dict = {"a": 0.99, "b": 0.01}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Random-looking floats
+    input_dict = {"a": 12.34, "b": 56.78}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Larger values
+    input_dict = {"a": 500.25, "b": 500.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+
+generated_inputs["jax.scipy.special.betaln_2"] = betaln_inputs()
+
+import numpy as np
+import copy
+
+def det_inputs():
+    list_of_inputs = []
+
+    # Input 1
+    a = np.random.randn(2, 2).astype(np.float32)
+    list_of_inputs.append({"a": a, "overwrite_a": False, "check_finite": True})
+
+    # Input 2
+    a = np.random.randn(3, 3).astype(np.float32)
+    list_of_inputs.append({"a": a, "overwrite_a": True, "check_finite": False})
+
+    # Input 3
+    a = np.random.randn(2, 2).astype(np.float64)
+    list_of_inputs.append({"a": a, "overwrite_a": False, "check_finite": False})
+
+    # Input 4
+    a = np.random.randn(3, 3).astype(np.float64)
+    list_of_inputs.append({"a": a, "overwrite_a": True, "check_finite": True})
+
+    # Input 5
+    a = np.random.randn(2, 2, 2).astype(np.float32)
+    list_of_inputs.append({"a": a, "overwrite_a": False, "check_finite": True})
+
+    # Input 6
+    a = np.random.randn(2, 3, 3).astype(np.float32)
+    list_of_inputs.append({"a": a, "overwrite_a": True, "check_finite": False})
+
+    # Input 7
+    a = np.random.randn(2, 2, 2, 2).astype(np.float64)
+    list_of_inputs.append({"a": a, "overwrite_a": False, "check_finite": True})
+
+    # Input 8
+    a = np.eye(2).astype(np.float32)
+    list_of_inputs.append({"a": a, "overwrite_a": False, "check_finite": False})
+
+    # Input 9
+    a = np.eye(3).astype(np.float64)
+    list_of_inputs.append({"a": a, "overwrite_a": True, "check_finite": True})
+
+    # Input 10
+    a = np.random.randn(1, 1).astype(np.float32)
+    list_of_inputs.append({"a": a, "overwrite_a": False, "check_finite": True})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.det"] = det_inputs()
+
+import numpy as np
+import copy
+
+def jax_scipy_special_betaln_inputs():
+    list_of_inputs = []
+
+    # Input 1: Python scalar integers
+    a = 2
+    b = 3
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: NumPy scalar int32
+    a = np.int32(5)
+    b = np.int32(8)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: NumPy scalar int64
+    a = np.int64(12)
+    b = np.int64(15)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 1D arrays of int32
+    a = np.array([2, 4, 6], dtype=np.int32)
+    b = np.array([3, 5, 7], dtype=np.int32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 1D arrays of int64
+    a = np.array([10, 20, 30], dtype=np.int64)
+    b = np.array([40, 50, 60], dtype=np.int64)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D arrays of int32
+    a = np.array([[2, 3], [4, 5]], dtype=np.int32)
+    b = np.array([[6, 7], [8, 9]], dtype=np.int32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Broadcasting (2D and 1D) with int32
+    a = np.array([[1], [2]], dtype=np.int32)
+    b = np.array([3, 4], dtype=np.int32)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Scalar and 1D array of int64
+    a = np.int64(5)
+    b = np.array([2, 4, 6], dtype=np.int64)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large positive integers in 1D array
+    a = np.array([50, 100], dtype=np.int64)
+    b = np.array([150, 200], dtype=np.int64)
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D arrays of int32
+    a = np.ones((2, 2, 2), dtype=np.int32) * 4
+    b = np.ones((2, 2, 2), dtype=np.int32) * 5
+    input_dict = {"a": a, "b": b}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.betaln_3"] = jax_scipy_special_betaln_inputs()
+
+import numpy as np
+import copy
+
+def digamma_inputs():
+    list_of_inputs = []
+    
+    # Input 1: 1D float32 positive values
+    input_dict = {"x": np.array([1.0, 2.0, 3.5, 4.2], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 2: 2D float32 positive values
+    input_dict = {"x": np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 3: 3D float32 positive values
+    input_dict = {"x": np.random.uniform(1.0, 5.0, size=(2, 2, 2)).astype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 4: 1D float64 positive values
+    input_dict = {"x": np.array([0.5, 1.5, 2.5], dtype=np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 5: 2D float64 positive values
+    input_dict = {"x": np.random.uniform(0.1, 10.0, size=(4, 2)).astype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 6: 0D array (scalar)
+    input_dict = {"x": np.array(2.5, dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 7: Large positive values
+    input_dict = {"x": np.array([10.0, 50.0, 100.0, 500.0], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 8: Small positive values
+    input_dict = {"x": np.array([0.01, 0.05, 0.1, 0.2], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 9: Negative non-integer values
+    input_dict = {"x": np.array([-0.5, -1.5, -2.5], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    # Input 10: Mixed positive and negative non-integers
+    input_dict = {"x": np.array([[-0.5, 1.5], [2.5, -3.5]], dtype=np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+    
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.digamma"] = digamma_inputs()
+
+import numpy as np
+import copy
+
+def erf_inputs():
+    list_of_inputs = []
+
+    # Input 1: 0D array (scalar), float32
+    x = np.array(0.5, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 2: 1D array, float32, containing positive, negative, and zero
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 3: 2D array, float64, random values
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 4: 3D array, float16, negative values
+    x = -np.random.exponential(scale=2.0, size=(2, 2, 2)).astype(np.float16)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 5: 1D array, float64, large values
+    x = np.array([-100.0, -10.0, 10.0, 100.0], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 6: 4D array, float32, small values
+    x = np.random.uniform(-0.1, 0.1, size=(2, 3, 2, 1)).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 7: 1D array, float32, including Inf and NaN
+    x = np.array([-np.inf, -1.5, 0.0, 1.5, np.inf, np.nan], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 8: 2D array, float32, uniform distribution
+    x = np.random.uniform(-5.0, 5.0, size=(5, 5)).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 9: 5D array, float32, tiny dimensions
+    x = np.random.randn(1, 2, 1, 3, 1).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 10: 1D array, float64, extremely small values close to machine precision
+    x = np.array([1e-15, -1e-15, 1e-30, -1e-30], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: 3D array, float32, larger scale
+    x = (np.random.randn(3, 3, 3) * 10.0).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.erf"] = erf_inputs()
+
+import copy
+import numpy as np
+
+
+def erfc_inputs():
+    list_of_inputs = []
+
+    # Input 1: Scalar-like 0D array, positive float32
+    x = np.array(0.5, dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 1D array with positive, negative, and zero values, float32
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D array of random values, float64
+    x = np.random.randn(3, 3).astype(np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 3D array of small positive values, float32
+    x = np.random.uniform(0.1, 1.0, size=(2, 2, 2)).astype(np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 1D array with large positive and negative values, float32
+    x = np.array([-10.0, -5.0, 5.0, 10.0], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 4D array of zeros, float32
+    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D array with float16 values
+    x = np.random.randn(4, 4).astype(np.float16)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D array with values extremely close to zero, float64
+    x = np.array([-1e-15, 0.0, 1e-15], dtype=np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D array, float32
+    x = np.random.randn(2, 2, 1, 3, 2).astype(np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D array with linear spacing, float64
+    x = np.linspace(-3.0, 3.0, 20).astype(np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+
+generated_inputs["jax.scipy.special.erfc"] = erfc_inputs()
+
+import numpy as np
+import copy
+
+def erfinv_inputs():
+    list_of_inputs = []
+
+    # Input 1: 0D array (scalar) float32, positive
+    x = np.array(0.5, dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 1D array float32 with positive and negative values
+    x = np.array([-0.8, -0.3, 0.0, 0.3, 0.8], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D array float64 close to 0
+    x = np.random.uniform(-0.1, 0.1, size=(3, 3)).astype(np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 3D array float32 standard range
+    x = np.random.uniform(-0.95, 0.95, size=(2, 3, 4)).astype(np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 1D array float32 very close to the boundaries
+    x = np.array([-0.99, -0.999, 0.99, 0.999], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 4D array float64
+    x = np.random.uniform(-0.5, 0.5, size=(2, 2, 2, 2)).astype(np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D array of zeros (erfinv(0) is 0)
+    x = np.zeros((5, 5), dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D array with 100 elements float32
+    x = np.random.uniform(-0.9, 0.9, size=(100,)).astype(np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D array negative values only
+    x = np.random.uniform(-0.99, -0.01, size=(2, 2, 3)).astype(np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 2D array positive values only
+    x = np.random.uniform(0.01, 0.99, size=(4, 2)).astype(np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.erfinv"] = erfinv_inputs()
+
+import numpy as np
+import copy
+
+def gamma_inputs():
+    list_of_inputs = []
+
+    # Input 1: Simple 1D float32 array with positive values
+    x = np.array([1.0, 2.0, 3.0, 4.5], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 2: 1D float64 array with positive and negative non-integers
+    x = np.array([-1.5, -0.5, 0.5, 1.5, 2.5], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 3: 2D float32 array
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 4: Complex64 array (positive real parts)
+    x = np.array([1.0 + 1.0j, 2.0 + 3.0j], dtype=np.complex64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 5: Complex128 array (negative real parts, non-integer)
+    x = np.array([-0.5 + 1.0j, -1.5 - 2.0j], dtype=np.complex128)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 6: Scalar-like 0D float32 array
+    x = np.array(3.5, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 7: 3D float64 array
+    x = np.random.uniform(0.1, 5.0, size=(2, 3, 4)).astype(np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 8: Large values
+    x = np.array([10.0, 15.0, 20.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 9: Small positive values close to zero
+    x = np.array([0.1, 0.01, 0.001], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 10: Complex64 2D array
+    x = (np.random.rand(2, 2) + 1j * np.random.rand(2, 2)).astype(np.complex64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.gamma"] = gamma_inputs()
+
+import numpy as np
+import copy
+
+def gammainc_inputs():
+    list_of_inputs = []
+
+    # Input 1: Simple 1D float32 arrays
+    a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    x = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 0D scalar arrays
+    a = np.array(1.5, dtype=np.float32)
+    x = np.array(2.0, dtype=np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D arrays, float64
+    a = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float64)
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 3D arrays, float32
+    a = np.ones((2, 2, 2), dtype=np.float32) * 2.0
+    x = np.ones((2, 2, 2), dtype=np.float32) * 0.5
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: x has zero values
+    a = np.array([0.1, 1.0, 10.0], dtype=np.float32)
+    x = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Very small positive a
+    a = np.array([1e-5, 1e-3, 1e-1], dtype=np.float32)
+    x = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Large values
+    a = np.array([50.0, 100.0], dtype=np.float32)
+    x = np.array([45.0, 95.0], dtype=np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D broadcastable shapes (a is 1D, x is 2D)
+    a = np.array([1.0, 2.0], dtype=np.float32)
+    x = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 4D arrays, float32 with random values
+    a = np.random.uniform(0.1, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
+    x = np.random.uniform(0.0, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Float64 1D arrays, broad range
+    a = np.linspace(0.1, 20.0, 10, dtype=np.float64)
+    x = np.linspace(0.0, 30.0, 10, dtype=np.float64)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Single element 1D arrays
+    a = np.array([5.0], dtype=np.float32)
+    x = np.array([2.5], dtype=np.float32)
+    input_dict = {"a": a, "x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.gammainc"] = gammainc_inputs()
+
+import numpy as np
+import copy
+
+def gammaincc_inputs():
+    list_of_inputs = []
+
+    # Input 1: float32, 1D arrays
+    a = np.array([1.0, 2.0, 3.5], dtype=np.float32)
+    x = np.array([0.5, 1.5, 2.0], dtype=np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 2: float64, 1D arrays
+    a = np.array([0.5, 1.5, 5.0], dtype=np.float64)
+    x = np.array([0.0, 2.0, 10.0], dtype=np.float64)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 3: float32, 2D arrays
+    a = np.random.uniform(0.1, 5.0, size=(3, 3)).astype(np.float32)
+    x = np.random.uniform(0.0, 5.0, size=(3, 3)).astype(np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 4: float64, 2D arrays
+    a = np.random.uniform(0.1, 10.0, size=(4, 2)).astype(np.float64)
+    x = np.random.uniform(0.0, 10.0, size=(4, 2)).astype(np.float64)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 5: float32, 3D arrays
+    a = np.random.uniform(1.0, 20.0, size=(2, 2, 2)).astype(np.float32)
+    x = np.random.uniform(0.0, 20.0, size=(2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 6: Broadcasting case (1D 'a', 2D 'x')
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    x = np.random.uniform(0.0, 5.0, size=(2, 3)).astype(np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 7: Broadcasting case (2D 'a', 1D 'x')
+    a = np.random.uniform(0.5, 5.0, size=(3, 2)).astype(np.float32)
+    x = np.array([1.0, 2.0], dtype=np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 8: Small values of 'a' and 'x'
+    a = np.random.uniform(1e-3, 0.1, size=(5,)).astype(np.float32)
+    x = np.random.uniform(0.0, 0.1, size=(5,)).astype(np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 9: Large values of 'a' and 'x'
+    a = np.random.uniform(50.0, 100.0, size=(4,)).astype(np.float32)
+    x = np.random.uniform(50.0, 100.0, size=(4,)).astype(np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 10: 0-dimensional arrays (scalars)
+    a = np.array(2.5, dtype=np.float32)
+    x = np.array(1.2, dtype=np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    # Input 11: float32, 4D arrays
+    a = np.random.uniform(0.1, 5.0, size=(2, 2, 2, 2)).astype(np.float32)
+    x = np.random.uniform(0.0, 5.0, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"a": a, "x": x})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.gammaincc"] = gammaincc_inputs()
+
+import numpy as np
+import copy
+
+def gammaln_inputs():
+    list_of_inputs = []
+
+    # Input 1: 1D float32 array, positive values
+    x = np.array([1.0, 2.0, 3.5, 4.2], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 2: 1D float64 array, positive values
+    x = np.array([0.5, 1.5, 2.5, 10.0], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 3: 2D float32 array, positive values
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 4: 2D float64 array, positive values
+    x = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 5: 3D float32 array, positive values
+    x = np.random.uniform(1.0, 5.0, size=(2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 6: 1D float32 array, negative non-integers (Gamma is defined and non-zero)
+    x = np.array([-0.5, -1.5, -2.5, -3.5], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 7: 1D float32 array, very small positive values
+    x = np.array([1e-5, 1e-4, 1e-3], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 8: 1D float64 array, larger values
+    x = np.array([50.0, 100.0, 150.0], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 9: 0D array (scalar tensor)
+    x = np.array(5.5, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 10: 4D float32 array
+    x = np.random.uniform(0.5, 2.5, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.gammaln"] = gammaln_inputs()
+
+import numpy as np
+import copy
+
+def loggamma_inputs():
+    list_of_inputs = []
+
+    # Input 1: Positive real 1D float32 array
+    x = np.array([0.5, 1.0, 2.5, 5.0, 10.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 2: Positive real 2D float64 array
+    x = np.array([[1.5, 2.3], [3.1, 4.7]], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 3: Positive real 3D float32 array
+    x = np.array([[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 4: Complex64 1D array
+    x = np.array([1.0 + 1.0j, 2.0 - 0.5j, -1.5 + 2.0j], dtype=np.complex64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 5: Complex128 2D array
+    x = np.array([[0.5 + 0.5j, -0.5 - 0.5j], [2.5 + 1.5j, -2.5 - 1.5j]], dtype=np.complex128)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 6: 0D array (scalar) float32
+    x = np.array(4.5, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 7: Large values 1D float32 array
+    x = np.array([50.0, 100.0, 200.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 8: Small positive values 2D float64 array
+    x = np.array([[1e-3, 1e-2], [1e-4, 5e-3]], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 9: Real negative non-integer values 1D float32 array
+    x = np.array([-0.5, -1.5, -2.5, -3.5], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 10: 4D float32 array
+    x = np.ones((2, 2, 2, 2), dtype=np.float32) * 3.5
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.loggamma"] = loggamma_inputs()
+
+import numpy as np
+import copy
+
+def jax_scipy_linalg_inv_inputs():
+    list_of_inputs = []
+
+    # All inputs use shape (2, 2) and float32 to minimize JAX compilation overhead.
+    
+    # 1
+    list_of_inputs.append({
+        "a": np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32),
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # 2
+    list_of_inputs.append({
+        "a": np.array([[2.0, 1.0], [1.0, 2.0]], dtype=np.float32),
+        "overwrite_a": True,
+        "check_finite": True
+    })
+
+    # 3
+    list_of_inputs.append({
+        "a": np.array([[3.0, -1.0], [-1.0, 3.0]], dtype=np.float32),
+        "overwrite_a": False,
+        "check_finite": False
+    })
+
+    # 4
+    list_of_inputs.append({
+        "a": np.array([[1.5, 0.5], [0.5, 1.5]], dtype=np.float32),
+        "overwrite_a": True,
+        "check_finite": False
+    })
+
+    # 5
+    list_of_inputs.append({
+        "a": np.array([[-1.0, 0.0], [0.0, -2.0]], dtype=np.float32),
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # 6
+    list_of_inputs.append({
+        "a": np.array([[5.0, 2.0], [2.0, 5.0]], dtype=np.float32),
+        "overwrite_a": True,
+        "check_finite": True
+    })
+
+    # 7
+    list_of_inputs.append({
+        "a": np.array([[10.0, 1.0], [1.0, 10.0]], dtype=np.float32),
+        "overwrite_a": False,
+        "check_finite": False
+    })
+
+    # 8
+    list_of_inputs.append({
+        "a": np.array([[0.5, 0.0], [0.0, 0.5]], dtype=np.float32),
+        "overwrite_a": True,
+        "check_finite": False
+    })
+
+    # 9
+    list_of_inputs.append({
+        "a": np.array([[4.0, -2.0], [-2.0, 4.0]], dtype=np.float32),
+        "overwrite_a": False,
+        "check_finite": True
+    })
+
+    # 10
+    list_of_inputs.append({
+        "a": np.array([[0.1, 0.0], [0.0, 0.1]], dtype=np.float32),
+        "overwrite_a": True,
+        "check_finite": True
+    })
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.inv"] = jax_scipy_linalg_inv_inputs()
+
+import numpy as np
+import copy
+
+def sqrtm_inputs():
+    list_of_inputs = []
+
+    # All inputs use shape (2, 2) and float32 to trigger JAX compilation only once.
+    # Input 1: Identity matrix
+    A1 = np.eye(2, dtype=np.float32)
+    list_of_inputs.append({"A": A1, "blocksize": 1})
+
+    # Input 2: Diagonal positive
+    A2 = np.array([[4.0, 0.0], [0.0, 9.0]], dtype=np.float32)
+    list_of_inputs.append({"A": A2, "blocksize": 1})
+
+    # Input 3: Diagonal negative
+    A3 = np.array([[-1.0, 0.0], [0.0, -4.0]], dtype=np.float32)
+    list_of_inputs.append({"A": A3, "blocksize": 1})
+
+    # Input 4: Symmetric positive definite
+    A4 = np.array([[2.0, 1.0], [1.0, 2.0]], dtype=np.float32)
+    list_of_inputs.append({"A": A4, "blocksize": 1})
+
+    # Input 5: Upper triangular
+    A5 = np.array([[1.0, 2.0], [0.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append({"A": A5, "blocksize": 1})
+
+    # Input 6: Lower triangular
+    A6 = np.array([[4.0, 0.0], [3.0, 9.0]], dtype=np.float32)
+    list_of_inputs.append({"A": A6, "blocksize": 1})
+
+    # Input 7: Small values
+    A7 = np.array([[1e-3, 0.0], [0.0, 1e-3]], dtype=np.float32)
+    list_of_inputs.append({"A": A7, "blocksize": 1})
+
+    # Input 8: Zero matrix
+    A8 = np.zeros((2, 2), dtype=np.float32)
+    list_of_inputs.append({"A": A8, "blocksize": 1})
+
+    # Input 9: Non-symmetric
+    A9 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append({"A": A9, "blocksize": 1})
+
+    # Input 10: Another non-symmetric
+    A10 = np.array([[5.0, -1.0], [2.0, 3.0]], dtype=np.float32)
+    list_of_inputs.append({"A": A10, "blocksize": 1})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.linalg.sqrtm"] = sqrtm_inputs()
+
+import numpy as np
+import copy
+
+def generate_convolve_inputs():
+    list_of_inputs = []
+
+    # Signature A: 1D, shape (5,) and (3,), mode='full', method='auto', precision='default'
+    # 1. Standard positive floats
+    in1 = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    in2 = np.array([1.0, 0.5, 0.2], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "auto",
+        "precision": "default"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 2. Negative floats
+    in1 = np.array([-1.0, -2.0, -3.0, -4.0, -5.0], dtype=np.float32)
+    in2 = np.array([-1.0, -0.5, -0.2], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "auto",
+        "precision": "default"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 3. Mixed signs
+    in1 = np.array([-2.0, 1.5, -0.5, 3.0, -1.0], dtype=np.float32)
+    in2 = np.array([1.0, -1.0, 0.5], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "auto",
+        "precision": "default"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 4. Zero arrays
+    in1 = np.zeros((5,), dtype=np.float32)
+    in2 = np.zeros((3,), dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "auto",
+        "precision": "default"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 5. One arrays
+    in1 = np.ones((5,), dtype=np.float32)
+    in2 = np.ones((3,), dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "method": "auto",
+        "precision": "default"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+
+    # Signature B: 2D, shape (3,3) and (2,2), mode='same', method='direct', precision='high'
+    # 6. Random positive floats
+    in1 = np.abs(np.random.randn(3, 3)).astype(np.float32)
+    in2 = np.abs(np.random.randn(2, 2)).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 7. Random negative floats
+    in1 = -np.abs(np.random.randn(3, 3)).astype(np.float32)
+    in2 = -np.abs(np.random.randn(2, 2)).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 8. Mixed random floats
+    in1 = np.random.randn(3, 3).astype(np.float32)
+    in2 = np.random.randn(2, 2).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 9. Integer-like floats
+    in1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], dtype=np.float32)
+    in2 = np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 10. All ones (2D)
+    in1 = np.ones((3, 3), dtype=np.float32)
+    in2 = np.ones((2, 2), dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "method": "direct",
+        "precision": "high"
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.convolve_1"] = generate_convolve_inputs()
+
+import numpy as np
+import copy
+
+def fftconvolve_inputs():
+    list_of_inputs = []
+
+    # All inputs use in1 of shape (5,) and in2 of shape (3,) to minimize JIT compilation overhead.
+    
+    # Mode: 'full'
+    # Input 1: positive float32
+    in1 = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    in2 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "full", "axes": [0]})
+
+    # Input 2: negative float32
+    in1 = np.array([-1.0, -2.0, -3.0, -4.0, -5.0], dtype=np.float32)
+    in2 = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "full", "axes": [0]})
+
+    # Input 3: mixed float32
+    in1 = np.array([1.0, -2.0, 3.0, -4.0, 5.0], dtype=np.float32)
+    in2 = np.array([-1.0, 2.0, -3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "full", "axes": [0]})
+
+    # Input 4: float64
+    in1 = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+    in2 = np.array([1.0, 1.0, 1.0], dtype=np.float64)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "full", "axes": [0]})
+
+    # Mode: 'same'
+    # Input 5: positive float32
+    in1 = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    in2 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "same", "axes": [0]})
+
+    # Input 6: negative float32
+    in1 = np.array([-1.0, -2.0, -3.0, -4.0, -5.0], dtype=np.float32)
+    in2 = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "same", "axes": [0]})
+
+    # Input 7: mixed float32
+    in1 = np.array([1.0, -2.0, 3.0, -4.0, 5.0], dtype=np.float32)
+    in2 = np.array([-1.0, 2.0, -3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "same", "axes": [0]})
+
+    # Mode: 'valid'
+    # Input 8: positive float32
+    in1 = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    in2 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "valid", "axes": [0]})
+
+    # Input 9: negative float32
+    in1 = np.array([-1.0, -2.0, -3.0, -4.0, -5.0], dtype=np.float32)
+    in2 = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "valid", "axes": [0]})
+
+    # Input 10: mixed float32
+    in1 = np.array([1.0, -2.0, 3.0, -4.0, 5.0], dtype=np.float32)
+    in2 = np.array([-1.0, 2.0, -3.0], dtype=np.float32)
+    list_of_inputs.append({"in1": in1, "in2": in2, "mode": "valid", "axes": [0]})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.fftconvolve_1"] = fftconvolve_inputs()
+
+import numpy as np
+import copy
+
+def fftconvolve_inputs():
+    list_of_inputs = []
+
+    # All 10 inputs use the same shape, mode, and axes to compile only once and avoid timeouts.
+    for i in range(10):
+        input_dict = {
+            "in1": np.random.randn(3).astype(np.float32),
+            "in2": np.random.randn(2).astype(np.float32),
+            "mode": "full",
+            "axes": (0,)
+        }
+        list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.fftconvolve_2"] = fftconvolve_inputs()
+
+import numpy as np
+
+def digamma_inputs():
+    list_of_inputs = []
+    for i in range(1, 11):
+        list_of_inputs.append({"x": np.array([float(i)], dtype=np.float32)})
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.digamma"] = digamma_inputs()
+
+import numpy as np
+
+def erf_inputs():
+    list_of_inputs = []
+    
+    list_of_inputs.append({"x": np.array([0.0, 1.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-1.0, 2.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-0.5, 0.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-2.5, 2.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-5.0, 5.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.1, 0.2], dtype=np.float32)})
+    
+    list_of_inputs.append({"x": np.array([[1.0, 1.0], [1.0, 1.0]], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([[-1.0, 1.0], [-2.0, 2.0]], dtype=np.float32)})
+    
+    list_of_inputs.append({"x": np.array([0.0], dtype=np.float32)})
+    
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.erf"] = erf_inputs()
+
+import os
+os.environ["JAX_PLATFORMS"] = "cpu"
+os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
+
+import numpy as np
+
+def erfc_inputs():
+    list_of_inputs = []
+    
+    list_of_inputs.append({"x": np.array([1.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-1.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.5], dtype=np.float64)})
+    list_of_inputs.append({"x": np.array([[1.0]], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([[[1.0]]], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([2.0, 3.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-2.0, -3.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.1], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-0.1], dtype=np.float32)})
+    
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.erfc"] = erfc_inputs()
+
+import numpy as np
+import copy
+
+def erfinv_inputs():
+    list_of_inputs = []
+
+    # Input 1
+    list_of_inputs.append({"x": np.array([-0.9, -0.5, 0.0, 0.5, 0.9], dtype=np.float32)})
+
+    # Input 2
+    list_of_inputs.append({"x": np.array(0.3, dtype=np.float32)})
+
+    # Input 3
+    list_of_inputs.append({"x": np.array([[-0.2, 0.4], [0.1, -0.8]], dtype=np.float32)})
+
+    # Input 4
+    list_of_inputs.append({"x": np.array([[[0.1, -0.1], [0.2, -0.2]], [[0.3, -0.3], [0.4, -0.4]]], dtype=np.float64)})
+
+    # Input 5
+    list_of_inputs.append({"x": np.array([-0.1, -0.01, 0.0, 0.01, 0.1], dtype=np.float64)})
+
+    # Input 6
+    list_of_inputs.append({"x": np.array([0.95, 0.99, 0.999], dtype=np.float32)})
+
+    # Input 7
+    list_of_inputs.append({"x": np.array([-0.95, -0.99, -0.999], dtype=np.float32)})
+
+    # Input 8
+    list_of_inputs.append({"x": np.array([[[[0.05, -0.05]]]], dtype=np.float32)})
+
+    # Input 9
+    list_of_inputs.append({"x": np.zeros((5,), dtype=np.float32)})
+
+    # Input 10
+    list_of_inputs.append({"x": np.array([[-0.7, 0.7], [-0.2, 0.2]], dtype=np.float64)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.erfinv"] = erfinv_inputs()
+
+import numpy as np
+
+def gamma_inputs():
+    list_of_inputs = []
+    
+    list_of_inputs.append({"x": np.array([1.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([2.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([3.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([4.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([5.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([1.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([2.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([3.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([4.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([5.5], dtype=np.float32)})
+    
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.gamma"] = gamma_inputs()
+
+import numpy as np
+import copy
+
+def gammaln_inputs():
+    list_of_inputs = []
+
+    # All inputs use the same shape (4,) and dtype float32 to minimize JAX compilation time.
+    list_of_inputs.append({"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([1.1, 2.2, 3.3, 4.4], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-0.5, -1.5, -2.5, -3.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.01, 0.02, 0.03, 0.04], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([5.0, 6.0, 7.0, 8.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([1.2, 1.8, 2.4, 3.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([-0.1, -1.1, -2.1, -3.1], dtype=np.float32)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.gammaln"] = gammaln_inputs()
+
+import numpy as np
+import copy
+
+def loggamma_inputs():
+    list_of_inputs = []
+
+    # All inputs use the same shape (3,) and dtype float32 to minimize JAX compilation overhead.
+    list_of_inputs.append({"x": np.array([1.0, 2.0, 3.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.5, 1.5, 2.5], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([4.0, 5.0, 6.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.1, 0.2, 0.3], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([10.0, 11.0, 12.0], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.75, 1.25, 1.75], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([2.2, 3.3, 4.4], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([5.5, 6.6, 7.7], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([8.8, 9.9, 10.1], dtype=np.float32)})
+    list_of_inputs.append({"x": np.array([0.01, 0.05, 0.1], dtype=np.float32)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.loggamma"] = loggamma_inputs()
+

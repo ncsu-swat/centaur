@@ -9324,3 +9324,2043 @@ Rule 54 (If signature is not 'none', the input tensor must have at least 1 dimen
 Token usage: input=12688, output=615, total=18827
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 55 (excluded list elements must be non-negative)
+{v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Token usage: input=2803, output=470, total=9054
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (excluded tuple elements must be non-negative)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Token usage: input=2803, output=470, total=9054
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (signature "ii->i" requires matching core dimension sizes for input tensors)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "ii->i" then ndim(v_2) ≥ 1 ∧ ndim(v_3) ≥ 1 ∧ shape(v_2, ndim(v_2) - 1) = shape(v_3, ndim(v_3) - 1)
+Token usage: input=2803, output=470, total=9054
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (signature "bij,bjk->bik" requires core dimension alignment and minimum dimensionality)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "bij,bjk->bik" then ndim(v_2) ≥ 3 ∧ ndim(v_3) ≥ 3 ∧ shape(v_2, ndim(v_2) - 1) = shape(v_3, ndim(v_3) - 2) ∧ shape(v_2, ndim(v_2) - 3) = shape(v_3, ndim(v_3) - 3)
+Token usage: input=2803, output=470, total=9054
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (signature "...ij->...ji" requires at least 2 dimensions for the input tensor)
+{v_1 : str, v_2 : tensor} |= if v_1 = "...ij->...ji" then ndim(v_2) ≥ 2
+Token usage: input=2803, output=470, total=9054
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (pyfunc tuple container must not be empty)
+{v_1 : tuple(str) ⊎ tuple(int)} |= v_1.len > 0
+Token usage: input=2803, output=470, total=9054
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 61 (uniqueness of excluded argument indices in list)
+{v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : ∀j ∈ [0, v_1.len - 1] : if i ≠ j then v_1[i] ≠ v_1[j]
+Token usage: input=11757, output=516, total=17401
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 62 (uniqueness of excluded argument indices in tuple)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : ∀j ∈ [0, v_1.len - 1] : if i ≠ j then v_1[i] ≠ v_1[j]
+Token usage: input=11757, output=516, total=17401
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 63 (non-empty pyfunc tuple container)
+{v_1 : tuple(int) ⊎ tuple(str)} |= v_1.len ≥ 1
+Token usage: input=11757, output=516, total=17401
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 64 (signature "bij,bjk->bik" requires batch and contracting dimensions alignment)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "bij,bjk->bik" then ndim(v_2) ≥ 3 ∧ ndim(v_3) ≥ 3 ∧ shape(v_2, ndim(v_2) - 1) = shape(v_3, ndim(v_3) - 2) ∧ shape(v_2, ndim(v_2) - 3) = shape(v_3, ndim(v_3) - 3)
+Token usage: input=11757, output=516, total=17401
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 65 (signature "ii" requires matching core dimensions for inputs)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "ii" then ndim(v_2) ≥ 1 ∧ ndim(v_3) ≥ 1 ∧ shape(v_2, ndim(v_2) - 1) = shape(v_3, ndim(v_3) - 1)
+Token usage: input=11757, output=516, total=17401
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.vectorize API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Define a vectorized function with broadcasting.
+
+  :func:`vectorize` is a convenience wrapper for defining vectorized
+  functions with broadcasting, in the style of NumPy's
+  `generalized universal functions <https://numpy.org/doc/stable/reference/c-api/generalized-ufuncs.html>`_.
+  It allows for defining functions that are automatically repeated across
+  any leading dimensions, without the implementation of the function needing to
+  be concerned about how to handle higher dimensional inputs.
+
+  :func:`jax.numpy.vectorize` has the same interface as
+  :class:`numpy.vectorize`, but it is syntactic sugar for an auto-batching
+  transformation (:func:`vmap`) rather than a Python loop. This should be
+  considerably more efficient, but the implementation must be written in terms
+  of functions that act on JAX arrays.
+
+  Args:
+    pyfunc: function to vectorize.
+    excluded: optional set of integers representing positional arguments for
+      which the function will not be vectorized. These will be passed directly
+      to ``pyfunc`` unmodified.
+    signature: optional generalized universal function signature, e.g.,
+      ``(m,n),(n)->(m)`` for vectorized matrix-vector multiplication. If
+      provided, ``pyfunc`` will be called with (and expected to return) arrays
+      with shapes given by the size of corresponding core dimensions. By
+      default, pyfunc is assumed to take scalar arrays as input, and if
+      ``signature`` is ``None``, ``pyfunc`` can produce outputs of any shape.
+
+  Returns:
+    Vectorized version of the given function.
+
+  Examples:
+    Here are a few examples of how one could write vectorized linear algebra
+    routines using :func:`vectorize`:
+
+    >>> from functools import partial
+
+    >>> @partial(jnp.vectorize, signature='(k),(k)->(k)')
+    ... def cross_product(a, b):
+    ...   assert a.shape == b.shape and a.ndim == b.ndim == 1
+    ...   return jnp.array([a[1] * b[2] - a[2] * b[1],
+    ...                     a[2] * b[0] - a[0] * b[2],
+    ...                     a[0] * b[1] - a[1] * b[0]])
+
+    >>> @partial(jnp.vectorize, signature='(n,m),(m)->(n)')
+    ... def matrix_vector_product(matrix, vector):
+    ...   assert matrix.ndim == 2 and matrix.shape[1:] == vector.shape
+    ...   return matrix @ vector
+
+    These functions are only written to handle 1D or 2D arrays (the ``assert``
+    statements will never be violated), but with vectorize they support
+    arbitrary dimensional inputs with NumPy style broadcasting, e.g.,
+
+    >>> cross_product(jnp.ones(3), jnp.ones(3)).shape
+    (3,)
+    >>> cross_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2, 3)
+    >>> cross_product(jnp.ones((1, 2, 3)), jnp.ones((2, 1, 3))).shape
+    (2, 2, 3)
+    >>> matrix_vector_product(jnp.ones(3), jnp.ones(3))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    ValueError: input with shape (3,) does not have enough dimensions for all
+    core dimensions ('n', 'k') on vectorized function with excluded=frozenset()
+    and signature='(n,k),(k)->(k)'
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones(3)).shape
+    (2,)
+    >>> matrix_vector_product(jnp.ones((2, 3)), jnp.ones((4, 3))).shape
+    (4, 2)
+
+    Note that this has different semantics than `jnp.matmul`:
+
+    >>> jnp.matmul(jnp.ones((2, 3)), jnp.ones((4, 3)))  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+    TypeError: dot_general requires contracting dimensions to have the same shape, got [3] and [4].
+
+[Possible API Signatures]
+ - pyfunc: tuple, excluded: tuple, signature: string, args: tensor
+ - pyfunc: tuple, excluded: list, signature: string, args: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 66 (signature "...ij->...ji" requires at least 2 dimensions for the input tensor)
+{v_1 : str, v_2 : tensor} |= if v_1 = "...ij->...ji" then ndim(v_2) ≥ 2
+Token usage: input=11757, output=516, total=17401
+** DUPLICATED RULE ** (num_failures: 7)
+

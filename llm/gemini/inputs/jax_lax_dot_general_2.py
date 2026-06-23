@@ -6,200 +6,179 @@ generated_inputs = dict()
 
 import numpy as np
 import copy
-import sys
-from jax.sharding import PartitionSpec
+import jax
+from jax.sharding import Mesh, PartitionSpec
 
-try:
-    orig_init_subclass = PartitionSpec.__init_subclass__
-    PartitionSpec.__init_subclass__ = classmethod(lambda cls, **kwargs: None)
-except Exception:
-    orig_init_subclass = None
-
-class MagicPartitionSpec(PartitionSpec):
-    def __len__(self):
-        try:
-            if sys._getframe(1).f_code.co_name == 'get_ll':
-                return 0
-        except Exception:
-            pass
-        return super().__len__()
-
-if orig_init_subclass is not None:
-    try:
-        PartitionSpec.__init_subclass__ = orig_init_subclass
-    except Exception:
-        pass
-
-class MagicTuple(tuple):
-    def __len__(self):
-        try:
-            if sys._getframe(1).f_code.co_name == 'get_ll':
-                return 0
-        except Exception:
-            pass
-        return super().__len__()
+# Create and enter a global mesh context so PartitionSpec can be canonicalized
+devices = jax.devices()
+mesh = Mesh(np.array(devices[:1]), ('x',))
+mesh.__enter__()
 
 def dot_general_inputs():
     list_of_inputs = []
 
-    # Input 1: N=1, float32
+    # Case 1: Batch matrix multiplication with float32 (Type A)
     lhs = np.random.randn(2, 3, 4).astype(np.float32)
     rhs = np.random.randn(2, 4, 5).astype(np.float32)
     dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("default", "default"))
+    precision = (0, 0)
     preferred_element_type = np.dtype('float32')
-    out_sharding = MagicPartitionSpec(None, None, None)
+    out_sharding = PartitionSpec()
     list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
     })
 
-    # Input 2: N=1, float32, high precision
-    lhs = np.random.randn(3, 2, 5).astype(np.float32)
-    rhs = np.random.randn(3, 5, 4).astype(np.float32)
+    # Case 2: Batch matrix multiplication with float64 (Type A)
+    lhs = np.random.randn(3, 2, 5).astype(np.float64)
+    rhs = np.random.randn(3, 5, 2).astype(np.float64)
     dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("high", "high"))
-    preferred_element_type = np.dtype('float32')
-    out_sharding = MagicPartitionSpec(None, None, None)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
-    })
-
-    # Input 3: N=1, float64, highest precision
-    lhs = np.random.randn(4, 3, 2).astype(np.float64)
-    rhs = np.random.randn(4, 2, 6).astype(np.float64)
-    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("highest", "highest"))
+    precision = (1, 1)
     preferred_element_type = np.dtype('float64')
-    out_sharding = MagicPartitionSpec(None, None, None)
+    out_sharding = PartitionSpec()
     list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
     })
 
-    # Input 4: N=1, int32, negative values
-    lhs = np.random.randint(-10, 10, size=(2, 5, 3)).astype(np.int32)
+    # Case 3: Batch matrix multiplication with int32 (Type A)
+    lhs = np.random.randint(-10, 10, size=(2, 4, 3)).astype(np.int32)
     rhs = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int32)
     dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("default", "default"))
+    precision = (0, 0)
     preferred_element_type = np.dtype('int32')
-    out_sharding = MagicPartitionSpec(None, None, None)
+    out_sharding = PartitionSpec()
     list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
     })
 
-    # Input 5: N=1, float16
-    lhs = np.random.randn(5, 2, 3).astype(np.float16)
-    rhs = np.random.randn(5, 3, 2).astype(np.float16)
+    # Case 4: 4D tensor contraction with 2 contracting and 2 batch dims (Type B)
+    lhs = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    rhs = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    dimension_numbers = (((2, 3), (2, 3)), ((0, 1), (0, 1)))
+    precision = (2, 2)
+    preferred_element_type = np.dtype('float32')
+    out_sharding = PartitionSpec()
+    list_of_inputs.append({
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
+    })
+
+    # Case 5: Outer product with float32 (Type C)
+    lhs = np.random.randn(3, 3).astype(np.float32)
+    rhs = np.random.randn(2, 2).astype(np.float32)
+    dimension_numbers = (((), ()), ((), ()))
+    precision = (0, 0)
+    preferred_element_type = np.dtype('float32')
+    out_sharding = PartitionSpec()
+    list_of_inputs.append({
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
+    })
+
+    # Case 6: Batch matrix multiplication with float16 (Type A)
+    lhs = np.random.randn(2, 5, 2).astype(np.float16)
+    rhs = np.random.randn(2, 2, 5).astype(np.float16)
     dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("default", "default"))
+    precision = (0, 0)
     preferred_element_type = np.dtype('float16')
-    out_sharding = MagicPartitionSpec(None, None, None)
+    out_sharding = PartitionSpec()
     list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
     })
 
-    # Input 6: N=1, complex64
-    lhs = (np.random.randn(2, 2, 3) + 1j * np.random.randn(2, 2, 3)).astype(np.complex64)
-    rhs = (np.random.randn(2, 3, 2) + 1j * np.random.randn(2, 3, 2)).astype(np.complex64)
+    # Case 7: 4D tensor contraction with float64 (Type B)
+    lhs = np.random.randn(2, 3, 2, 2).astype(np.float64)
+    rhs = np.random.randn(2, 3, 2, 2).astype(np.float64)
+    dimension_numbers = (((2, 3), (2, 3)), ((0, 1), (0, 1)))
+    precision = (1, 1)
+    preferred_element_type = np.dtype('float64')
+    out_sharding = PartitionSpec()
+    list_of_inputs.append({
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
+    })
+
+    # Case 8: Batch matrix multiplication with complex64 (Type A)
+    real_lhs = np.random.randn(2, 3, 3).astype(np.float32)
+    imag_lhs = np.random.randn(2, 3, 3).astype(np.float32)
+    real_rhs = np.random.randn(2, 3, 3).astype(np.float32)
+    imag_rhs = np.random.randn(2, 3, 3).astype(np.float32)
+    lhs = real_lhs + 1j * imag_lhs
+    rhs = real_rhs + 1j * imag_rhs
     dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("default", "default"))
+    precision = (0, 0)
     preferred_element_type = np.dtype('complex64')
-    out_sharding = MagicPartitionSpec(None, None, None)
+    out_sharding = PartitionSpec()
     list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
     })
 
-    # Input 7: N=2, float32, homogeneous 2-contracting 2-batch
-    lhs = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    rhs = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    dimension_numbers = (((2, 3), (2, 3)), ((0, 1), (0, 1)))
-    precision = MagicTuple(("default", "default"))
-    preferred_element_type = np.dtype('float32')
-    out_sharding = MagicPartitionSpec(None, None)
+    # Case 9: Outer product with float64 (Type C)
+    lhs = np.random.randn(4, 2).astype(np.float64)
+    rhs = np.random.randn(2, 4).astype(np.float64)
+    dimension_numbers = (((), ()), ((), ()))
+    precision = (2, 2)
+    preferred_element_type = np.dtype('float64')
+    out_sharding = PartitionSpec()
     list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
     })
 
-    # Input 8: N=2, complex128, homogeneous 2-contracting 2-batch
-    lhs = (np.random.randn(1, 2, 3, 4) + 1j * np.random.randn(1, 2, 3, 4)).astype(np.complex128)
-    rhs = (np.random.randn(1, 2, 3, 4) + 1j * np.random.randn(1, 2, 3, 4)).astype(np.complex128)
-    dimension_numbers = (((2, 3), (2, 3)), ((0, 1), (0, 1)))
-    precision = MagicTuple(("highest", "highest"))
-    preferred_element_type = np.dtype('complex128')
-    out_sharding = MagicPartitionSpec(None, None)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
-    })
-
-    # Input 9: N=1, float32, larger dims
-    lhs = np.random.randn(10, 2, 3).astype(np.float32)
-    rhs = np.random.randn(10, 3, 4).astype(np.float32)
+    # Case 10: Batch matrix multiplication with different dimensions (Type A)
+    lhs = np.random.randn(4, 2, 6).astype(np.float32)
+    rhs = np.random.randn(4, 6, 3).astype(np.float32)
     dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("high", "high"))
+    precision = (0, 0)
     preferred_element_type = np.dtype('float32')
-    out_sharding = MagicPartitionSpec(None, None, None)
+    out_sharding = PartitionSpec()
     list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
-    })
-
-    # Input 10: N=1, float32, large sizes
-    lhs = np.random.randn(8, 16, 32).astype(np.float32)
-    rhs = np.random.randn(8, 32, 64).astype(np.float32)
-    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
-    precision = MagicTuple(("default", "default"))
-    preferred_element_type = np.dtype('float32')
-    out_sharding = MagicPartitionSpec(None, None, None)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": dimension_numbers,
-        "precision": precision,
-        "preferred_element_type": preferred_element_type,
-        "out_sharding": out_sharding
+        'lhs': lhs,
+        'rhs': rhs,
+        'dimension_numbers': dimension_numbers,
+        'precision': precision,
+        'preferred_element_type': preferred_element_type,
+        'out_sharding': out_sharding
     })
 
     return list_of_inputs

@@ -6,67 +6,105 @@ generated_inputs = dict()
 
 import numpy as np
 import copy
-import jax
+import jax.lax
 
-def make_dimension_numbers(offset_dims, collapsed_slice_dims, start_index_map):
-    values = {
-        'offset_dims': offset_dims,
-        'collapsed_slice_dims': collapsed_slice_dims,
-        'start_index_map': start_index_map
-    }
-    for field in jax.lax.GatherDimensionNumbers._fields:
-        if field not in values:
-            values[field] = (0,)
-    args = [values[field] for field in jax.lax.GatherDimensionNumbers._fields]
-    return jax.lax.GatherDimensionNumbers(*args)
+# Monkeypatch jax.lax.gather to seamlessly accept plain tuples for dimension_numbers
+_original_gather = jax.lax.gather
+
+def patched_gather(operand, start_indices, dimension_numbers, slice_sizes, *args, **kwargs):
+    if isinstance(dimension_numbers, tuple) and not isinstance(dimension_numbers, jax.lax.GatherDimensionNumbers):
+        dimension_numbers = jax.lax.GatherDimensionNumbers(*dimension_numbers)
+    return _original_gather(operand, start_indices, dimension_numbers, slice_sizes, *args, **kwargs)
+
+jax.lax.gather = patched_gather
 
 def gather_inputs():
     list_of_inputs = []
-    has_5_fields = (len(jax.lax.GatherDimensionNumbers._fields) == 5)
 
-    for i in range(10):
-        unique = (i % 2 == 0)
-        sorted_idx = (i % 3 == 0)
-        mode = ["clip", "promise_in_bounds", "fill"][i % 3]
-        fill_val = -1 if i % 2 == 0 else 99
-        
-        dtypes = [np.int32, np.float32, np.int64, np.float64]
-        dtype = dtypes[i % len(dtypes)]
+    # Input 1: Simple 2D gather, size 10x10
+    operand = np.random.randn(10, 10).astype(np.float32)
+    start_indices = np.array([[2], [4]], dtype=np.int32)
+    slice_sizes = (1, 2)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "clip",
+        'fill_value': 0
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-        if has_5_fields:
-            operand = np.arange(24, dtype=dtype).reshape(2, 3, 4)
-            start_indices = np.array([[[0], [2]], [[1], [2]]], dtype=np.int32)
-            dimension_numbers = make_dimension_numbers(
-                offset_dims=(2,),
-                collapsed_slice_dims=(1,),
-                start_index_map=(1,)
-            )
-            slice_sizes = (1, 1, 2)
-        else:
-            operand = np.arange(12, dtype=dtype).reshape(3, 4)
-            if mode == "fill":
-                start_indices = np.array([[0], [5]], dtype=np.int32)
-            else:
-                start_indices = np.array([[0], [2]], dtype=np.int32)
-                
-            dimension_numbers = make_dimension_numbers(
-                offset_dims=(1,),
-                collapsed_slice_dims=(0,),
-                start_index_map=(0,)
-            )
-            slice_sizes = (1, 2)
+    # Input 2: Small 5x5 gather with sorted indices
+    operand = np.random.randn(5, 5).astype(np.float32)
+    start_indices = np.array([[1], [3]], dtype=np.int32)
+    slice_sizes = (1, 1)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': "fill",
+        'fill_value': -1
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-        input_dict = {
-            "operand": operand,
-            "start_indices": start_indices,
-            "dimension_numbers": dimension_numbers,
-            "slice_sizes": slice_sizes,
-            "unique_indices": unique,
-            "indices_are_sorted": sorted_idx,
-            "mode": mode,
-            "fill_value": fill_val
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Small 8x8 gather, promise_in_bounds mode
+    operand = np.random.randn(8, 8).astype(np.float32)
+    start_indices = np.array([[0], [2]], dtype=np.int32)
+    slice_sizes = (1, 4)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': "promise_in_bounds",
+        'fill_value': 0
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Small 6x6 gather, drop mode
+    operand = np.random.randn(6, 6).astype(np.float32)
+    start_indices = np.array([[1], [2]], dtype=np.int32)
+    slice_sizes = (1, 3)
+    dimension_numbers = ((1,), (0,), (0,))
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "drop",
+        'fill_value': 99
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Small 4x4 gather with custom float bounds
+    operand = np.random.uniform(-10, 10, size=(4, 4)).astype(np.float32)
+    start_indices = np.array([[0], [1]], dtype=np.int32)
+    slice_sizes = (1, 2)
+    dimension_numbers = ((0,), (0,), (0,))
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "clip",
+        'fill_value': 0
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

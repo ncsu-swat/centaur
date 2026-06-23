@@ -8541,3 +8541,2610 @@ Rule 52 (Convert a non-empty list of booleans with valid options)
 Token usage: input=13275, output=437, total=17367
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 53 (dimension of input tensor should be within 0 to 8)
+{v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+Token usage: input=2293, output=281, total=5903
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 54 (list of floats conversion requires non-empty list)
+{v_1 : list(float)} |= v_1.len > 0
+Token usage: input=2293, output=281, total=5903
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 55 (tuple of ints conversion requires non-empty tuple)
+{v_1 : tuple(int)} |= v_1.len > 0
+Token usage: input=2293, output=281, total=5903
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (if order is "none", copy can be either true or false)
+{v_1 : str, v_2 : bool} |= if v_1 = "none" then v_2 = true ∨ v_2 = false
+Token usage: input=2293, output=281, total=5903
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (input tensor must have a valid data type index)
+{v_1 : tensor} |= 0 ≤ dtype_(v_1) ∧ dtype_(v_1) ≤ 10
+Token usage: input=2293, output=281, total=5903
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (input tensor with float dtype must have at least one element along the first dimension)
+{v_1 : tensor} |= if (6 ≤ dtype_(v_1) ∧ dtype_(v_1) ≤ 8) then shape(v_1, 0) > 0
+Token usage: input=2293, output=281, total=5903
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (input tensor should have dimensions between 0 and 8)
+{v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+Token usage: input=8177, output=229, total=11693
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (tuple of numbers should not be empty)
+{v_1 : tuple(int) ⊎ tuple(float)} |= v_1.len > 0
+Token usage: input=8177, output=229, total=11693
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 61 (the order parameter must be "none")
+{v_1 : str} |= v_1 = "none"
+Token usage: input=8177, output=229, total=11693
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 62 (boolean tensors must have values restricted to 0 or 1)
+{v_1 : tensor} |= if dtype_(v_1) = 0 then min(v_1) ≥ 0 ∧ max(v_1) ≤ 1
+Token usage: input=8177, output=229, total=11693
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 63 (scalar input should be within a reasonable numeric range)
+{v_1 : float ⊎ int} |= v_1 ≥ -1000000 ∧ v_1 ≤ 1000000
+Token usage: input=8177, output=229, total=11693
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 64 (when input is a list and copy is disabled, list should not be empty)
+{v_1 : list(int), v_2 : bool} |= if v_2 = false then v_1.len > 0
+Token usage: input=14022, output=257, total=17700
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 65 (the dtype parameter must represent a valid numeric or boolean type index)
+{v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 10
+Token usage: input=14022, output=257, total=17700
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 66 (if the input tensor has a complex data type, its dimension must be at least 1)
+{v_1 : tensor} |= if (dtype_(v_1) = 9 ∨ dtype_(v_1) = 10) then ndim(v_1) ≥ 1
+Token usage: input=14022, output=257, total=17700
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 67 (if a boolean scalar is provided, the target dtype should be boolean or numeric)
+{v_1 : bool, v_2 : dtype} |= v_2 ≤ 10
+Token usage: input=14022, output=257, total=17700
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.asarray API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Convert an object to a JAX array.
+
+  JAX implementation of :func:`numpy.asarray`.
+
+  Args:
+    a: an object that is convertible to an array. This includes JAX
+      arrays, NumPy arrays, Python scalars, Python collections like lists
+      and tuples, objects with a ``__jax_array__`` method, and objects
+      supporting the Python buffer protocol.
+    dtype: optionally specify the dtype of the output array. If not
+      specified it will be inferred from the input.
+    order: not implemented in JAX
+    copy: optional boolean specifying the copy mode. If True, then always
+      return a copy. If False, then error if a copy is necessary. Default is
+      None, which will only copy when necessary.
+    device: optional :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    A JAX array constructed from the input.
+
+  See also:
+    - :func:`jax.numpy.array`: like `asarray`, but defaults to `copy=True`.
+    - :func:`jax.numpy.from_dlpack`: construct a JAX array from an object
+      that implements the dlpack interface.
+    - :func:`jax.numpy.frombuffer`: construct a JAX array from an object
+      that implements the buffer interface.
+
+  Examples:
+    Constructing JAX arrays from Python scalars:
+
+    >>> jnp.asarray(True)
+    Array(True, dtype=bool)
+    >>> jnp.asarray(42)
+    Array(42, dtype=int32, weak_type=True)
+    >>> jnp.asarray(3.5)
+    Array(3.5, dtype=float32, weak_type=True)
+    >>> jnp.asarray(1 + 1j)
+    Array(1.+1.j, dtype=complex64, weak_type=True)
+
+    Constructing JAX arrays from Python collections:
+
+    >>> jnp.asarray([1, 2, 3])  # list of ints -> 1D array
+    Array([1, 2, 3], dtype=int32)
+    >>> jnp.asarray([(1, 2, 3), (4, 5, 6)])  # list of tuples of ints -> 2D array
+    Array([[1, 2, 3],
+           [4, 5, 6]], dtype=int32)
+    >>> jnp.asarray(range(5))
+    Array([0, 1, 2, 3, 4], dtype=int32)
+
+    Constructing JAX arrays from NumPy arrays:
+
+    >>> jnp.asarray(np.linspace(0, 2, 5))
+    Array([0. , 0.5, 1. , 1.5, 2. ], dtype=float32)
+
+    Constructing a JAX array via the Python buffer interface, using Python's
+    built-in :mod:`array` module.
+
+    >>> from array import array
+    >>> pybuffer = array('i', [2, 3, 5, 7])
+    >>> jnp.asarray(pybuffer)
+    Array([2, 3, 5, 7], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, dtype: dtype, order: string, copy: boolean
+ - a: list, dtype: dtype, order: string, copy: boolean
+ - a: tuple, dtype: dtype, order: string, copy: boolean
+ - a: integer, dtype: dtype, order: string, copy: boolean
+ - a: float, dtype: dtype, order: string, copy: boolean
+ - a: boolean, dtype: dtype, order: string, copy: boolean
+ - a: string, dtype: dtype, order: string, copy: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 68 (a tuple of booleans must have a length between 1 and 10)
+{v_1 : tuple(bool)} |= v_1.len ≥ 1 ∧ v_1.len ≤ 10
+Token usage: input=14022, output=257, total=17700
+** SUCCESS **
+

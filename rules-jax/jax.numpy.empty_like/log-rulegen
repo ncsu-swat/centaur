@@ -6590,3 +6590,3370 @@ Rule 46 (Both the prototype tensor and the override dtype must have valid array 
 Token usage: input=16782, output=270, total=19123
 ** DUPLICATED RULE ** (num_failures: 6)
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 46 (prototype tensor must have at least 1 dimension)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 47 (prototype tensor must not have any 0-sized dimensions)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 48 (prototype tensor must have an integer or float dtype)
+{v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 8
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 49 (shape override as an integer must be positive)
+{v_1 : int} |= v_1 > 0
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 50 (shape override as a tuple must have positive length)
+{v_1 : tuple(int)} |= v_1.len > 0
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 51 (shape override as a list must have positive length)
+{v_1 : list(int)} |= v_1.len > 0
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 52 (shape override as a union of tuple or list must have positive length)
+{v_1 : tuple(int) ⊎ list(int)} |= v_1.len > 0
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 53 (elements of shape override tuple must be non-negative)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Token usage: input=1869, output=603, total=8475
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 54 (elements of shape override list must be non-negative)
+{v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Token usage: input=1869, output=603, total=8475
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 55 (overridden shape tuple length is within 5 of the prototype's dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= v_2.len ≤ ndim(v_1) + 5 ∧ v_2.len ≥ 1
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (overridden shape list length is within 5 of the prototype's dimensions)
+{v_1 : tensor, v_2 : list(int)} |= v_2.len ≤ ndim(v_1) + 5 ∧ v_2.len ≥ 1
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (dtype parameter must be a valid dtype index)
+{v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+Token usage: input=1869, output=603, total=8475
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (if shape override tuple has only 1 element, its value must be greater than 1)
+{v_1 : tuple(int)} |= if v_1.len = 1 then v_1[0] > 1
+Token usage: input=1869, output=603, total=8475
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (prototype tensor must have at least 1 dimension)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=10461, output=677, total=14347
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (overridden shape as integer must be greater than or equal to 1)
+{v_1 : int} |= v_1 ≥ 1
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 61 (if shape is a tuple, all elements must be greater than or equal to 1)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 1
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 62 (if shape is a list, all elements must be greater than or equal to 1)
+{v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 1
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 63 (prototype tensor must not have more than 10 dimensions)
+{v_1 : tensor} |= ndim(v_1) ≤ 10
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 64 (override dtype parameter must be a valid numerical data type)
+{v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 10
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 65 (if shape is a tuple, its length must not exceed 8 dimensions)
+{v_1 : tuple(int)} |= v_1.len ≤ 8
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 66 (if shape is a list, its length must not exceed 8 dimensions)
+{v_1 : list(int)} |= v_1.len ≤ 8
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 67 (union of shape override list or tuple length constraint)
+{v_1 : tuple(int) ⊎ list(int)} |= v_1.len ≥ 1 ∧ v_1.len ≤ 8
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 68 (when prototype tensor is 1D, shape override tuple must also be 1D)
+{v_1 : tensor, v_2 : tuple(int)} |= if ndim(v_1) = 1 then v_2.len = 1
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 69 (when prototype tensor has float dtype, shape override tuple elements must be positive)
+{v_1 : tensor, v_2 : tuple(int)} |= if dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 8 then ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 1
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 70 (if prototype is integer, override dtype should also be integer)
+{v_1 : tensor, v_2 : dtype} |= if dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5 then v_2 ≥ 1 ∧ v_2 ≤ 5
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : list(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0
+Duplicated rule: {v_1 : dtype} |= v_1 ≥ 0 ∧ v_1 ≤ 12
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.empty_like API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Create an empty array with the same shape and dtype as an array.
+
+  JAX implementation of :func:`numpy.empty_like`. Because XLA cannot create
+  an un-initialized array, :func:`jax.numpy.empty` will always return an
+  array full of zeros.
+
+  Args:
+    a: Array-like object with ``shape`` and ``dtype`` attributes.
+    shape: optionally override the shape of the created array.
+    dtype: optionally override the dtype of the created array.
+    device: (optional) :class:`~jax.Device` or :class:`~jax.sharding.Sharding`
+      to which the created array will be committed.
+
+  Returns:
+    Array of the specified shape and dtype, on the specified device if specified.
+
+  See also:
+    - :func:`jax.numpy.empty`
+    - :func:`jax.numpy.zeros_like`
+    - :func:`jax.numpy.ones_like`
+    - :func:`jax.numpy.full_like`
+
+  Examples:
+    >>> x = jnp.arange(4)
+    >>> jnp.empty_like(x)  # doctest: +SKIP
+    Array([0, 0, 0, 0], dtype=int32)
+    >>> jnp.empty_like(x, dtype=bool)  # doctest: +SKIP
+    Array([False, False, False, False], dtype=bool)
+    >>> jnp.empty_like(x, shape=(2, 3))  # doctest: +SKIP
+    Array([[0, 0, 0],
+           [0, 0, 0]], dtype=int32)
+
+[Possible API Signatures]
+ - prototype: tensor, dtype: dtype, shape: tuple
+ - prototype: tensor, dtype: dtype, shape: integer
+ - prototype: tensor, dtype: dtype, shape: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 71 (if prototype is float, override dtype should also be float)
+{v_1 : tensor, v_2 : dtype} |= if dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 8 then v_2 ≥ 6 ∧ v_2 ≤ 8
+Token usage: input=10461, output=677, total=14347
+** SUCCESS **
+

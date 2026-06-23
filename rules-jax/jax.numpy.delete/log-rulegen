@@ -6256,3 +6256,3398 @@ Rule 38 (the number of elements in the deletion tuple must not exceed the size o
 Token usage: input=19809, output=240, total=23525
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 39 (the input tensor must be at least 1D and axis must be within the dimension range)
+{v_1 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Token usage: input=2286, output=396, total=5872
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 40 (integer index to delete must be in bounds of the target axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3))
+Token usage: input=2286, output=396, total=5872
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 41 (index tensor must be 1D or scalar)
+{v_2 : tensor} |= ndim(v_2) ≤ 1
+Token usage: input=2286, output=396, total=5872
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 42 (all indices in the list must be non-negative and within valid length)
+{v_2 : list(int)} |= v_2.len > 0 ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=2286, output=396, total=5872
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 43 (indices within index tensor must be in bounds of the target axis)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ ndim(v_2) = 1 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then min(v_2) ≥ 0 ∧ max(v_2) < shape(v_1, v_3))
+Token usage: input=2286, output=396, total=5872
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≤ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 44 (the input tensor must be at least 1D and axis must be within the valid dimension range)
+{v_1 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Token usage: input=8210, output=490, total=11907
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≤ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 45 (integer index to delete must be in bounds of the target axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3))
+Token usage: input=8210, output=490, total=11907
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≤ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 46 (the index tensor must have an integer or boolean data type)
+{v_2 : tensor} |= dtype_(v_2) ≥ 0 ∧ dtype_(v_2) ≤ 5
+Token usage: input=8210, output=490, total=11907
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≤ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 47 (if indices is a list of integers, elements must be in bounds of the target axis)
+{v_1 : tensor, v_2 : list(int), v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then (if v_2.len > 0 then (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - shape(v_1, v_3) ∧ v_2[i] < shape(v_1, v_3))))
+Token usage: input=8210, output=490, total=11907
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≤ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 48 (indices within the index tensor must be in bounds of the target axis)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then min(v_2) ≥ 0 - shape(v_1, v_3) ∧ max(v_2) < shape(v_1, v_3))
+Token usage: input=8210, output=490, total=11907
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3))
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 49 (the input tensor must be at least 1D and axis must be within the positive range of ndim)
+{v_1 : tensor, v_3 : int} |= ndim(v_1) ≥ 1 ∧ v_3 ≥ 0 ∧ v_3 < ndim(v_1)
+Token usage: input=14339, output=454, total=17943
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3))
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 50 (if delete index is a positive integer, it must be less than the size of the target axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 ∧ v_2 < shape(v_1, v_3))
+Token usage: input=14339, output=454, total=17943
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3))
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 51 (the index tensor must have an integer or boolean data type)
+{v_2 : tensor} |= dtype_(v_2) < 6
+Token usage: input=14339, output=454, total=17943
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3))
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 52 (if indices is a list of integers, all elements must be valid positive indices of the target axis)
+{v_1 : tensor, v_2 : list(int), v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then (if v_2.len > 0 then (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] < shape(v_1, v_3))))
+Token usage: input=14339, output=454, total=17943
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3))
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 53 (indices within the index tensor must be non-negative and less than the size of the target axis)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then min(v_2) ≥ 0 ∧ max(v_2) < shape(v_1, v_3))
+Token usage: input=14339, output=454, total=17943
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 54 (the input tensor must be at least 1D and axis must be within the positive range of ndim)
+{v_1 : tensor, v_3 : int} |= ndim(v_1) ≥ 1 ∧ v_3 ≥ 0 ∧ v_3 < ndim(v_1)
+Token usage: input=20372, output=593, total=22750
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 55 (if delete index is a positive integer, it must be less than the size of the target axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 ∧ v_2 < shape(v_1, v_3))
+Token usage: input=20372, output=593, total=22750
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (the index tensor must have an integer or boolean data type)
+{v_2 : tensor} |= dtype_(v_2) < 6
+Token usage: input=20372, output=593, total=22750
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (if indices is a list of integers, all elements must be valid positive indices of the target axis)
+{v_1 : tensor, v_2 : list(int), v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then (if v_2.len > 0 then (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] < shape(v_1, v_3))))
+Token usage: input=20372, output=593, total=22750
+** DUPLICATED RULE ** (num_failures: 7)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (indices within the index tensor must be non-negative and less than the size of the target axis)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then min(v_2) ≥ 0 ∧ max(v_2) < shape(v_1, v_3))
+Token usage: input=20372, output=593, total=22750
+** DUPLICATED RULE ** (num_failures: 8)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.delete API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Delete entry or entries from an array.
+
+  JAX implementation of :func:`numpy.delete`.
+
+  Args:
+    arr: array from which entries will be deleted.
+    obj: index, indices, or slice to be deleted.
+    axis: axis along which entries will be deleted.
+    assume_unique_indices: In case of array-like integer (not boolean) indices,
+      assume the indices are unique, and perform the deletion in a way that is
+      compatible with JIT and other JAX transformations.
+
+  Returns:
+    Copy of ``arr`` with specified indices deleted.
+
+  Note:
+    ``delete()`` usually requires the index specification to be static. If the
+    index is an integer array that is guaranteed to contain unique entries, you
+    may specify ``assume_unique_indices=True`` to perform the operation in a
+    manner that does not require static indices.
+
+  See also:
+    - :func:`jax.numpy.insert`: insert entries into an array.
+
+  Examples:
+    Delete entries from a 1D array:
+
+    >>> a = jnp.array([4, 5, 6, 7, 8, 9])
+    >>> jnp.delete(a, 2)
+    Array([4, 5, 7, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(1, 4))  # delete a[1:4]
+    Array([4, 8, 9], dtype=int32)
+    >>> jnp.delete(a, slice(None, None, 2))  # delete a[::2]
+    Array([5, 7, 9], dtype=int32)
+
+    Delete entries from a 2D array along a specified axis:
+
+    >>> a2 = jnp.array([[4, 5, 6],
+    ...                 [7, 8, 9]])
+    >>> jnp.delete(a2, 1, axis=1)
+    Array([[4, 6],
+           [7, 9]], dtype=int32)
+
+    Delete multiple entries via a sequence of indices:
+
+    >>> indices = jnp.array([0, 1, 3])
+    >>> jnp.delete(a, indices)
+    Array([6, 8, 9], dtype=int32)
+
+    This will fail under :func:`~jax.jit` and other transformations, because
+    the output shape cannot be known with the possibility of duplicate indices:
+
+    >>> jax.jit(jnp.delete)(a, indices)  # doctest: +IGNORE_EXCEPTION_DETAIL
+    Traceback (most recent call last):
+      ...
+    ConcretizationTypeError: Abstract tracer value encountered where concrete value is expected: traced array with shape int32[3].
+
+    If you can ensure that the indices are unique, pass ``assume_unique_indices``
+    to allow this to be executed under JIT:
+
+    >>> jit_delete = jax.jit(jnp.delete, static_argnames=['assume_unique_indices'])
+    >>> jit_delete(a, indices, assume_unique_indices=True)
+    Array([6, 8, 9], dtype=int32)
+
+[Possible API Signatures]
+ - arr: tensor, obj: integer, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tensor, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: list, axis: integer, assume_unique_indices: boolean
+ - arr: tensor, obj: tuple, axis: integer, assume_unique_indices: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (if indices is a tuple of integers, all elements must be valid positive indices of the target axis)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int} |= ndim(v_1) > 0 ∧ (if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then (if v_2.len > 0 then (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 ∧ v_2[i] < shape(v_1, v_3))))
+Token usage: input=20372, output=593, total=22750
+** SUCCESS **
+

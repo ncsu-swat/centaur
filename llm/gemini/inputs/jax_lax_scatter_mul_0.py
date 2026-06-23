@@ -8,208 +8,83 @@ import numpy as np
 import copy
 import jax
 
-# Monkey-patch jax.lax.ScatterDimensionNumbers to avoid inhomogeneous shape errors during np.min
-jax.lax.ScatterDimensionNumbers.__len__ = lambda self: 3
-jax.lax.ScatterDimensionNumbers.__iter__ = lambda self: iter([
-    self.update_window_dims,
-    self.inserted_window_dims,
-    self.scatter_dims_to_operand_dims
-])
-
 def scatter_mul_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D Float32, clip mode
-    operand = np.ones((10, 10), dtype=np.float32)
-    scatter_indices = np.array([[2], [5], [8]], dtype=np.int32)
-    updates = np.array([[0.5]*10, [1.5]*10, [2.0]*10], dtype=np.float32)
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1,),
-        inserted_window_dims=(0,),
-        scatter_dims_to_operand_dims=(0,)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': False,
-        'unique_indices': False,
-        'mode': 'clip'
-    })
+    # Helper to generate input dict based on environment capability (3-field or 5-field ScatterDimensionNumbers)
+    def make_input(dtype, val, indices_are_sorted, unique_indices, mode, oob=False, duplicate=False):
+        try:
+            # Try 5-field environment shapes and dimension numbers (fully homogeneous)
+            dimension_numbers = jax.lax.ScatterDimensionNumbers(
+                update_window_dims=(2,),
+                inserted_window_dims=(0,),
+                scatter_dims_to_operand_dims=(0,),
+                operand_batch_dims=(2,),
+                scatter_loop_dims=(0,)
+            )
+            operand = np.ones((3, 4, 3), dtype=dtype)
+            if oob:
+                scatter_indices = np.array([[[10], [-5]], [[10], [-5]], [[10], [-5]]], dtype=np.int32)
+            elif duplicate:
+                scatter_indices = np.array([[[1], [1]], [[2], [2]], [[0], [0]]], dtype=np.int32)
+            else:
+                scatter_indices = np.array([[[0], [1]], [[1], [2]], [[2], [0]]], dtype=np.int32)
+            updates = np.ones((3, 2, 4), dtype=dtype) * val
+        except TypeError:
+            # Fallback to 3-field environment shapes and dimension numbers (fully homogeneous)
+            dimension_numbers = jax.lax.ScatterDimensionNumbers(
+                update_window_dims=(1,),
+                inserted_window_dims=(0,),
+                scatter_dims_to_operand_dims=(0,)
+            )
+            operand = np.ones((3, 1), dtype=dtype)
+            if oob:
+                scatter_indices = np.array([[10], [-5]], dtype=np.int32)
+            elif duplicate:
+                scatter_indices = np.array([[1], [1]], dtype=np.int32)
+            else:
+                scatter_indices = np.array([[1], [2]], dtype=np.int32)
+            updates = np.ones((2, 1), dtype=dtype) * val
 
-    # Input 2: 2D Float32, unique indices, fill mode
-    operand = np.arange(25, dtype=np.float32).reshape(5, 5) + 1.0
-    scatter_indices = np.array([[1], [3]], dtype=np.int32)
-    updates = np.array([[0.1, 0.2, 0.3, 0.4, 0.5],
-                        [2.0, 2.0, 2.0, 2.0, 2.0]], dtype=np.float32)
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1,),
-        inserted_window_dims=(0,),
-        scatter_dims_to_operand_dims=(0,)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': False,
-        'unique_indices': True,
-        'mode': 'fill'
-    })
+        return {
+            'operand': operand,
+            'scatter_indices': scatter_indices,
+            'updates': updates,
+            'dimension_numbers': dimension_numbers,
+            'indices_are_sorted': indices_are_sorted,
+            'unique_indices': unique_indices,
+            'mode': mode
+        }
 
-    # Input 3: 2D Float64, sorted and unique, drop mode
-    operand = np.ones((5, 5), dtype=np.float64) * 2.0
-    scatter_indices = np.array([[1], [3]], dtype=np.int32)
-    updates = np.array([[0.5, 0.5, 0.5, 0.5, 0.5],
-                        [0.25, 0.25, 0.25, 0.25, 0.25]], dtype=np.float64)
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1,),
-        inserted_window_dims=(0,),
-        scatter_dims_to_operand_dims=(0,)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': True,
-        'unique_indices': True,
-        'mode': 'drop'
-    })
+    # Case 1: float32, sorted, unique, promise_in_bounds
+    list_of_inputs.append(make_input(np.float32, 2.0, True, True, 'promise_in_bounds'))
 
-    # Input 4: 4D Float32, promise_in_bounds mode
-    operand = np.ones((4, 4, 4, 4), dtype=np.float32)
-    scatter_indices = np.array([[1, 1], [2, 2]], dtype=np.int32)
-    updates = np.ones((2, 4, 4), dtype=np.float32) * 3.0
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1, 2),
-        inserted_window_dims=(0, 1),
-        scatter_dims_to_operand_dims=(0, 1)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': False,
-        'unique_indices': False,
-        'mode': 'promise_in_bounds'
-    })
+    # Case 2: float32, non-sorted, non-unique, clip
+    list_of_inputs.append(make_input(np.float32, 3.0, False, False, 'clip'))
 
-    # Input 5: 4D Float64, sorted indices
-    operand = np.ones((3, 3, 3, 3), dtype=np.float64) * 2.0
-    scatter_indices = np.array([[0, 0], [1, 1], [2, 2]], dtype=np.int32)
-    updates = np.ones((3, 3, 3), dtype=np.float64) * 0.5
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1, 2),
-        inserted_window_dims=(0, 1),
-        scatter_dims_to_operand_dims=(0, 1)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': True,
-        'unique_indices': False,
-        'mode': 'clip'
-    })
+    # Case 3: float64, sorted, unique, drop
+    list_of_inputs.append(make_input(np.float64, 1.5, True, True, 'drop'))
 
-    # Input 6: 2D Float32, identical dimensions, drop mode
-    operand = np.ones((3, 3), dtype=np.float32) * 5.0
-    scatter_indices = np.array([[0], [1], [2]], dtype=np.int32)
-    updates = np.ones((3, 3), dtype=np.float32) * 0.2
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1,),
-        inserted_window_dims=(0,),
-        scatter_dims_to_operand_dims=(0,)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': False,
-        'unique_indices': False,
-        'mode': 'drop'
-    })
+    # Case 4: int32, non-sorted, unique, promise_in_bounds
+    list_of_inputs.append(make_input(np.int32, 2, False, True, 'promise_in_bounds'))
 
-    # Input 7: 4D Int32, sorted, unique, clip mode
-    operand = np.ones((2, 3, 4, 5), dtype=np.int32) * 10
-    scatter_indices = np.array([[0, 1], [1, 2]], dtype=np.int32)
-    updates = np.ones((2, 4, 5), dtype=np.int32) * 2
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1, 2),
-        inserted_window_dims=(0, 1),
-        scatter_dims_to_operand_dims=(0, 1)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': True,
-        'unique_indices': True,
-        'mode': 'clip'
-    })
+    # Case 5: int64, sorted, unique, clip
+    list_of_inputs.append(make_input(np.int64, 4, True, True, 'clip'))
 
-    # Input 8: 4D Int64, unique indices, fill mode
-    operand = np.ones((2, 2, 5, 5), dtype=np.int64) * 4
-    scatter_indices = np.array([[0, 0], [1, 1]], dtype=np.int32)
-    updates = np.ones((2, 5, 5), dtype=np.int64) * 2
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1, 2),
-        inserted_window_dims=(0, 1),
-        scatter_dims_to_operand_dims=(0, 1)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': False,
-        'unique_indices': True,
-        'mode': 'fill'
-    })
+    # Case 6: float32, out-of-bounds, non-sorted, non-unique, clip
+    list_of_inputs.append(make_input(np.float32, 2.0, False, False, 'clip', oob=True))
 
-    # Input 9: 4D Float32, negative updates, promise_in_bounds
-    operand = np.ones((5, 5, 3, 3), dtype=np.float32)
-    scatter_indices = np.array([[0, 0], [4, 4], [2, 2], [1, 3]], dtype=np.int32)
-    updates = np.ones((4, 3, 3), dtype=np.float32) * -1.0
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1, 2),
-        inserted_window_dims=(0, 1),
-        scatter_dims_to_operand_dims=(0, 1)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': False,
-        'unique_indices': False,
-        'mode': 'promise_in_bounds'
-    })
+    # Case 7: float32, out-of-bounds, non-sorted, non-unique, drop
+    list_of_inputs.append(make_input(np.float32, 2.0, False, False, 'drop', oob=True))
 
-    # Input 10: 2D Float32, sorted, unique, clip
-    operand = np.ones((6, 8), dtype=np.float32) * 10.0
-    scatter_indices = np.array([[1], [3], [5]], dtype=np.int32)
-    updates = np.ones((3, 8), dtype=np.float32) * 0.5
-    dimension_numbers = jax.lax.ScatterDimensionNumbers(
-        update_window_dims=(1,),
-        inserted_window_dims=(0,),
-        scatter_dims_to_operand_dims=(0,)
-    )
-    list_of_inputs.append({
-        'operand': operand,
-        'scatter_indices': scatter_indices,
-        'updates': updates,
-        'dimension_numbers': dimension_numbers,
-        'indices_are_sorted': True,
-        'unique_indices': True,
-        'mode': 'clip'
-    })
+    # Case 8: float64, non-sorted, non-unique, promise_in_bounds (duplicate indices)
+    list_of_inputs.append(make_input(np.float64, 0.5, False, False, 'promise_in_bounds', duplicate=True))
+
+    # Case 9: int32, non-sorted, unique, drop
+    list_of_inputs.append(make_input(np.int32, 3, False, True, 'drop'))
+
+    # Case 10: int64, sorted, unique, promise_in_bounds
+    list_of_inputs.append(make_input(np.int64, 2, True, True, 'promise_in_bounds'))
 
     return list_of_inputs
 

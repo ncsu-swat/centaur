@@ -48,9 +48,9 @@ def rule_49_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
         solver.add(arg4_value == arg4)
 
         # Constraints for rule 49
-        rule_49(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_value': arg2_value, 'arg3_value': arg3_value, 'arg4_value': arg4_value})
+        rule_49(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length, 'arg2_value': arg2_value, 'arg3_value': arg3_value, 'arg4_value': arg4_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_49(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value'], 'arg4_value': arg4['value']}, neg)
+        rule_49(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value'], 'arg4_value': arg4['value']}, neg)

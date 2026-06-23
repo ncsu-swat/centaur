@@ -54,9 +54,9 @@ def rule_31_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
         solver.add(arg4_value == list_of_string_values_jax.index(arg4))
 
         # Constraints for rule 31
-        rule_31(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_length': arg3_length, 'arg3_values': arg3_values, 'arg4_value': arg4_value})
+        rule_31(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_values': arg3_values, 'arg3_length': arg3_length, 'arg4_value': arg4_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_31(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values'], 'arg4_value': arg4['value']}, neg)
+        rule_31(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_values': arg3['values'], 'arg3_length': arg3['length'], 'arg4_value': arg4['value']}, neg)

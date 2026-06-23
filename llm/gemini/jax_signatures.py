@@ -10368,3 +10368,221 @@ signatures["jax.lax.iota"] = {
     "kwargs": {},
     "inner": {}
 }
+signatures["jax.scipy.linalg.expm"] = {
+    "args": {
+        "A": "tensor"
+    },
+    "kwargs": {
+        "upper_triangular": "boolean",
+        "max_squarings": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.cholesky"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "lower": "boolean",
+        "overwrite_a": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.inv"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "overwrite_a": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.det"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "overwrite_a": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.sqrtm"] = {
+    "args": {
+        "A": "tensor"
+    },
+    "kwargs": {
+        "blocksize": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.digamma"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.gammaln"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.betaln_1"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.betaln_2"] = {
+    "args": {
+        "a": "float",
+        "b": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.betaln_3"] = {
+    "args": {
+        "a": "integer",
+        "b": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.erf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.erfc"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.erfinv"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.gamma"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.loggamma"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.gammainc"] = {
+    "args": {
+        "a": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.gammaincc"] = {
+    "args": {
+        "a": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.signal.convolve_1"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "method": "string",
+        "precision": "string"  # Can also be tuple of precision enums
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.convolve_2"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "method": "string",
+        "precision": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.convolve2d_1"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "boundary": "string",
+        "fillvalue": "float",
+        "method": "string",
+        "precision": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.convolve2d_2"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "boundary": "string",
+        "fillvalue": "float",
+        "method": "string",
+        "precision": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.fftconvolve_1"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.fftconvolve_2"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "tuple"
+    },
+    "inner": {}
+}

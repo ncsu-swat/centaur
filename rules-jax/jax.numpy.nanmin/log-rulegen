@@ -11057,3 +11057,2745 @@ Rule 60 (Rank constraint of initial array compared to input array)
 Token usage: input=18495, output=502, total=21185
 ** DUPLICATED RULE ** (num_failures: 8)
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (where tensor must have boolean dtype)
+{v_5 : tensor} |= dtype_(v_5) = 0
+Token usage: input=2420, output=671, total=9341
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (integer axis must be within the valid range of input tensor dimensions)
+{v_1 : tensor, v_2 : int} |= v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1)
+Token usage: input=2420, output=671, total=9341
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (tuple axis elements must be within the valid range of input tensor dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Token usage: input=2420, output=671, total=9341
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (list axis elements must be within the valid range of input tensor dimensions)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Token usage: input=2420, output=671, total=9341
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 61 (where tensor must be broadcast compatible with the input tensor)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_2) ≤ ndim(v_1) ∧ ∀i ∈ [0, ndim(v_2) - 1] : shape(v_2, ndim(v_2) - 1 - i) = 1 ∨ shape(v_2, ndim(v_2) - 1 - i) = shape(v_1, ndim(v_1) - 1 - i)
+Token usage: input=2420, output=671, total=9341
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 62 (initial tensor must have the same dtype as the input tensor)
+{v_1 : tensor, v_3 : tensor} |= dtype_(v_3) = dtype_(v_1)
+Token usage: input=2420, output=671, total=9341
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 63 (input tensor must have a numeric or boolean dtype)
+{v_1 : tensor} |= dtype_(v_1) ≤ 10
+Token usage: input=2420, output=671, total=9341
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 64 (axis list elements must be unique)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Token usage: input=2420, output=671, total=9341
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 65 (axis tuple elements must be unique)
+{v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Token usage: input=2420, output=671, total=9341
+** DUPLICATED RULE ** (num_failures: 7)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 66 (initial value must be non-negative if input tensor has unsigned integer dtype)
+{v_1 : tensor, v_2 : int ⊎ float} |= if dtype_(v_1) = 5 then v_2 ≥ 0
+Token usage: input=2420, output=671, total=9341
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : tensor} |= dtype_(v_5) = 0
+Duplicated rule: {v_1 : tensor, v_2 : int} |= v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≤ 10
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 67 (where tensor must be boolean and initial must have the same dtype as input)
+{v_1 : tensor, v_2 : tensor, v_3 : tensor} |= dtype_(v_3) = 0 ∧ dtype_(v_2) = dtype_(v_1)
+Token usage: input=11991, output=417, total=21842
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : tensor} |= dtype_(v_5) = 0
+Duplicated rule: {v_1 : tensor, v_2 : int} |= v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≤ 10
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 68 (if axis is specified as an integer, the input tensor must have at least one dimension)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) ≥ 1
+Token usage: input=11991, output=417, total=21842
+** REDUNDANT VARIABLES ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : tensor} |= dtype_(v_5) = 0
+Duplicated rule: {v_1 : tensor, v_2 : int} |= v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≤ 10
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 69 (if axis is a tuple, its length cannot exceed the number of dimensions of the input tensor)
+{v_1 : tensor, v_2 : tuple(int)} |= v_2.len ≤ ndim(v_1)
+Token usage: input=11991, output=417, total=21842
+** DUPLICATED RULE ** (num_failures: 9)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : tensor} |= dtype_(v_5) = 0
+Duplicated rule: {v_1 : tensor, v_2 : int} |= v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≤ 10
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 70 (if axis is a list, its length cannot exceed the number of dimensions of the input tensor)
+{v_1 : tensor, v_2 : list(int)} |= v_2.len ≤ ndim(v_1)
+Token usage: input=11991, output=417, total=21842
+** DUPLICATED RULE ** (num_failures: 10)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : tensor} |= dtype_(v_5) = 0
+Duplicated rule: {v_1 : tensor, v_2 : int} |= v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≤ 10
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 71 (the number of dimensions of initial cannot exceed the rank of the input tensor)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_2) ≤ ndim(v_1)
+Token usage: input=11991, output=417, total=21842
+** DUPLICATED RULE ** (num_failures: 11)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_5 : tensor} |= dtype_(v_5) = 0
+Duplicated rule: {v_1 : tensor, v_2 : int} |= v_2 ≥ 0 - ndim(v_1) ∧ v_2 < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - ndim(v_1) ∧ v_2[i] < ndim(v_1)
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≤ 10
+Duplicated rule: {v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+Duplicated rule: {v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : ∀j ∈ [0, v_2.len - 1] : i = j ∨ v_2[i] ≠ v_2[j]
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.nanmin API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Return the minimum of the array elements along a given axis, ignoring NaNs.
+
+  JAX implementation of :func:`numpy.nanmin`.
+
+  Args:
+    a: Input array.
+    axis: int or sequence of ints, default=None. Axis along which the minimum is
+      computed. If None, the minimum is computed along the flattened array.
+    keepdims: bool, default=False. If True, reduced axes are left in the result
+      with size 1.
+    initial: int or array, default=None. Initial value for the minimum.
+    where: array of boolean dtype, default=None. The elements to be used in the
+      minimum. Array should be broadcast compatible to the input. ``initial``
+      must be specified when ``where`` is used.
+    out: Unused by JAX.
+
+  Returns:
+    An array of minimum values along the given axis, ignoring NaNs. If all values
+    are NaNs along the given axis, returns ``nan``.
+
+  See also:
+    - :func:`jax.numpy.nanmax`: Compute the maximum of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nansum`: Compute the sum of array elements along a given
+      axis, ignoring NaNs.
+    - :func:`jax.numpy.nanprod`: Compute the product of array elements along a
+      given axis, ignoring NaNs.
+    - :func:`jax.numpy.nanmean`: Compute the mean of array elements along a given
+      axis, ignoring NaNs.
+
+  Examples:
+
+    By default, ``jnp.nanmin`` computes the minimum of elements along the flattened
+    array.
+
+    >>> nan = jnp.nan
+    >>> x = jnp.array([[1, nan, 4, 5],
+    ...                [nan, -2, nan, -4],
+    ...                [2, 1, 3, nan]])
+    >>> jnp.nanmin(x)
+    Array(-4., dtype=float32)
+
+    If ``axis=1``, the maximum will be computed along axis 1.
+
+    >>> jnp.nanmin(x, axis=1)
+    Array([ 1., -4.,  1.], dtype=float32)
+
+    If ``keepdims=True``, ``ndim`` of the output will be same of that of the input.
+
+    >>> jnp.nanmin(x, axis=1, keepdims=True)
+    Array([[ 1.],
+           [-4.],
+           [ 1.]], dtype=float32)
+
+    To include only specific elements in computing the maximum, you can use
+    ``where``. It can either have same dimension as input
+
+    >>> where=jnp.array([[0, 0, 1, 0],
+    ...                  [0, 0, 1, 1],
+    ...                  [1, 1, 1, 0]], dtype=bool)
+    >>> jnp.nanmin(x, axis=1, keepdims=True, initial=0, where=where)
+    Array([[ 0.],
+           [-4.],
+           [ 0.]], dtype=float32)
+
+    or must be broadcast compatible with input.
+
+    >>> where = jnp.array([[False],
+    ...                    [True],
+    ...                    [False]])
+    >>> jnp.nanmin(x, axis=0, keepdims=True, initial=0, where=where)
+    Array([[ 0., -2.,  0., -4.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, axis: integer, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: tuple, keepdims: boolean, initial: tensor, where: tensor
+ - a: tensor, axis: list, keepdims: boolean, initial: tensor, where: tensor
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 72 (where tensor must be broadcast compatible with the input tensor)
+{v_1 : tensor, v_2 : tensor, v_3 : tensor} |= ndim(v_2) ≥ 0 ∧ ndim(v_3) ≤ ndim(v_1) ∧ ∀i ∈ [0, ndim(v_3) - 1] : shape(v_3, ndim(v_3) - 1 - i) = 1 ∨ shape(v_3, ndim(v_3) - 1 - i) = shape(v_1, ndim(v_1) - 1 - i)
+Token usage: input=11991, output=417, total=21842
+** SUCCESS **
+

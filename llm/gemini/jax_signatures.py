@@ -10586,3 +10586,254 @@ signatures["jax.scipy.signal.fftconvolve_2"] = {
     },
     "inner": {}
 }
+signatures["jax.scipy.signal.fftconvolve_1"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.fftconvolve_2"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "tuple"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.fftconvolve_3"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.xlogy"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.xlog1py"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.logsumexp_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "b": "tensor",
+        "keepdims": "boolean",
+        "return_sign": "boolean",
+        "where": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.logsumexp_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "axis": "tuple",
+        "b": "tensor",
+        "keepdims": "boolean",
+        "return_sign": "boolean",
+        "where": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.logsumexp_3"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "axis": "list",
+        "b": "tensor",
+        "keepdims": "boolean",
+        "return_sign": "boolean",
+        "where": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.log_softmax_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.log_softmax_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.ndtr_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.ndtr_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.ndtri"] = {
+    "args": {
+        "p": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.i0"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.i0e"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.i1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.i1e"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.entr"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.rel_entr"] = {
+    "args": {
+        "p": "tensor",
+        "q": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.kl_div"] = {
+    "args": {
+        "p": "tensor",
+        "q": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.polygamma_1"] = {
+    "args": {
+        "n": "integer",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.polygamma_2"] = {
+    "args": {
+        "n": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.polygamma_3"] = {
+    "args": {
+        "n": "integer",
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.polygamma_4"] = {
+    "args": {
+        "n": "tensor",
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.solve_triangular_1"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "trans": "integer",
+        "lower": "boolean",
+        "unit_diagonal": "boolean",
+        "overwrite_b": "boolean",
+        "debug": "boolean", # debug is Any, mapped to boolean as it is unused by JAX
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.linalg.solve_triangular_2"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "trans": "string",
+        "lower": "boolean",
+        "unit_diagonal": "boolean",
+        "overwrite_b": "boolean",
+        "debug": "boolean", # debug is Any, mapped to boolean as it is unused by JAX
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}

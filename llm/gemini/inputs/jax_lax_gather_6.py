@@ -7,49 +7,165 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-class CustomGatherDimensionNumbers(tuple):
-    def __new__(cls, offset_dims, collapsed_slice_dims, start_index_map):
-        return super().__new__(cls, (offset_dims, collapsed_slice_dims, start_index_map))
-    
-    @property
-    def offset_dims(self):
-        return self[0]
-    
-    @property
-    def collapsed_slice_dims(self):
-        return self[1]
-    
-    @property
-    def start_index_map(self):
-        return self[2]
-
 def gather_inputs():
     list_of_inputs = []
 
-    # We generate 10 valid and distinct inputs with varying shapes and dtypes.
-    # We use CustomGatherDimensionNumbers to satisfy both type checks and attributes.
-    for i in range(10):
-        size = 4 + (i % 3) * 2  # sizes: 4, 6, 8
-        operand = np.arange(size * size, dtype=np.float32).reshape(size, size) + i
-        if i % 2 == 0:
-            operand = operand.astype(np.float64)
-        else:
-            operand = operand.astype(np.int32)
+    # To completely avoid any potential (5,) inhomogeneous shape issues,
+    # we use a plain tuple of 3 homogeneous tuples for dimension_numbers,
+    # which is automatically converted to GatherDimensionNumbers by JAX.
+    # No variable in the dictionary will have a length of 5.
+    dimension_numbers = ((1,), (0,), (0,))
+    slice_sizes = [1, 4]
 
-        start_indices = np.array([[0], [1]], dtype=np.int32)
-        dimension_numbers = CustomGatherDimensionNumbers(offset_dims=(1,), collapsed_slice_dims=(0,), start_index_map=(0,))
-        
-        input_dict = {
-            "operand": operand,
-            "start_indices": start_indices,
-            "dimension_numbers": dimension_numbers,
-            "slice_sizes": [1, size // 2],
-            "unique_indices": (i % 2 == 0),
-            "indices_are_sorted": (i % 2 == 0),
-            "mode": "clip" if i % 2 == 0 else "fill",
-            "fill_value": (i % 2 == 0)
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1
+    operand = np.random.randn(4, 4).astype(np.float32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "clip",
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2
+    operand = np.random.randn(4, 4).astype(np.float32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': "fill",
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3
+    operand = np.random.randn(4, 4).astype(np.float64)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int64)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "promise_in_bounds",
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4
+    operand = np.random.randint(0, 100, size=(4, 4)).astype(np.int32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': True,
+        'mode': "promise_in_bounds",
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5
+    operand = np.random.randn(4, 4).astype(np.float32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "clip",
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6
+    operand = np.random.randn(4, 4).astype(np.float32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': False,
+        'mode': "fill",
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7
+    operand = np.random.randn(4, 4).astype(np.float64)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int64)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': "clip",
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8
+    operand = np.random.randint(0, 50, size=(4, 4)).astype(np.int32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "promise_in_bounds",
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9
+    operand = np.random.randn(4, 4).astype(np.float32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': "clip",
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10
+    operand = np.random.randn(4, 4).astype(np.float32)
+    start_indices = np.random.randint(0, 4, size=(2, 1)).astype(np.int32)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': True,
+        'mode': "fill",
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

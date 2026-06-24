@@ -15467,3 +15467,3413 @@ Rule 89 (local_window_size tuple must have positive window sizes)
 Token usage: input=15352, output=638, total=24516
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 90 (key and value must have identical shape)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Token usage: input=2707, output=639, total=8464
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 91 (query and key last dimension representing head dimension must match)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 3 ∧ ndim(v_2) = ndim(v_1) ∧ shape(v_1, ndim(v_1) - 1) = shape(v_2, ndim(v_2) - 1)
+Token usage: input=2707, output=639, total=8464
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 92 (query and key batch size must match when query and key are 4D)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Token usage: input=2707, output=639, total=8464
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 93 (number of query attention heads must be a multiple of key/value heads)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 3 ∧ ndim(v_2) = ndim(v_1) ∧ shape(v_1, ndim(v_1) - 2) % shape(v_2, ndim(v_2) - 2) = 0
+Token usage: input=2707, output=639, total=8464
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 94 (query_seq_lengths size must match query batch size when query is 4D)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 1 ∧ shape(v_2, 0) = shape(v_1, 0)
+Token usage: input=2707, output=639, total=8464
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 95 (query_seq_lengths must have non-negative sequence length values)
+{v_1 : tensor} |= min(v_1) ≥ 0
+Token usage: input=2707, output=639, total=8464
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 96 (query_seq_lengths must be of type np.int32)
+{v_1 : tensor} |= dtype_(v_1) = 3
+Token usage: input=2707, output=639, total=8464
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 97 (local_window_size as a tuple must have exactly 2 non-negative elements)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Token usage: input=2707, output=639, total=8464
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 98 (local_window_size as an integer must be non-negative)
+{v_1 : int} |= v_1 ≥ 0
+Token usage: input=2707, output=639, total=8464
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 99 (scale factor must be a positive float)
+{v_1 : float} |= v_1 > 0
+Token usage: input=2707, output=639, total=8464
+** DUPLICATED RULE ** (num_failures: 7)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 100 (head dimensions of query and key must be equal)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 3 ∧ ndim(v_2) = ndim(v_1) ∧ shape(v_1, ndim(v_1) - 1) = shape(v_2, ndim(v_2) - 1)
+Token usage: input=11419, output=886, total=20349
+** DUPLICATED RULE ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 101 (number of query attention heads must be a multiple of key attention heads)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 3 ∧ ndim(v_2) = ndim(v_1) ∧ shape(v_1, ndim(v_1) - 2) % shape(v_2, ndim(v_2) - 2) = 0
+Token usage: input=11419, output=886, total=20349
+** DUPLICATED RULE ** (num_failures: 9)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 102 (query_seq_lengths size must match query batch size when query is 4D)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 1 ∧ shape(v_2, 0) = shape(v_1, 0)
+Token usage: input=11419, output=886, total=20349
+** DUPLICATED RULE ** (num_failures: 10)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 103 (key_value_seq_lengths size must match key batch size when key is 4D)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 1 ∧ shape(v_2, 0) = shape(v_1, 0)
+Token usage: input=11419, output=886, total=20349
+** DUPLICATED RULE ** (num_failures: 11)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 104 (query, key, and value must have the exact same data type)
+{v_1 : tensor, v_2 : tensor, v_3 : tensor} |= dtype_(v_1) = dtype_(v_2) ∧ dtype_(v_2) = dtype_(v_3)
+Token usage: input=11419, output=886, total=20349
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 105 (query tensor must be of floating-point type: float16, float32, or float64)
+{v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 8
+Token usage: input=11419, output=886, total=20349
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 106 (bias tensor dimensions must match query and key batch, head, and sequence lengths)
+{v_1 : tensor, v_2 : tensor, v_3 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ ndim(v_3) = 4 ∧ shape(v_3, 0) = shape(v_1, 0) ∧ shape(v_3, 1) = shape(v_1, 2) ∧ shape(v_3, 2) = shape(v_1, 1) ∧ shape(v_3, 3) = shape(v_2, 1)
+Token usage: input=11419, output=886, total=20349
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 107 (mask tensor dimensions must match query and key head and sequence lengths for 3D input)
+{v_1 : tensor, v_2 : tensor, v_3 : tensor} |= ndim(v_1) = 3 ∧ ndim(v_2) = 3 ∧ ndim(v_3) = 4 ∧ shape(v_3, 0) = 1 ∧ shape(v_3, 1) = shape(v_1, 1) ∧ shape(v_3, 2) = shape(v_1, 0) ∧ shape(v_3, 3) = shape(v_2, 0)
+Token usage: input=11419, output=886, total=20349
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 108 (local window size tuple elements must be strictly positive)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] > 0 ∧ v_1[1] > 0
+Token usage: input=11419, output=886, total=20349
+** DUPLICATED RULE ** (num_failures: 12)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i))
+Duplicated rule: {v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ shape(v_1, 0) = shape(v_2, 0)
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 3
+Duplicated rule: {v_1 : tuple(int)} |= v_1.len = 2 ∧ v_1[0] ≥ 0 ∧ v_1[1] ≥ 0
+Duplicated rule: {v_1 : int} |= v_1 ≥ 0
+Duplicated rule: {v_1 : float} |= v_1 > 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.nn.dot_product_attention API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Scaled dot product attention function.
+
+  Computes the following for each head:
+
+  .. math::
+
+    \mathrm{Attention}(Q, K, V) = \mathrm{softmax}\left( \frac{QK^T}{\sqrt{d}} + B \right) V
+
+  where
+  :math:`Q` is the query matrix,
+  :math:`K` is the key matrix,
+  :math:`V` is the value matrix,
+  :math:`d` is the dimension of each individual query and key,
+  and :math:`B` is the bias matrix (optional).
+
+  Throughout this function, we utilize the following uppercase letters to
+  represent the shape of array::
+
+    B = batch size
+    S = length of the key/value (source)
+    T = length of the query (target)
+    N = number of attention heads
+    H = dimensions of each attention head
+    K = number of key/value heads
+    G = number of groups, which equals to N // K
+
+  Args:
+    query: query array; shape :code:`(BTNH|TNH)`
+    key: key array: shape :code:`(BSKH|SKH)`. When `K` equals `N`, multi-headed
+      attention (MHA https://arxiv.org/abs/1706.03762) is performed. Otherwise,
+      grouped query attention (GQA https://arxiv.org/abs/2305.13245) is
+      performed if `N` is a multiple of `K`, and multi-query attention (MQA
+      https://arxiv.org/abs/1911.02150) is performed if `K == 1` (a special case
+      of GQA).
+    value: value array, should have the same shape as the `key` array.
+    bias: optional, bias array to be added to logits; The shape must be 4D and
+      be broadcastable to :code:`(BNTS|NTS)`.
+    mask: optional, mask array used to filter out logits. It is a boolean mask
+      where `True` indicates the element should take part in attention. For an
+      additive mask, users should pass it to `bias`. The shape must be 4D and be
+      broadcastable to :code:`(BNTS|NTS)`.
+    scale: scale for the logits. If None, the scale will be set to 1 divided by
+      the square root of query's head dimension (i.e. H).
+    is_causal: If true, causal attention will be applied. Note, some
+      implementations like `xla` will generate a mask tensor and apply it to the
+      logits to mask out the non-causal parts of the attention matrix, but other
+      implementations like `cudnn` will avoid computing the non-causal regions,
+      providing speedups.
+    query_seq_lengths: `int32` array of sequence lengths for query; shape
+      :code:`(B)`
+    key_value_seq_lengths: `int32` array of sequence lengths for key and value;
+      shape :code:`(B)`
+    local_window_size: Window sizes to make self attention to attend to each
+      token's local window. If set, this specifies the (left_window_size,
+      right_window_size) for each token. E.g., if local_window_size == (3, 2)
+      and the sequence is [0, 1, 2, 3, 4, 5, c, 7, 8, 9], token `c` can attend
+      to [3, 4, 5, c, 7, 8]. If a single int is given, it will be interpreted as
+      a symmetric window (window_size, window_size).
+    return_residual: Whether to return the logsumexp tensor of shape BTN
+      or BNT to users. See section 3.1.1 in the FlashAttention-2 paper:
+      https://arxiv.org/pdf/2307.08691 to find the definition of logsumexp.
+    implementation: A string to control which implementation backend to use.
+      Supported strings are `xla`, `cudnn` (cuDNN flash attention). It defaults
+      to `None`, which currently falls back to `xla`.
+      Note, `cudnn` supports only a subset of shapes/dtypes, and an exception
+      will be thrown if its not supported.
+
+  Returns:
+    If return_residual is False, returns an array of the attention output with
+    the same shape as :code:`query`. If return_residual is True, returns a tuple
+    of (output, residual). The residual is the shape of BTN|TN.
+
+[Possible API Signatures]
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: integer, implementation: string, return_residual: boolean
+ - query: tensor, key: tensor, value: tensor, bias: tensor, mask: tensor, scale: float, is_causal: boolean, query_seq_lengths: tensor, key_value_seq_lengths: tensor, local_window_size: tuple, implementation: string, return_residual: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 109 (local window size integer must be at least 1)
+{v_1 : int} |= v_1 ≥ 1
+Token usage: input=11419, output=886, total=20349
+** SUCCESS **
+

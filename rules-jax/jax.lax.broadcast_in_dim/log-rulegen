@@ -8767,3 +8767,2375 @@ Rule 59 (compatibility of dimension sizes under broadcasting mapping)
 Token usage: input=15982, output=367, total=17538
 ** DUPLICATED RULE ** (num_failures: 6)
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (the length of the broadcast dimensions must equal the number of dimensions of the operand tensor)
+{v_1 : tensor, v_3 : tuple(int)} |= ndim(v_1) = v_3.len
+Token usage: input=2091, output=457, total=7055
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (the length of the broadcast dimensions list must equal the number of dimensions of the operand tensor)
+{v_1 : tensor, v_3 : list(int)} |= ndim(v_1) = v_3.len
+Token usage: input=2091, output=457, total=7055
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (all broadcast dimension indices must be valid indices within the target shape)
+{v_2 : tuple(int), v_3 : tuple(int)} |= ∀i ∈ [0, v_3.len - 1] : (v_3[i] ≥ 0 ∧ v_3[i] < v_2.len)
+Token usage: input=2091, output=457, total=7055
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (operand shape dimensions must be compatible with the target shape dimensions mapped by broadcast dimensions)
+{v_1 : tensor, v_2 : tuple(int), v_3 : list(int)} |= ndim(v_1) = v_3.len ∧ (∀i ∈ [0, ndim(v_1) - 1] : (v_3[i] ≥ 0 ∧ v_3[i] < v_2.len ∧ (shape(v_1, i) = 1 ∨ shape(v_1, i) = v_2[v_3[i]])))
+Token usage: input=2091, output=457, total=7055
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (target shape dimensions must be non-negative)
+{v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=2091, output=457, total=7055
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 61 (broadcast dimensions must contain unique indices to prevent mapping multiple operand dimensions to the same target dimension)
+{v_3 : list(int)} |= ∀i ∈ [0, v_3.len - 1] : (∀j ∈ [0, v_3.len - 1] : (if i ≠ j then v_3[i] ≠ v_3[j]))
+Token usage: input=2091, output=457, total=7055
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 62 (broadcast_dimensions length matches the operand's rank)
+{v_1 : tensor, v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len
+Token usage: input=9212, output=448, total=12253
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 63 (broadcast_dimensions elements must be valid indices of the target shape)
+{v_2 : tuple(int) ⊎ list(int), v_3 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_3.len - 1] : (v_3[i] ≥ 0 ∧ v_3[i] < v_2.len)
+Token usage: input=9212, output=448, total=12253
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 64 (all dimensions of the target shape must be non-negative integers)
+{v_2 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+Token usage: input=9212, output=448, total=12253
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 65 (operand dimensions must be broadcast-compatible with the corresponding target shape dimensions)
+{v_1 : tensor, v_2 : tuple(int) ⊎ list(int), v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len ∧ (∀i ∈ [0, ndim(v_1) - 1] : (v_3[i] ≥ 0 ∧ v_3[i] < v_2.len ∧ (shape(v_1, i) = 1 ∨ shape(v_1, i) = v_2[v_3[i]])))
+Token usage: input=9212, output=448, total=12253
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 66 (broadcast_dimensions must not contain duplicate dimensions)
+{v_3 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_3.len - 1] : (∀j ∈ [0, v_3.len - 1] : (if i ≠ j then v_3[i] ≠ v_3[j]))
+Token usage: input=9212, output=448, total=12253
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len
+Duplicated rule: {v_2 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 67 (target shape rank must be at least the operand rank)
+{v_1 : tensor, v_2 : tuple(int) ⊎ list(int)} |= ndim(v_1) ≤ v_2.len
+Token usage: input=14654, output=429, total=20319
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len
+Duplicated rule: {v_2 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 68 (operand dimensions must be compatible with the mapped target dimensions)
+{v_1 : tensor, v_2 : tuple(int) ⊎ list(int), v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len ∧ (∀i ∈ [0, ndim(v_1) - 1] : (v_3[i] ≥ 0 ∧ v_3[i] < v_2.len ∧ (if shape(v_1, i) ≠ 1 then shape(v_1, i) = v_2[v_3[i]])))
+Token usage: input=14654, output=429, total=20319
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len
+Duplicated rule: {v_2 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 69 (broadcast dimensions must contain unique indices to prevent multiple dimensions mapping to the same target dimension)
+{v_3 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_3.len - 1] : (∀j ∈ [i + 1, v_3.len - 1] : v_3[i] ≠ v_3[j])
+Token usage: input=14654, output=429, total=20319
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len
+Duplicated rule: {v_2 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 70 (if the operand is a scalar, the broadcast dimensions list must be empty)
+{v_1 : tensor, v_3 : tuple(int) ⊎ list(int)} |= if ndim(v_1) = 0 then v_3.len = 0
+Token usage: input=14654, output=429, total=20319
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_3 : tuple(int) ⊎ list(int)} |= ndim(v_1) = v_3.len
+Duplicated rule: {v_2 : tuple(int) ⊎ list(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.lax.broadcast_in_dim API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+General broadcasting operation.
+
+  This function lowers directly to the `stablehlo.broadcast_in_dim`_ operation.
+
+  Args:
+    operand: an array
+    shape: the shape of the target array
+    broadcast_dimensions: to which dimension in the target shape each dimension
+      of the operand shape corresponds to. That is, dimension i of the operand
+      becomes dimension broadcast_dimensions[i] of the result.
+
+  Returns:
+    An array containing the result.
+
+  See also:
+    - :func:`jax.lax.broadcast`: simpler interface to add new leading dimensions.
+    - :func:`jax.numpy.broadcast_to`: NumPy-style API for general broadcasting.
+
+  Examples:
+    Here is an example of implementing simple NumPy-style broadcasting:
+
+    >>> import jax.numpy as jnp
+    >>> from jax import lax
+    >>> import numpy as np
+
+    >>> arr = jnp.arange(3).reshape(3, 1)
+    >>> target_shape = (2, 3, 4)
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 2))
+    >>> result.shape
+    (2, 3, 4)
+
+    The above is equivalent to :func:`jax.numpy.broadcast_to`:
+
+    >>> result_jnp = jnp.broadcast_to(result, target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+    However, :func:`broadcast_in_dim` is more general, allowing implicit transposes
+    as part of the single broadcasting operation:
+
+    >>> result = lax.broadcast_in_dim(arr, target_shape, broadcast_dimensions=(1, 0))
+    >>> result.shape
+    (2, 3, 4)
+
+    This more general operation has no direct equivlant in the NumPy-style broadcasting
+    API, but can be replicated by appropriately adding and transposing input dimensions:
+
+    >>> result_jnp = jnp.broadcast_to(jnp.expand_dims(arr, 0).transpose(), target_shape)
+    >>> np.testing.assert_array_equal(result, result_jnp)
+
+  .. _stablehlo.broadcast_in_dim: https://openxla.org/stablehlo/spec#broadcast_in_dim
+
+[Possible API Signatures]
+ - operand: tensor, shape: tuple, broadcast_dimensions: tuple
+ - operand: tensor, shape: tuple, broadcast_dimensions: list
+ - operand: tensor, shape: list, broadcast_dimensions: tuple
+ - operand: tensor, shape: list, broadcast_dimensions: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 71 (if the target shape is 0-dimensional, the operand must also be 0-dimensional)
+{v_1 : tensor, v_2 : tuple(int) ⊎ list(int)} |= if v_2.len = 0 then ndim(v_1) = 0
+Token usage: input=14654, output=429, total=20319
+** SUCCESS **
+

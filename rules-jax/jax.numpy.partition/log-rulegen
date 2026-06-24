@@ -7561,3 +7561,1716 @@ Rule 51 (if partition axis is the last dimension, kth must be within the bounds 
 Token usage: input=15978, output=398, total=19341
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 52 (dimension of input tensor must be greater than or equal to 1)
+{v_1 : tensor} |= ndim(v_1) ≥ 1
+Token usage: input=2271, output=271, total=5963
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 53 (axis parameter must be within the valid range of dimensions)
+{v_1 : tensor, v_3 : int} |= v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Token usage: input=2271, output=271, total=5963
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 54 (kth parameter must be within the valid index range of the partitioned dimension)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) ≥ 1 ∧ v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1) ∧ (if v_3 ≥ 0 then (v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3)) else (v_2 ≥ 0 - shape(v_1, ndim(v_1) + v_3) ∧ v_2 < shape(v_1, ndim(v_1) + v_3)))
+Token usage: input=2271, output=271, total=5963
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_1 : tensor, v_3 : int} |= v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 55 (input tensor should have a numeric or boolean dtype, not string)
+{v_1 : tensor} |= dtype_(v_1) < 11
+Token usage: input=8270, output=184, total=11471
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_1 : tensor, v_3 : int} |= v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 56 (the partition axis dimension size must be at least 1)
+{v_1 : tensor, v_3 : int} |= v_3 ≥ 0 ∧ v_3 < ndim(v_1) ∧ shape(v_1, v_3) ≥ 1
+Token usage: input=8270, output=184, total=11471
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 1
+Duplicated rule: {v_1 : tensor, v_3 : int} |= v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 57 (kth index must be within bounds for a 1D input tensor along the default axis)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) = 1 ∧ v_2 ≥ 0 - shape(v_1, 0) ∧ v_2 < shape(v_1, 0)
+Token usage: input=8270, output=184, total=11471
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) < 11
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 58 (kth bounds for positive axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then v_2 ≥ 0 - shape(v_1, v_3) ∧ v_2 < shape(v_1, v_3)
+Token usage: input=13712, output=279, total=17174
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) < 11
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 59 (partition axis size constraint for 2D tensors)
+{v_1 : tensor, v_2 : int, v_3 : int} |= if ndim(v_1) = 2 ∧ v_3 = 1 then v_2 ≥ 0 - shape(v_1, 1) ∧ v_2 < shape(v_1, 1)
+Token usage: input=13712, output=279, total=17174
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) < 11
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 60 (partition axis size constraint for 1D tensors)
+{v_1 : tensor, v_2 : int, v_3 : int} |= if ndim(v_1) = 1 then (v_3 = 0 ∨ v_3 = 0 - 1) ∧ v_2 ≥ 0 - shape(v_1, 0) ∧ v_2 < shape(v_1, 0)
+Token usage: input=13712, output=279, total=17174
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 61 (kth bounds for negative axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= if v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1) then v_2 ≥ 0 - shape(v_1, ndim(v_1) + v_3) ∧ v_2 < shape(v_1, ndim(v_1) + v_3)
+Token usage: input=19299, output=263, total=21458
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 62 (partition axis size constraint for 3D tensors)
+{v_1 : tensor, v_2 : int, v_3 : int} |= if ndim(v_1) = 3 ∧ v_3 = 2 then v_2 ≥ 0 - shape(v_1, 2) ∧ v_2 < shape(v_1, 2)
+Token usage: input=19299, output=263, total=21458
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.partition API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Returns a partially-sorted copy of an array.
+
+  JAX implementation of :func:`numpy.partition`. The JAX version differs from
+  NumPy in the treatment of NaN entries: NaNs which have the negative bit set
+  are sorted to the beginning of the array.
+
+  Args:
+    a: array to be partitioned.
+    kth: static integer index about which to partition the array.
+    axis: static integer axis along which to partition the array; default is -1.
+
+  Returns:
+    A copy of ``a`` partitioned at the ``kth`` value along ``axis``. The entries
+    before ``kth`` are values smaller than ``take(a, kth, axis)``, and entries
+    after ``kth`` are indices of values larger than ``take(a, kth, axis)``
+
+  Note:
+    The JAX version requires the ``kth`` argument to be a static integer rather than
+    a general array. This is implemented via two calls to :func:`jax.lax.top_k`. If
+    you're only accessing the top or bottom k values of the output, it may be more
+    efficient to call :func:`jax.lax.top_k` directly.
+
+  See Also:
+    - :func:`jax.numpy.sort`: full sort
+    - :func:`jax.numpy.argpartition`: indirect partial sort
+    - :func:`jax.lax.top_k`: directly find the top k entries
+    - :func:`jax.lax.approx_max_k`: compute the approximate top k entries
+    - :func:`jax.lax.approx_min_k`: compute the approximate bottom k entries
+
+  Examples:
+    >>> x = jnp.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3])
+    >>> kth = 4
+    >>> x_partitioned = jnp.partition(x, kth)
+    >>> x_partitioned
+    Array([1, 2, 3, 3, 4, 9, 8, 7, 6, 5], dtype=int32)
+
+    The result is a partially-sorted copy of the input. All values before ``kth``
+    are of smaller than the pivot value, and all values after ``kth`` are larger
+    than the pivot value:
+
+    >>> smallest_values = x_partitioned[:kth]
+    >>> pivot_value = x_partitioned[kth]
+    >>> largest_values = x_partitioned[kth + 1:]
+    >>> print(smallest_values, pivot_value, largest_values)
+    [1 2 3 3] 4 [9 8 7 6 5]
+
+    Notice that among ``smallest_values`` and ``largest_values``, the returned
+    order is arbitrary and implementation-dependent.
+
+[API Signature] a: tensor, kth: integer, axis: integer
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 63 (partition axis size must be positive for positive axis index)
+{v_1 : tensor, v_3 : int} |= if v_3 ≥ 0 ∧ v_3 < ndim(v_1) then shape(v_1, v_3) ≥ 1
+Token usage: input=19299, output=263, total=21458
+** SUCCESS **
+

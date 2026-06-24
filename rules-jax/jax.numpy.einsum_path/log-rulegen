@@ -10508,3 +10508,3163 @@ Rule 73 (operand tensor must have floating-point or integer dtype: 1-8)
 Token usage: input=17260, output=382, total=23000
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 74 (The operands list must contain at least one tensor)
+{v_2 : list(tensor)} |= v_2.len ≥ 1
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 75 (The contraction path length should match the number of contractions needed for the operands)
+{v_2 : list(tensor), v_3 : list(tuple(int))} |= if v_2.len > 1 then v_3.len = v_2.len - 1 else v_3.len = 0
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 76 (If subscripts is "ii", there must be exactly one operand)
+{v_1 : str, v_2 : list(tensor)} |= if v_1 = "ii" then v_2.len = 1
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 77 (If subscripts is "ii->i", there must be exactly one operand)
+{v_1 : str, v_2 : list(tensor)} |= if v_1 = "ii->i" then v_2.len = 1
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 78 (If subscripts is "i,j->ij", there must be exactly two operands)
+{v_1 : str, v_2 : list(tensor)} |= if v_1 = "i,j->ij" then v_2.len = 2
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 79 (If subscripts is "bij,bjk->bik", there must be exactly two operands)
+{v_1 : str, v_2 : list(tensor)} |= if v_1 = "bij,bjk->bik" then v_2.len = 2
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 80 (If subscripts is "ii", the single operand must be a 2D tensor)
+{v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Token usage: input=2200, output=849, total=9744
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 81 (If subscripts is "ii", the two dimensions of the operand must be equal)
+{v_1 : str, v_2 : tensor} |= if v_1 = "ii" then shape(v_2, 0) = shape(v_2, 1)
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 82 (If subscripts is "ii->i", the two dimensions of the operand must be equal)
+{v_1 : str, v_2 : tensor} |= if v_1 = "ii->i" then shape(v_2, 0) = shape(v_2, 1)
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 83 (If subscripts is "i,j->ij", both operands must be 1D tensors)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+Token usage: input=2200, output=849, total=9744
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 84 (If subscripts is "bij,bjk->bik", both operands must be 3D tensors)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "bij,bjk->bik" then ndim(v_2) = 3 ∧ ndim(v_3) = 3
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 85 (If subscripts is "bij,bjk->bik", the batch dimension of both operands must match)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "bij,bjk->bik" then shape(v_2, 0) = shape(v_3, 0)
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 86 (If subscripts is "bij,bjk->bik", the contracting dimension of both operands must match)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "bij,bjk->bik" then shape(v_2, 2) = shape(v_3, 1)
+Token usage: input=2200, output=849, total=9744
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 87 (For "bij,bjk->bik", both operands must be 3D and their contracting dimension 'j' must match)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "bij,bjk->bik" then ndim(v_2) = 3 ∧ ndim(v_3) = 3 ∧ shape(v_2, 2) = shape(v_3, 1)
+Token usage: input=12013, output=701, total=17892
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 88 (For "bij,bjk->bik", the batch dimensions of both operands must match)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "bij,bjk->bik" then shape(v_2, 0) = shape(v_3, 0)
+Token usage: input=12013, output=701, total=17892
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 89 (For "ii->i", the operand must be 2D and square)
+{v_1 : str, v_2 : tensor} |= if v_1 = "ii->i" then ndim(v_2) = 2 ∧ shape(v_2, 0) = shape(v_2, 1)
+Token usage: input=12013, output=701, total=17892
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 90 (For "ii", the operand must have equal dimensions)
+{v_1 : str, v_2 : tensor} |= if v_1 = "ii" then shape(v_2, 0) = shape(v_2, 1)
+Token usage: input=12013, output=701, total=17892
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 91 (For "...ij->...ji", the operand must be at least 2D, and its last two dimensions must be positive)
+{v_1 : str, v_2 : tensor} |= if v_1 = "...ij->...ji" then ndim(v_2) ≥ 2 ∧ shape(v_2, ndim(v_2) - 1) > 0 ∧ shape(v_2, ndim(v_2) - 2) > 0
+Token usage: input=12013, output=701, total=17892
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 92 (For "i,j->ij", both operands must have positive sizes along their single dimension)
+{v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then shape(v_2, 0) > 0 ∧ shape(v_3, 0) > 0
+Token usage: input=12013, output=701, total=17892
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 93 (If optimize is specified as a custom contraction path list, its length must be positive)
+{v_3 : list(tuple(int))} |= v_3.len ≥ 1
+Token usage: input=12013, output=701, total=17892
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 94 (For "ii", both dimensions of the operand must be positive)
+{v_1 : str, v_2 : tensor} |= if v_1 = "ii" then shape(v_2, 0) > 0 ∧ shape(v_2, 1) > 0
+Token usage: input=12013, output=701, total=17892
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str, v_2 : tensor} |= if v_1 = "ii" then ndim(v_2) = 2
+Duplicated rule: {v_1 : str, v_2 : tensor, v_3 : tensor} |= if v_1 = "i,j->ij" then ndim(v_2) = 1 ∧ ndim(v_3) = 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.einsum_path API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Evaluates the optimal contraction path without evaluating the einsum.
+
+  JAX implementation of :func:`numpy.einsum_path`. This function calls into
+  the opt_einsum_ package, and makes use of its optimization routines.
+
+  Args:
+    subscripts: string containing axes names separated by commas.
+    *operands: sequence of one or more arrays corresponding to the subscripts.
+    optimize: specify how to optimize the order of computation. In JAX this defaults
+      to ``"auto"``. Other options are ``True`` (same as ``"optimize"``), ``False``
+      (unoptimized), or any string supported by ``opt_einsum``, which
+      includes ``"optimize"``,, ``"greedy"``, ``"eager"``, and others.
+
+  Returns:
+    A tuple containing the path that may be passed to :func:`~jax.numpy.einsum`, and a
+    printable object representing this optimal path.
+
+  Examples:
+    >>> key1, key2, key3 = jax.random.split(jax.random.key(0), 3)
+    >>> x = jax.random.randint(key1, minval=-5, maxval=5, shape=(2, 3))
+    >>> y = jax.random.randint(key2, minval=-5, maxval=5, shape=(3, 100))
+    >>> z = jax.random.randint(key3, minval=-5, maxval=5, shape=(100, 5))
+    >>> path, path_info = jnp.einsum_path("ij,jk,kl", x, y, z, optimize="optimal")
+    >>> print(path)
+    [(1, 2), (0, 1)]
+    >>> print(path_info)
+          Complete contraction:  ij,jk,kl->il
+                Naive scaling:  4
+            Optimized scaling:  3
+              Naive FLOP count:  9.000e+3
+          Optimized FLOP count:  3.060e+3
+          Theoretical speedup:  2.941e+0
+          Largest intermediate:  1.500e+1 elements
+        --------------------------------------------------------------------------------
+        scaling        BLAS                current                             remaining
+        --------------------------------------------------------------------------------
+          3           GEMM              kl,jk->lj                             ij,lj->il
+          3           GEMM              lj,ij->il                                il->il
+
+    Use the computed path in :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum("ij,jk,kl", x, y, z, optimize=path)
+    Array([[-754,  324, -142,   82,   50],
+           [ 408,  -50,   87,  -29,    7]], dtype=int32)
+
+  .. _opt_einsum: https://github.com/dgasmith/opt_einsum
+
+[Possible API Signatures]
+ - subscripts: string, operands: tensor, optimize: boolean
+ - subscripts: string, operands: tensor, optimize: string
+ - subscripts: string, operands: tensor, optimize: list
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 95 (For "ii->i", both dimensions of the operand must be positive)
+{v_1 : str, v_2 : tensor} |= if v_1 = "ii->i" then shape(v_2, 0) > 0 ∧ shape(v_2, 1) > 0
+Token usage: input=12013, output=701, total=17892
+** SUCCESS **
+

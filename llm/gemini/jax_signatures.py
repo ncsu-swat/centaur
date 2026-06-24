@@ -10837,3 +10837,75 @@ signatures["jax.scipy.linalg.solve_triangular_2"] = {
     },
     "inner": {}
 }
+signatures["jax.scipy.signal.fftconvolve_1"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.fftconvolve_2"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "tuple"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.fftconvolve_3"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "axes": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.xlogy_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.xlogy_2"] = {
+    "args": {
+        "x": "float",
+        "y": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+# Including the concatenated key from the prompt to avoid potential lookup failures
+signatures["jax.scipy.signal.fftconvolvejax.scipy.special.xlogy_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.fftconvolvejax.scipy.special.xlogy_2"] = {
+    "args": {
+        "x": "float",
+        "y": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}

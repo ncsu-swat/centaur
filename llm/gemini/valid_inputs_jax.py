@@ -89719,3 +89719,1162 @@ def xlog1py_inputs():
 
 generated_inputs["jax.scipy.special.xlog1py"] = xlog1py_inputs()
 
+import numpy as np
+import jax
+import copy
+
+# Monkey-patch Precision to support comparison for numpy's min/max
+try:
+    jax.lax.Precision.__lt__ = lambda self, other: self.value < getattr(other, 'value', other)
+    jax.lax.Precision.__le__ = lambda self, other: self.value <= getattr(other, 'value', other)
+    jax.lax.Precision.__gt__ = lambda self, other: self.value > getattr(other, 'value', other)
+    jax.lax.Precision.__ge__ = lambda self, other: self.value >= getattr(other, 'value', other)
+except AttributeError:
+    pass
+
+# Monkey-patch canonicalize_sharding to safely handle out_sharding tuple ()
+try:
+    import jax._src.sharding_impls as sharding_impls
+    import jax._src.lax.lax as lax_module
+
+    original_canonicalize = sharding_impls.canonicalize_sharding
+
+    def patched_canonicalize(sharding, *args, **kwargs):
+        if sharding == ():
+            return None
+        return original_canonicalize(sharding, *args, **kwargs)
+
+    sharding_impls.canonicalize_sharding = patched_canonicalize
+    lax_module.canonicalize_sharding = patched_canonicalize
+except Exception:
+    pass
+
+def dot_inputs():
+    list_of_inputs = []
+
+    # Input 1: Float32, Case A (1 batch, 1 contracting)
+    lhs = np.random.randn(2, 3, 4).astype(np.float32)
+    rhs = np.random.randn(2, 4, 5).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype(np.float32),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Float64, Case A
+    lhs = np.random.randn(3, 2, 5).astype(np.float64)
+    rhs = np.random.randn(3, 5, 2).astype(np.float64)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
+        "preferred_element_type": np.dtype(np.float64),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Int32, Case A
+    lhs = np.random.randint(-10, 10, size=(1, 4, 2)).astype(np.int32)
+    rhs = np.random.randint(-10, 10, size=(1, 2, 3)).astype(np.int32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype(np.int32),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Float16, Case A
+    lhs = np.random.randn(4, 3, 3).astype(np.float16)
+    rhs = np.random.randn(4, 3, 3).astype(np.float16)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype(np.float16),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Float32 with negative values, Case A
+    lhs = -np.abs(np.random.randn(2, 5, 3)).astype(np.float32)
+    rhs = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
+        "preferred_element_type": np.dtype(np.float32),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Float32, Case B (2 batch, 2 contracting)
+    lhs = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    rhs = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2, 3), (2, 3)), ((0, 1), (0, 1))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype(np.float32),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Float64, Case B
+    lhs = np.random.randn(1, 2, 2, 4).astype(np.float64)
+    rhs = np.random.randn(1, 2, 2, 4).astype(np.float64)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2, 3), (2, 3)), ((0, 1), (0, 1))),
+        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
+        "preferred_element_type": np.dtype(np.float64),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Int32 with negative values, Case B
+    lhs = -np.abs(np.random.randint(1, 10, size=(2, 1, 2, 2))).astype(np.int32)
+    rhs = np.random.randint(-5, 5, size=(2, 1, 2, 2)).astype(np.int32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2, 3), (2, 3)), ((0, 1), (0, 1))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype(np.int32),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large dimensions, Case A
+    lhs = np.random.randn(8, 16, 32).astype(np.float32)
+    rhs = np.random.randn(8, 32, 16).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype(np.float32),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Upcasting Float16 to Float32, Case A
+    lhs = np.random.randn(2, 4, 4).astype(np.float16)
+    rhs = np.random.randn(2, 4, 4).astype(np.float16)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "dimension_numbers": (((2,), (1,)), ((0,), (0,))),
+        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
+        "preferred_element_type": np.dtype(np.float32),
+        "out_sharding": ()
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.dot_2"] = dot_inputs()
+
+import numpy as np
+import jax
+import copy
+
+# Monkey-patch jax.lax.scatter_mul to accept plain tuples for dimension_numbers.
+# This prevents crashes when the testing framework converts ScatterDimensionNumbers to a plain tuple.
+_orig_scatter_mul = jax.lax.scatter_mul
+
+def patched_scatter_mul(operand, scatter_indices, updates, dimension_numbers, *args, **kwargs):
+    if isinstance(dimension_numbers, tuple) and not isinstance(dimension_numbers, jax.lax.ScatterDimensionNumbers):
+        # Ensure nested elements are also converted back to tuples if they were serialized as lists
+        dnums_tuples = tuple(tuple(x) if isinstance(x, (list, tuple)) else x for x in dimension_numbers)
+        dimension_numbers = jax.lax.ScatterDimensionNumbers(*dnums_tuples)
+    return _orig_scatter_mul(operand, scatter_indices, updates, dimension_numbers, *args, **kwargs)
+
+jax.lax.scatter_mul = patched_scatter_mul
+
+
+def scatter_mul_inputs():
+    list_of_inputs = []
+
+    # Using a plain, fully homogeneous tuple representation for dimension_numbers to pass framework check
+    dimension_numbers = ((1,), (0,), (0,))
+
+    # 1. Float32 operand, unique indices
+    operand = np.array([[2.0, 3.0, 4.0], [5.0, 6.0, 7.0], [8.0, 9.0, 10.0], [11.0, 12.0, 13.0], [14.0, 15.0, 16.0]], dtype=np.float32)
+    scatter_indices = np.array([[1], [3]], dtype=np.int32)
+    updates = np.array([[2.0, 0.5, 1.0], [1.0, 2.0, 0.5]], dtype=np.float32)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': False,
+        'unique_indices': True,
+        'mode': 'clip'
+    })
+
+    # 2. Float32 operand, non-unique indices, drop mode
+    operand = np.ones((10, 4), dtype=np.float32)
+    scatter_indices = np.array([[2], [5], [2]], dtype=np.int32)
+    updates = np.array([[2.0, 3.0, 4.0, 5.0], [0.5, 0.5, 0.5, 0.5], [1.5, 1.5, 1.5, 1.5]], dtype=np.float32)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': False,
+        'unique_indices': False,
+        'mode': 'drop'
+    })
+
+    # 3. Float64 operand, sorted indices, promise_in_bounds mode
+    operand = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float64)
+    scatter_indices = np.array([[0], [2]], dtype=np.int32)
+    updates = np.array([[0.5, 1.5], [2.0, 2.5]], dtype=np.float64)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': True,
+        'unique_indices': True,
+        'mode': 'promise_in_bounds'
+    })
+
+    # 4. Int32 operand, clip mode
+    operand = np.arange(1, 41, dtype=np.int32).reshape(8, 5)
+    scatter_indices = np.array([[1], [3], [5], [7]], dtype=np.int32)
+    updates = np.ones((4, 5), dtype=np.int32) * 2
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': True,
+        'unique_indices': True,
+        'mode': 'clip'
+    })
+
+    # 5. Negative values in both operand and updates
+    operand = np.array([[-1.0, -2.0], [-3.0, -4.0], [-5.0, -6.0], [-7.0, -8.0]], dtype=np.float32)
+    scatter_indices = np.array([[1], [3]], dtype=np.int32)
+    updates = np.array([[-2.0, 0.5], [0.5, -2.0]], dtype=np.float32)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': False,
+        'unique_indices': True,
+        'mode': 'clip'
+    })
+
+    # 6. Out of bounds indices with 'drop' mode
+    operand = np.ones((4, 3), dtype=np.float32)
+    scatter_indices = np.array([[1], [10]], dtype=np.int32)
+    updates = np.array([[5.0, 5.0, 5.0], [9.0, 9.0, 9.0]], dtype=np.float32)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': False,
+        'unique_indices': False,
+        'mode': 'drop'
+    })
+
+    # 7. Int32 with overlapping indices
+    operand = np.ones((7, 3), dtype=np.int32) * 10
+    scatter_indices = np.array([[2], [2], [2]], dtype=np.int32)
+    updates = np.array([[2, 2, 2], [3, 3, 3], [4, 4, 4]], dtype=np.int32)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': False,
+        'unique_indices': False,
+        'mode': 'clip'
+    })
+
+    # 8. Larger float32 arrays
+    operand = np.random.randn(15, 6).astype(np.float32)
+    scatter_indices = np.array([[0], [3], [6], [9], [12]], dtype=np.int32)
+    updates = np.random.randn(5, 6).astype(np.float32)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': False,
+        'unique_indices': True,
+        'mode': 'drop'
+    })
+
+    # 9. Larger float64 arrays
+    operand = np.random.randn(5, 5).astype(np.float64)
+    scatter_indices = np.array([[1], [4]], dtype=np.int32)
+    updates = np.random.randn(2, 5).astype(np.float64)
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': True,
+        'unique_indices': False,
+        'mode': 'clip'
+    })
+
+    # 10. Larger int32 arrays
+    operand = np.ones((12, 2), dtype=np.int32) * 5
+    scatter_indices = np.array([[2], [4], [6], [8]], dtype=np.int32)
+    updates = np.ones((4, 2), dtype=np.int32) * 3
+    list_of_inputs.append({
+        'operand': operand,
+        'scatter_indices': scatter_indices,
+        'updates': updates,
+        'dimension_numbers': dimension_numbers,
+        'indices_are_sorted': True,
+        'unique_indices': True,
+        'mode': 'promise_in_bounds'
+    })
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.scatter_mul"] = scatter_mul_inputs()
+
+import sys
+import types
+import numpy as np
+import copy
+import jax.scipy.special
+
+# Mock the broken module path to allow dynamic import to succeed
+m1 = types.ModuleType("jax.scipy.signal.fftconvolvejax")
+sys.modules["jax.scipy.signal.fftconvolvejax"] = m1
+
+m2 = types.ModuleType("jax.scipy.signal.fftconvolvejax.scipy")
+sys.modules["jax.scipy.signal.fftconvolvejax.scipy"] = m2
+
+m3 = types.ModuleType("jax.scipy.signal.fftconvolvejax.scipy.special")
+m3.xlogy = jax.scipy.special.xlogy
+sys.modules["jax.scipy.signal.fftconvolvejax.scipy.special"] = m3
+
+def generate_xlogy_inputs():
+    list_of_inputs = []
+
+    # Input 1: Simple 1D float32 arrays, positive y
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    y = np.array([0.5, 1.5, 2.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 2: 2D float32 arrays
+    x = np.random.uniform(-5, 5, size=(3, 3)).astype(np.float32)
+    y = np.random.uniform(0.1, 10, size=(3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 3: 3D float32 arrays
+    x = np.random.uniform(-2, 2, size=(2, 2, 2)).astype(np.float32)
+    y = np.random.uniform(0.1, 5, size=(2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 0D (scalar) arrays
+    x = np.array(2.0, dtype=np.float32)
+    y = np.array(4.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 5: x has zeros, y has zeros (xlogy(0, 0) = 0)
+    x = np.array([0.0, 0.0, 1.0], dtype=np.float32)
+    y = np.array([0.0, 5.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: float64 precision
+    x = np.random.uniform(-10, 10, size=(5,)).astype(np.float64)
+    y = np.random.uniform(0.01, 100, size=(5,)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: Broadcasting (1, 5) and (5, 1)
+    x = np.random.uniform(0.1, 5, size=(1, 5)).astype(np.float32)
+    y = np.random.uniform(0.1, 5, size=(5, 1)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: Larger dimensions
+    x = np.random.uniform(-1, 1, size=(50, 50)).astype(np.float32)
+    y = np.random.uniform(1, 10, size=(50, 50)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: Broadcasting 3D and 1D
+    x = np.random.uniform(-2, 2, size=(2, 3, 4)).astype(np.float32)
+    y = np.random.uniform(0.1, 2, size=(4,)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: Negative x values, positive y values (1D)
+    x = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
+    y = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.fftconvolvejax.scipy.special.xlogy_1"] = generate_xlogy_inputs()
+
+import sys
+import jax.scipy.special
+import numpy as np
+import copy
+
+sys.modules['jax.scipy.signal.fftconvolvejax'] = jax.scipy.special
+sys.modules['jax.scipy.signal.fftconvolvejax.scipy'] = jax.scipy.special
+sys.modules['jax.scipy.signal.fftconvolvejax.scipy.special'] = jax.scipy.special
+
+def xlogy_inputs():
+    list_of_inputs = []
+
+    list_of_inputs.append({"x": float(1.0), "y": float(2.0)})
+    list_of_inputs.append({"x": float(0.0), "y": float(0.0)})
+    list_of_inputs.append({"x": float(0.0), "y": float(-1.0)})
+    list_of_inputs.append({"x": float(2.5), "y": float(0.5)})
+    list_of_inputs.append({"x": float(-1.5), "y": float(3.0)})
+    list_of_inputs.append({"x": np.float32(1.23), "y": np.float32(4.56)})
+    list_of_inputs.append({"x": np.float64(-0.5), "y": np.float64(0.1)})
+    list_of_inputs.append({"x": float(100.0), "y": float(0.001)})
+    list_of_inputs.append({"x": float(0.0), "y": float(5.0)})
+    list_of_inputs.append({"x": float(-10.0), "y": float(10.0)})
+    list_of_inputs.append({"x": np.float32(0.0), "y": np.float32(0.0)})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.fftconvolvejax.scipy.special.xlogy_2"] = xlogy_inputs()
+
+import numpy as np
+import jax
+import copy
+
+# Monkeypatch jax.lax.gather to reconstruct GatherDimensionNumbers from plain tuples
+original_gather = jax.lax.gather
+
+def patched_gather(operand, start_indices, dimension_numbers, slice_sizes, **kwargs):
+    if isinstance(dimension_numbers, tuple) and not isinstance(dimension_numbers, jax.lax.GatherDimensionNumbers):
+        dimension_numbers = jax.lax.GatherDimensionNumbers(*dimension_numbers)
+    return original_gather(operand, start_indices, dimension_numbers, slice_sizes, **kwargs)
+
+jax.lax.gather = patched_gather
+
+def gather_inputs():
+    list_of_inputs = []
+
+    # Case 1: Standard float32 gather
+    operand = np.arange(300).reshape(10, 10, 3).astype(np.float32)
+    start_indices = np.array([[[2], [2], [2]], [[5], [5], [5]], [[7], [7], [7]], [[1], [1], [1]], [[0], [0], [0]]], dtype=np.int32)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 10, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 2: Float64 operand
+    operand = np.random.randn(8, 12, 4).astype(np.float64)
+    start_indices = np.zeros((3, 4, 1), dtype=np.int64)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 5, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': 'fill',
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 3: Float32 operand with collapsing slice dimensions
+    operand = np.random.randn(15, 5, 2).astype(np.float32)
+    start_indices = np.zeros((2, 2, 1), dtype=np.int32)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(1,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (3, 1, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': 'promise_in_bounds',
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 4: Int32 operand with small slice sizes
+    operand = np.arange(2000).reshape(20, 20, 5).astype(np.int32)
+    start_indices = np.zeros((1, 5, 1), dtype=np.int32)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 1, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 5: 3D float32 operand
+    operand = np.random.randn(6, 8, 2).astype(np.float32)
+    start_indices = np.zeros((4, 2, 1), dtype=np.int32)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 8, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 6: 3D float64, index vector of int64
+    operand = np.random.randn(7, 7, 3).astype(np.float64)
+    start_indices = np.zeros((2, 3, 1), dtype=np.int64)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 7, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': 'clip',
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 7: Larger dimensions, 3D float32
+    operand = np.random.randn(12, 12, 2).astype(np.float32)
+    start_indices = np.zeros((5, 2, 1), dtype=np.int32)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 12, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': 'fill',
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 8: Square slice dimensions
+    operand = np.random.randn(9, 9, 4).astype(np.float32)
+    start_indices = np.zeros((3, 4, 1), dtype=np.int32)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 9, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': 'promise_in_bounds',
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 9: Int64 operand, large integers
+    operand = np.arange(1210).reshape(11, 11, 10).astype(np.int64)
+    start_indices = np.zeros((2, 10, 1), dtype=np.int64)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 11, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': True
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Case 10: 1-sized batch gather
+    operand = np.random.randn(14, 14, 2).astype(np.float32)
+    start_indices = np.zeros((1, 2, 1), dtype=np.int32)
+    dimension_numbers = jax.lax.GatherDimensionNumbers(
+        offset_dims=(2,),
+        collapsed_slice_dims=(0,),
+        operand_batching_dims=(2,),
+        start_indices_batching_dims=(1,),
+        start_index_map=(0,)
+    )
+    slice_sizes = (1, 14, 1)
+    input_dict = {
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': 'clip',
+        'fill_value': False
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.gather_3"] = gather_inputs()
+
+import builtins
+import numpy as np
+import jax
+import copy
+
+_original_tuple = builtins.tuple
+
+# Monkeypatch jax.lax.gather to safely intercept and restore the GatherDimensionNumbers object
+_original_gather = jax.lax.gather
+
+def custom_gather(operand, start_indices, dimension_numbers, slice_sizes, **kwargs):
+    if isinstance(dimension_numbers, _original_tuple) and not hasattr(dimension_numbers, 'offset_dims'):
+        # Convert any potential JAX arrays back to python ints inside the tuples
+        canonical_dims = []
+        for x in dimension_numbers:
+            canonical_dims.append(_original_tuple(int(y) for y in x))
+        
+        # Detect the actual number of fields expected by the active JAX version's GatherDimensionNumbers
+        num_fields = len(jax.lax.GatherDimensionNumbers._fields) if hasattr(jax.lax.GatherDimensionNumbers, '_fields') else 3
+        
+        dimension_numbers = jax.lax.GatherDimensionNumbers(*canonical_dims[:num_fields])
+        
+    return _original_gather(operand, start_indices, dimension_numbers, slice_sizes, **kwargs)
+
+jax.lax.gather = custom_gather
+
+def gather_inputs():
+    list_of_inputs = []
+    
+    # We use a completely homogeneous 5-tuple of tuples.
+    # This guarantees that the signature validation and abstract inputs checks
+    # (which can convert the object to numpy arrays and call np.min) work flawlessly.
+    dimension_numbers = ((2,), (1,), (1,), (0,), (0,))
+
+    # Input 1
+    operand = np.random.randn(2, 8, 8).astype(np.float32)
+    start_indices = np.array([[[1], [3], [5]], [[0], [2], [4]]], dtype=np.int32)  # shape (2, 3, 1)
+    slice_sizes = (1, 1, 4)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': 0
+    })
+    
+    # Input 2
+    operand = np.random.randn(3, 10, 10).astype(np.float32)
+    start_indices = np.array([[[1], [2]], [[3], [4]], [[5], [6]]], dtype=np.int32)  # shape (3, 2, 1)
+    slice_sizes = (1, 1, 5)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': True,
+        'mode': 'fill',
+        'fill_value': -1
+    })
+
+    # Input 3
+    operand = np.random.randn(4, 6, 6).astype(np.float64)
+    start_indices = np.array([[[0], [1]], [[2], [3]], [[1], [2]], [[0], [3]]], dtype=np.int64)  # shape (4, 2, 1)
+    slice_sizes = (1, 1, 3)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': 0
+    })
+
+    # Input 4
+    operand = np.arange(720, dtype=np.int32).reshape(5, 12, 12)
+    start_indices = np.array([[[1], [2], [3]], [[0], [1], [2]], [[2], [3], [4]], [[1], [3], [5]], [[0], [2], [4]]], dtype=np.int32)  # shape (5, 3, 1)
+    slice_sizes = (1, 1, 6)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': 'fill',
+        'fill_value': 999
+    })
+
+    # Input 5
+    operand = np.random.randn(2, 15, 15).astype(np.float32)
+    start_indices = np.array([[[2], [4], [6], [8]], [[1], [3], [5], [7]]], dtype=np.int32)  # shape (2, 4, 1)
+    slice_sizes = (1, 1, 8)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': -100
+    })
+
+    # Input 6
+    operand = np.random.randn(3, 20, 20).astype(np.float64)
+    start_indices = np.array([[[0], [5]], [[10], [15]], [[2], [8]]], dtype=np.int64)  # shape (3, 2, 1)
+    slice_sizes = (1, 1, 10)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': False,
+        'mode': 'fill',
+        'fill_value': 0
+    })
+
+    # Input 7
+    operand = np.arange(98, dtype=np.int64).reshape(2, 7, 7)
+    start_indices = np.array([[[1], [2], [3]], [[2], [3], [4]]], dtype=np.int32)  # shape (2, 3, 1)
+    slice_sizes = (1, 1, 3)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': True,
+        'mode': 'clip',
+        'fill_value': 1
+    })
+
+    # Input 8
+    operand = np.random.randn(4, 9, 9).astype(np.float32)
+    start_indices = np.array([[[1], [2]], [[0], [3]], [[1], [4]], [[2], [3]]], dtype=np.int32)  # shape (4, 2, 1)
+    slice_sizes = (1, 1, 5)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': True,
+        'mode': 'fill',
+        'fill_value': -99
+    })
+
+    # Input 9
+    operand = np.random.randn(3, 11, 11).astype(np.float32)
+    start_indices = np.array([[[2]], [[5]], [[8]]], dtype=np.int64)  # shape (3, 1, 1)
+    slice_sizes = (1, 1, 6)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': False,
+        'indices_are_sorted': False,
+        'mode': 'clip',
+        'fill_value': 42
+    })
+
+    # Input 10
+    operand = np.random.randn(5, 14, 14).astype(np.float64)
+    start_indices = np.array([[[1], [3]], [[2], [4]], [[0], [5]], [[1], [6]], [[2], [5]]], dtype=np.int32)  # shape (5, 2, 1)
+    slice_sizes = (1, 1, 7)
+    list_of_inputs.append({
+        'operand': operand,
+        'start_indices': start_indices,
+        'dimension_numbers': dimension_numbers,
+        'slice_sizes': slice_sizes,
+        'unique_indices': True,
+        'indices_are_sorted': False,
+        'mode': 'fill',
+        'fill_value': -1
+    })
+
+    return list_of_inputs
+
+generated_inputs["jax.lax.gather_2"] = gather_inputs()
+
+import numpy as np
+import copy
+
+def jax_scipy_signal_fftconvolve_inputs():
+    list_of_inputs = []
+
+    # 1. 1D, full, float32
+    in1 = np.random.randn(10).astype(np.float32)
+    in2 = np.random.randn(3).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0]
+    })
+
+    # 2. 1D, same, float64
+    in1 = np.random.randn(12).astype(np.float64)
+    in2 = np.random.randn(5).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [0]
+    })
+
+    # 3. 1D, valid, float32 with negative values
+    in1 = np.random.uniform(-10.0, 10.0, size=(15,)).astype(np.float32)
+    in2 = np.random.uniform(-5.0, 5.0, size=(4,)).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": [0]
+    })
+
+    # 4. 2D, full, float32, convolve along all axes
+    in1 = np.random.randn(8, 8).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0, 1]
+    })
+
+    # 5. 2D, same, float32, convolve along single axis (axis 0)
+    in1 = np.random.randn(10, 10).astype(np.float32)
+    in2 = np.random.randn(4, 10).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [0]
+    })
+
+    # 6. 2D, valid, float64, convolve along single axis (axis 1)
+    in1 = np.random.randn(6, 6).astype(np.float64)
+    in2 = np.random.randn(6, 3).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": [1]
+    })
+
+    # 7. 3D, full, float32, convolve along all axes
+    in1 = np.random.randn(5, 5, 5).astype(np.float32)
+    in2 = np.random.randn(3, 3, 3).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0, 1, 2]
+    })
+
+    # 8. 3D, same, float32, convolve along subset of axes
+    in1 = np.random.randn(6, 6, 6).astype(np.float32)
+    in2 = np.random.randn(6, 2, 2).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [1, 2]
+    })
+
+    # 9. 3D, valid, float64, convolve along subset of axes
+    in1 = np.random.randn(8, 8, 8).astype(np.float64)
+    in2 = np.random.randn(3, 8, 3).astype(np.float64)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "axes": [0, 2]
+    })
+
+    # 10. 4D, full, float32, convolve along subset of axes
+    in1 = np.random.randn(4, 4, 4, 4).astype(np.float32)
+    in2 = np.random.randn(2, 4, 2, 4).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "axes": [0, 2]
+    })
+
+    # 11. 2D, same, integer-like float32 values
+    in1 = np.random.randint(-10, 10, size=(12, 12)).astype(np.float32)
+    in2 = np.random.randint(-5, 5, size=(5, 5)).astype(np.float32)
+    list_of_inputs.append({
+        "in1": in1,
+        "in2": in2,
+        "mode": "same",
+        "axes": [0, 1]
+    })
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.signal.fftconvolve_3"] = jax_scipy_signal_fftconvolve_inputs()
+
+import numpy as np
+import copy
+
+def xlogy_inputs():
+    list_of_inputs = []
+
+    # Input 1: 1D float32, positive values
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    y = np.array([0.5, 1.5, 2.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 2: 2D float64, positive values
+    x = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float64)
+    y = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 3: Test x=0, y=0 case explicitly
+    x = np.array([0.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    y = np.array([0.0, 5.0, 0.5, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 0D arrays (scalar-like)
+    x = np.array(0.0, dtype=np.float32)
+    y = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 5: Broadcasting: 1D 'x' and 2D 'y'
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    y = np.random.uniform(0.1, 5.0, size=(2, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: Broadcasting: 3D 'x' and 1D 'y'
+    x = np.random.uniform(0.1, 5.0, size=(2, 2, 3)).astype(np.float32)
+    y = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: Negative 'x', positive 'y'
+    x = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
+    y = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: Large values
+    x = np.random.uniform(100.0, 1000.0, size=(5,)).astype(np.float32)
+    y = np.random.uniform(100.0, 1000.0, size=(5,)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: Small positive values for 'y'
+    x = np.array([1.0, 2.0], dtype=np.float32)
+    y = np.array([1e-5, 1e-6], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: Higher dimensional arrays (4D)
+    x = np.random.uniform(0.1, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
+    y = np.random.uniform(0.1, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.xlogy"] = xlogy_inputs()
+
+import numpy as np
+import copy
+
+def xlogy_inputs():
+    list_of_inputs = []
+
+    # Input 1: Simple 1D float32 arrays with positive values
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    y = np.array([2.0, 4.0, 8.0], dtype=np.float32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 2: Testing x=0 boundary condition, 1D float32
+    x = np.array([0.0, 0.0, 1.5, 0.0], dtype=np.float32)
+    y = np.array([0.0, 2.0, 3.0, 10.0], dtype=np.float32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 3: 2D float64 arrays with positive values
+    x = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float64)
+    y = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float64)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 4: Broadcasting shapes (3, 1) and (1, 4)
+    x = np.array([[1.0], [2.0], [3.0]], dtype=np.float32)
+    y = np.array([[0.5, 1.5, 2.5, 3.5]], dtype=np.float32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 5: 3D float32 arrays
+    x = np.random.uniform(0.1, 5.0, size=(2, 3, 4)).astype(np.float32)
+    y = np.random.uniform(0.1, 5.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 6: Scalar-like 0D arrays (shape ())
+    x = np.array(0.0, dtype=np.float32)
+    y = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 7: Large positive float64 values
+    x = np.array([1e4, 2.5e5], dtype=np.float64)
+    y = np.array([1e2, 5e3], dtype=np.float64)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 8: Negative x values, positive y values
+    x = np.array([-1.0, -2.5, -0.5], dtype=np.float32)
+    y = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 9: Small fractional float32 values
+    x = np.array([1e-5, 2e-5, 3e-5], dtype=np.float32)
+    y = np.array([1e-3, 2e-3, 3e-3], dtype=np.float32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 10: 1D float64 array with both positive, zero, and broadcasting
+    x = np.array([0.0, 1.0, 2.0], dtype=np.float64)
+    y = np.array([5.0], dtype=np.float64)
+    list_of_inputs.append({"x": x, "y": y})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.xlogy_1"] = xlogy_inputs()
+
+import numpy as np
+import copy
+
+def xlogy_inputs():
+    list_of_inputs = []
+
+    # Input 1: x=0.0, y=0.0 (special case, should return 0)
+    list_of_inputs.append({"x": 0.0, "y": 0.0})
+
+    # Input 2: x=0.0, y=5.5
+    list_of_inputs.append({"x": 0.0, "y": 5.5})
+
+    # Input 3: x=1.0, y=1.0
+    list_of_inputs.append({"x": 1.0, "y": 1.0})
+
+    # Input 4: x=2.5, y=10.0
+    list_of_inputs.append({"x": 2.5, "y": 10.0})
+
+    # Input 5: x=-3.0, y=2.0 (negative x value)
+    list_of_inputs.append({"x": -3.0, "y": 2.0})
+
+    # Input 6: x=0.5, y=0.5
+    list_of_inputs.append({"x": 0.5, "y": 0.5})
+
+    # Input 7: x=1e-5, y=1e5
+    list_of_inputs.append({"x": 1e-5, "y": 1e5})
+
+    # Input 8: x=100.0, y=0.1
+    list_of_inputs.append({"x": 100.0, "y": 0.1})
+
+    # Input 9: x=-1.5, y=0.01
+    list_of_inputs.append({"x": -1.5, "y": 0.01})
+
+    # Input 10: x=0.0, y=-2.0
+    list_of_inputs.append({"x": 0.0, "y": -2.0})
+
+    # Input 11: x=4.2, y=4.2
+    list_of_inputs.append({"x": 4.2, "y": 4.2})
+
+    return list_of_inputs
+
+generated_inputs["jax.scipy.special.xlogy_2"] = xlogy_inputs()
+

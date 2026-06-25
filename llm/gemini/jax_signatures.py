@@ -10909,3 +10909,222 @@ signatures["jax.scipy.signal.fftconvolvejax.scipy.special.xlogy_2"] = {
     "kwargs": {},
     "inner": {}
 }
+signatures["jax.scipy.special.exp1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.expi"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.spence"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.owens_t"] = {
+    "args": {
+        "h": "tensor",
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.poch"] = {
+    "args": {
+        "z": "tensor",
+        "m": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.multigammaln_1"] = {
+    "args": {
+        "a": "tensor",
+        "d": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.multigammaln_2"] = {
+    "args": {
+        "a": "tensor",
+        "d": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.solve"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "lower": "boolean",
+        "overwrite_a": "boolean",
+        "overwrite_b": "boolean",
+        "debug": "boolean",
+        "check_finite": "boolean",
+        "assume_a": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.funm"] = {
+    "args": {
+        "A": "tensor",
+        "func": "tensor"  # should be callable (Callable[[Array], Array])
+    },
+    "kwargs": {
+        "disp": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.circulant"] = {
+    "args": {
+        "c": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.toeplitz"] = {
+    "args": {
+        "c": "tensor"
+    },
+    "kwargs": {
+        "r": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.hilbert"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.hadamard"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.pascal"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {
+        "kind": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.correlate_1"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "method": "string",
+        "precision": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.correlate_2"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "method": "string",
+        "precision": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.correlate2d_1"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "boundary": "string",
+        "fillvalue": "float",
+        "precision": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.correlate2d_2"] = {
+    "args": {
+        "in1": "tensor",
+        "in2": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "boundary": "string",
+        "fillvalue": "float",
+        "precision": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.detrend_1"] = {
+    "args": {
+        "data": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "type": "string",
+        "bp": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.detrend_2"] = {
+    "args": {
+        "data": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "type": "string",
+        "bp": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.detrend_3"] = {
+    "args": {
+        "data": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "type": "string",
+        "bp": "tuple"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.detrend_4"] = {
+    "args": {
+        "data": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "type": "string",
+        "bp": "tensor"
+    },
+    "inner": {}
+}

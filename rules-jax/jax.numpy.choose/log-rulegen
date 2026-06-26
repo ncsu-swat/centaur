@@ -10921,3 +10921,2608 @@ Rule 63 (Choices tensor must have a non-empty first dimension representing the a
 Token usage: input=16359, output=441, total=22064
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 64 (index values of a must be within the number of choices when choices is a list of tensors)
+{v_1 : tensor, v_2 : list(tensor)} |= min(v_1) ≥ 0 ∧ max(v_1) < v_2.len
+Token usage: input=2493, output=329, total=7049
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 65 (index values of a must be within the first dimension of choices when choices is a tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_1) ≥ 0 ∧ max(v_1) < shape(v_2, 0)
+Token usage: input=2493, output=329, total=7049
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 66 (mode parameter must be a valid out-of-bounds indexing mode string)
+{v_3 : str} |= v_3 = "clip" ∨ v_3 = "fill" ∨ v_3 = "drop" ∨ v_3 = "promise_in_bounds"
+Token usage: input=2493, output=329, total=7049
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 67 (the index array a must be of integer data type)
+{v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5
+Token usage: input=2493, output=329, total=7049
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 68 (shape compatibility between the index array and the choices tensor)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_2) = ndim(v_1) + 1 ∧ ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i + 1)
+Token usage: input=2493, output=329, total=7049
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(tensor)} |= min(v_1) ≥ 0 ∧ max(v_1) < v_2.len
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 69 (Number of choices in list must be greater than the maximum index in a)
+{v_1 : tensor, v_2 : list(tensor)} |= v_2.len > max(v_1)
+Token usage: input=9571, output=235, total=14026
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(tensor)} |= min(v_1) ≥ 0 ∧ max(v_1) < v_2.len
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 70 (First dimension of the choices tensor must be greater than the maximum index in a)
+{v_1 : tensor, v_2 : tensor} |= shape(v_2, 0) > max(v_1)
+Token usage: input=9571, output=235, total=14026
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(tensor)} |= min(v_1) ≥ 0 ∧ max(v_1) < v_2.len
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 71 (The index tensor a must contain non-negative values)
+{v_1 : tensor} |= min(v_1) ≥ 0
+Token usage: input=9571, output=235, total=14026
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(tensor)} |= min(v_1) ≥ 0 ∧ max(v_1) < v_2.len
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 72 (The choices tensor must have at least one dimension)
+{v_2 : tensor} |= ndim(v_2) ≥ 1
+Token usage: input=9571, output=235, total=14026
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor, v_2 : list(tensor)} |= min(v_1) ≥ 0 ∧ max(v_1) < v_2.len
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 1 ∧ dtype_(v_1) ≤ 5
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 20 (input tensor must be 1-dimensional)
+{v_1 : tensor} |= ndim(v_1) = 1
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 73 (Out-of-bounds mode parameter must be one of the specified options)
+{v_3 : str} |= v_3 = "clip" ∨ v_3 = "promise_in_bounds" ∨ v_3 = "drop" ∨ v_3 = "fill"
+Token usage: input=9571, output=235, total=14026
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 74 (Number of choices in the list must be greater than the maximum index value in a)
+{v_1 : tensor, v_2 : list(tensor)} |= v_2.len > max(v_1)
+Token usage: input=16614, output=282, total=19865
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 75 (First dimension of choices tensor must be greater than the maximum index in a)
+{v_1 : tensor, v_2 : tensor} |= shape(v_2, 0) > max(v_1)
+Token usage: input=16614, output=282, total=19865
+** DUPLICATED RULE ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 76 (The dimension of choices tensor must be strictly greater than that of the index tensor a)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_2) > ndim(v_1)
+Token usage: input=16614, output=282, total=19865
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 77 (If the index tensor is 0-dimensional, the choices tensor must have at least one dimension)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 0 then ndim(v_2) ≥ 1
+Token usage: input=16614, output=282, total=19865
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= min(v_1) ≥ 0
+Duplicated rule: {v_2 : tensor} |= ndim(v_2) ≥ 1
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.choose API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Construct an array by stacking slices of choice arrays.
+
+  JAX implementation of :func:`numpy.choose`.
+
+  The semantics of this function can be confusing, but in the simplest case where
+  ``a`` is a one-dimensional array, ``choices`` is a two-dimensional array, and
+  all entries of ``a`` are in-bounds (i.e. ``0 <= a_i < len(choices)``), then the
+  function is equivalent to the following::
+
+     def choose(a, choices):
+       return jnp.array([choices[a_i, i] for i, a_i in enumerate(a)])
+
+  In the more general case, ``a`` may have any number of dimensions and ``choices``
+  may be an arbitrary sequence of broadcast-compatible arrays. In this case, again
+  for in-bound indices, the logic is equivalent to::
+
+     def choose(a, choices):
+       a, *choices = jnp.broadcast_arrays(a, *choices)
+       choices = jnp.array(choices)
+       return jnp.array([choices[a[idx], *idx] for idx in np.ndindex(a.shape)])
+
+  The only additional complexity comes from the ``mode`` argument, which controls
+  the behavior for out-of-bound indices in ``a`` as described below.
+
+  Args:
+    a: an N-dimensional array of integer indices.
+    choices: an array or sequence of arrays. All arrays in the sequence must be
+      mutually broadcast compatible with ``a``.
+    out: unused by JAX
+    mode: specify the out-of-bounds indexing mode; one of ``'raise'`` (default),
+      ``'wrap'``, or ``'clip'``. Note that the default mode of ``'raise'`` is
+      not compatible with JAX transformations.
+
+  Returns:
+    an array containing stacked slices from ``choices`` at the indices
+    specified by ``a``. The shape of the result is
+    ``broadcast_shapes(a.shape, *(c.shape for c in choices))``.
+
+  See also:
+    - :func:`jax.lax.switch`: choose between N functions based on an index.
+
+  Examples:
+    Here is the simplest case of a 1D index array with a 2D choice array,
+    in which case this chooses the indexed value from each column:
+
+    >>> choices = jnp.array([[ 1,  2,  3,  4],
+    ...                      [ 5,  6,  7,  8],
+    ...                      [ 9, 10, 11, 12]])
+    >>> a = jnp.array([2, 0, 1, 0])
+    >>> jnp.choose(a, choices)
+    Array([9, 2, 7, 4], dtype=int32)
+
+    The ``mode`` argument specifies what to do with out-of-bound indices;
+    options are to either ``wrap`` or ``clip``:
+
+    >>> a2 = jnp.array([2, 0, 1, 4])  # last index out-of-bound
+    >>> jnp.choose(a2, choices, mode='clip')
+    Array([ 9,  2,  7, 12], dtype=int32)
+    >>> jnp.choose(a2, choices, mode='wrap')
+    Array([9, 2, 7, 8], dtype=int32)
+
+    In the more general case, ``choices`` may be a sequence of array-like
+    objects with any broadcast-compatible shapes.
+
+    >>> choice_1 = jnp.array([1, 2, 3, 4])
+    >>> choice_2 = 99
+    >>> choice_3 = jnp.array([[10],
+    ...                       [20],
+    ...                       [30]])
+    >>> a = jnp.array([[0, 1, 2, 0],
+    ...                [1, 2, 0, 1],
+    ...                [2, 0, 1, 2]])
+    >>> jnp.choose(a, [choice_1, choice_2, choice_3], mode='wrap')
+    Array([[ 1, 99, 10,  4],
+           [99, 20,  3, 99],
+           [30,  2, 99, 30]], dtype=int32)
+
+[Possible API Signatures]
+ - a: tensor, choices: tensor_list, mode: string
+ - a: tensor, choices: tensor, mode: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 78 (Out-of-bounds mode parameter must be one of the specified options)
+{v_3 : str} |= v_3 = "clip" ∨ v_3 = "promise_in_bounds" ∨ v_3 = "drop" ∨ v_3 = "fill"
+Token usage: input=16614, output=282, total=19865
+** DUPLICATED RULE ** (num_failures: 7)
+

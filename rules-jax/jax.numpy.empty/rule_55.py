@@ -43,9 +43,9 @@ def rule_55_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_length == len(arg3))
 
         # Constraints for rule 55
-        rule_55(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length, 'arg2_value': arg2_value, 'arg3_length': arg3_length})
+        rule_55(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_value': arg2_value, 'arg3_length': arg3_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_55(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length']}, neg)
+        rule_55(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length']}, neg)

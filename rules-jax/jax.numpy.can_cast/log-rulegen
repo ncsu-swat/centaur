@@ -13267,3 +13267,2046 @@ Rule 85 (Cast from string to string with specific compatible types)
 Token usage: input=17450, output=330, total=21857
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 86 (casting mode must be one of the permitted values for dtype to dtype casting)
+{v_1 : dtype, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe"
+Token usage: input=2014, output=606, total=6934
+** REDUNDANT VARIABLES ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 87 (casting mode must be one of the permitted values for tensor to dtype casting)
+{v_1 : tensor, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe"
+Token usage: input=2014, output=606, total=6934
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 88 (casting mode must be one of the permitted values for str to dtype casting)
+{v_1 : str, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe"
+Token usage: input=2014, output=606, total=6934
+** REDUNDANT VARIABLES ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 89 (casting mode must be one of the permitted values for dtype to str casting)
+{v_1 : dtype, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe"
+Token usage: input=2014, output=606, total=6934
+** REDUNDANT VARIABLES ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 90 (casting mode must be one of the permitted values for tensor to str casting)
+{v_1 : tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe"
+Token usage: input=2014, output=606, total=6934
+** REDUNDANT VARIABLES ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 91 (casting mode must be one of the permitted values for str to str casting)
+{v_1 : str, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe"
+Token usage: input=2014, output=606, total=6934
+** REDUNDANT VARIABLES ** (num_failures: 6)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 92 (casting mode must be valid for union of dtype and tensor to str casting)
+{v_1 : dtype ⊎ tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe"
+Token usage: input=2014, output=606, total=6934
+** REDUNDANT VARIABLES ** (num_failures: 7)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : dtype, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype ⊎ tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 93 (source tensor and target dtype must be valid)
+{v_1 : tensor, v_2 : dtype} |= (ndim(v_1) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0) ∧ (0 ≤ v_2 ∧ v_2 ≤ 12)
+Token usage: input=9467, output=577, total=19622
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : dtype, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype ⊎ tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 94 (source string and target dtype must be valid)
+{v_1 : str, v_2 : dtype} |= (v_1 = "float32" ∨ v_1 = "bfloat16") ∧ (0 ≤ v_2 ∧ v_2 ≤ 12)
+Token usage: input=9467, output=577, total=19622
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : dtype, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype ⊎ tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 95 (source dtype and target string must be valid)
+{v_1 : dtype, v_2 : str} |= (0 ≤ v_1 ∧ v_1 ≤ 12) ∧ (v_2 = "float32" ∨ v_2 = "bfloat16")
+Token usage: input=9467, output=577, total=19622
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : dtype, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype ⊎ tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 96 (source string and target string must be valid)
+{v_1 : str, v_2 : str} |= (v_1 = "float32" ∨ v_1 = "bfloat16") ∧ (v_2 = "float32" ∨ v_2 = "bfloat16")
+Token usage: input=9467, output=577, total=19622
+** DUPLICATED RULE ** (num_failures: 8)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : dtype, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype ⊎ tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 97 (source dtype, target dtype, and casting mode must all be valid)
+{v_1 : dtype, v_2 : dtype, v_3 : str} |= (0 ≤ v_1 ∧ v_1 ≤ 12) ∧ (0 ≤ v_2 ∧ v_2 ≤ 12) ∧ (v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe")
+Token usage: input=9467, output=577, total=19622
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Redundant variables: {v_1 : dtype, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : dtype, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : str, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+Redundant variables: {v_1 : dtype ⊎ tensor, v_2 : str, v_3 : str} |= v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe" (Unused: v_1, v_2)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.can_cast API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+can_cast(from_, to, casting='safe')
+
+Returns True if cast between data types can occur according to the
+casting rule.
+
+Parameters
+----------
+from_ : dtype, dtype specifier, NumPy scalar, or array
+    Data type, NumPy scalar, or array to cast from.
+to : dtype or dtype specifier
+    Data type to cast to.
+casting : {'no', 'equiv', 'safe', 'same_kind', 'unsafe'}, optional
+    Controls what kind of data casting may occur.
+
+    * 'no' means the data types should not be cast at all.
+    * 'equiv' means only byte-order changes are allowed.
+    * 'safe' means only casts which can preserve values are allowed.
+    * 'same_kind' means only safe casts or casts within a kind,
+      like float64 to float32, are allowed.
+    * 'unsafe' means any data conversions may be done.
+
+Returns
+-------
+out : bool
+    True if cast can occur according to the casting rule.
+
+Notes
+-----
+.. versionchanged:: 2.0
+   This function does not support Python scalars anymore and does not
+   apply any value-based logic for 0-D arrays and NumPy scalars.
+
+See also
+--------
+dtype, result_type
+
+Examples
+--------
+Basic examples
+
+>>> import numpy as np
+>>> np.can_cast(np.int32, np.int64)
+True
+>>> np.can_cast(np.float64, complex)
+True
+>>> np.can_cast(complex, float)
+False
+
+>>> np.can_cast('i8', 'f8')
+True
+>>> np.can_cast('i8', 'f4')
+False
+>>> np.can_cast('i4', 'S4')
+False
+
+[Possible API Signatures]
+ - from_: dtype, to: dtype, casting: string
+ - from_: dtype, to: string, casting: string
+ - from_: string, to: dtype, casting: string
+ - from_: string, to: string, casting: string
+ - from_: tensor, to: dtype, casting: string
+ - from_: tensor, to: string, casting: string
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+Rule 6 (last dimension of a tensor matches first dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 98 (source tensor, target string, and casting mode must all be valid)
+{v_1 : tensor, v_2 : str, v_3 : str} |= (ndim(v_1) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0) ∧ (v_2 = "float32" ∨ v_2 = "bfloat16") ∧ (v_3 = "no" ∨ v_3 = "equiv" ∨ v_3 = "safe" ∨ v_3 = "same_kind" ∨ v_3 = "unsafe")
+Token usage: input=9467, output=577, total=19622
+** SUCCESS **
+

@@ -1,0 +1,1660 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (The number of axes to sum over must be non-negative and not exceed the number of dimensions of either input tensor)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= v_3 ≥ 0 ∧ v_3 ≤ ndim(v_1) ∧ v_3 ≤ ndim(v_2)
+Token usage: input=2690, output=365, total=10765
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (The contracting dimensions of x1 and x2 must match in size when axes is an integer k)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= v_3 ≥ 0 ∧ v_3 ≤ ndim(v_1) ∧ v_3 ≤ ndim(v_2) ∧ (v_3 = 0 ∨ ∀i ∈ [0, v_3 - 1] : shape(v_1, ndim(v_1) - v_3 + i) = shape(v_2, i))
+Token usage: input=2690, output=365, total=10765
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (Precision parameter must be "highest" if specified as a string)
+{v_4 : str} |= v_4 = "highest"
+Token usage: input=2690, output=365, total=10765
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (If either input tensor is a scalar, the axes parameter must be 0)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= if ndim(v_1) = 0 ∨ ndim(v_2) = 0 then v_3 = 0
+Token usage: input=2690, output=365, total=10765
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 3 (input tensors must have the same number of dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (When axes is specified as a tuple, it must contain exactly 2 sequences of dimensions)
+{v_3 : tuple(list(int))} |= v_3.len = 2
+Token usage: input=2690, output=365, total=10765
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (The contracting axes count must be non-negative and must not exceed the number of dimensions of either input tensor)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= v_3 ≥ 0 ∧ v_3 ≤ ndim(v_1) ∧ v_3 ≤ ndim(v_2)
+Token usage: input=13290, output=387, total=16570
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (The sizes of the contracting dimensions of the input tensors must match when axes is an integer)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= v_3 = 0 ∨ (v_3 > 0 ∧ v_3 ≤ ndim(v_1) ∧ v_3 ≤ ndim(v_2) ∧ (∀i ∈ [0, v_3 - 1] : shape(v_1, ndim(v_1) - v_3 + i) = shape(v_2, i)))
+Token usage: input=13290, output=387, total=16570
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (The axes parameter when specified as a tuple must contain exactly two sequences representing axes of x1 and x2 respectively)
+{v_3 : tuple(list(int))} |= v_3.len = 2
+Token usage: input=13290, output=387, total=16570
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (The precision parameter as a string must be one of the supported backend precision configurations)
+{v_4 : str} |= v_4 = "highest" ∨ v_4 = "float32" ∨ v_4 = "bfloat16"
+Token usage: input=13290, output=387, total=16570
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.tensordot API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the tensor dot product of two N-dimensional arrays.
+
+  JAX implementation of :func:`numpy.linalg.tensordot`.
+
+  Args:
+    x1: N-dimensional array
+    x2: M-dimensional array
+    axes: integer or tuple of sequences of integers. If an integer `k`, then
+      sum over the last `k` axes of ``x1`` and the first `k` axes of ``x2``,
+      in order. If a tuple, then ``axes[0]`` specifies the axes of ``x1`` and
+      ``axes[1]`` specifies the axes of ``x2``.
+    precision: either ``None`` (default), which means the default precision for
+      the backend, a :class:`~jax.lax.Precision` enum value (``Precision.DEFAULT``,
+      ``Precision.HIGH`` or ``Precision.HIGHEST``) or a tuple of two
+      such values indicating precision of ``x1`` and ``x2``.
+    preferred_element_type: either ``None`` (default), which means the default
+      accumulation type for the input types, or a datatype, indicating to
+      accumulate results to and return a result with that datatype.
+
+  Returns:
+    array containing the tensor dot product of the inputs
+
+  See also:
+    - :func:`jax.numpy.tensordot`: equivalent API in the :mod:`jax.numpy` namespace.
+    - :func:`jax.numpy.einsum`: NumPy API for more general tensor contractions.
+    - :func:`jax.lax.dot_general`: XLA API for more general tensor contractions.
+
+  Examples:
+    >>> x1 = jnp.arange(24.).reshape(2, 3, 4)
+    >>> x2 = jnp.ones((3, 4, 5))
+    >>> jnp.linalg.tensordot(x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result when specifying the axes as explicit sequences:
+
+    >>> jnp.linalg.tensordot(x1, x2, axes=([1, 2], [0, 1]))
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Equivalent result via :func:`~jax.numpy.einsum`:
+
+    >>> jnp.einsum('ijk,jkm->im', x1, x2)
+    Array([[ 66.,  66.,  66.,  66.,  66.],
+           [210., 210., 210., 210., 210.]], dtype=float32)
+
+    Setting ``axes=1`` for two-dimensional inputs is equivalent to a matrix
+    multiplication:
+
+    >>> x1 = jnp.array([[1, 2],
+    ...                 [3, 4]])
+    >>> x2 = jnp.array([[1, 2, 3],
+    ...                 [4, 5, 6]])
+    >>> jnp.linalg.tensordot(x1, x2, axes=1)
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+    >>> x1 @ x2
+    Array([[ 9, 12, 15],
+           [19, 26, 33]], dtype=int32)
+
+    Setting ``axes=0`` for one-dimensional inputs is equivalent to
+    :func:`jax.numpy.linalg.outer`:
+
+    >>> x1 = jnp.array([1, 2])
+    >>> x2 = jnp.array([1, 2, 3])
+    >>> jnp.linalg.tensordot(x1, x2, axes=0)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+    >>> jnp.linalg.outer(x1, x2)
+    Array([[1, 2, 3],
+           [2, 4, 6]], dtype=int32)
+
+[Possible API Signatures]
+ - x1: tensor, x2: tensor, axes: integer, precision: string, preferred_element_type: dtype
+ - x1: tensor, x2: tensor, axes: tuple, precision: string, preferred_element_type: dtype
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (The preferred accumulation element type must be a floating-point or complex datatype)
+{v_5 : dtype} |= v_5 = 6 ∨ v_5 = 7 ∨ v_5 = 8 ∨ v_5 = 9 ∨ v_5 = 10
+Token usage: input=13290, output=387, total=16570
+** SUCCESS **
+

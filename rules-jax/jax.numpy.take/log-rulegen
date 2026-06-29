@@ -16487,3 +16487,3946 @@ Rule 93 (if unique_indices is true, then all elements of indices must be unique)
 Token usage: input=12462, output=338, total=20065
 ** SUCCESS **
 
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 94 (valid axis parameter range)
+{v_1 : tensor, v_2 : int} |= 0 - ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+Token usage: input=2802, output=501, total=7869
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 95 (valid mode value)
+{v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip" ∨ v_1 = "drop" ∨ v_1 = "promise_in_bounds"
+Token usage: input=2802, output=501, total=7869
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 96 (index in bounds for integer index to avoid index out of bounds error)
+{v_1 : tensor, v_2 : int, v_3 : int, v_4 : str} |= if (v_4 = "promise_in_bounds" ∧ v_3 ≥ 0 ∧ v_3 < ndim(v_1)) then (0 - shape(v_1, v_3) ≤ v_2 ∧ v_2 < shape(v_1, v_3))
+Token usage: input=2802, output=501, total=7869
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 97 (indices in bounds for list of indices to avoid index out of bounds error)
+{v_1 : tensor, v_2 : list(int), v_3 : int, v_4 : str} |= if (v_4 = "promise_in_bounds" ∧ v_3 ≥ 0 ∧ v_3 < ndim(v_1)) then (∀i ∈ [0, v_2.len - 1] : 0 - shape(v_1, v_3) ≤ v_2[i] ∧ v_2[i] < shape(v_1, v_3))
+Token usage: input=2802, output=501, total=7869
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 28 (list of ints used as dimensions/axes, all non-negative and valid for tensor shape)
+{v_1 : tensor, v_2 : list(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 98 (indices in bounds for tuple of indices to avoid index out of bounds error)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int, v_4 : str} |= if (v_4 = "promise_in_bounds" ∧ v_3 ≥ 0 ∧ v_3 < ndim(v_1)) then (∀i ∈ [0, v_2.len - 1] : 0 - shape(v_1, v_3) ≤ v_2[i] ∧ v_2[i] < shape(v_1, v_3))
+Token usage: input=2802, output=501, total=7869
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip" ∨ v_1 = "drop" ∨ v_1 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 99 (axis parameter must be a valid axis of tensor a)
+{v_1 : tensor, v_2 : int} |= 0 - ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+Token usage: input=10634, output=696, total=18027
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip" ∨ v_1 = "drop" ∨ v_1 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 100 (integer index must be in bounds for axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= if (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) then (0 - shape(v_1, v_3) ≤ v_2 ∧ v_2 < shape(v_1, v_3)) else (if (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1)) then (0 - shape(v_1, v_3 + ndim(v_1)) ≤ v_2 ∧ v_2 < shape(v_1, v_3 + ndim(v_1))))
+Token usage: input=10634, output=696, total=18027
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip" ∨ v_1 = "drop" ∨ v_1 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 101 (list of integer indices must be in bounds for axis)
+{v_1 : tensor, v_2 : list(int), v_3 : int} |= if (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) then (∀i ∈ [0, v_2.len - 1] : 0 - shape(v_1, v_3) ≤ v_2[i] ∧ v_2[i] < shape(v_1, v_3)) else (if (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1)) then (∀i ∈ [0, v_2.len - 1] : 0 - shape(v_1, v_3 + ndim(v_1)) ≤ v_2[i] ∧ v_2[i] < shape(v_1, v_3 + ndim(v_1))))
+Token usage: input=10634, output=696, total=18027
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip" ∨ v_1 = "drop" ∨ v_1 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 102 (tuple of integer indices must be in bounds for axis)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int} |= if (v_3 ≥ 0 ∧ v_3 < ndim(v_1)) then (∀i ∈ [0, v_2.len - 1] : 0 - shape(v_1, v_3) ≤ v_2[i] ∧ v_2[i] < shape(v_1, v_3)) else (if (v_3 < 0 ∧ v_3 ≥ 0 - ndim(v_1)) then (∀i ∈ [0, v_2.len - 1] : 0 - shape(v_1, v_3 + ndim(v_1)) ≤ v_2[i] ∧ v_2[i] < shape(v_1, v_3 + ndim(v_1))))
+Token usage: input=10634, output=696, total=18027
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip" ∨ v_1 = "drop" ∨ v_1 = "promise_in_bounds"
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 103 (boolean fill_value compatibility with boolean tensor)
+{v_1 : tensor, v_2 : bool} |= dtype_(v_1) = 0
+Token usage: input=10634, output=696, total=18027
+** REDUNDANT VARIABLES ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 103 (valid axis range for input tensor)
+{v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+Token usage: input=2629, output=615, total=9069
+** PARSING ERROR ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 104 (mode parameter must be "fill" or "clip")
+{v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip"
+Token usage: input=2629, output=615, total=9069
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 105 (indices tensor must have integer or boolean dtype)
+{v_1 : tensor} |= dtype_(v_1) = 0 ∨ dtype_(v_1) = 1 ∨ dtype_(v_1) = 2 ∨ dtype_(v_1) = 3 ∨ dtype_(v_1) = 4 ∨ dtype_(v_1) = 5
+Token usage: input=2629, output=615, total=9069
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 106 (tensor indices must be within bounds along the specified axis)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2) ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ max(v_2) < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)
+Token usage: input=2629, output=615, total=9069
+** PARSING ERROR ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 107 (integer index must be within bounds along the specified axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2 < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)
+Token usage: input=2629, output=615, total=9069
+** PARSING ERROR ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 25 (tensor shape matches given tuple shape)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) = v_2.len ∧ ∀i ∈ [0, v_2.len - 1] : shape(v_1, i) = v_2[i]
+
+Rule 22 (valid step size for a range)
+{v_1 : int ⊎ float, v_2 : int ⊎ float, v_3 : int ⊎ float} |= if v_1 > 0 then v_2 ≤ v_3 else if v_1 < 0 then v_2 ≥ v_3 else true
+
+Rule 27 (reduction over valid dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : 0 ≤ v_2[i] ∧ v_2[i] < ndim(v_1)
+
+Rule 7 (first dimension of a tensor matches second dimension of the other)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, 0) = shape(v_2, 1)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 108 (indices in tuple must be within bounds along the specified axis)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2[i] < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3))
+Token usage: input=2629, output=615, total=9069
+** PARSING ERROR ** (num_failures: 6)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1) (Error: No terminal matches '-' in the current parser context, at line 1 col 30
+
+{v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+                             ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* IF
+	* __ANON_6
+	* LPAR
+	* __ANON_4
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip"
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0 ∨ dtype_(v_1) = 1 ∨ dtype_(v_1) = 2 ∨ dtype_(v_1) = 3 ∨ dtype_(v_1) = 4 ∨ dtype_(v_1) = 5
+Parse error: {v_1 : tensor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2) ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ max(v_2) < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 51
+
+sor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2)
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2 < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 48
+
+tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -s
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2[i] < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)) (Error: No terminal matches '-' in the current parser context, at line 1 col 55
+
+ v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 109 (axis parameter is within the valid range of dimensions of tensor a)
+{v_1 : tensor, v_2 : int} |= ndim(v_1) ≥ 1 ∧ 0 - ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+Token usage: input=12767, output=601, total=17152
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1) (Error: No terminal matches '-' in the current parser context, at line 1 col 30
+
+{v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+                             ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* IF
+	* __ANON_6
+	* LPAR
+	* __ANON_4
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip"
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0 ∨ dtype_(v_1) = 1 ∨ dtype_(v_1) = 2 ∨ dtype_(v_1) = 3 ∨ dtype_(v_1) = 4 ∨ dtype_(v_1) = 5
+Parse error: {v_1 : tensor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2) ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ max(v_2) < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 51
+
+sor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2)
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2 < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 48
+
+tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -s
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2[i] < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)) (Error: No terminal matches '-' in the current parser context, at line 1 col 55
+
+ v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 110 (indices must be within the bounds of the tensor along the specified axis)
+{v_1 : tensor, v_2 : tensor, v_3 : int} |= ndim(v_1) ≥ 1 ∧ 0 - ndim(v_1) ≤ v_3 ∧ v_3 < ndim(v_1) ∧ min(v_2) ≥ 0 - shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ max(v_2) < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)
+Token usage: input=12767, output=601, total=17152
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1) (Error: No terminal matches '-' in the current parser context, at line 1 col 30
+
+{v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+                             ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* IF
+	* __ANON_6
+	* LPAR
+	* __ANON_4
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip"
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0 ∨ dtype_(v_1) = 1 ∨ dtype_(v_1) = 2 ∨ dtype_(v_1) = 3 ∨ dtype_(v_1) = 4 ∨ dtype_(v_1) = 5
+Parse error: {v_1 : tensor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2) ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ max(v_2) < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 51
+
+sor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2)
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2 < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 48
+
+tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -s
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2[i] < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)) (Error: No terminal matches '-' in the current parser context, at line 1 col 55
+
+ v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 111 (integer index must be within bounds along the specified axis)
+{v_1 : tensor, v_2 : int, v_3 : int} |= ndim(v_1) ≥ 1 ∧ 0 - ndim(v_1) ≤ v_3 ∧ v_3 < ndim(v_1) ∧ v_2 ≥ 0 - shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2 < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)
+Token usage: input=12767, output=601, total=17152
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1) (Error: No terminal matches '-' in the current parser context, at line 1 col 30
+
+{v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+                             ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* IF
+	* __ANON_6
+	* LPAR
+	* __ANON_4
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip"
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0 ∨ dtype_(v_1) = 1 ∨ dtype_(v_1) = 2 ∨ dtype_(v_1) = 3 ∨ dtype_(v_1) = 4 ∨ dtype_(v_1) = 5
+Parse error: {v_1 : tensor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2) ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ max(v_2) < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 51
+
+sor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2)
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2 < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 48
+
+tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -s
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2[i] < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)) (Error: No terminal matches '-' in the current parser context, at line 1 col 55
+
+ v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 112 (indices in tuple must be within bounds along the specified axis)
+{v_1 : tensor, v_2 : tuple(int), v_3 : int} |= ndim(v_1) ≥ 1 ∧ 0 - ndim(v_1) ≤ v_3 ∧ v_3 < ndim(v_1) ∧ (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0 - shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2[i] < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3))
+Token usage: input=12767, output=601, total=17152
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Parse error: {v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1) (Error: No terminal matches '-' in the current parser context, at line 1 col 30
+
+{v_1 : tensor, v_2 : int} |= -ndim(v_1) ≤ v_2 ∧ v_2 < ndim(v_1)
+                             ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* IF
+	* __ANON_6
+	* LPAR
+	* __ANON_4
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Duplicated rule: {v_1 : str} |= v_1 = "fill" ∨ v_1 = "clip"
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) = 0 ∨ dtype_(v_1) = 1 ∨ dtype_(v_1) = 2 ∨ dtype_(v_1) = 3 ∨ dtype_(v_1) = 4 ∨ dtype_(v_1) = 5
+Parse error: {v_1 : tensor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2) ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ max(v_2) < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 51
+
+sor, v_2 : tensor, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ min(v_2)
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2 < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) (Error: No terminal matches '-' in the current parser context, at line 1 col 48
+
+tensor, v_2 : int, v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ v_2 ≥ -s
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+Parse error: {v_1 : tensor, v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ -shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3) ∧ v_2[i] < shape(v_1, if v_3 < 0 then v_3 + ndim(v_1) else v_3)) (Error: No terminal matches '-' in the current parser context, at line 1 col 55
+
+ v_2 : tuple(int), v_3 : int} |= (v_3 ≥ -ndim(v_1) ∧ v_3 < ndim(v_1)) ∧ (∀i ∈ [0
+                                        ^
+Expected one of: 
+	* FALSE
+	* VAR
+	* TRUE
+	* LPAR
+	* FUNC
+	* SIGNED_NUMBER
+	* ESCAPED_STRING
+)
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.take API parameters should satisfy. Refer to the API documentation. Particularly, there should be at least one rule to suppress each error message.
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Take elements from an array.
+
+  JAX implementation of :func:`numpy.take`, implemented in terms of
+  :func:`jax.lax.gather`. JAX's behavior differs from NumPy in the case
+  of out-of-bound indices; see the ``mode`` parameter below.
+
+  Args:
+    a: array from which to take values.
+    indices: N-dimensional array of integer indices of values to take from the array.
+    axis: the axis along which to take values. If not specified, the array will
+      be flattened before indexing is applied.
+    mode: Out-of-bounds indexing mode, either ``"fill"`` or ``"clip"``. The default
+      ``mode="fill"`` returns invalid values (e.g. NaN) for out-of bounds indices;
+      the ``fill_value`` argument gives control over this value. For more discussion
+      of ``mode`` options, see :attr:`jax.numpy.ndarray.at`.
+    fill_value: The fill value to return for out-of-bounds slices when mode is 'fill'.
+      Ignored otherwise. Defaults to NaN for inexact types, the largest negative value for
+      signed types, the largest positive value for unsigned types, and True for booleans.
+    unique_indices: If True, the implementation will assume that the indices are unique
+      after normalization of negative indices, which lets the compiler emit more efficient
+      code during the backward pass. If set to True and normalized indices are not unique,
+      the result is implementation-defined and may be non-deterministic.
+    indices_are_sorted : If True, the implementation will assume that the indices are
+      sorted in ascending order after normalization of negative indices, which can lead
+      to more efficient execution on some backends. If set to True and normalized indices
+      are not sorted, the output is implementation-defined.
+
+  Returns:
+    Array of values extracted from ``a``.
+
+  See also:
+    - :attr:`jax.numpy.ndarray.at`: take values via indexing syntax.
+    - :func:`jax.numpy.take_along_axis`: take values along an axis
+
+  Examples:
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 6.]])
+    >>> indices = jnp.array([2, 0])
+
+    Passing no axis results in indexing into the flattened array:
+
+    >>> jnp.take(x, indices)
+    Array([3., 1.], dtype=float32)
+    >>> x.ravel()[indices]  # equivalent indexing syntax
+    Array([3., 1.], dtype=float32)
+
+    Passing an axis results ind applying the index to every subarray along the axis:
+
+    >>> jnp.take(x, indices, axis=1)
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+    >>> x[:, indices]  # equivalent indexing syntax
+    Array([[3., 1.],
+           [6., 4.]], dtype=float32)
+
+    Out-of-bound indices fill with invalid values. For float inputs, this is `NaN`:
+
+    >>> jnp.take(x, indices, axis=0)
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+    >>> x.at[indices].get(mode='fill', fill_value=jnp.nan)  # equivalent indexing syntax
+    Array([[nan, nan, nan],
+           [ 1.,  2.,  3.]], dtype=float32)
+
+    This default out-of-bound behavior can be adjusted using the ``mode`` parameter, for
+    example, we can instead clip to the last valid value:
+
+    >>> jnp.take(x, indices, axis=0, mode='clip')
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+    >>> x.at[indices].get(mode='clip')  # equivalent indexing syntax
+    Array([[4., 5., 6.],
+           [1., 2., 3.]], dtype=float32)
+
+[Possible API Signatures]
+ - a: tensor, indices: tensor, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+ - a: tensor, indices: integer, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: integer
+ - a: tensor, indices: list, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: boolean
+ - a: tensor, indices: tuple, axis: integer, mode: string, unique_indices: boolean, indices_are_sorted: boolean, fill_value: float
+
+[Error Messages]
+IndexError: index out of bounds for axis
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 4 (tensor data types should match)
+{v_1 : tensor, v_2 : tensor} |= dtype(v_1) = dtype(v_2)
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 113 (indices tensor must have integer or boolean dtype to prevent indexing error)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_2) ≤ 5
+Token usage: input=12767, output=601, total=17152
+** REDUNDANT VARIABLES ** (num_failures: 7)
+

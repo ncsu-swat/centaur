@@ -43,9 +43,9 @@ def rule_78_func(arg1, arg2, arg3, solver=None, neg=False):
             arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 78
-        rule_78(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
+        rule_78(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg3_values': arg3_values, 'arg3_length': arg3_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_78(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)
+        rule_78(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg3_values': arg3['values'], 'arg3_length': arg3['length']}, neg)

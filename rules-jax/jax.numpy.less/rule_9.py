@@ -38,9 +38,9 @@ def rule_9_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_length': arg1_length, 'arg2_shape': arg2_shape, 'arg2_dtype': arg2_dtype})
+        rule_9(solver, {'arg1_length': arg1_length, 'arg2_dtype': arg2_dtype, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_length': arg1['length'], 'arg2_shape': arg2['shape'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_9(solver, {'arg1_length': arg1['length'], 'arg2_dtype': arg2['dtype'], 'arg2_shape': arg2['shape']}, neg)

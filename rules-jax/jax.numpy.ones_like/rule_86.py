@@ -43,9 +43,9 @@ def rule_86_func(arg1, arg2, arg3, solver=None, neg=False):
             arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 86
-        rule_86(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
+        rule_86(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_values': arg3_values, 'arg3_length': arg3_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_86(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)
+        rule_86(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_values': arg3['values'], 'arg3_length': arg3['length']}, neg)

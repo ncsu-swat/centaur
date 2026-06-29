@@ -1,4 +1,5 @@
 import os
+from functools import reduce
 import sys
 from lark import Transformer
 
@@ -146,6 +147,12 @@ class Z3ExprTransformer(Transformer):
             return f'Select(v["{var}_range"], 0)'
         elif func_name == "max":
             return f'Select(v["{var}_range"], 1)'
+        elif func_name == "size":
+            return (
+                f'reduce(lambda a, b: a * b, '
+                f'[If(i < v["{var}_ndim"], Select(v["{var}_shape"], i), 1) '
+                f'for i in range({MAX_N_DIM})], 1)'
+            )
         else:
             raise Exception(f" {func_name} not supported")
 

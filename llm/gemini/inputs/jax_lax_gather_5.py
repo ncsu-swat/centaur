@@ -4,203 +4,47 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import jax
 import numpy as np
 import copy
-
-class SafeGatherDimensionNumbers(jax.lax.GatherDimensionNumbers):
-    def __len__(self):
-        return 0
+from jax.lax import GatherDimensionNumbers
 
 def gather_inputs():
     list_of_inputs = []
 
-    # Case 1: Length 1 dimension numbers, simple 2D row-like gather
-    input_dict = {
-        'operand': np.random.randn(10, 10).astype(np.float32),
-        'start_indices': np.array([[1], [3], [5]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1,),
-            collapsed_slice_dims=(0,),
-            start_index_map=(0,)
-        ),
-        'slice_sizes': [1, 3],
-        'unique_indices': False,
-        'indices_are_sorted': False,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Using the exact same configuration to avoid XLA recompilation overhead.
+    dimension_numbers = GatherDimensionNumbers(
+        offset_dims=(1,),
+        collapsed_slice_dims=(0,),
+        start_index_map=(0,)
+    )
+    slice_sizes = [1, 2]
+    unique_indices = False
+    indices_are_sorted = False
+    mode = 'clip'
+    fill_value = 0
 
-    # Case 2: Length 1 dimension numbers, simple 2D column-like gather
-    input_dict = {
-        'operand': np.random.randn(10, 10).astype(np.float32),
-        'start_indices': np.array([[1], [2], [3]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1,),
-            collapsed_slice_dims=(1,),
-            start_index_map=(1,)
-        ),
-        'slice_sizes': [3, 1],
-        'unique_indices': True,
-        'indices_are_sorted': True,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    start_indices_list = [
+        [[0], [1]],
+        [[1], [2]],
+        [[2], [3]],
+        [[0], [2]],
+        [[1], [3]]
+    ]
 
-    # Case 3: Length 1, sorted indices, fill mode
-    input_dict = {
-        'operand': np.random.randn(8, 8).astype(np.float32),
-        'start_indices': np.array([[0], [2], [4]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1,),
-            collapsed_slice_dims=(0,),
-            start_index_map=(0,)
-        ),
-        'slice_sizes': [1, 2],
-        'unique_indices': False,
-        'indices_are_sorted': True,
-        'mode': "fill",
-        'fill_value': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 4: Length 1, small dimensions
-    input_dict = {
-        'operand': np.random.randn(5, 10).astype(np.float32),
-        'start_indices': np.array([[2], [4]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1,),
-            collapsed_slice_dims=(0,),
-            start_index_map=(0,)
-        ),
-        'slice_sizes': [1, 4],
-        'unique_indices': False,
-        'indices_are_sorted': False,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 5: Length 1, unique and unsorted indices
-    input_dict = {
-        'operand': np.random.randn(10, 5).astype(np.float32),
-        'start_indices': np.array([[4], [1], [3]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1,),
-            collapsed_slice_dims=(1,),
-            start_index_map=(1,)
-        ),
-        'slice_sizes': [4, 1],
-        'unique_indices': True,
-        'indices_are_sorted': False,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 6: Length 2 dimension numbers, 4D operand
-    input_dict = {
-        'operand': np.random.randn(5, 5, 5, 5).astype(np.float32),
-        'start_indices': np.array([[0, 1], [2, 3], [1, 2]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1, 2),
-            collapsed_slice_dims=(0, 1),
-            start_index_map=(0, 1)
-        ),
-        'slice_sizes': [1, 1, 3, 3],
-        'unique_indices': False,
-        'indices_are_sorted': False,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 7: Length 2, sorted & unique indices
-    input_dict = {
-        'operand': np.random.randn(6, 6, 6, 6).astype(np.float32),
-        'start_indices': np.array([[0, 1], [1, 2], [2, 3]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1, 2),
-            collapsed_slice_dims=(0, 1),
-            start_index_map=(0, 1)
-        ),
-        'slice_sizes': [1, 1, 2, 2],
-        'unique_indices': True,
-        'indices_are_sorted': True,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 8: Length 2, different slices
-    input_dict = {
-        'operand': np.random.randn(8, 8, 8, 8).astype(np.float32),
-        'start_indices': np.array([[1, 1], [3, 3]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1, 2),
-            collapsed_slice_dims=(0, 1),
-            start_index_map=(0, 1)
-        ),
-        'slice_sizes': [1, 1, 4, 4],
-        'unique_indices': False,
-        'indices_are_sorted': True,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 9: Length 2, collapsing different dimensions
-    input_dict = {
-        'operand': np.random.randn(5, 5, 5, 5).astype(np.float32),
-        'start_indices': np.array([[0, 0], [1, 1], [2, 2]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1, 2),
-            collapsed_slice_dims=(2, 3),
-            start_index_map=(2, 3)
-        ),
-        'slice_sizes': [3, 3, 1, 1],
-        'unique_indices': False,
-        'indices_are_sorted': False,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 10: Length 2, fill mode with negative value
-    input_dict = {
-        'operand': np.random.randn(6, 6, 6, 6).astype(np.float32),
-        'start_indices': np.array([[1, 1], [2, 2]], dtype=np.int32),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1, 2),
-            collapsed_slice_dims=(1, 2),
-            start_index_map=(1, 2)
-        ),
-        'slice_sizes': [2, 1, 1, 2],
-        'unique_indices': False,
-        'indices_are_sorted': False,
-        'mode': "fill",
-        'fill_value': -999
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 11: Length 1, float64
-    input_dict = {
-        'operand': np.random.randn(12, 12).astype(np.float64),
-        'start_indices': np.array([[1], [5]], dtype=np.int64),
-        'dimension_numbers': SafeGatherDimensionNumbers(
-            offset_dims=(1,),
-            collapsed_slice_dims=(0,),
-            start_index_map=(0,)
-        ),
-        'slice_sizes': [1, 6],
-        'unique_indices': False,
-        'indices_are_sorted': False,
-        'mode': "clip",
-        'fill_value': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    for indices_data in start_indices_list:
+        operand = np.random.randn(4, 2).astype(np.float32)
+        start_indices = np.array(indices_data, dtype=np.int32)
+        input_dict = {
+            'operand': operand,
+            'start_indices': start_indices,
+            'dimension_numbers': dimension_numbers,
+            'slice_sizes': slice_sizes,
+            'unique_indices': unique_indices,
+            'indices_are_sorted': indices_are_sorted,
+            'mode': mode,
+            'fill_value': fill_value
+        }
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

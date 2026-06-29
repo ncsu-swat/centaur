@@ -1,0 +1,39 @@
+import numpy as np
+import torch 
+import tensorflow as tf
+import jax
+import jax.numpy as jnp
+
+from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
+from z3 import *
+
+# Tensor input's maximum value should not exceed the overflow threshold of 709 for standard exponentiation (Rule 150)
+
+rule_150 = lambda s, v, n=False: (
+    s.add(Not(Select(v["arg1_range"], 1) < 709) if n else
+          Select(v["arg1_range"], 1) < 709)
+)
+
+def rule_150_func(arg1, solver=None, neg=False):
+    arg1 = next(iter(arg1.values()))
+
+    # Invariant learning phase
+    if not solver:
+        if not isinstance(arg1, np.ndarray):
+            return False
+
+        # Variable declarations
+        solver = Solver()
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
+
+        # Value assignments
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+
+        # Constraints for rule 150
+        rule_150(solver, {'arg1_range': arg1_range})
+        return solver.check() == sat
+
+    # Fuzz input generation phase
+    else:
+        rule_150(solver, {'arg1_range': arg1['range']}, neg)

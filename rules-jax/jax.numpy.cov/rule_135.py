@@ -60,9 +60,9 @@ def rule_135_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
         arg4_range = Store(arg4_range, 1, int(np.max(arg4)))
 
         # Constraints for rule 135
-        rule_135(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_shape': arg3_shape, 'arg3_ndim': arg3_ndim, 'arg3_range': arg3_range, 'arg4_shape': arg4_shape, 'arg4_ndim': arg4_ndim, 'arg4_range': arg4_range})
+        rule_135(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_ndim': arg3_ndim, 'arg3_shape': arg3_shape, 'arg3_range': arg3_range, 'arg4_ndim': arg4_ndim, 'arg4_shape': arg4_shape, 'arg4_range': arg4_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_135(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_shape': arg3['shape'], 'arg3_ndim': arg3['ndim'], 'arg3_range': arg3['range'], 'arg4_shape': arg4['shape'], 'arg4_ndim': arg4['ndim'], 'arg4_range': arg4['range']}, neg)
+        rule_135(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_ndim': arg3['ndim'], 'arg3_shape': arg3['shape'], 'arg3_range': arg3['range'], 'arg4_ndim': arg4['ndim'], 'arg4_shape': arg4['shape'], 'arg4_range': arg4['range']}, neg)

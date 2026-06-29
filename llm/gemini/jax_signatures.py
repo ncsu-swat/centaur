@@ -11128,3 +11128,4708 @@ signatures["jax.scipy.signal.detrend_4"] = {
     },
     "inner": {}
 }
+signatures["jax.numpy.fft.fft"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "n": "integer",
+        "axis": "integer",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.ifft"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "n": "integer",
+        "axis": "integer",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.rfft"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "n": "integer",
+        "axis": "integer",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.irfft"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "n": "integer",
+        "axis": "integer",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.fft2_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fft2_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fft2_3"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fft2_4"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.ifft2_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.ifft2_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.ifft2_3"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.ifft2_4"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.lax.complex"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.real"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.imag"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.conj"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.abs"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.population_count"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.clz"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.dft"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {
+        "scale": "string",
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.companion"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.fiedler"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.hankel"] = {
+    "args": {
+        "c": "tensor"
+    },
+    "kwargs": {
+        "r": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.helmert"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {
+        "full": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.hessenberg"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "calc_q": "boolean",
+        "overwrite_a": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.leslie"] = {
+    "args": {
+        "f": "tensor",
+        "s": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.solve_sylvester"] = {
+    "args": {
+        "A": "tensor",
+        "B": "tensor",
+        "C": "tensor"
+    },
+    "kwargs": {
+        "method": "string",
+        "tol": "float"
+    },
+    "inner": {}
+}
+signatures["jax.lax.slice_in_dim"] = {
+    "args": {
+        "operand": "tensor",
+        "start_index": "integer", # Can also be None
+        "limit_index": "integer"  # Can also be None
+    },
+    "kwargs": {
+        "stride": "integer",
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.lax.index_in_dim"] = {
+    "args": {
+        "operand": "tensor",
+        "index": "integer"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "keepdims": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.rev_1"] = {
+    "args": {
+        "operand": "tensor",
+        "dimensions": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.rev_2"] = {
+    "args": {
+        "operand": "tensor",
+        "dimensions": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.shift_left"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.shift_right_arithmetic"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.shift_right_logical"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bitwise_and"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bitwise_or"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bitwise_xor_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bitwise_xor_2"] = {
+    "args": {
+        "x": "integer",
+        "y": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bitwise_xor_3"] = {
+    "args": {
+        "x": "boolean",
+        "y": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bitwise_not_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bitwise_not_2"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bitwise_not_3"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.acos"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.add"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.approx_max_k"] = {
+    "args": {
+        "operand": "tensor",
+        "k": "integer"
+    },
+    "kwargs": {
+        "reduction_dimension": "integer",
+        "recall_target": "float",
+        "reduction_input_size_override": "integer",
+        "aggregate_to_topk": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.approx_min_k"] = {
+    "args": {
+        "operand": "tensor",
+        "k": "integer"
+    },
+    "kwargs": {
+        "reduction_dimension": "integer",
+        "recall_target": "float",
+        "reduction_input_size_override": "integer",
+        "aggregate_to_topk": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.asin"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.atan"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.atan2"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.ceil"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.cos_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # For AccuracyMode
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.cos_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # For Tolerance
+    },
+    "inner": {}
+}
+signatures["jax.lax.cosh"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.div"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.eq_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.eq_2"] = {
+    "args": {
+        "x": "integer",
+        "y": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.eq_3"] = {
+    "args": {
+        "x": "float",
+        "y": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.eq_4"] = {
+    "args": {
+        "x": "boolean",
+        "y": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.exp2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # lax.Tolerance or lax.AccuracyMode object
+    },
+    "inner": {}
+}
+signatures["jax.lax.expm1_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # For lax.AccuracyMode
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.expm1_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # For lax.Tolerance (which is a named tuple)
+    },
+    "inner": {}
+}
+signatures["jax.lax.floor"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.ge"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.gt"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.is_finite"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.le_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.le_2"] = {
+    "args": {
+        "x": "integer",
+        "y": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.le_3"] = {
+    "args": {
+        "x": "float",
+        "y": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.le_4"] = {
+    "args": {
+        "x": "boolean",
+        "y": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.le_5"] = {
+    "args": {
+        "x": "tensor",
+        "y": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.le_6"] = {
+    "args": {
+        "x": "tensor",
+        "y": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.le_7"] = {
+    "args": {
+        "x": "float",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.le_8"] = {
+    "args": {
+        "x": "integer",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.log1p"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # Should be lax.Tolerance or lax.AccuracyMode custom object
+    },
+    "inner": {}
+}
+signatures["jax.lax.lt"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.max_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.max_2"] = {
+    "args": {
+        "x": "integer",
+        "y": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.max_3"] = {
+    "args": {
+        "x": "float",
+        "y": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.max_4"] = {
+    "args": {
+        "x": "boolean",
+        "y": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.min"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.mul"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {
+        "out_dtype": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.lax.ne"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.neg"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.pow"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reduce_and_1"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_and_2"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reduce_or_1"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_or_2"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reduce_precision_1"] = {
+    "args": {
+        "operand": "tensor",
+        "exponent_bits": "integer",
+        "mantissa_bits": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_precision_2"] = {
+    "args": {
+        "operand": "float",
+        "exponent_bits": "integer",
+        "mantissa_bits": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reduce_xor_1"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.reduce_xor_2"] = {
+    "args": {
+        "operand": "tensor",
+        "axes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.rem"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.round"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "rounding_method": "string"  # Represents jax.lax.RoundingMethod enum
+    },
+    "inner": {}
+}
+signatures["jax.lax.sign"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.sin_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # lax.Tolerance which is typically a tuple
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.sin_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # lax.AccuracyMode
+    },
+    "inner": {}
+}
+signatures["jax.lax.sinh"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.square"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.sub_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.sub_2"] = {
+    "args": {
+        "x": "integer",
+        "y": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.sub_3"] = {
+    "args": {
+        "x": "float",
+        "y": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.fft.fftfreq_1"] = {
+    "args": {
+        "n": "integer",
+        "d": "float"
+    },
+    "kwargs": {
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fftfreq_2"] = {
+    "args": {
+        "n": "integer",
+        "d": "integer"
+    },
+    "kwargs": {
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fftfreq_3"] = {
+    "args": {
+        "n": "integer",
+        "d": "tensor"
+    },
+    "kwargs": {
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.fftn_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fftn_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fftn_3"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fftn_4"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.fftshift_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axes": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fftshift_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axes": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.fftshift_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axes": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.hfft"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "n": "integer",
+        "axis": "integer",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.ifftn_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.ifftn_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.ifftshift_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axes": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.ifftshift_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axes": "list"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.ifftshift_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axes": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.ihfft"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "n": "integer",
+        "axis": "integer",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.irfftn_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.irfftn_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.rfftfreq_1"] = {
+    "args": {
+        "n": "integer",
+        "d": "float"
+    },
+    "kwargs": {
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.rfftfreq_2"] = {
+    "args": {
+        "n": "integer",
+        "d": "tensor"
+    },
+    "kwargs": {
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.rfftn_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.rfftn_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.cond_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "p": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.cond_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "p": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.cond_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "p": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.cross"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.det"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.eig"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.eigh"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "UPLO": "string",
+        "symmetrize_input": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.eigvals"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.eigvalsh"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "UPLO": "string",
+        "symmetrize_input": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.inv"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.lstsq"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "rcond": "float",  # Can also be None, but 'float' is the closest allowed type
+        "numpy_resid": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.matrix_norm_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "keepdims": "boolean",
+        "ord": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.matrix_norm_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "keepdims": "boolean",
+        "ord": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.matrix_power"] = {
+    "args": {
+        "a": "tensor",
+        "n": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.matrix_rank_1"] = {
+    "args": {
+        "M": "tensor"
+    },
+    "kwargs": {
+        "rtol": "float",
+        "hermitian": "boolean",
+        "tol": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.matrix_rank_2"] = {
+    "args": {
+        "M": "tensor"
+    },
+    "kwargs": {
+        "rtol": "tensor",
+        "hermitian": "boolean",
+        "tol": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.norm_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "ord": "integer",
+        "axis": "integer",
+        "keepdims": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.norm_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "ord": "integer",
+        "axis": "tuple",
+        "keepdims": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.norm_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "ord": "string",
+        "axis": "integer",
+        "keepdims": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.norm_4"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "ord": "string",
+        "axis": "tuple",
+        "keepdims": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.norm_5"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "ord": "float",
+        "axis": "integer",
+        "keepdims": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.norm_6"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "ord": "float",
+        "axis": "tuple",
+        "keepdims": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.pinv_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "rtol": "float",
+        "hermitian": "boolean",
+        "rcond": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.pinv_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "rtol": "tensor",
+        "hermitian": "boolean",
+        "rcond": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.qr"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "mode": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.slogdet"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "method": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.solve"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.svd"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "full_matrices": "boolean",
+        "compute_uv": "boolean",
+        "hermitian": "boolean",
+        "subset_by_index": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.svdvals"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.vecdot_1"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "precision": "string",  # Precision can be a string like 'default', 'high', 'highest'
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.vecdot_2"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "precision": "tuple",   # Precision can be a tuple of string/Enum
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.vector_norm_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "keepdims": "boolean",
+        "ord": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.vector_norm_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "keepdims": "boolean",
+        "ord": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.vector_norm_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "tuple",
+        "keepdims": "boolean",
+        "ord": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.vector_norm_4"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "tuple",
+        "keepdims": "boolean",
+        "ord": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.block_diag"] = {
+    "args": {
+        "arrs": "tensor_list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.cho_factor"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "lower": "boolean",
+        "overwrite_a": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.cho_solve"] = {
+    "args": {
+        "c_and_lower": "tuple",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "overwrite_b": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.convolution_matrix"] = {
+    "args": {
+        "a": "tensor",
+        "n": "integer"
+    },
+    "kwargs": {
+        "mode": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.eigh"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "b": "tensor",  # In scipy this is a tensor, but JAX only supports None
+        "lower": "boolean",
+        "eigvals_only": "boolean",
+        "overwrite_a": "boolean",
+        "overwrite_b": "boolean",
+        "turbo": "boolean",
+        "eigvals": "tuple",  # In scipy this is a tuple (lo, hi), but JAX only supports None
+        "type": "integer",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.eigh_tridiagonal"] = {
+    "args": {
+        "d": "tensor",
+        "e": "tensor"
+    },
+    "kwargs": {
+        "eigvals_only": "boolean",
+        "select": "string",
+        "select_range": "tuple",
+        "tol": "float",
+        "key": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.expm_frechet"] = {
+    "args": {
+        "A": "tensor",
+        "E": "tensor"
+    },
+    "kwargs": {
+        "method": "string",
+        "compute_expm": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.fiedler_companion"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.linalg.invhilbert"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {
+        "exact": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.invpascal"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {
+        "kind": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.lu"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "permute_l": "boolean",
+        "overwrite_a": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.lu_factor"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "overwrite_a": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.lu_solve"] = {
+    "args": {
+        "lu_and_piv": "tuple",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "trans": "integer",
+        "overwrite_b": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.polar"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "side": "string",
+        "method": "string",
+        "eps": "float",
+        "max_iterations": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.qr"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "overwrite_a": "boolean",
+        "lwork": "integer", # 'lwork' is unused in JAX, but typically represents workspace size as an integer or None
+        "mode": "string",
+        "pivoting": "boolean",
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.qr_multiply"] = {
+    "args": {
+        "a": "tensor",
+        "c": "tensor"
+    },
+    "kwargs": {
+        "mode": "string",
+        "pivoting": "boolean",
+        "conjugate": "boolean",
+        "overwrite_a": "boolean",
+        "overwrite_c": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.rsf2csf"] = {
+    "args": {
+        "T": "tensor",
+        "Z": "tensor"
+    },
+    "kwargs": {
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.schur"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "output": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.linalg.svd"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "full_matrices": "boolean",
+        "compute_uv": "boolean",
+        "overwrite_a": "boolean",
+        "check_finite": "boolean",
+        "lapack_driver": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.csd_1"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "string",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "string",
+        "return_onesided": "boolean",
+        "scaling": "string",
+        "axis": "integer",
+        "average": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.csd_2"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tuple",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "string",
+        "return_onesided": "boolean",
+        "scaling": "string",
+        "axis": "integer",
+        "average": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.csd_3"] = {
+    "args": {
+        "x": "tensor",
+        "y": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tensor",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "string",
+        "return_onesided": "boolean",
+        "scaling": "string",
+        "axis": "integer",
+        "average": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.csd_4"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "y": "tensor",
+        "fs": "float",
+        "window": "string",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "string",
+        "return_onesided": "boolean",
+        "scaling": "string",
+        "axis": "integer",
+        "average": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.istft_1"] = {
+    "args": {
+        "Zxx": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "string",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "input_onesided": "boolean",
+        "boundary": "boolean",
+        "time_axis": "integer",
+        "freq_axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.istft_2"] = {
+    "args": {
+        "Zxx": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tuple",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "input_onesided": "boolean",
+        "boundary": "boolean",
+        "time_axis": "integer",
+        "freq_axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.istft_3"] = {
+    "args": {
+        "Zxx": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tensor",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "input_onesided": "boolean",
+        "boundary": "boolean",
+        "time_axis": "integer",
+        "freq_axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.istft_4"] = {
+    "args": {
+        "Zxx": "tensor"
+    },
+    "kwargs": {
+        "fs": "tensor",
+        "window": "string",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "input_onesided": "boolean",
+        "boundary": "boolean",
+        "time_axis": "integer",
+        "freq_axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.istft_5"] = {
+    "args": {
+        "Zxx": "tensor"
+    },
+    "kwargs": {
+        "fs": "tensor",
+        "window": "tuple",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "input_onesided": "boolean",
+        "boundary": "boolean",
+        "time_axis": "integer",
+        "freq_axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.istft_6"] = {
+    "args": {
+        "Zxx": "tensor"
+    },
+    "kwargs": {
+        "fs": "tensor",
+        "window": "tensor",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "input_onesided": "boolean",
+        "boundary": "boolean",
+        "time_axis": "integer",
+        "freq_axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.stft_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "string",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "boolean",
+        "return_onesided": "boolean",
+        "boundary": "string",
+        "padded": "boolean",
+        "axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.stft_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tensor",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "boolean",
+        "return_onesided": "boolean",
+        "boundary": "string",
+        "padded": "boolean",
+        "axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.stft_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tuple",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "boolean",
+        "return_onesided": "boolean",
+        "boundary": "string",
+        "padded": "boolean",
+        "axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.stft_4"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "string",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "string",
+        "return_onesided": "boolean",
+        "boundary": "string",
+        "padded": "boolean",
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.signal.welch_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "string",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "string",
+        "return_onesided": "boolean",
+        "scaling": "string",
+        "axis": "integer",
+        "average": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.welch_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tuple",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "boolean",
+        "return_onesided": "boolean",
+        "scaling": "string",
+        "axis": "integer",
+        "average": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.signal.welch_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "fs": "float",
+        "window": "tensor",
+        "nperseg": "integer",
+        "noverlap": "integer",
+        "nfft": "integer",
+        "detrend": "string",
+        "return_onesided": "boolean",
+        "scaling": "string",
+        "axis": "integer",
+        "average": "string"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.bernoulli.cdf"] = {
+    "args": {
+        "k": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.bernoulli.logpmf"] = {
+    "args": {
+        "k": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.bernoulli.pmf"] = {
+    "args": {
+        "k": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.beta.cdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",  # Can also be float/integer
+        "scale": "tensor"  # Can also be float/integer
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.beta.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.beta.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.logpdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.logpdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.logpdf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.pdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.chi2.cdf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.chi2.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.chi2.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.dirichlet.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "alpha": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.dirichlet.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "alpha": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.expon.logpdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.expon.pdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.expon.pdf_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.expon.pdf_3"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gamma.cdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gamma.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gamma.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_r.logpdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",  # Can also be float or integer, but represented as tensor for generality
+        "scale": "tensor"  # Can also be float or integer, but represented as tensor for generality
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_r.pdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.laplace.logpdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.laplace.pdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.logistic.logpdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.logistic.logpdf_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.logistic.logpdf_3"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.logistic.pdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.logistic.pdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.logistic.pdf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.multivariate_normal.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "mean": "tensor",
+        "cov": "tensor"
+    },
+    "kwargs": {
+        "allow_singular": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.multivariate_normal.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "mean": "tensor",
+        "cov": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.cdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.logcdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.logpdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.norm.logpdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.pdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.norm.pdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.norm.pdf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.sf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",  # Can also be float or integer
+        "scale": "tensor"  # Can also be float or integer
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.poisson.cdf"] = {
+    "args": {
+        "k": "tensor",
+        "mu": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.poisson.logpmf"] = {
+    "args": {
+        "k": "tensor",
+        "mu": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.poisson.pmf"] = {
+    "args": {
+        "k": "tensor",
+        "mu": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.t.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.t.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.truncnorm.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.truncnorm.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",  # Can also be float or integer
+        "scale": "tensor"  # Can also be float or integer
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.uniform.cdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.uniform.logpdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",  # Can also be float or integer, but represented as tensor here
+        "scale": "tensor"  # Can also be float or integer, but represented as tensor here
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.uniform.pdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.lax.acosh"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.asinh"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.atanh_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.atanh_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bessel_i0e_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bessel_i0e_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bessel_i0e_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bessel_i0e_4"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bessel_i1e_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bessel_i1e_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bessel_i1e_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bessel_i1e_4"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.betainc"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.bitcast_convert_type_1"] = {
+    "args": {
+        "operand": "tensor",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bitcast_convert_type_2"] = {
+    "args": {
+        "operand": "integer",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bitcast_convert_type_3"] = {
+    "args": {
+        "operand": "float",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.bitcast_convert_type_4"] = {
+    "args": {
+        "operand": "boolean",
+        "new_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.broadcast_1"] = {
+    "args": {
+        "operand": "tensor",
+        "sizes": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.broadcast_2"] = {
+    "args": {
+        "operand": "tensor",
+        "sizes": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.broadcast_like"] = {
+    "args": {
+        "arr": "tensor",
+        "like_arr": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.cbrt_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # For AccuracyMode
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.cbrt_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # For Tolerance (namedtuple of floats)
+    },
+    "inner": {}
+}
+signatures["jax.lax.collapse"] = {
+    "args": {
+        "operand": "tensor",
+        "start_dimension": "integer"
+    },
+    "kwargs": {
+        "stop_dimension": "integer"  # Can also be None, but "None" is not an allowed type.
+    },
+    "inner": {}
+}
+signatures["jax.lax.cumlogsumexp"] = {
+    "args": {
+        "operand": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "reverse": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.cummax"] = {
+    "args": {
+        "operand": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "reverse": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.cummin"] = {
+    "args": {
+        "operand": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "reverse": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.dynamic_index_in_dim_1"] = {
+    "args": {
+        "operand": "tensor",
+        "index": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "keepdims": "boolean",
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_index_in_dim_2"] = {
+    "args": {
+        "operand": "tensor",
+        "index": "integer"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "keepdims": "boolean",
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.dynamic_slice_in_dim_1"] = {
+    "args": {
+        "operand": "tensor",
+        "start_index": "integer",
+        "slice_size": "integer"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_slice_in_dim_2"] = {
+    "args": {
+        "operand": "tensor",
+        "start_index": "tensor",
+        "slice_size": "integer"
+    },
+    "kwargs": {
+        "axis": "integer",
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.dynamic_update_index_in_dim_1"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "index": "integer",
+        "axis": "integer"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_index_in_dim_2"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "index": "tensor",
+        "axis": "integer"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_index_in_dim_3"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "float",
+        "index": "integer",
+        "axis": "integer"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_index_in_dim_4"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "float",
+        "index": "tensor",
+        "axis": "integer"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.dynamic_update_slice_in_dim_1"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_index": "integer",
+        "axis": "integer"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.dynamic_update_slice_in_dim_2"] = {
+    "args": {
+        "operand": "tensor",
+        "update": "tensor",
+        "start_index": "tensor",
+        "axis": "integer"
+    },
+    "kwargs": {
+        "allow_negative_indices": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.lax.erf_inv_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erf_inv_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erf_inv_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erf_inv_4"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.erfc_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erfc_2"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erfc_3"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.erfc_4"] = {
+    "args": {
+        "x": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.expand_dims_1"] = {
+    "args": {
+        "array": "tensor",
+        "dimensions": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.expand_dims_2"] = {
+    "args": {
+        "array": "tensor",
+        "dimensions": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.igamma_grad_a"] = {
+    "args": {
+        "a": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.igammac_1"] = {
+    "args": {
+        "a": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.igammac_2"] = {
+    "args": {
+        "a": "float",
+        "x": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.igammac_3"] = {
+    "args": {
+        "a": "integer",
+        "x": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.logistic"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # Represents Tolerance or AccuracyMode, closest match is string
+    },
+    "inner": {}
+}
+signatures["jax.lax.nextafter_1"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.nextafter_2"] = {
+    "args": {
+        "x1": "float",
+        "x2": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.nextafter_3"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.nextafter_4"] = {
+    "args": {
+        "x1": "float",
+        "x2": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.polygamma_1"] = {
+    "args": {
+        "m": "integer",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.polygamma_2"] = {
+    "args": {
+        "m": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.reciprocal"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.select_n"] = {
+    "args": {
+        "which": "tensor",
+        "cases": "tensor_list" # Represents the variadic *cases argument
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.split_1"] = {
+    "args": {
+        "operand": "tensor",
+        "sizes": "list"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.split_2"] = {
+    "args": {
+        "operand": "tensor",
+        "sizes": "tuple"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.lax.squeeze_1"] = {
+    "args": {
+        "array": "tensor",
+        "dimensions": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.squeeze_2"] = {
+    "args": {
+        "array": "tensor",
+        "dimensions": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.stack"] = {
+    "args": {
+        "operands": "tensor_list"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.lax.tan_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "string"  # Can also be Tolerance or AccuracyMode custom objects
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.tan_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "float"  # Can also be Tolerance or AccuracyMode custom objects
+    },
+    "inner": {}
+}
+
+signatures["jax.lax.tan_3"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "accuracy": "tuple"  # Can also be Tolerance or AccuracyMode custom objects
+    },
+    "inner": {}
+}
+signatures["jax.lax.tile_1"] = {
+    "args": {
+        "operand": "tensor",
+        "reps": "tuple"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.tile_2"] = {
+    "args": {
+        "operand": "tensor",
+        "reps": "list"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.unstack"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.lax.zeta_1"] = {
+    "args": {
+        "x": "tensor",
+        "q": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.zeta_2"] = {
+    "args": {
+        "x": "float",
+        "q": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.lax.zeta_3"] = {
+    "args": {
+        "x": "integer",
+        "q": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.fft.irfft2_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.irfft2_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.fft.rfft2_1"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.rfft2_2"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "tuple",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.rfft2_3"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "tuple",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.fft.rfft2_4"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "s": "list",
+        "axes": "list",
+        "norm": "string"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.cholesky"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "upper": "boolean",
+        "symmetrize_input": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.diagonal"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "offset": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.matmul_1"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {
+        "precision": "string",
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.matmul_2"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {
+        "precision": "tuple",
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.matrix_transpose"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.multi_dot_1"] = {
+    "args": {
+        "arrays": "tensor_list"
+    },
+    "kwargs": {
+        "precision": "string"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.multi_dot_2"] = {
+    "args": {
+        "arrays": "tensor_list"
+    },
+    "kwargs": {
+        "precision": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.outer"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.numpy.linalg.tensordot_1"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {
+        "axes": "integer",
+        "precision": "string",  # Can also be lax.Precision enum or tuple of such
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+
+signatures["jax.numpy.linalg.tensordot_2"] = {
+    "args": {
+        "x1": "tensor",
+        "x2": "tensor"
+    },
+    "kwargs": {
+        "axes": "tuple",  # e.g., tuple of sequences of integers
+        "precision": "string",  # Can also be lax.Precision enum or tuple of such
+        "preferred_element_type": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.tensorinv"] = {
+    "args": {
+        "a": "tensor"
+    },
+    "kwargs": {
+        "ind": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.tensorsolve"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "axes": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.numpy.linalg.trace"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "offset": "integer",
+        "dtype": "dtype"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.bernoulli"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.bessel_jn"] = {
+    "args": {
+        "z": "tensor"
+    },
+    "kwargs": {
+        "v": "integer",
+        "n_iter": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.beta"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.betainc"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.boxcox_1"] = {
+    "args": {
+        "x": "tensor",
+        "lmbda": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.boxcox_2"] = {
+    "args": {
+        "x": "tensor",
+        "lmbda": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.special.boxcox_3"] = {
+    "args": {
+        "x": "tensor",
+        "lmbda": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.boxcox1p"] = {
+    "args": {
+        "x": "tensor",
+        "l": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.comb_1"] = {
+    "args": {
+        "N": "tensor",
+        "k": "tensor"
+    },
+    "kwargs": {
+        "exact": "boolean",
+        "repetition": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.comb_2"] = {
+    "args": {
+        "N": "integer",
+        "k": "integer"
+    },
+    "kwargs": {
+        "exact": "boolean",
+        "repetition": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.dawsn"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.erfcx"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.expit"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.expn"] = {
+    "args": {
+        "n": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.factorial_1"] = {
+    "args": {
+        "n": "tensor"
+    },
+    "kwargs": {
+        "exact": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.factorial_2"] = {
+    "args": {
+        "n": "integer"
+    },
+    "kwargs": {
+        "exact": "boolean"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.factorial_3"] = {
+    "args": {
+        "n": "float"
+    },
+    "kwargs": {
+        "exact": "boolean"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.fresnel"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.gammasgn"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.hyp1f1"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.hyp2f1"] = {
+    "args": {
+        "a": "tensor",
+        "b": "tensor",
+        "c": "tensor",
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.log_ndtr"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "series_order": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.logit"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.sici"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.softmax_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.special.softmax_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "axis": "tuple"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.special.wofz"] = {
+    "args": {
+        "z": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.special.zeta"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "q": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.bernoulli.ppf_1"] = {
+    "args": {
+        "q": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.bernoulli.ppf_2"] = {
+    "args": {
+        "q": "float",
+        "p": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.bernoulli.ppf_3"] = {
+    "args": {
+        "q": "integer",
+        "p": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.bernoulli.ppf_4"] = {
+    "args": {
+        "q": "boolean",
+        "p": "boolean"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.beta.logcdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.beta.logsf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.beta.sf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.betabinom.logpmf"] = {
+    "args": {
+        "k": "tensor",
+        "n": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.betabinom.pmf"] = {
+    "args": {
+        "k": "tensor",
+        "n": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.binom.logpmf"] = {
+    "args": {
+        "k": "tensor",
+        "n": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor" # Can also be a float or integer scalar
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.binom.pmf"] = {
+    "args": {
+        "k": "tensor",
+        "n": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.cdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.cdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.cdf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.isf"] = {
+    "args": {
+        "q": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.logcdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.logsf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.logsf_2"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.logsf_3"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.ppf_1"] = {
+    "args": {
+        "q": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.ppf_2"] = {
+    "args": {
+        "q": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.cauchy.ppf_3"] = {
+    "args": {
+        "q": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.cauchy.sf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.chi2.logcdf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.chi2.logsf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.chi2.sf"] = {
+    "args": {
+        "x": "tensor",
+        "df": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.expon.cdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.expon.logcdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.expon.logsf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.expon.ppf"] = {
+    "args": {
+        "q": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.expon.sf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",  # Can also be float or integer
+        "scale": "tensor"  # Can also be float or integer
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gamma.logcdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gamma.logsf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gamma.sf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gennorm.cdf_1"] = {
+    "args": {
+        "x": "tensor",
+        "beta": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gennorm.cdf_2"] = {
+    "args": {
+        "x": "float",
+        "beta": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gennorm.cdf_3"] = {
+    "args": {
+        "x": "integer",
+        "beta": "integer"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.gennorm.logpdf_1"] = {
+    "args": {
+        "x": "tensor",
+        "beta": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gennorm.logpdf_2"] = {
+    "args": {
+        "x": "tensor",
+        "beta": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gennorm.logpdf_3"] = {
+    "args": {
+        "x": "float",
+        "beta": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gennorm.logpdf_4"] = {
+    "args": {
+        "x": "float",
+        "beta": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.gennorm.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "beta": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.geom.logpmf"] = {
+    "args": {
+        "k": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.geom.pmf"] = {
+    "args": {
+        "k": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_l.cdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_l.logcdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gumbel_l.logcdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gumbel_l.logcdf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_l.logpdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_l.logsf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_l.pdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_l.ppf"] = {
+    "args": {
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_l.sf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_r.cdf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_r.logcdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gumbel_r.logcdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.gumbel_r.logcdf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_r.logsf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_r.ppf"] = {
+    "args": {
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.gumbel_r.sf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.laplace.cdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.laplace.cdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.logistic.cdf_1"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.logistic.cdf_2"] = {
+    "args": {
+        "x": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.logistic.cdf_3"] = {
+    "args": {
+        "x": "integer"
+    },
+    "kwargs": {
+        "loc": "integer",
+        "scale": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.logistic.isf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.logistic.ppf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.logistic.sf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.multinomial.logpmf"] = {
+    "args": {
+        "x": "tensor",
+        "n": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.multinomial.pmf_1"] = {
+    "args": {
+        "x": "tensor",
+        "n": "integer",
+        "p": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.multinomial.pmf_2"] = {
+    "args": {
+        "x": "tensor",
+        "n": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.nbinom.logpmf"] = {
+    "args": {
+        "k": "tensor",
+        "n": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.nbinom.pmf"] = {
+    "args": {
+        "k": "tensor",
+        "n": "tensor",
+        "p": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.isf"] = {
+    "args": {
+        "q": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.logsf"] = {
+    "args": {
+        "x": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.norm.ppf_1"] = {
+    "args": {
+        "q": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.norm.ppf_2"] = {
+    "args": {
+        "q": "float"
+    },
+    "kwargs": {
+        "loc": "float",
+        "scale": "float"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.pareto.cdf"] = {
+    "args": {
+        "x": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.pareto.logcdf"] = {
+    "args": {
+        "x": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.pareto.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.pareto.logsf"] = {
+    "args": {
+        "x": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.pareto.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.pareto.ppf"] = {
+    "args": {
+        "q": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.pareto.sf"] = {
+    "args": {
+        "x": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.truncnorm.cdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.truncnorm.logcdf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.truncnorm.logsf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.truncnorm.sf"] = {
+    "args": {
+        "x": "tensor",
+        "a": "tensor",
+        "b": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.uniform.ppf"] = {
+    "args": {
+        "q": "tensor"
+    },
+    "kwargs": {
+        "loc": "tensor",
+        "scale": "tensor"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.stats.vonmises.logpdf_1"] = {
+    "args": {
+        "x": "tensor",
+        "kappa": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.vonmises.logpdf_2"] = {
+    "args": {
+        "x": "float",
+        "kappa": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.vonmises.pdf_1"] = {
+    "args": {
+        "x": "tensor",
+        "kappa": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+
+signatures["jax.scipy.stats.vonmises.pdf_2"] = {
+    "args": {
+        "x": "float",
+        "kappa": "float"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.wrapcauchy.logpdf"] = {
+    "args": {
+        "x": "tensor",
+        "c": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.stats.wrapcauchy.pdf"] = {
+    "args": {
+        "x": "tensor",
+        "c": "tensor"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.argmax"] = {
+    "args": {
+        "operand": "tensor",
+        "axis": "integer",
+        "index_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.lax.argmin"] = {
+    "args": {
+        "operand": "tensor",
+        "axis": "integer",
+        "index_dtype": "dtype"
+    },
+    "kwargs": {},
+    "inner": {}
+}
+signatures["jax.scipy.integrate.trapezoid_1"] = {
+    "args": {
+        "y": "tensor"
+    },
+    "kwargs": {
+        "x": "tensor",
+        "dx": "float",
+        "axis": "integer"
+    },
+    "inner": {}
+}
+
+signatures["jax.scipy.integrate.trapezoid_2"] = {
+    "args": {
+        "y": "tensor"
+    },
+    "kwargs": {
+        "x": "tensor",
+        "dx": "tensor",
+        "axis": "integer"
+    },
+    "inner": {}
+}
+signatures["jax.scipy.cluster.vq.vq"] = {
+    "args": {
+        "obs": "tensor",
+        "code_book": "tensor"
+    },
+    "kwargs": {
+        "check_finite": "boolean"
+    },
+    "inner": {}
+}

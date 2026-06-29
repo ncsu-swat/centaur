@@ -6,180 +6,39 @@ generated_inputs = dict()
 
 import numpy as np
 import copy
-import jax
+from jax.lax import GatherDimensionNumbers
 
 def gather_inputs():
     list_of_inputs = []
+    
+    modes = ['clip', 'fill', 'drop', 'promise_in_bounds', 'clip', 'fill', 'drop', 'promise_in_bounds', 'clip', 'fill']
+    unique_flags = [False, True, False, True, False, True, False, True, False, False]
+    sorted_flags = [False, False, True, True, False, False, True, True, False, False]
+    fill_flags = [False, True, False, True, False, True, False, True, False, True]
 
-    # Input 1
-    operand = np.random.randn(4, 3).astype(np.float32)
-    start_indices = np.array([[1], [3]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 3]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    for i in range(10):
+        operand = np.random.randn(5, 5).astype(np.float32)
+        start_indices = np.random.randint(0, 5, size=(3, 1)).astype(np.int32)
+        if sorted_flags[i]:
+            start_indices = np.sort(start_indices, axis=0)
 
-    # Input 2
-    operand = np.random.randn(6, 4).astype(np.float64)
-    start_indices = np.array([[4], [1], [2]], dtype=np.int64)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 4]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": True,
-        "indices_are_sorted": True,
-        "mode": "fill",
-        "fill_value": True,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3
-    operand = np.random.randint(-50, 50, size=(3, 3)).astype(np.int32)
-    start_indices = np.array([[2], [0]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 3]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "mode": "promise_in_bounds",
-        "fill_value": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4
-    operand = np.random.randn(4, 4).astype(np.float32)
-    start_indices = np.array([[2], [1]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 4]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": True,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5
-    operand = np.random.choice([True, False], size=(3, 6)).astype(np.bool_)
-    start_indices = np.array([[0], [2]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 6]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": True,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6
-    operand = np.random.randn(6, 3).astype(np.float32)
-    start_indices = np.array([[1], [4], [3]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 3]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": True,
-        "indices_are_sorted": True,
-        "mode": "clip",
-        "fill_value": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7
-    operand = (np.random.randn(4, 2) + 1j * np.random.randn(4, 2)).astype(np.complex64)
-    start_indices = np.array([[0], [2]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 2]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": True,
-        "mode": "clip",
-        "fill_value": True,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8
-    operand = np.random.randint(-100, 100, size=(4, 6)).astype(np.int64)
-    start_indices = np.array([[1], [3]], dtype=np.int64)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 6]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": True,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9
-    operand = np.random.randn(3, 4).astype(np.float32)
-    start_indices = np.array([[0], [2]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 4]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10
-    operand = np.random.randn(6, 6).astype(np.float64)
-    start_indices = np.array([[2], [1], [4]], dtype=np.int64)
-    dimension_numbers = jax.lax.GatherDimensionNumbers((1,), (0,), (0,))
-    slice_sizes = [1, 6]
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": True,
-        "indices_are_sorted": True,
-        "mode": "fill",
-        "fill_value": True,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+        dimension_numbers = GatherDimensionNumbers(
+            offset_dims=(0,),
+            collapsed_slice_dims=(0,),
+            start_index_map=(0,)
+        )
+        
+        input_dict = {
+            'operand': operand,
+            'start_indices': start_indices,
+            'dimension_numbers': dimension_numbers,
+            'slice_sizes': [1, 5],
+            'unique_indices': unique_flags[i],
+            'indices_are_sorted': sorted_flags[i],
+            'mode': modes[i],
+            'fill_value': fill_flags[i]
+        }
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

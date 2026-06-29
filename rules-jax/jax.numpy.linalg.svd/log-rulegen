@@ -1,0 +1,3095 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (input tensor a must have at least 2 dimensions)
+{v_1 : tensor} |= ndim(v_1) ≥ 2
+Token usage: input=2453, output=384, total=6475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (subset_by_index must have a length of 2 if specified)
+{v_5 : tuple(int)} |= v_5.len = 2
+Token usage: input=2453, output=384, total=6475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (subset_by_index is only compatible with full_matrices being False)
+{v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Token usage: input=2453, output=384, total=6475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (the starting index of subset_by_index must be non-negative and strictly less than the ending index)
+{v_5 : tuple(int)} |= v_5[0] ≥ 0 ∧ v_5[1] > v_5[0]
+Token usage: input=2453, output=384, total=6475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (subset_by_index ending index must be less than or equal to the minimum of the last two dimensions of input tensor a)
+{v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Token usage: input=2453, output=384, total=6475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+Rule 17 (primitive type variable must be non-negative)
+{v_1 : int ⊎ float} |= v_1 ≥ 0
+
+Rule 5 (index tensor (v_2) should be within the range of input tensor)
+{v_1 : tensor, v_2 : tensor} |= min(v_2) ≥ 0 ∧ ∀i ∈ [0, ndim(v_1) − 1] : max(v_2) ≤ shape(v_1, i) − 1
+
+Rule 11 (index tensor (v_3) is within the input tensor along the specified dimension)
+{v_1 : tensor, v_2 : int, v_3 : tensor} |= min(v_3) ≥ 0 ∧ max(v_3) ≤ shape(v_1, v_2) − 1
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (input tensor a must have floating-point or complex data type)
+{v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+Token usage: input=2453, output=384, total=6475
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (the input tensor must have at least 2 dimensions)
+{v_1 : tensor} |= ndim(v_1) ≥ 2
+Token usage: input=8892, output=504, total=11367
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (the last two dimensions of the input tensor must be non-empty)
+{v_1 : tensor} |= shape(v_1, ndim(v_1) - 1) > 0 ∧ shape(v_1, ndim(v_1) - 2) > 0
+Token usage: input=8892, output=504, total=11367
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (if subset_by_index is specified, full_matrices must be false)
+{v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Token usage: input=8892, output=504, total=11367
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (the indices specified in subset_by_index must be non-negative and in ascending order)
+{v_5 : tuple(int)} |= if v_5.len = 2 then v_5[0] ≥ 0 ∧ v_5[1] > v_5[0]
+Token usage: input=8892, output=504, total=11367
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (subset_by_index ending index must not exceed the smaller of the last two dimensions of the input tensor)
+{v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Token usage: input=8892, output=504, total=11367
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (if hermitian is true, the input tensor must be square along its last two dimensions)
+{v_1 : tensor, v_4 : bool} |= if v_4 = true then shape(v_1, ndim(v_1) - 1) = shape(v_1, ndim(v_1) - 2)
+Token usage: input=8892, output=504, total=11367
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+Rule 29 (list of floats for weights must match length of a tensor dimension)
+{v_1 : tensor, v_2 : list(float)} |= v_2.len = shape(v_1, 0) ∧ ∀i ∈ [0, v_2.len - 1] : v_2[i] ≥ 0
+
+Rule 13 (tensor must have a floating-point dtype: 6–8)
+{v1: tensor} |= 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8
+
+Rule 21 (primitive type variable should not be zero)
+{v_1 : int ⊎ float} |= v_1 ≠ 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (the input tensor must have a floating-point or complex data type)
+{v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+Token usage: input=8892, output=504, total=11367
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 2
+Duplicated rule: {v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Duplicated rule: {v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (all dimensions of input tensor a must have a positive size)
+{v_1 : tensor} |= ndim(v_1) ≥ 2 ∧ ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+Token usage: input=14290, output=517, total=19583
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 2
+Duplicated rule: {v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Duplicated rule: {v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (subset_by_index, if provided, must contain exactly 2 elements; otherwise, it must be empty)
+{v_5 : tuple(int)} |= v_5.len = 2 ∨ v_5.len = 0
+Token usage: input=14290, output=517, total=19583
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 2
+Duplicated rule: {v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Duplicated rule: {v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (if full_matrices is enabled, then subset_by_index cannot be specified)
+{v_2 : bool, v_5 : tuple(int)} |= if v_2 = true then v_5.len = 0
+Token usage: input=14290, output=517, total=19583
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 2
+Duplicated rule: {v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Duplicated rule: {v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (the subset_by_index range must be valid, with start non-negative and end at least start + 1)
+{v_5 : tuple(int)} |= if v_5.len = 2 then v_5[0] ≥ 0 ∧ v_5[1] ≥ v_5[0] + 1
+Token usage: input=14290, output=517, total=19583
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 2
+Duplicated rule: {v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Duplicated rule: {v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (the start and end indices in subset_by_index must be within the bounds of the matrix dimensions)
+{v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then v_5[0] < shape(v_1, ndim(v_1) - 1) ∧ v_5[0] < shape(v_1, ndim(v_1) - 2) ∧ v_5[1] ≤ shape(v_1, ndim(v_1) - 1) ∧ v_5[1] ≤ shape(v_1, ndim(v_1) - 2)
+Token usage: input=14290, output=517, total=19583
+** SUCCESS **
+
+>>> PROMPT
+[Feedback Message from Prior Run]
+Duplicated rule: {v_1 : tensor} |= ndim(v_1) ≥ 2
+Duplicated rule: {v_2 : bool, v_5 : tuple(int)} |= if v_5.len = 2 then v_2 = false
+Duplicated rule: {v_1 : tensor, v_5 : tuple(int)} |= if v_5.len = 2 then (if shape(v_1, ndim(v_1) - 1) < shape(v_1, ndim(v_1) - 2) then v_5[1] ≤ shape(v_1, ndim(v_1) - 1) else v_5[1] ≤ shape(v_1, ndim(v_1) - 2))
+Duplicated rule: {v_1 : tensor} |= dtype_(v_1) ≥ 6 ∧ dtype_(v_1) ≤ 10
+
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.svd API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the singular value decomposition.
+
+  JAX implementation of :func:`numpy.linalg.svd`, implemented in terms of
+  :func:`jax.lax.linalg.svd`.
+
+  The SVD of a matrix `A` is given by
+
+  .. math::
+
+     A = U\Sigma V^H
+
+  - :math:`U` contains the left singular vectors and satisfies :math:`U^HU=I`
+  - :math:`V` contains the right singular vectors and satisfies :math:`V^HV=I`
+  - :math:`\Sigma` is a diagonal matrix of singular values.
+
+  Args:
+    a: input array, of shape ``(..., N, M)``
+    full_matrices: if True (default) compute the full matrices; i.e. ``u`` and ``vh`` have
+      shape ``(..., N, N)`` and ``(..., M, M)``. If False, then the shapes are
+      ``(..., N, K)`` and ``(..., K, M)`` with ``K = min(N, M)``.
+    compute_uv: if True (default), return the full SVD ``(u, s, vh)``. If False then return
+      only the singular values ``s``.
+    hermitian: if True, assume the matrix is hermitian, which allows for a more efficient
+      implementation (default=False)
+    subset_by_index: (TPU-only) Optional 2-tuple [start, end] indicating the range of
+      indices of singular values to compute. For example, if ``[n-2, n]`` then
+      ``svd`` computes the two largest singular values and their singular vectors.
+      Only compatible with ``full_matrices=False``.
+
+  Returns:
+    A tuple of arrays ``(u, s, vh)`` if ``compute_uv`` is True, otherwise the array ``s``.
+
+    - ``u``: left singular vectors of shape ``(..., N, N)`` if ``full_matrices`` is True
+      or ``(..., N, K)`` otherwise.
+    - ``s``: singular values of shape ``(..., K)``
+    - ``vh``: conjugate-transposed right singular vectors of shape ``(..., M, M)``
+      if ``full_matrices`` is True or ``(..., K, M)`` otherwise.
+
+    where ``K = min(N, M)``.
+
+  See also:
+    - :func:`jax.scipy.linalg.svd`: SciPy-style SVD API
+    - :func:`jax.lax.linalg.svd`: XLA-style SVD API
+
+  Examples:
+    Consider the SVD of a small real-valued array:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [6., 5., 4.]])
+    >>> u, s, vt = jnp.linalg.svd(x, full_matrices=False)
+    >>> s  # doctest: +SKIP
+    Array([9.361919 , 1.8315067], dtype=float32)
+
+    The singular vectors are in the columns of ``u`` and ``v = vt.T``. These vectors are
+    orthonormal, which can be demonstrated by comparing the matrix product with the
+    identity matrix:
+
+    >>> jnp.allclose(u.T @ u, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+    >>> v = vt.T
+    >>> jnp.allclose(v.T @ v, jnp.eye(2), atol=1E-5)
+    Array(True, dtype=bool)
+
+    Given the SVD, ``x`` can be reconstructed via matrix multiplication:
+
+    >>> x_reconstructed = u @ jnp.diag(s) @ vt
+    >>> jnp.allclose(x_reconstructed, x)
+    Array(True, dtype=bool)
+
+[API Signature] a: tensor, full_matrices: boolean, compute_uv: boolean, hermitian: boolean, subset_by_index: tuple
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 23 (3-dimensional tensor with all positive shape dimensions)
+{v_1 : tensor} |= ndim(v_1) = 3 ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 2 (v_2 should be a valid dimension of input tensor)
+{v_1 : tensor, v_2 : int} |= −1 × ndim(v_1) ≤ v_2 ∧ v_2 ≤ ndim(v_1) − 1
+
+Rule 19 (compatibility of integer or float (data) type tensor and variable)
+{v1 : tensor, v2 : int ⊎ float} |= if 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5 then 1 ≤ v2 ∧ v2 ≤ 5 else if 6 ≤ dtype(v1) ∧ dtype(v1) ≤ 8 then 1 ≤ v2 ∧ v2 ≤ 8 else false
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 19 (if hermitian is true, the input tensor must have at least 2 dimensions and its last two dimensions must be equal)
+{v_1 : tensor, v_4 : bool} |= if v_4 = true then ndim(v_1) ≥ 2 ∧ shape(v_1, ndim(v_1) - 1) = shape(v_1, ndim(v_1) - 2)
+Token usage: input=14290, output=517, total=19583
+** SUCCESS **
+

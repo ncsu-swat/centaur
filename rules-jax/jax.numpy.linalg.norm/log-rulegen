@@ -1,0 +1,4150 @@
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 1 (dimension of tensor must be sufficient for the axes specified in tuple)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) ≥ v_2.len
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 2 (axis indices in tuple must be within the valid range of tensor dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] < ndim(v_1) ∧ v_2[i] + ndim(v_1) ≥ 0
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 3 (if axis is an integer, it must be within the valid range of tensor dimensions)
+{v_1 : tensor, v_2 : int} |= v_2 < ndim(v_1) ∧ v_2 + ndim(v_1) ≥ 0
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 4 (for matrix norm specified by a tuple of axis of length 2, the axes must be distinct)
+{v_1 : tuple(int)} |= if v_1.len = 2 then v_1[0] ≠ v_1[1]
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 5 (the axis tuple can have at most 2 elements and at least 1 element)
+{v_1 : tuple(int)} |= v_1.len ≥ 1 ∧ v_1.len ≤ 2
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 6 (if ord is an integer and axis is a 2-tuple, ord must be a valid matrix norm integer)
+{v_1 : tuple(int), v_2 : int} |= if v_1.len = 2 then v_2 = 1 ∨ v_2 = -1 ∨ v_2 = 2 ∨ v_2 = -2
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 7 (if ord is a float, the axis tuple must be of length 1 since float ord is only for vector norms)
+{v_1 : float, v_2 : tuple(int)} |= if v_1 = v_1 then v_2.len = 1 else false
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 12 (a primitive type variable is smaller than the other)
+{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≤ v_2
+
+Rule 1 (tensor shapes should be the same)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = shape(v_2, i)
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 14 (tensor should not be empty)
+{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) > 0
+
+Rule 26 (tuple of ints used as kernel size must have length 2)
+{v_1 : tuple(int)} |= v_1.len = 2 ∧ ∀i ∈ [0, 1] : v_1[i] > 0
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 8 (if ord is a string, the axis tuple must be of length 2 since string ord is only for matrix norms)
+{v_1 : str, v_2 : tuple(int)} |= if v_1 = v_1 then v_2.len = 2 else false
+Token usage: input=2373, output=525, total=12594
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 9 (if axis is an integer, it must be within the valid range of tensor dimensions)
+{v_1 : tensor, v_2 : int} |= v_2 < ndim(v_1) ∧ v_2 + ndim(v_1) ≥ 0
+Token usage: input=15191, output=570, total=19608
+** DUPLICATED RULE ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 10 (axis indices in tuple must be within the valid range of tensor dimensions)
+{v_1 : tensor, v_2 : tuple(int)} |= ∀i ∈ [0, v_2.len - 1] : v_2[i] < ndim(v_1) ∧ v_2[i] + ndim(v_1) ≥ 0
+Token usage: input=15191, output=570, total=19608
+** DUPLICATED RULE ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 11 (the axis tuple can have at most 2 elements and at least 1 element)
+{v_1 : tuple(int)} |= v_1.len ≥ 1 ∧ v_1.len ≤ 2
+Token usage: input=15191, output=570, total=19608
+** DUPLICATED RULE ** (num_failures: 3)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 12 (for matrix norm specified by a tuple of axis of length 2, the axes must not refer to the same dimension)
+{v_1 : tensor, v_2 : tuple(int)} |= if v_2.len = 2 then (v_2[0] + ndim(v_1)) % ndim(v_1) ≠ (v_2[1] + ndim(v_1)) % ndim(v_1)
+Token usage: input=15191, output=570, total=19608
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 13 (dimension of tensor must be at least the size of the axes tuple)
+{v_1 : tensor, v_2 : tuple(int)} |= ndim(v_1) ≥ v_2.len
+Token usage: input=15191, output=570, total=19608
+** DUPLICATED RULE ** (num_failures: 4)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 14 (if ord is an integer and axis is a 2-tuple, ord must be a valid matrix norm integer)
+{v_1 : tuple(int), v_2 : int} |= if v_1.len = 2 then v_2 = 1 ∨ v_2 = -1 ∨ v_2 = 2 ∨ v_2 = -2
+Token usage: input=15191, output=570, total=19608
+** DUPLICATED RULE ** (num_failures: 5)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 15 (if ord is a float, the axis tuple must be of length 1 since float ord is only for vector norms)
+{v_1 : float, v_2 : tuple(int)} |= if v_1 = v_1 then v_2.len = 1
+Token usage: input=15191, output=570, total=19608
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 16 (shape alignment for matrix multiplication)
+{v_1 : tensor, v_2 : tensor} |= (ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, ndim(v_2) − 2)) ∨ (ndim(v_1) ≥ 2 ∧ ndim(v_2) = 1 ∧ shape(v_1, ndim(v_1) − 1) = shape(v_2, 0))
+
+Rule 15 (broadcasting compatibility for tensor shapes)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) − 1 else ndim(v_2) − 1] : ndim(v_1) − i − 1 < 0 ∨ ndim(v_2) − i − 1 < 0 ∨ shape(v_1, ndim(v_1) − i − 1) = 1 ∨ shape(v_2, ndim(v_2) − i − 1) = 1 ∨ shape(v_1, ndim(v_1) − i − 1) = shape(v_2, ndim(v_2) − i − 1)
+
+Rule 9 (4D tensor with all shape dimensions positive)
+{v_1 : tensor} |= ndim(v_1) = 4 ∧ ∀i ∈ [0, 3] : shape(v_1, i) > 0
+
+Rule 30 (list of bools for masking or selection)
+{v_1 : tensor, v_2 : list(bool)} |= v_2.len = shape(v_1, 0)
+
+Rule 31 (dtype must be a floating-point type)
+{v_1 : dtype} |= v_1 = 6 ∨ v_1 = 7 ∨ v_1 = 8
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 16 (if ord is a string, the axis tuple must be of length 2 since string ord is only for matrix norms)
+{v_1 : str, v_2 : tuple(int)} |= if v_1 = v_1 then v_2.len = 2
+Token usage: input=15191, output=570, total=19608
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 17 (If axis is a tuple, its length must be either 1 or 2)
+{v_3 : tuple(int)} |= v_3.len = 1 ∨ v_3.len = 2
+Token usage: input=2508, output=575, total=11378
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 18 (If axis is a tuple of length 2, the two axes must be distinct)
+{v_3 : tuple(int)} |= if v_3.len = 2 then v_3[0] ≠ v_3[1]
+Token usage: input=2508, output=575, total=11378
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 19 (If axis is a tuple, all of its elements must be valid axis indices for the tensor)
+{v_1 : tensor, v_3 : tuple(int)} |= ∀i ∈ [0, v_3.len - 1] : v_3[i] ≥ 0 - ndim(v_1) ∧ v_3[i] < ndim(v_1)
+Token usage: input=2508, output=575, total=11378
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 20 (If axis is an integer, it must be a valid axis index for the tensor)
+{v_1 : tensor, v_3 : int} |= v_3 ≥ 0 - ndim(v_1) ∧ v_3 < ndim(v_1)
+Token usage: input=2508, output=575, total=11378
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 21 (The number of dimensions of the tensor must be at least the number of reduced axes in the tuple)
+{v_1 : tensor, v_3 : tuple(int)} |= ndim(v_1) ≥ v_3.len
+Token usage: input=2508, output=575, total=11378
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 22 (If ord is a float and axis is a tuple, it must be a vector norm where axis length is 1)
+{v_2 : float, v_3 : tuple(int)} |= v_3.len = 1
+Token usage: input=2508, output=575, total=11378
+** REDUNDANT VARIABLES ** (num_failures: 1)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 23 (If axis is a 2-tuple and ord is an integer, ord must be a valid matrix norm order: -2, -1, 1, or 2)
+{v_2 : int, v_3 : tuple(int)} |= if v_3.len = 2 then v_2 = 1 ∨ v_2 = -1 ∨ v_2 = 2 ∨ v_2 = -2
+Token usage: input=2508, output=575, total=11378
+** SUCCESS **
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 24 (For a single integer axis reduction, the tensor must have at least 1 dimension)
+{v_1 : tensor, v_3 : int} |= ndim(v_1) ≥ 1
+Token usage: input=2508, output=575, total=11378
+** REDUNDANT VARIABLES ** (num_failures: 2)
+
+>>> PROMPT
+[Rule Grammar in EBNF Notation]
+<rule> ::= "{" <binding_list> "}" "|=" <expr>
+
+<binding_list> ::= <binding> ("," <binding>)*
+<binding> ::= <VAR> ":" <type>
+
+<type> ::= "tensor"
+         | "int"
+         | "float"
+         | "bool"
+         | "dtype"
+         | "str"
+         | "list" "(" <type> ")"
+         | "tuple" "(" <type> ")"
+         | <type> "⊎" <type>
+
+<expr> ::= <and_expr>
+<and_expr> ::= <or_expr> | <and_expr> "∧" <or_expr>
+<or_expr> ::= <quant_expr> | <or_expr> "∨" <quant_expr>
+<quant_expr> ::= "∀" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | "∃" <PRIMVAR> "∈" "[" <expr> "," <expr> "]" ":" <expr>
+               | <if_expr>
+               | <compare_expr>
+
+<if_expr> ::= "if" <expr> "then" <expr> [ "else" <expr> ]
+<compare_expr> ::= <arith_expr> | <arith_expr> <COMPOP> <arith_expr>
+<arith_expr> ::= <arith_expr> <ADDOP> <arith_term> | <arith_term>
+<arith_term> ::= <arith_term> <MULOP> <arith_factor> | <arith_factor>
+<arith_factor> ::= <TUPLEVAR> <tuple_access> | <func_call> | <constant> | <PRIMVAR> | "(" <expr> ")"
+
+<tuple_access>  ::= "[" <expr> "]" | ".len"
+<func_call> ::= <FUNC> "(" <TENSORVAR> [ "," <expr> ] ")"
+<constant> ::= <NUMBER> | "true" | "false" | <STRING>
+<COMPOP> ::= "=" | "≠" | ">" | "<" | "≥" | "≤"
+<ADDOP> ::= "+" | "-"
+<MULOP> ::= "*" | "/" | "%"
+<FUNC> ::= "ndim" | "shape" | "dtype_" | "min" | "max"
+<PRIMVAR> ::= any variable name (e.g., matches [a-zA-Z_][a-zA-Z_0-9]*)
+<TENSORVAR> ::= same format as PRIMVAR
+<TUPLEVAR> ::= same format as PRIMVAR
+
+<VAR> ::= same format as PRIMVAR
+<NUMBER> ::= any integer or decimal number (e.g., -5, 0.3, +7)
+<STRING> ::= any quoted string (e.g., "hello", 'world')
+
+[Task Description]
+Define rules that jax.numpy.linalg.norm API parameters should satisfy. Refer to the API documentation. 
+
+Type is encoded as an integer (index of the following list):
+[bool, np.int8, np.int16, np.int32, np.int64, np.uint8, np.float16, np.float32, np.float64, np.complex64, np.complex128, str, np.dtype]
+
+String value should be selected from the following list:
+["ii", "ii->i", "i,j->ij", "bij,bjk->bik", "...ij->...ji", "none", "sum", "max", "min", "mean", "relu", "tanh", "sigmoid", "softmax", "gelu", "NHWC", "NCHW", "HWIO", "OIHW", "valid", "same", "NDHWC", "NCDHW", "HWDIO", "OIDHW", "OHWI", "NHW", "NCH", "SAME_LOWER", "FFT", "IFFT", "RFFT", "IRFFT", "promise_in_bounds", "clip", "drop", "fill", "highest", "float32", "bfloat16"]
+
+[API Documentation]
+Compute the norm of a matrix or vector.
+
+  JAX implementation of :func:`numpy.linalg.norm`.
+
+  Args:
+    x: N-dimensional array for which the norm will be computed.
+    ord: specify the kind of norm to take. Default is Frobenius norm for matrices,
+      and the 2-norm for vectors. For other options, see Notes below.
+    axis: integer or sequence of integers specifying the axes over which the norm
+      will be computed. For a single axis, compute a vector norm. For two axes,
+      compute a matrix norm. Defaults to all axes of ``x``.
+    keepdims: if True, the output array will have the same number of dimensions as
+      the input, with the size of reduced axes replaced by ``1`` (default: False).
+
+  Returns:
+    array containing the specified norm of x.
+
+  Notes:
+    The flavor of norm computed depends on the value of ``ord`` and the number of
+    axes being reduced.
+
+    For **vector norms** (i.e. a single axis reduction):
+
+    - ``ord=None`` (default) computes the 2-norm
+    - ``ord=inf`` computes ``max(abs(x))``
+    - ``ord=-inf`` computes min(abs(x))``
+    - ``ord=0`` computes ``sum(x!=0)``
+    - for other numerical values, computes ``sum(abs(x) ** ord)**(1/ord)``
+
+    For **matrix norms** (i.e. two axes reductions):
+
+    - ``ord='fro'`` or ``ord=None`` (default) computes the Frobenius norm
+    - ``ord='nuc'`` computes the nuclear norm, or the sum of the singular values
+    - ``ord=1`` computes ``max(abs(x).sum(0))``
+    - ``ord=-1`` computes ``min(abs(x).sum(0))``
+    - ``ord=2`` computes the 2-norm, i.e. the largest singular value
+    - ``ord=-2`` computes the smallest singular value
+
+    In the special case of ``ord=None`` and ``axis=None``, this function accepts an
+    array of any dimension and computes the vector 2-norm of the flattened array.
+
+  Examples:
+    Vector norms:
+
+    >>> x = jnp.array([3., 4., 12.])
+    >>> jnp.linalg.norm(x)
+    Array(13., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)
+    Array(19., dtype=float32)
+    >>> jnp.linalg.norm(x, ord=0)
+    Array(3., dtype=float32)
+
+    Matrix norms:
+
+    >>> x = jnp.array([[1., 2., 3.],
+    ...                [4., 5., 7.]])
+    >>> jnp.linalg.norm(x)  # Frobenius norm
+    Array(10.198039, dtype=float32)
+    >>> jnp.linalg.norm(x, ord='nuc')  # nuclear norm
+    Array(10.762535, dtype=float32)
+    >>> jnp.linalg.norm(x, ord=1)  # 1-norm
+    Array(10., dtype=float32)
+
+    Batched vector norm:
+
+    >>> jnp.linalg.norm(x, axis=1)
+    Array([3.7416575, 9.486833 ], dtype=float32)
+
+[Possible API Signatures]
+ - x: tensor, ord: integer, axis: integer, keepdims: boolean
+ - x: tensor, ord: integer, axis: tuple, keepdims: boolean
+ - x: tensor, ord: string, axis: integer, keepdims: boolean
+ - x: tensor, ord: string, axis: tuple, keepdims: boolean
+ - x: tensor, ord: float, axis: integer, keepdims: boolean
+ - x: tensor, ord: float, axis: tuple, keepdims: boolean
+
+[Output Format]
+Rule {Number} ({Description})\n{Rule Definition}
+Ex) Rule 21 (primitive type variable should not be zero)
+    {v_1 : int ⊎ float} |= v_1 ≠ 0
+
+[Example Rules]
+Rule 8 (tensor must have an integer dtype: 1–5)
+{v1: tensor} |= 1 ≤ dtype(v1) ∧ dtype(v1) ≤ 5
+
+Rule 24 (tuple of ints represents valid shape dimensions)
+{v_1 : tuple(int)} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] > 0
+
+Rule 10 (valid 2D transposed convolution)
+{v_1 : tensor, v_2 : tensor, v_3 : int, v_4 : int} |= ndim(v_1) = 4 ∧ ndim(v_2) = 4 ∧ v_3 ≥ 1 ∧ v_4 ≥ 0 ∧ v_3 × (shape(v_1, 2) − 1) + shape(v_2, 2) − 2 × v_4 > 0 ∧ v_3 × (shape(v_1, 3) − 1) + shape(v_2, 3) − 2 × v_4 > 0
+
+Rule 18 (input tensor is empty or only contains non-negative values)
+{v_1 : tensor} |= (∃i ∈ [0, ndim(v_1) − 1] : shape(v_1, i) = 0) ∨ min(v_1) ≥ 0
+
+Rule 32 (Integer indices only valid with int-compatible dtype)
+{v_1 : tuple(int), v_2 : dtype} |= ∀i ∈ [0, v_1.len - 1] : v_1[i] ≥ 0 ∧ v_2 = 1 ∨ v_2 = 2 ∨ v_2 = 3 ∨ v_2 = 4 ∨ v_2 = 5
+
+** IMPORTANT: The rule definition should be a new one and strictly follow the grammar. **
+** IMPORTANT: Rules should span diverse types (tensor, int, float, bool, dtype, str, tuple, list, union), properties, and numbers of parameters. **
+** IMPORTANT: Variables should be named v_1, v_2, and so on. **
+** IMPORTANT: Bindings should be API parameters and include only variables that are used in the expression. **
+** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **
+** IMPORTANT: For module classes returning instances, include rules for their parameters. **
+
+<<< RESPONSE
+Rule 25 (For a two-axes matrix norm reduction, the tensor must have at least 2 dimensions)
+{v_1 : tensor, v_3 : tuple(int)} |= if v_3.len = 2 then ndim(v_1) ≥ 2
+Token usage: input=2508, output=575, total=11378
+** SUCCESS **
+

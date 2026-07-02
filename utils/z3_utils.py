@@ -1,10 +1,16 @@
 import json
+import math
 from z3 import *
 from functools import reduce
 import numpy as np
 from .defaults import *
 from generator.input_generators import get_ll
 from generator.rules_auto_z3 import get_rules_map
+
+# Maximum number of elements allowed in a single tensor.  Keeping this at 1M
+# (8 MB at float64) prevents multi-GB numpy temporary buffers from numpy's
+# internal float64 intermediate during rng.uniform(...).astype(dtype).
+MAX_TENSOR_ELEMENTS = 1_000_000
 
 def add_negative_buckets(buckets):
     new_buckets = []
@@ -229,12 +235,23 @@ def model_to_abs(model, signature, z3_args):
 
     return abstract_args
 
+class _NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super().default(obj)
+
+
 def append_abstract_to_jsonl(abstract_input, path):
     '''
     Appends the abstract input to an existing JSONL file, creates the file if it doesn't exist.
     '''
     with open(path, "a") as f:
-        f.write(json.dumps(abstract_input) + "\n")
+        f.write(json.dumps(abstract_input, cls=_NumpyEncoder) + "\n")
 
 def get_abstract_from_dict(json_dict, signature, lib="torch"):
     """
@@ -295,6 +312,14 @@ def instantiate_args(model, signature, z3_args, seed=42, lib="torch", sample_ran
                     selected_values = np.random.choice(clipped_buckets, size=2, replace=False)
                     low, high = np.min(selected_values), np.max(selected_values)
             
+            # Cap each dimension proportionally so prod(shape) ≤ MAX_TENSOR_ELEMENTS
+            # while preserving ndim.  Dropping trailing dims (previous approach)
+            # silently changed the tensor rank, breaking APIs that require a
+            # specific ndim (e.g. AvgPool2d needs exactly 4D).
+            if shape and math.prod(shape) > MAX_TENSOR_ELEMENTS:
+                max_dim = max(1, int(MAX_TENSOR_ELEMENTS ** (1.0 / len(shape))))
+                shape = [min(s, max_dim) for s in shape]
+
             np_array = rng.uniform(low, high, size=shape).astype(list_of_available_dtypes[dtype])
             concrete_args[param_name] = np_array
             

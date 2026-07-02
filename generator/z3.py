@@ -13,6 +13,7 @@ import os
 import json
 from utils.proc import get_memory_usage
 import shutil
+import sys
 
 def save_state_models(api, suffix, unsat, nominal, invalid, crash, excp, tmp_results):
     api = f"{api}_{suffix}" if suffix > 0 else api
@@ -154,6 +155,11 @@ def gen_models(definition, api, z3_args, model_gen_duration, max_model=0, seed=4
     models, num_model = [], 0
     initial_constraints(solver_main, definition["signature"], z3_args, lib=lib)
     collect_constraints(solver_main, api, definition["ruleset"], z3_args, use_reference=use_reference, lib=lib)
+    # Save smt formulae to smtlib file for debugging
+    smtlib_file = os.path.join(get_tmp_dir(), f"{api}_{definition['suffix']}_formula.smt2")
+    with open(smtlib_file, "w") as f:
+        f.write(solver_main.to_smt2())
+        # sys.exit(0)
     block_all = set()
     perma_block = set()
     stale = 0

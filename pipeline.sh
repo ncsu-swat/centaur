@@ -12,7 +12,7 @@ fi
 lib=$1        # Library (torch or tf)
 retry=${2:-0} # Retry flag (0 means no retry, 1 means retry cancelled jobs)
 reduce=${3:-1} # 1 means reduce ruleset, 0 means do not reduce ruleset
-save_to=${4:-default} # Output directory for saving results
+save_to=${4:-centaur_no_sample} # Output directory for saving results
 regen=${5:-0}  # Regenerate invariants flag (0 means do not regenerate, 1 means regenerate)
 max_p=${6:-64} # Maximum number of parallel jobs for Slurm
 compute_cov=${7:-1} # Compute coverage flag (1 means compute coverage, 0 means skip coverage computation)
@@ -25,23 +25,23 @@ export max_memory_docker=400G   # Maximum memory for Docker container for Tensor
 
 # Step 1: Infer invariants: <duration> <regen> <library> <reduce>
 # Note: Changes in <reduce> won't take effect if invariants are already generated and regen=0
-bash scripts/infer_invariants_with_slurm.sh 1200 $regen $lib $reduce
-if [ "$retry" -eq 1 ]; then
-  # Cancelled jobs due to memory issues are retried
-  python -m utils.parse_cancelled_jobs $lib
-  export elements_file=.tmp/cancelled_infs_${lib}.txt  # Set the elements file for the next steps
-  bash scripts/infer_invariants_with_slurm.sh 1200 1 $lib $reduce
-  export elements_file=${lib}_variations.txt  # Restore elements file for the next steps
-fi
-# Step 2: Generate models: <duration> <n_models> <library> <seed> <regen>
-bash scripts/generate_models_with_slurm.sh 3600 0 $lib $seed $regen
-if [ "$retry" -eq 1 ]; then
-  # Cancelled jobs due to memory issues are retried
-  python -m utils.parse_cancelled_jobs $lib
-  export elements_file=.tmp/cancelled_modls_${lib}.txt  # Set the elements file for the next steps
-  bash scripts/generate_models_with_slurm.sh 3600 0 $lib $seed 1
-  export elements_file=${lib}_apis.txt  # Restore elements file for the next steps
-fi
+# bash scripts/infer_invariants_with_slurm.sh 1200 $regen $lib $reduce
+# if [ "$retry" -eq 1 ]; then
+#   # Cancelled jobs due to memory issues are retried
+#   python -m utils.parse_cancelled_jobs $lib
+#   export elements_file=.tmp/cancelled_infs_${lib}.txt  # Set the elements file for the next steps
+#   bash scripts/infer_invariants_with_slurm.sh 1200 1 $lib $reduce
+#   export elements_file=${lib}_variations.txt  # Restore elements file for the next steps
+# fi
+# # Step 2: Generate models: <duration> <n_models> <library> <seed> <regen>
+# bash scripts/generate_models_with_slurm.sh 3600 0 $lib $seed $regen
+# if [ "$retry" -eq 1 ]; then
+#   # Cancelled jobs due to memory issues are retried
+#   python -m utils.parse_cancelled_jobs $lib
+#   export elements_file=.tmp/cancelled_modls_${lib}.txt  # Set the elements file for the next steps
+#   bash scripts/generate_models_with_slurm.sh 3600 0 $lib $seed 1
+#   export elements_file=${lib}_apis.txt  # Restore elements file for the next steps
+# fi
 # Step 3: Fuzz with the generated models: <duration> <n_inputs> <library> <seed>
 bash scripts/fuzz_with_slurm.sh 180 0 $lib $seed
 # Step 4: Collect coverage
@@ -72,11 +72,11 @@ if [ "$save_to" = "default" ]; then
 fi
 
 mv logs .tmp/
-cp -r corpus_${lib} .tmp/
-cp -r invariants_${lib} .tmp/
-zip -r $save_to.zip .tmp
+# cp -r corpus_${lib} .tmp/
+# cp -r invariants_${lib} .tmp/
+# zip -r $save_to.zip .tmp
 
 mkdir -p ../centaur_results
 mv .tmp ../centaur_results/$save_to
 
-echo "Pipeline completed. Results saved to $save_to.zip (size: $(du -h $save_to.zip | cut -f1)) and ../centaur_results/$save_to"
+# echo "Pipeline completed. Results saved to $save_to.zip (size: $(du -h $save_to.zip | cut -f1)) and ../centaur_results/$save_to"

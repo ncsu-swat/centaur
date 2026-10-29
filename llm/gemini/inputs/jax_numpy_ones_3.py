@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ones_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32
+    # Input 1: 1D list, float32
     input_dict = {"shape": [5], "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32
+    # Input 2: 2D list, int32
     input_dict = {"shape": [2, 3], "dtype": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D bool
-    input_dict = {"shape": [2, 2, 2], "dtype": np.dtype(np.bool_)}
+    # Input 3: 3D list, bool
+    input_dict = {"shape": [2, 2, 4], "dtype": np.dtype(np.bool_)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D float64
-    input_dict = {"shape": [10, 10], "dtype": np.dtype(np.float64)}
+    # Input 4: 0D list (scalar shape), float64
+    input_dict = {"shape": [], "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D int16
-    input_dict = {"shape": [1, 2, 1, 3], "dtype": np.dtype(np.int16)}
+    # Input 5: 4D list, int64
+    input_dict = {"shape": [1, 2, 3, 4], "dtype": np.dtype(np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D uint8
-    input_dict = {"shape": [100], "dtype": np.dtype(np.uint8)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 3D complex64
-    input_dict = {"shape": [3, 4, 5], "dtype": np.dtype(np.complex64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D int64
-    input_dict = {"shape": [8, 8], "dtype": np.dtype(np.int64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 3D float16
-    input_dict = {"shape": [2, 1, 4], "dtype": np.dtype(np.float16)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D with zero dimension (empty array)
+    # Input 6: 2D with zero dimension, float32
     input_dict = {"shape": [0, 5], "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
+    # Input 7: 1D list with 1 element, complex64
+    input_dict = {"shape": [1], "dtype": np.dtype(np.complex64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 2D list, uint8
+    input_dict = {"shape": [4, 4], "dtype": np.dtype(np.uint8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D list with unit dimensions, int16
+    input_dict = {"shape": [1, 1, 1], "dtype": np.dtype(np.int16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 2D list, complex128
+    input_dict = {"shape": [3, 2], "dtype": np.dtype(np.complex128)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 5D list, float16
+    input_dict = {"shape": [2, 1, 2, 1, 2], "dtype": np.dtype(np.float16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ones_3"] = ones_inputs()
 

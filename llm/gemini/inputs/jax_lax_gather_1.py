@@ -4,256 +4,282 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
-import jax
 import copy
+import numpy as np
 
-# Monkeypatch numpy min/max to prevent inhomogeneous tuple crash in test framework
-_orig_min = np.min
-_orig_max = np.max
 
-def _safe_min(a, *args, **kwargs):
-    try:
-        return _orig_min(a, *args, **kwargs)
-    except Exception:
-        return 0
+class GatherDNums:
+    def __init__(
+        self,
+        offset_dims,
+        collapsed_slice_dims,
+        start_index_map,
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
+    ):
+        self.offset_dims = tuple(offset_dims)
+        self.collapsed_slice_dims = tuple(collapsed_slice_dims)
+        self.start_index_map = tuple(start_index_map)
+        self.operand_batching_dims = tuple(operand_batching_dims)
+        self.start_indices_batching_dims = tuple(start_indices_batching_dims)
+        self._data = [
+            self.offset_dims,
+            self.collapsed_slice_dims,
+            self.start_index_map,
+            self.operand_batching_dims,
+            self.start_indices_batching_dims,
+        ]
 
-def _safe_max(a, *args, **kwargs):
-    try:
-        return _orig_max(a, *args, **kwargs)
-    except Exception:
-        return 0
+    def __len__(self):
+        return len(self._data)
 
-np.min = _safe_min
-np.max = _safe_max
+    def __getitem__(self, idx):
+        return self._data[idx]
 
-# Monkeypatch jax.lax.gather to reconstruct GatherDimensionNumbers from serialized plain tuples
-_orig_gather = jax.lax.gather
+    def __iter__(self):
+        return iter(self._data)
 
-def _patched_gather(operand, start_indices, dimension_numbers, slice_sizes, **kwargs):
-    if isinstance(dimension_numbers, tuple) and not isinstance(dimension_numbers, jax.lax.GatherDimensionNumbers):
-        fields = jax.lax.GatherDimensionNumbers._fields
-        kwargs_dn = dict(zip(fields, dimension_numbers))
-        dimension_numbers = jax.lax.GatherDimensionNumbers(**kwargs_dn)
-    return _orig_gather(operand, start_indices, dimension_numbers, slice_sizes, **kwargs)
-
-jax.lax.gather = _patched_gather
+    def __array__(self, dtype=None):
+        return np.array(self._data, dtype=dtype)
 
 
 def gather_inputs():
     list_of_inputs = []
 
-    # Input 1
-    operand = np.arange(25, dtype=np.float32).reshape(5, 5)
-    start_indices = np.array([[1], [3]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(1,),
-        collapsed_slice_dims=(0,),
-        start_index_map=(0,)
-    )
-    slice_sizes = (1, 2)
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2
-    operand = np.arange(24, dtype=np.float32).reshape(4, 6)
-    start_indices = np.array([[0], [1], [2]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(0,),
+    # Input 1: Basic batched gather, float32
+    operand = np.arange(24, dtype=np.float32).reshape(2, 4, 3)
+    start_indices = np.array([[[0], [1], [2]], [[3], [2], [1]]], dtype=np.int32)
+    dnums = GatherDNums(
+        offset_dims=(2,),
         collapsed_slice_dims=(1,),
-        start_index_map=(1,)
+        start_index_map=(1,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
     )
-    slice_sizes = (2, 1)
+    slice_sizes = (1, 1, 3)
     input_dict = {
         "operand": operand,
         "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": True,
-        "indices_are_sorted": True,
-        "mode": "fill",
-        "fill_value": -1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3
-    operand = np.arange(100, dtype=np.float64).reshape(10, 10)
-    start_indices = np.array([[2], [4], [6], [8]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(1,),
-        collapsed_slice_dims=(0,),
-        start_index_map=(0,)
-    )
-    slice_sizes = (1, 3)
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": True,
-        "indices_are_sorted": True,
-        "mode": "clip",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4 - fixed offset_dims to be within output rank bounds [0, 1, 2]
-    operand = np.arange(81, dtype=np.float32).reshape(3, 3, 3, 3)
-    start_indices = np.array([[0, 0], [1, 2]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(1, 2),
-        collapsed_slice_dims=(0, 1),
-        start_index_map=(0, 1)
-    )
-    slice_sizes = (1, 1, 2, 2)
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
+        "dimension_numbers": dnums,
         "slice_sizes": slice_sizes,
         "unique_indices": False,
         "indices_are_sorted": False,
-        "mode": "drop",
-        "fill_value": 0.0
+        "mode": "clip",
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    operand = np.arange(256, dtype=np.float32).reshape(4, 4, 4, 4)
-    start_indices = np.array([[0, 1]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(0, 1),
-        collapsed_slice_dims=(2, 3),
-        start_index_map=(2, 3)
+    # Input 2: float64, sorted unique indices, promise_in_bounds mode
+    operand = np.random.randn(3, 5, 4).astype(np.float64)
+    start_indices = np.array([[[0], [1]], [[1], [2]], [[2], [3]]], dtype=np.int64)
+    dnums = GatherDNums(
+        offset_dims=(2,),
+        collapsed_slice_dims=(1,),
+        start_index_map=(1,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
     )
-    slice_sizes = (3, 3, 1, 1)
+    slice_sizes = (1, 1, 2)
     input_dict = {
         "operand": operand,
         "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
+        "dimension_numbers": dnums,
         "slice_sizes": slice_sizes,
         "unique_indices": True,
         "indices_are_sorted": True,
         "mode": "promise_in_bounds",
-        "fill_value": 0.0
+        "fill_value": -1.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    operand = np.arange(25, dtype=np.float32).reshape(5, 5)
-    start_indices = np.array([[[0], [1], [2]], [[2], [3], [4]]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(1,),
-        collapsed_slice_dims=(0,),
-        start_index_map=(0,)
-    )
-    slice_sizes = (1, 3)
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": -10.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7
-    operand = np.arange(36, dtype=np.float32).reshape(6, 6)
-    start_indices = np.array([[4], [1]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(0,),
+    # Input 3: fill mode with out-of-bounds start indices
+    operand = np.arange(12, dtype=np.float32).reshape(1, 6, 2)
+    start_indices = np.array([[[0], [5], [10], [-2]]], dtype=np.int32)
+    dnums = GatherDNums(
+        offset_dims=(2,),
         collapsed_slice_dims=(1,),
-        start_index_map=(0,)
+        start_index_map=(1,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
     )
-    slice_sizes = (2, 1)
+    slice_sizes = (1, 1, 2)
     input_dict = {
         "operand": operand,
         "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
+        "dimension_numbers": dnums,
         "slice_sizes": slice_sizes,
         "unique_indices": False,
         "indices_are_sorted": False,
         "mode": "fill",
-        "fill_value": 99.0
+        "fill_value": 42.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    operand = np.arange(16, dtype=np.float32).reshape(2, 2, 2, 2)
-    start_indices = np.array([[[0, 0]], [[1, 1]]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(2, 3),
-        collapsed_slice_dims=(0, 1),
-        start_index_map=(0, 1)
+    # Input 4: Indexing dimension 2 instead of dimension 1
+    operand = np.random.randn(4, 3, 5).astype(np.float32)
+    start_indices = np.array([[[0]], [[2]], [[4]], [[1]]], dtype=np.int32)
+    dnums = GatherDNums(
+        offset_dims=(1,),
+        collapsed_slice_dims=(2,),
+        start_index_map=(2,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
     )
-    slice_sizes = (1, 1, 2, 2)
+    slice_sizes = (1, 3, 1)
     input_dict = {
         "operand": operand,
         "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
+        "dimension_numbers": dnums,
+        "slice_sizes": slice_sizes,
+        "unique_indices": True,
+        "indices_are_sorted": True,
+        "mode": "clip",
+        "fill_value": 0.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: drop mode with single-element slice along offset dim
+    operand = np.arange(18, dtype=np.float64).reshape(2, 3, 3)
+    start_indices = np.array(
+        [[[0], [1], [2], [10]], [[2], [1], [0], [-1]]], dtype=np.int32
+    )
+    dnums = GatherDNums(
+        offset_dims=(2,),
+        collapsed_slice_dims=(1,),
+        start_index_map=(1,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
+    )
+    slice_sizes = (1, 1, 1)
+    input_dict = {
+        "operand": operand,
+        "start_indices": start_indices,
+        "dimension_numbers": dnums,
+        "slice_sizes": slice_sizes,
+        "unique_indices": False,
+        "indices_are_sorted": False,
+        "mode": "drop",
+        "fill_value": -99.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Full slice along offset dimension
+    operand = np.ones((3, 4, 6), dtype=np.float32)
+    start_indices = np.random.randint(0, 4, size=(3, 5, 1), dtype=np.int32)
+    dnums = GatherDNums(
+        offset_dims=(2,),
+        collapsed_slice_dims=(1,),
+        start_index_map=(1,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
+    )
+    slice_sizes = (1, 1, 6)
+    input_dict = {
+        "operand": operand,
+        "start_indices": start_indices,
+        "dimension_numbers": dnums,
+        "slice_sizes": slice_sizes,
+        "unique_indices": False,
+        "indices_are_sorted": False,
+        "mode": "clip",
+        "fill_value": 1.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Small square sizes, unique indices
+    operand = np.array([[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]], dtype=np.float32)
+    start_indices = np.array([[[0], [1]], [[1], [0]]], dtype=np.int32)
+    dnums = GatherDNums(
+        offset_dims=(1,),
+        collapsed_slice_dims=(2,),
+        start_index_map=(2,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
+    )
+    slice_sizes = (1, 2, 1)
+    input_dict = {
+        "operand": operand,
+        "start_indices": start_indices,
+        "dimension_numbers": dnums,
         "slice_sizes": slice_sizes,
         "unique_indices": True,
         "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": 0.0
+        "mode": "promise_in_bounds",
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    operand = np.arange(64, dtype=np.float32).reshape(8, 8)
-    start_indices = np.array([[7], [0], [3], [5]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(1,),
-        collapsed_slice_dims=(0,),
-        start_index_map=(0,)
+    # Input 8: Larger indexed dimension, sorted unique indices
+    operand = np.linspace(0.0, 10.0, 40, dtype=np.float32).reshape(1, 10, 4)
+    start_indices = np.array([[[1], [4], [7]]], dtype=np.int32)
+    dnums = GatherDNums(
+        offset_dims=(2,),
+        collapsed_slice_dims=(1,),
+        start_index_map=(1,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
     )
-    slice_sizes = (1, 4)
+    slice_sizes = (1, 1, 3)
     input_dict = {
         "operand": operand,
         "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
+        "dimension_numbers": dnums,
         "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "mode": "clip",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10
-    operand = np.arange(15, dtype=np.float32).reshape(3, 5)
-    start_indices = np.array([[-1], [6], [2]], dtype=np.int32)
-    dimension_numbers = jax.lax.GatherDimensionNumbers(
-        offset_dims=(1,),
-        collapsed_slice_dims=(0,),
-        start_index_map=(0,)
-    )
-    slice_sizes = (1, 2)
-    input_dict = {
-        "operand": operand,
-        "start_indices": start_indices,
-        "dimension_numbers": dimension_numbers,
-        "slice_sizes": slice_sizes,
-        "unique_indices": False,
-        "indices_are_sorted": False,
+        "unique_indices": True,
+        "indices_are_sorted": True,
         "mode": "fill",
-        "fill_value": -999.0
+        "fill_value": 0.5,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Single index gather across 5 batches
+    operand = np.random.randn(5, 2, 8).astype(np.float64)
+    start_indices = np.array([[[0]], [[1]], [[0]], [[1]], [[0]]], dtype=np.int64)
+    dnums = GatherDNums(
+        offset_dims=(2,),
+        collapsed_slice_dims=(1,),
+        start_index_map=(1,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
+    )
+    slice_sizes = (1, 1, 4)
+    input_dict = {
+        "operand": operand,
+        "start_indices": start_indices,
+        "dimension_numbers": dnums,
+        "slice_sizes": slice_sizes,
+        "unique_indices": True,
+        "indices_are_sorted": True,
+        "mode": "clip",
+        "fill_value": 0.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Partial slice along dim 1 with dim 2 indexed
+    operand = np.arange(50, dtype=np.float32).reshape(2, 5, 5)
+    start_indices = np.array([[[0], [2], [4]], [[1], [3], [2]]], dtype=np.int32)
+    dnums = GatherDNums(
+        offset_dims=(1,),
+        collapsed_slice_dims=(2,),
+        start_index_map=(2,),
+        operand_batching_dims=(0,),
+        start_indices_batching_dims=(0,),
+    )
+    slice_sizes = (1, 4, 1)
+    input_dict = {
+        "operand": operand,
+        "start_indices": start_indices,
+        "dimension_numbers": dnums,
+        "slice_sizes": slice_sizes,
+        "unique_indices": False,
+        "indices_are_sorted": False,
+        "mode": "drop",
+        "fill_value": 100.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.gather_1"] = gather_inputs()
 

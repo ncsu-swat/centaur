@@ -4,44 +4,46 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def trunc_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive float
-    list_of_inputs.append({"x": 3.14})
+    # Input 1: Positive float with fraction
+    list_of_inputs.append({"x": 3.7})
 
-    # Input 2: Simple negative float
-    list_of_inputs.append({"x": -3.14})
+    # Input 2: Negative float with fraction
+    list_of_inputs.append({"x": -3.7})
 
-    # Input 3: Float close to zero (positive)
-    list_of_inputs.append({"x": 0.1234})
-
-    # Input 4: Float close to zero (negative)
-    list_of_inputs.append({"x": -0.9999})
-
-    # Input 5: Zero
+    # Input 3: Zero
     list_of_inputs.append({"x": 0.0})
 
-    # Input 6: Negative zero
+    # Input 4: Negative zero
     list_of_inputs.append({"x": -0.0})
 
-    # Input 7: Large positive float
-    list_of_inputs.append({"x": 1234567.89})
+    # Input 5: Fractional value between 0 and 1
+    list_of_inputs.append({"x": 0.99999})
 
-    # Input 8: Large negative float
-    list_of_inputs.append({"x": -9876543.21})
+    # Input 6: Fractional value between -1 and 0
+    list_of_inputs.append({"x": -0.99999})
 
-    # Input 9: Infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 7: Exact positive integer as float
+    list_of_inputs.append({"x": 42.0})
 
-    # Input 10: Negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 8: Exact negative integer as float
+    list_of_inputs.append({"x": -100.0})
 
-    # Input 11: NaN (Not a Number)
-    list_of_inputs.append({"x": float('nan')})
+    # Input 9: Large positive float
+    list_of_inputs.append({"x": 123456.789})
+
+    # Input 10: Large negative float
+    list_of_inputs.append({"x": -987654.321})
+
+    # Input 11: Positive infinity
+    list_of_inputs.append({"x": float("inf")})
+
+    # Input 12: Negative infinity
+    list_of_inputs.append({"x": float("-inf")})
 
     return list_of_inputs
 

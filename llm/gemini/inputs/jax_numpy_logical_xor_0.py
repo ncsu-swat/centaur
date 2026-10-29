@@ -4,79 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logical_xor_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D boolean arrays of the same size
-    x = np.array([True, False, True, False], dtype=bool)
-    y = np.array([False, True, True, False], dtype=bool)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D boolean arrays, same shape
+    x = np.array([True, True, False, False], dtype=np.bool_)
+    y = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D boolean arrays of the same size
-    x = np.random.choice([True, False], size=(3, 3))
-    y = np.random.choice([True, False], size=(3, 3))
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D integer arrays, same shape (integers evaluate truthiness)
+    x = np.array([0, 1, 2, 0], dtype=np.int32)
+    y = np.array([1, 0, 3, 0], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 1D integer arrays (integers cast to boolean)
-    x = np.array([-2, -1, 0, 1, 2], dtype=np.int32)
-    y = np.array([0, 1, 0, 0, -1], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float arrays with negative numbers, NaNs, and zeros
+    x = np.array([[-1.5, 0.0], [2.5, 0.0]], dtype=np.float32)
+    y = np.array([[0.0, 3.2], [-0.5, 0.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 1D float arrays including negative values and zeros
-    x = np.array([0.0, 1.5, -2.3, 0.0], dtype=np.float32)
-    y = np.array([-1.0, 0.0, 0.0, 3.14], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Broadcasting 1D to 2D
+    x = np.array([True, False, True], dtype=np.bool_)
+    y = np.array([[False], [True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: Broadcasting - 2D and 1D arrays
-    x = np.array([[True, False], [False, True]], dtype=bool)
-    y = np.array([True, False], dtype=bool)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 0D scalar arrays
+    x = np.array(True, dtype=np.bool_)
+    y = np.array(False, dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: Broadcasting - row vector and column vector
-    x = np.array([[True, False, True]], dtype=bool)  # shape (1, 3)
-    y = np.array([[False], [True]], dtype=bool)       # shape (2, 1)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D float64 arrays with broadcasting
+    x = np.random.randn(2, 1, 4).astype(np.float64)
+    y = np.random.randn(1, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: 3D boolean arrays
-    x = np.random.choice([True, False], size=(2, 2, 2))
-    y = np.random.choice([True, False], size=(2, 2, 2))
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D boolean arrays
+    x = np.random.choice([True, False], size=(2, 2, 3, 3))
+    y = np.random.choice([True, False], size=(2, 2, 3, 3))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 0D scalar-like arrays
-    x = np.array(True, dtype=bool)
-    y = np.array(False, dtype=bool)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Complex number arrays
+    x = np.array([1 + 1j, 0 + 0j, 0 + 2j], dtype=np.complex64)
+    y = np.array([0 + 0j, 1 + 0j, -1 - 1j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Int64 arrays of larger shapes
-    x = np.random.randint(-10, 10, size=(5, 5)).astype(np.int64)
-    y = np.random.randint(-10, 10, size=(5, 5)).astype(np.int64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Unsigned integer arrays, different shapes with broadcasting
+    x = np.array([0, 255, 128], dtype=np.uint8)
+    y = np.array([[0], [1]], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: High-dimensional arrays (4D)
-    x = np.random.choice([True, False], size=(2, 3, 4, 5))
-    y = np.random.choice([True, False], size=(2, 3, 4, 5))
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Empty arrays
+    x = np.array([], dtype=np.bool_)
+    y = np.array([], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 11: Float64 arrays with very small values
-    x = np.array([[1e-15, 0.0], [0.0, -1e-15]], dtype=np.float64)
-    y = np.array([[0.0, 1.0], [0.0, 0.0]], dtype=np.float64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 5D integer arrays
+    x = np.ones((1, 2, 1, 3, 2), dtype=np.int64)
+    y = np.zeros((2, 1, 2, 1, 2), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.logical_xor"] = logical_xor_inputs()
 

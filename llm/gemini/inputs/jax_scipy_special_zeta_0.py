@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def zeta_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D arrays (scalars), float32
-    x = np.array(2.5, dtype=np.float32)
-    q = np.array(1.5, dtype=np.float32)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalars, float32
+    x = np.array(2.0, dtype=np.float32)
+    q = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 2: 1D arrays, float32
-    x = np.array([2.0, 3.0, 4.0], dtype=np.float32)
-    q = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D scalars, float64
+    x = np.array(4.0, dtype=np.float64)
+    q = np.array(0.5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 3: 1D arrays, float64
+    # Input 3: 1D arrays, same shape
+    x = np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    q = np.array([1.0, 2.0, 1.5, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
+
+    # Input 4: 1D arrays with float64
     x = np.array([1.5, 2.5, 3.5], dtype=np.float64)
-    q = np.array([0.5, 1.5, 2.5], dtype=np.float64)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    q = np.array([0.25, 0.75, 1.25], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 4: 2D arrays, float32
+    # Input 5: 2D arrays, same shape
     x = np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float32)
     q = np.array([[1.0, 1.5], [2.0, 2.5]], dtype=np.float32)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 5: 2D arrays, float64
-    x = np.array([[1.1, 2.2], [3.3, 4.4]], dtype=np.float64)
-    q = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float64)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Broadcasting (3, 1) and (1, 3), float32
+    # Input 6: Broadcasting (3, 1) and (1, 4)
     x = np.array([[2.0], [3.0], [4.0]], dtype=np.float32)
-    q = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    q = np.array([[0.5, 1.0, 1.5, 2.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 7: Broadcasting (1, 2) and (2, 1), float64
-    x = np.array([[1.5, 2.5]], dtype=np.float64)
-    q = np.array([[0.5], [1.5]], dtype=np.float64)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Broadcasting scalar x with 2D q
+    x = np.array(3.0, dtype=np.float64)
+    q = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 8: 3D arrays, float32
-    x = np.array([[[2.0, 2.5], [3.0, 3.5]], [[4.0, 4.5], [5.0, 5.5]]], dtype=np.float32)
-    q = np.array([[[1.0, 1.1], [1.2, 1.3]], [[1.4, 1.5], [1.6, 1.7]]], dtype=np.float32)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Broadcasting 1D x with 2D q
+    x = np.array([2.0, 3.0, 4.0], dtype=np.float32)
+    q = np.ones((2, 3), dtype=np.float32) * 1.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 9: Large x values, float32
-    x = np.array([10.0, 20.0, 50.0], dtype=np.float32)
-    q = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D arrays
+    x = np.full((2, 2, 3), 2.5, dtype=np.float64)
+    q = np.full((2, 2, 3), 1.2, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 10: Large q values, float64
-    x = np.array([2.5, 3.5], dtype=np.float64)
-    q = np.array([10.0, 100.0], dtype=np.float64)
-    input_dict = {"x": x, "q": q}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: High exponent values and large q
+    x = np.array([10.0, 20.0, 30.0], dtype=np.float32)
+    q = np.array([5.0, 10.0, 15.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
+
+    # Input 11: Non-integer larger dimension inputs
+    x = np.linspace(2.0, 5.0, 8, dtype=np.float64).reshape(2, 4)
+    q = np.linspace(0.1, 2.0, 8, dtype=np.float64).reshape(2, 4)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.zeta"] = zeta_inputs()
 

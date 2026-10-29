@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# ensure floats with fractional parts are cast to floating-point or complex types to avoid loss of precision (Rule 32)
+# when casting float operand to boolean, value must be 0 or 1 (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] % 1 != 0, And(6 <= v["arg2_value"], v["arg2_value"] <= 10), And(0 <= v["arg2_value"], v["arg2_value"] <= 10))) if n else
-          If(v["arg1_value"] % 1 != 0, And(6 <= v["arg2_value"], v["arg2_value"] <= 10), And(0 <= v["arg2_value"], v["arg2_value"] <= 10)))
+    s.add(Not(If(v["arg2_value"] == 0, Or(v["arg1_value"] == 0, v["arg1_value"] == 1), True)) if n else
+          If(v["arg2_value"] == 0, Or(v["arg1_value"] == 0, v["arg1_value"] == 1), True))
 )
 
 def rule_32_func(arg1, arg2, solver=None, neg=False):

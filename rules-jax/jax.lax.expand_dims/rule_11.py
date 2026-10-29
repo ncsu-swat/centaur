@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Total dimensions of the expanded tensor must not exceed 64 for tuple (Rule 11)
+# pairwise ordering and bounds for two inserted dimensions (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] + v["arg2_length"] <= 64) if n else
-          v["arg1_ndim"] + v["arg2_length"] <= 64)
+    s.add(Not(If(v["arg2_length"] == 2, And(And(Select(v["arg2_values"], 0) >= 0, Select(v["arg2_values"], 0) < Select(v["arg2_values"], 1)), Select(v["arg2_values"], 1) <= v["arg1_ndim"] + 1), True)) if n else
+          If(v["arg2_length"] == 2, And(And(Select(v["arg2_values"], 0) >= 0, Select(v["arg2_values"], 0) < Select(v["arg2_values"], 1)), Select(v["arg2_values"], 1) <= v["arg1_ndim"] + 1), True))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):
@@ -29,15 +29,18 @@ def rule_11_func(arg1, arg2, solver=None, neg=False):
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 11
-        rule_11(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
+        rule_11(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_11(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)
+        rule_11(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

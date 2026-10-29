@@ -4,103 +4,117 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def array_split_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, split into 3 sections (even split)
-    ary = np.random.randn(9).astype(np.float32)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 3,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, float32, split evenly
+    ary = np.arange(10, dtype=np.float32)
+    indices_or_sections = 2
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 2: 1D int32 array, split into 4 sections (uneven split)
-    ary = np.arange(10, dtype=np.int32)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 4,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array, int32, uneven split
+    ary = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int32)
+    indices_or_sections = 4
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 3: 2D float64 array, split along axis 0
+    # Input 3: 2D array, float64, split along axis 0
     ary = np.random.randn(6, 4).astype(np.float64)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 2,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    indices_or_sections = 3
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 4: 2D float32 array, split along axis 1
-    ary = np.random.randn(4, 7).astype(np.float32)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 3,
-        "axis": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array, int64, split along axis 1
+    ary = np.random.randint(-10, 10, size=(5, 7), dtype=np.int64)
+    indices_or_sections = 3
+    axis = 1
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 5: 3D int64 array, split along axis 2
-    ary = np.random.randint(-10, 10, size=(2, 3, 5)).astype(np.int64)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 2,
-        "axis": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array, bool, split with negative axis
+    ary = np.random.choice([True, False], size=(4, 6))
+    indices_or_sections = 2
+    axis = -1
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 6: 3D float32 array, split along negative axis -1 (which is axis 2)
-    ary = np.random.randn(2, 4, 6).astype(np.float32)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 3,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array, complex64, split along axis 2
+    ary = (np.random.randn(3, 4, 5) + 1j * np.random.randn(3, 4, 5)).astype(
+        np.complex64
+    )
+    indices_or_sections = 2
+    axis = 2
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 7: 4D float64 array, split along axis 3
-    ary = np.random.randn(2, 2, 3, 4).astype(np.float64)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 2,
-        "axis": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array, uint8, split with indices_or_sections larger than dimension size
+    ary = np.zeros((2, 3, 4), dtype=np.uint8)
+    indices_or_sections = 5
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 8: 1D bool array, split into 2 sections
-    ary = np.array([True, False, True, False, True]).astype(np.bool_)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 2,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array, float32, split along negative axis -2
+    ary = np.random.randn(2, 6, 8, 3).astype(np.float32)
+    indices_or_sections = 4
+    axis = -2
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 9: 2D float32 array, split along negative axis -2 (which is axis 0)
-    ary = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 2,
-        "axis": -2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D array, float64, 1 section (no-op split)
+    ary = np.ones((2, 2, 2, 2, 2), dtype=np.float64)
+    indices_or_sections = 1
+    axis = 3
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
-    # Input 10: 3D float32 array, split along axis 1 with 4 sections (uneven split)
-    ary = np.random.randn(3, 10, 2).astype(np.float32)
-    input_dict = {
-        "ary": ary,
-        "indices_or_sections": 4,
-        "axis": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D empty array, float32
+    ary = np.array([], dtype=np.float32)
+    indices_or_sections = 3
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"ary": ary, "indices_or_sections": indices_or_sections, "axis": axis}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.array_split_1"] = array_split_inputs()
 

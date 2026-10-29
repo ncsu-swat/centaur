@@ -4,79 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def toeplitz_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D arrays of float32
-    c = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    r = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D standard float32 vectors, square result
+    c = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    r = np.array([1.0, -1.0, -2.0, -3.0], dtype=np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 2: Standard 1D arrays of int32, different sizes
-    c = np.array([1, 2, 3], dtype=np.int32)
-    r = np.array([4, 5, 6, 7], dtype=np.int32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D rectangular (N != M), float64
+    c = np.array([-5.0, 2.5, 0.0], dtype=np.float64)
+    r = np.array([-5.0, 1.2, -3.4, 7.8, 9.1], dtype=np.float64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 3: Complex 1D arrays
-    c = np.array([1+1j, 2+2j], dtype=np.complex64)
-    r = np.array([3+3j, 4+4j, 5+5j], dtype=np.complex64)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D integer arrays
+    c = np.array([10, -20, 30, -40, 50], dtype=np.int32)
+    r = np.array([10, 2, 3], dtype=np.int32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 4: 2D batched float32 with identical batch size
-    c = np.random.randn(2, 3).astype(np.float32)
-    r = np.random.randn(2, 4).astype(np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D complex numbers
+    c = np.array([1.0 + 2.0j, -3.0 + 0.5j, 4.0 - 1.0j], dtype=np.complex64)
+    r = np.array([1.0 + 2.0j, 0.0 - 1.0j, 2.0 + 3.0j], dtype=np.complex64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 5: 2D batched float32 with broadcasting batch size
-    c = np.random.randn(3, 4).astype(np.float32)
-    r = np.random.randn(1, 5).astype(np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D batched inputs with same shapes (B, N) and (B, M)
+    c = np.random.randn(3, 5).astype(np.float32)
+    r = np.random.randn(3, 5).astype(np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 6: 1D float64 with negative values
-    c = np.array([-1.5, -2.5, -3.5], dtype=np.float64)
-    r = np.array([-1.5, -4.5], dtype=np.float64)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D batched inputs with rectangular matrices (B, N) and (B, M)
+    c = np.random.randn(4, 6).astype(np.float64)
+    r = np.random.randn(4, 2).astype(np.float64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 7: 3D batched float32
-    c = np.random.randn(2, 2, 3).astype(np.float32)
-    r = np.random.randn(2, 2, 3).astype(np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D broadcastable batch dimension (1, N) and (B, M)
+    c = np.random.randn(1, 4).astype(np.float32)
+    r = np.random.randn(5, 4).astype(np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 8: 1D with single element in column
-    c = np.array([5.0], dtype=np.float32)
-    r = np.array([5.0, 6.0], dtype=np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D multi-batch arrays (B1, B2, N) and (B1, B2, M)
+    c = np.random.randn(2, 3, 4).astype(np.float32)
+    r = np.random.randn(2, 3, 6).astype(np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 9: 2D batched int64
-    c = np.random.randint(-10, 10, (2, 5)).astype(np.int64)
-    r = np.random.randint(-10, 10, (2, 5)).astype(np.int64)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Single element arrays (1x1 output)
+    c = np.array([42.0], dtype=np.float32)
+    r = np.array([42.0], dtype=np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 10: 1D complex128
-    c = np.array([1-1j, 2-2j, 3-3j], dtype=np.complex128)
-    r = np.array([1-1j, 5-5j, 6-6j], dtype=np.complex128)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D int64 array
+    c = np.array([-1, 0, 1, 2, -3], dtype=np.int64)
+    r = np.array([-1, 4, -5, 6], dtype=np.int64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 11: Broadcasting with c batch dimension equal to 1
-    c = np.random.randn(1, 3).astype(np.float32)
-    r = np.random.randn(4, 3).astype(np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 3D broadcastable shapes (B1, 1, N) and (1, B2, M)
+    c = np.random.randn(3, 1, 5).astype(np.float64)
+    r = np.random.randn(1, 4, 3).astype(np.float64)
+    list_of_inputs.append({"c": c, "r": r})
+
+    # Input 12: Complex128 batch array
+    c = (np.random.randn(2, 4) + 1j * np.random.randn(2, 4)).astype(np.complex128)
+    r = (np.random.randn(2, 4) + 1j * np.random.randn(2, 4)).astype(np.complex128)
+    list_of_inputs.append({"c": c, "r": r})
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.toeplitz"] = toeplitz_inputs()
 

@@ -10,95 +10,71 @@ import copy
 def batch_matmul_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 3D tensor, "default" precision
+    # Input 1: Basic float32 with "default" precision
     lhs = np.random.randn(2, 3, 4).astype(np.float32)
     rhs = np.random.randn(2, 4, 5).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "default"
-    })
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "default"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: float32 3D tensor with single batch dimension, "high" precision
-    lhs = np.random.randn(1, 5, 2).astype(np.float32)
-    rhs = np.random.randn(1, 2, 3).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "high"
-    })
+    # Input 2: Float64 with negative values and "high" precision
+    lhs = np.random.uniform(-5.0, 5.0, size=(4, 5, 2)).astype(np.float64)
+    rhs = np.random.uniform(-5.0, 5.0, size=(4, 2, 3)).astype(np.float64)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "high"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: float64 3D tensor, "highest" precision
-    lhs = np.random.randn(4, 8, 8).astype(np.float64)
-    rhs = np.random.randn(4, 8, 8).astype(np.float64)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "highest"
-    })
+    # Input 3: Float32 with "highest" precision, single element matrices
+    lhs = np.array([[[2.5]]], dtype=np.float32)
+    rhs = np.array([[[-1.5]]], dtype=np.float32)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "highest"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 4D tensor, "default" precision
-    lhs = np.random.randn(2, 2, 16, 8).astype(np.float32)
-    rhs = np.random.randn(2, 2, 8, 32).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "default"
-    })
+    # Input 4: Complex64 with "default" precision
+    lhs = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(np.complex64)
+    rhs = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(np.complex64)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "default"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: float32 with negative values, "high" precision
-    lhs = np.random.uniform(-5.0, 5.0, (3, 4, 5)).astype(np.float32)
-    rhs = np.random.uniform(-5.0, 5.0, (3, 5, 2)).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "high"
-    })
+    # Input 5: Int32 inputs with "default" precision
+    lhs = np.random.randint(-10, 10, size=(2, 4, 3), dtype=np.int32)
+    rhs = np.random.randint(-10, 10, size=(2, 3, 2), dtype=np.int32)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "default"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large dimensions, "default" precision
-    lhs = np.random.randn(8, 64, 128).astype(np.float32)
-    rhs = np.random.randn(8, 128, 64).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "default"
-    })
+    # Input 6: Float16 inputs with "fastest" precision
+    lhs = np.random.randn(5, 8, 4).astype(np.float16)
+    rhs = np.random.randn(5, 4, 6).astype(np.float16)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "fastest"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Smallest possible dimensions 3D, "highest" precision
-    lhs = np.random.randn(1, 1, 1).astype(np.float32)
-    rhs = np.random.randn(1, 1, 1).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "highest"
-    })
+    # Input 7: Large batch size with "high" precision
+    lhs = np.random.randn(16, 2, 3).astype(np.float32)
+    rhs = np.random.randn(16, 3, 2).astype(np.float32)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "high"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: High-dimensional batch tensor (5D), "default" precision
-    lhs = np.random.randn(2, 1, 3, 4, 5).astype(np.float32)
-    rhs = np.random.randn(2, 1, 3, 5, 6).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "default"
-    })
+    # Input 8: Zero-sized dimension with "default" precision
+    lhs = np.zeros((2, 0, 4), dtype=np.float32)
+    rhs = np.zeros((2, 4, 3), dtype=np.float32)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "default"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: float64 with large values, "high" precision
-    lhs = np.random.uniform(-100.0, 100.0, (2, 10, 10)).astype(np.float64)
-    rhs = np.random.uniform(-100.0, 100.0, (2, 10, 10)).astype(np.float64)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "high"
-    })
+    # Input 9: Batch size 1 with larger inner dimensions and "highest" precision
+    lhs = np.random.randn(1, 32, 16).astype(np.float32)
+    rhs = np.random.randn(1, 16, 8).astype(np.float32)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "highest"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: float32 with asymmetric matrix shapes, "highest" precision
-    lhs = np.random.randn(5, 12, 34).astype(np.float32)
-    rhs = np.random.randn(5, 34, 15).astype(np.float32)
-    list_of_inputs.append({
-        "lhs": lhs,
-        "rhs": rhs,
-        "precision": "highest"
-    })
+    # Input 10: Complex128 with "high" precision
+    lhs = (np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)).astype(np.complex128)
+    rhs = (np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)).astype(np.complex128)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "high"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Int64 inputs with "default" precision
+    lhs = np.random.randint(-5, 5, size=(3, 2, 4), dtype=np.int64)
+    rhs = np.random.randint(-5, 5, size=(3, 4, 1), dtype=np.int64)
+    input_dict = {"lhs": lhs, "rhs": rhs, "precision": "default"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

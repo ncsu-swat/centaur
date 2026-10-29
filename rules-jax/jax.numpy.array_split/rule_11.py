@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# indices_or_sections as tensor must be 1D with integer dtype (Rule 11)
+# indices specified as a tensor must be 1-dimensional with integer dtype (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] == 1, 1 <= v["arg1_dtype"]), v["arg1_dtype"] <= 5)) if n else
-          And(And(v["arg1_ndim"] == 1, 1 <= v["arg1_dtype"]), v["arg1_dtype"] <= 5))
+    s.add(Not(And(And(v["arg1_ndim"] == 1, v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 5)) if n else
+          And(And(v["arg1_ndim"] == 1, v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 5))
 )
 
 def rule_11_func(arg1, solver=None, neg=False):
@@ -32,9 +32,9 @@ def rule_11_func(arg1, solver=None, neg=False):
         solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 11
-        rule_11(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim})
+        rule_11(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_11(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_11(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype']}, neg)

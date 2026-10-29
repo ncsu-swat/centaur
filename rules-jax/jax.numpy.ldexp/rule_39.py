@@ -7,32 +7,40 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# x1 must be a floating-point real-valued tensor (Rule 39)
+# non-empty leading dimension for mantissa tensor with bounded scalar exponent (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)) if n else
-          And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8))
+    s.add(Not(If(v["arg1_ndim"] > 0, And(And(Select(v["arg1_shape"], 0) > 0, v["arg2_value"] >= -2048), v["arg2_value"] <= 2048), True)) if n else
+          If(v["arg1_ndim"] > 0, And(And(Select(v["arg1_shape"], 0) > 0, v["arg2_value"] >= -2048), v["arg2_value"] <= 2048), True))
 )
 
-def rule_39_func(arg1, solver=None, neg=False):
+def rule_39_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_dtype': arg1_dtype})
+        rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_39(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

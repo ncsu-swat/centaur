@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# 1D array size must match the product of 3D target tuple shape dimensions when no dimension is -1 (Rule 15)
+# Total size of new array must be unchanged when reshaping a 2D array into 1D list shape (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If((And(And(And(And(v["arg1_ndim"] == 1, v["arg2_length"] == 3), Select(v["arg2_values"], 0) != -1), Select(v["arg2_values"], 1) != -1), Select(v["arg2_values"], 2) != -1)), Select(v["arg2_values"], 0) * Select(v["arg2_values"], 1) * Select(v["arg2_values"], 2) == Select(v["arg1_shape"], 0), True)) if n else
-          If((And(And(And(And(v["arg1_ndim"] == 1, v["arg2_length"] == 3), Select(v["arg2_values"], 0) != -1), Select(v["arg2_values"], 1) != -1), Select(v["arg2_values"], 2) != -1)), Select(v["arg2_values"], 0) * Select(v["arg2_values"], 1) * Select(v["arg2_values"], 2) == Select(v["arg1_shape"], 0), True))
+    s.add(Not(If(And(And(v["arg1_ndim"] == 2, v["arg2_length"] == 1), Select(v["arg2_values"], 0) > 0), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) == Select(v["arg2_values"], 0), True)) if n else
+          If(And(And(v["arg1_ndim"] == 2, v["arg2_length"] == 1), Select(v["arg2_values"], 0) > 0), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) == Select(v["arg2_values"], 0), True))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
@@ -41,9 +41,9 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

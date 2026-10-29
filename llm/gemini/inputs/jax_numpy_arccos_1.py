@@ -4,53 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arccos_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D array (scalar) within [-1, 1], float32
-    x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 2: 1D array with values in [-1, 1], float32
+    # Input 1: 1D array with values in standard range [-1, 1], float32
     x = np.array([-1.0, -0.5, 0.0, 0.5, 1.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: 2D array with values in [-1, 1], float64
-    x = np.linspace(-1.0, 1.0, 9).reshape(3, 3).astype(np.float64)
+    # Input 2: 2D array, float64
+    x = np.array([[-0.8, -0.2], [0.3, 0.9]], dtype=np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 3D array with some values outside [-1, 1] to test nan behavior, float32
-    x = np.array([[[ -2.0, 0.0], [0.5, 2.0]], [[-0.1, 0.1], [1.5, -1.5]]], dtype=np.float32)
+    # Input 3: 0D scalar array, float32
+    x = np.array(0.5, dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: 1D complex array, complex64
-    x = np.array([1.0 + 1.0j, -2.0 - 3.0j, 0.5j], dtype=np.complex64)
+    # Input 4: 3D array with uniform random values in [-1, 1], float32
+    x = np.random.uniform(-1.0, 1.0, size=(2, 3, 4)).astype(np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: 2D integer array (will be cast to float)
-    x = np.array([[-1, 0], [1, 0]], dtype=np.int32)
+    # Input 5: 1D integer array (will be promoted to inexact dtype)
+    x = np.array([-1, 0, 1], dtype=np.int32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: 4D array of small float32 values
-    x = np.random.uniform(-0.1, 0.1, size=(2, 2, 2, 2)).astype(np.float32)
+    # Input 6: 1D complex array, complex64
+    x = np.array([4.0 - 1.0j, -2.0 + 3.0j, 0.5 + 0.5j], dtype=np.complex64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: 1D array of float64 close to the boundaries
-    x = np.array([-0.999999, 0.999999], dtype=np.float64)
+    # Input 7: 2D complex array, complex128
+    x = np.array(
+        [[1.0 + 2.0j, -0.5 - 0.5j], [3.0 + 0.0j, 0.0 - 1.5j]],
+        dtype=np.complex128,
+    )
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: 2D complex array, complex128
-    x = np.array([[0.5 - 0.5j, 2.0 + 0.0j], [-1.0j, -1.5 + 1.5j]], dtype=np.complex128)
+    # Input 8: Array containing boundary values and out-of-domain real values (produces nan)
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: 1D array with only zeros, int64
-    x = np.zeros((5,), dtype=np.int64)
+    # Input 9: float16 array
+    x = np.array([-0.75, -0.25, 0.25, 0.75], dtype=np.float16)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 10: 4D array with values in [-1, 1], float32
+    x = np.random.uniform(-1.0, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: Empty array, float32
+    x = np.array([], dtype=np.float32).reshape(0, 5)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arccos_1"] = arccos_inputs()
 

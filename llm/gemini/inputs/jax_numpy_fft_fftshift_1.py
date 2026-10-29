@@ -4,68 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fftshift_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float array, even length, axis 0
-    x = np.array([0., 1., 2., 3., 4., 5.], dtype=np.float32)
+    # Input 1: 1D float32 array, odd length, axis 0
+    x = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     axes = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 2: 1D float array, odd length, axis 0
-    x = np.array([0., 1., 2., 3., 4.], dtype=np.float32)
+    # Input 2: 1D float64 array, even length, axis 0
+    x = np.arange(8, dtype=np.float64)
     axes = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 3: 2D float array, axis 0
-    x = np.random.randn(4, 4).astype(np.float32)
-    axes = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
-
-    # Input 4: 2D float array, axis 1
-    x = np.random.randn(4, 4).astype(np.float32)
-    axes = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
-
-    # Input 5: 2D float array, negative axis
-    x = np.random.randn(4, 4).astype(np.float32)
+    # Input 3: 1D complex64 array, negative axis index
+    x = (np.arange(6) + 1j * np.arange(6, 12)).astype(np.complex64)
     axes = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 6: 3D float array, axis 0
-    x = np.random.randn(3, 3, 3).astype(np.float32)
+    # Input 4: 2D float32 array, shift along axis 0
+    x = np.random.randn(4, 5).astype(np.float32)
     axes = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 7: 3D float array, axis 2
-    x = np.random.randn(3, 3, 3).astype(np.float32)
-    axes = 2
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
-
-    # Input 8: 3D complex array, axis 1
-    x = (np.random.randn(2, 4, 3) + 1j * np.random.randn(2, 4, 3)).astype(np.complex64)
+    # Input 5: 2D float32 array, shift along axis 1
+    x = np.random.randn(6, 7).astype(np.float32)
     axes = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 9: 4D integer array, axis 3
-    x = np.arange(16).reshape(2, 2, 2, 2).astype(np.int32)
-    axes = 3
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
-
-    # Input 10: 1D double array, negative axis
-    x = np.arange(10).astype(np.float64)
-    axes = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
-
-    # Input 11: 2D float array, axis -2
-    x = np.random.randn(5, 6).astype(np.float32)
+    # Input 6: 2D complex128 array, negative axis index -2
+    x = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(
+        np.complex128
+    )
     axes = -2
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": axes})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 7: 3D int32 array, shift along axis 1
+    x = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
+    axes = 1
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 8: 3D float64 array with negative values, shift along axis 2
+    x = np.linspace(-10.0, 10.0, 30, dtype=np.float64).reshape(2, 3, 5)
+    axes = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 9: 4D float32 array, shift along axis -3
+    x = np.random.uniform(-1.0, 1.0, size=(2, 4, 3, 5)).astype(np.float32)
+    axes = -3
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 10: 4D int64 array, shift along last axis
+    x = np.random.randint(-100, 100, size=(3, 2, 2, 4), dtype=np.int64)
+    axes = 3
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 11: 1D bool array
+    x = np.array([True, False, True, True, False, False], dtype=bool)
+    axes = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.fftshift_1"] = fftshift_inputs()
 

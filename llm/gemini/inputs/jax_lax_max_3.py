@@ -4,45 +4,50 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_lax_max_inputs():
+def lax_max_inputs():
     list_of_inputs = []
 
-    # Input 1: positive floats
-    list_of_inputs.append({"x": 1.5, "y": 2.5})
-
-    # Input 2: negative floats
-    list_of_inputs.append({"x": -3.0, "y": -1.2})
-
-    # Input 3: mix of positive and negative
-    list_of_inputs.append({"x": -5.5, "y": 4.5})
-
-    # Input 4: zeroes
+    # Input 1: Zero values
     list_of_inputs.append({"x": 0.0, "y": 0.0})
 
-    # Input 5: signed zeroes
+    # Input 2: Positive floats
+    list_of_inputs.append({"x": 1.5, "y": 2.5})
+
+    # Input 3: Negative floats
+    list_of_inputs.append({"x": -5.5, "y": -2.3})
+
+    # Input 4: Mixed positive and negative floats
+    list_of_inputs.append({"x": 100.0, "y": -100.0})
+
+    # Input 5: Float constants
+    list_of_inputs.append({"x": 3.141592653589793, "y": 2.718281828459045})
+
+    # Input 6: Positive infinity
+    list_of_inputs.append({"x": float("inf"), "y": 1e30})
+
+    # Input 7: Negative infinity
+    list_of_inputs.append({"x": float("-inf"), "y": -1e30})
+
+    # Input 8: Very small positive floats
+    list_of_inputs.append({"x": 1e-15, "y": 1e-14})
+
+    # Input 9: Signed zeroes
     list_of_inputs.append({"x": -0.0, "y": 0.0})
 
-    # Input 6: large floats
-    list_of_inputs.append({"x": 1e10, "y": 1e11})
+    # Input 10: Equal values
+    list_of_inputs.append({"x": 42.0, "y": 42.0})
 
-    # Input 7: small fractional floats
-    list_of_inputs.append({"x": 1e-5, "y": 2e-5})
+    # Input 11: Very large numbers
+    list_of_inputs.append({"x": 1e100, "y": 2e100})
 
-    # Input 8: infinity values
-    list_of_inputs.append({"x": float('inf'), "y": float('-inf')})
+    # Input 12: Close negative floats
+    list_of_inputs.append({"x": -1e-5, "y": -1e-4})
 
-    # Input 9: close floats
-    list_of_inputs.append({"x": 1.0000001, "y": 1.0})
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
-    # Input 10: large negative and positive floats
-    list_of_inputs.append({"x": -99999.9, "y": 99999.9})
-
-    return list_of_inputs
-
-generated_inputs["jax.lax.max_3"] = jax_lax_max_inputs()
+generated_inputs["jax.lax.max_3"] = lax_max_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

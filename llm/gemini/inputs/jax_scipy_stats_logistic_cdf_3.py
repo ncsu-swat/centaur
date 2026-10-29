@@ -4,95 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_stats_logistic_cdf_inputs():
+def logistic_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic Python integers
+    # Input 1: Basic standard logistic at 0
     input_dict = {
-        "x": 0,
-        "loc": 0,
-        "scale": 1
+        "x": int(0),
+        "loc": int(0),
+        "scale": int(1)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive offset
+    # Input 2: Positive values
     input_dict = {
-        "x": 5,
-        "loc": 2,
-        "scale": 3
+        "x": int(5),
+        "loc": int(2),
+        "scale": int(3)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative values for x and loc
+    # Input 3: Negative x
     input_dict = {
-        "x": -2,
-        "loc": -5,
-        "scale": 2
+        "x": int(-5),
+        "loc": int(0),
+        "scale": int(2)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.int32 scalars
+    # Input 4: Negative loc
     input_dict = {
-        "x": np.int32(10),
-        "loc": np.int32(0),
-        "scale": np.int32(5)
+        "x": int(0),
+        "loc": int(-3),
+        "scale": int(1)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.int64 scalars
+    # Input 5: Negative x and negative loc
     input_dict = {
-        "x": np.int64(-5),
-        "loc": np.int64(5),
-        "scale": np.int64(10)
+        "x": int(-10),
+        "loc": int(-5),
+        "scale": int(4)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger values
+    # Input 6: Larger scale
     input_dict = {
-        "x": 100,
-        "loc": 50,
-        "scale": 20
+        "x": int(15),
+        "loc": int(5),
+        "scale": int(20)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Standard logistic distribution parameters
+    # Input 7: x equal to loc
     input_dict = {
-        "x": 1,
-        "loc": 0,
-        "scale": 1
+        "x": int(7),
+        "loc": int(7),
+        "scale": int(5)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative x and positive loc
+    # Input 8: Larger negative integer for x
     input_dict = {
-        "x": np.int32(-10),
-        "loc": np.int32(10),
-        "scale": np.int32(4)
+        "x": int(-100),
+        "loc": int(0),
+        "scale": int(10)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large scale parameter
+    # Input 9: Large positive integer for x
     input_dict = {
-        "x": np.int64(0),
-        "loc": np.int64(-100),
-        "scale": np.int64(500)
+        "x": int(100),
+        "loc": int(10),
+        "scale": int(2)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Equal x and loc
+    # Input 10: Scale is 1 with offset loc
     input_dict = {
-        "x": 42,
-        "loc": 42,
-        "scale": 1
+        "x": int(4),
+        "loc": int(-2),
+        "scale": int(1)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Scale with moderate positive value
+    input_dict = {
+        "x": int(-1),
+        "loc": int(1),
+        "scale": int(8)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.logistic.cdf_3"] = jax_scipy_stats_logistic_cdf_inputs()
+generated_inputs["jax.scipy.stats.logistic.cdf_3"] = logistic_cdf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

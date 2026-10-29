@@ -4,46 +4,64 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax
+import numpy as np
+
 
 def bessel_i1e_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float representing integer
-    list_of_inputs.append({"x": np.float32(5.0)})
+    # Input 1: zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: zero float
-    list_of_inputs.append({"x": np.float32(0.0)})
+    # Input 2: positive small value
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: negative float representing integer
-    list_of_inputs.append({"x": np.float32(-5.0)})
+    # Input 3: negative small value
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.float64 scalar representing integer
-    list_of_inputs.append({"x": np.float64(10.0)})
+    # Input 4: positive value
+    input_dict = {"x": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.float64 scalar representing negative integer
-    list_of_inputs.append({"x": np.float64(-42.0)})
+    # Input 5: negative value
+    input_dict = {"x": -2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D np.float32 array with integer values
-    list_of_inputs.append({"x": np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)})
+    # Input 6: medium positive value
+    input_dict = {"x": 5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D np.float64 array with negative and zero integer values
-    list_of_inputs.append({"x": np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float64)})
+    # Input 7: medium negative value
+    input_dict = {"x": -5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D np.float32 array with integer values
-    list_of_inputs.append({"x": np.array([[1.0, -2.0], [3.0, -4.0]], dtype=np.float32)})
+    # Input 8: larger positive value
+    input_dict = {"x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D np.float32 array with integer values
-    list_of_inputs.append({"x": np.arange(-4, 4, dtype=np.float32).reshape(2, 2, 2)})
+    # Input 9: larger negative value
+    input_dict = {"x": -10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 0-dimensional np.float32 array representing integer
-    list_of_inputs.append({"x": np.array(7.0, dtype=np.float32)})
+    # Input 10: large positive value
+    input_dict = {"x": 50.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: large scalar np.float64 representing integer
-    list_of_inputs.append({"x": np.float64(1000.0)})
+    # Input 11: large negative value
+    input_dict = {"x": -50.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: very large positive value
+    input_dict = {"x": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.bessel_i1e_3"] = bessel_i1e_inputs()
 

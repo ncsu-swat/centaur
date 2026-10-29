@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The number of window strides tuple must equal the spatial dimensions of the input tensor, and all strides must be positive (Rule 67)
+# for 2D convolution, padding string must be valid or same when strides list has length 2 (Rule 67)
 
 rule_67 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_length"] == v["arg1_ndim"] - 2, And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 1) for i in range(6)]))) if n else
-          And(v["arg2_length"] == v["arg1_ndim"] - 2, And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 1) for i in range(6)])))
+    s.add(Not(If(v["arg1_length"] == 2, Or(v["arg2_value"] == 19, v["arg2_value"] == 20), True)) if n else
+          If(v["arg1_length"] == 2, Or(v["arg2_value"] == 19, v["arg2_value"] == 20), True))
 )
 
 def rule_67_func(arg1, arg2, solver=None, neg=False):
@@ -20,27 +20,24 @@ def rule_67_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg1_length = Int('arg1_length')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg1_length == len(arg1))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 67
-        rule_67(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_67(solver, {'arg1_length': arg1_length, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_67(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_67(solver, {'arg1_length': arg1['length'], 'arg2_value': arg2['value']}, neg)

@@ -4,63 +4,79 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def floor_divide_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float and 1D float32 array
-    x1 = 10.0
-    x2 = np.array([2.0, 3.0, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 1: 1D float32 array divisor
+    input_dict = {
+        "x1": 10.0,
+        "x2": np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative float and 1D float32 array with negative/positive values
-    x1 = -12.5
-    x2 = np.array([-2.0, 2.0, 5.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 2: Negative float dividend, 1D int32 array divisor
+    input_dict = {"x1": -15.5, "x2": np.array([1, 2, 4, 5], dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: positive float and 2D float64 array
-    x1 = 5.0
-    x2 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 3: Zero dividend, 2D float64 array divisor with mixed signs
+    input_dict = {
+        "x1": 0.0,
+        "x2": np.array([[1.0, -2.0], [3.0, -4.0]], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: zero float and 1D int32 array (no zeros in divisor)
-    x1 = 0.0
-    x2 = np.array([1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 4: 3D float32 array divisor
+    input_dict = {
+        "x1": 100.25,
+        "x2": np.full((2, 3, 4), 3.5, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: large float and 3D float32 array
-    x1 = 100.0
-    x2 = np.random.uniform(1.0, 10.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 5: Negative float dividend, 2D float32 array divisor
+    input_dict = {
+        "x1": -7.0,
+        "x2": np.array([[-1.5, 2.5, -3.5]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: negative float and 1D float32 array with small decimal values
-    x1 = -1.0
-    x2 = np.array([0.5, -0.5, 2.5], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 6: 0D scalar array divisor
+    input_dict = {"x1": 3.14159, "x2": np.array(2.0, dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: float and 1D float32 array of ones multiplied by 2
-    x1 = 20.5
-    x2 = np.ones((5,), dtype=np.float32) * 2.0
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 7: 1D float64 array divisor with positive values
+    input_dict = {
+        "x1": 50.0,
+        "x2": np.array([1.5, 3.2, 7.8, 12.4, 25.0], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: very large float and 1D float64 array of powers of 10
-    x1 = 1e5
-    x2 = np.array([1e2, 1e3, 1e4], dtype=np.float64)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 8: Negative float dividend, 3D int64 array divisor
+    input_dict = {
+        "x1": -42.0,
+        "x2": np.array([[[2], [4]], [[-3], [-6]]], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: negative float and 2D int64 array
-    x1 = -50.2
-    x2 = np.array([[-10, 10], [-5, 5]], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 9: Large float dividend, 1D float32 array divisor
+    input_dict = {
+        "x1": 1.0e5,
+        "x2": np.array([10.0, 100.0, 1000.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: float (pi representation) and 1D float32 array
-    x1 = 3.14159
-    x2 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 10: Fractional values for dividend and float64 divisor
+    input_dict = {
+        "x1": -0.5,
+        "x2": np.array([-0.2, 0.2, -0.4, 0.4], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.floor_divide_5"] = floor_divide_inputs()
 

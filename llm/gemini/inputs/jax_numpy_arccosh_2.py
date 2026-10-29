@@ -4,43 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arccosh_inputs():
     list_of_inputs = []
 
-    # Input 1: Boundary value 1.0
-    list_of_inputs.append({"x": 1.0})
+    # Input 1: Boundary value at x = 1.0 (arccosh(1.0) = 0.0)
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Small value > 1.0
-    list_of_inputs.append({"x": 1.1})
+    # Input 2: Small value greater than 1
+    input_dict = {"x": 1.0001}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 3: Standard float value
-    list_of_inputs.append({"x": 1.5})
+    input_dict = {"x": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Standard float value
-    list_of_inputs.append({"x": 2.0})
+    # Input 4: Moderate float value
+    input_dict = {"x": 5.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Intermediate float value
-    list_of_inputs.append({"x": 5.0})
+    # Input 5: Value yielding a known integer-ish result
+    input_dict = {"x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger float value
-    list_of_inputs.append({"x": 10.0})
+    # Input 6: Large float value
+    input_dict = {"x": 1e6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 7: Very large float value
-    list_of_inputs.append({"x": 100.0})
+    input_dict = {"x": 1e15}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Float with decimals
-    list_of_inputs.append({"x": 12.34})
+    # Input 8: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Value close to 1
-    list_of_inputs.append({"x": 1.0001})
+    # Input 9: Value less than 1 (returns nan)
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Another float value
-    list_of_inputs.append({"x": 50.5})
+    # Input 10: Zero (returns nan)
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative float value (returns nan)
+    input_dict = {"x": -3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: NaN input
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arccosh_2"] = arccosh_inputs()
 

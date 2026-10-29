@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both input tensors must have numeric or boolean data types (Rule 28)
+# strictly positive tensor exponent elements when scalar float base is zero (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] <= 10, v["arg2_dtype"] <= 10)) if n else
-          And(v["arg1_dtype"] <= 10, v["arg2_dtype"] <= 10))
+    s.add(Not(If(v["arg1_value"] == 0, Select(v["arg2_range"], 0) > 0, True)) if n else
+          If(v["arg1_value"] == 0, Select(v["arg2_range"], 0) > 0, True))
 )
 
 def rule_28_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,25 @@ def rule_28_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, (float, np.floating)):
             return False
         if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_dtype = Int('arg2_dtype')
+        arg1_value = Real('arg1_value')
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg1_value == arg1)
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 28
-        rule_28(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
+        rule_28(solver, {'arg1_value': arg1_value, 'arg2_range': arg2_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_28(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_28(solver, {'arg1_value': arg1['value'], 'arg2_range': arg2['range']}, neg)

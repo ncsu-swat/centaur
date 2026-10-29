@@ -7,32 +7,49 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# diagonal fill value list must contain at least one element (Rule 21)
+# all four API arguments where input tensor matches fill tensor dtype and wrap and inplace are false (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] >= 1) if n else
-          v["arg1_length"] >= 1)
+    s.add(Not(And(And(And(v["arg1_ndim"] >= 2, v["arg1_dtype"] == v["arg2_dtype"]), v["arg3_value"] == False), v["arg4_value"] == False)) if n else
+          And(And(And(v["arg1_ndim"] >= 2, v["arg1_dtype"] == v["arg2_dtype"]), v["arg3_value"] == False), v["arg4_value"] == False))
 )
 
-def rule_21_func(arg1, solver=None, neg=False):
+def rule_21_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1))):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, np.ndarray):
+            return False
+        if not isinstance(arg3, bool):
+            return False
+        if not isinstance(arg4, bool):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_dtype = Int('arg1_dtype')
+        arg2_dtype = Int('arg2_dtype')
+        arg3_value = Bool('arg3_value')
+        arg4_value = Bool('arg4_value')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg3_value == arg3)
+        solver.add(arg4_value == arg4)
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_length': arg1_length})
+        rule_21(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype, 'arg3_value': arg3_value, 'arg4_value': arg4_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_length': arg1['length']}, neg)
+        rule_21(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype'], 'arg3_value': arg3['value'], 'arg4_value': arg4['value']}, neg)

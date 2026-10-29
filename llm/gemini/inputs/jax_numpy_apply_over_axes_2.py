@@ -4,115 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.numpy as jnp
+import numpy as np
+
 
 class CallableStr(str):
-    def __new__(cls, name, func):
-        obj = super().__new__(cls, name)
-        obj.func = func
-        return obj
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
+
+    def __call__(self, a, axis):
+        return getattr(jnp, str(self))(a, axis)
+
     def __deepcopy__(self, memo):
         return self
-    def __copy__(self):
-        return self
+
 
 def apply_over_axes_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, sum over axis 0
-    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    input_dict = {
-        "func": CallableStr("sum", lambda x, axis: x.sum(axis=axis)),
-        "a": a,
-        "axes": (0,)
-    }
+    # Input 1: 2D float32 array, sum over axis 0
+    a = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    input_dict = {"func": CallableStr("sum"), "a": a, "axes": (0,)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 3D array, mean over axes 0 and 2
-    a = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.float32)
-    input_dict = {
-        "func": CallableStr("mean", lambda x, axis: x.mean(axis=axis)),
-        "a": a,
-        "axes": (0, 2)
-    }
+    # Input 2: 2D float32 array, sum over axis 1
+    a = np.array([[-1.0, 2.5, -3.0], [4.5, -5.0, 6.0]], dtype=np.float32)
+    input_dict = {"func": CallableStr("sum"), "a": a, "axes": (1,)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, max over axis 1
-    a = np.array([[-1.0, -2.0], [-3.0, -4.0]], dtype=np.float64)
-    input_dict = {
-        "func": CallableStr("max", lambda x, axis: x.max(axis=axis)),
-        "a": a,
-        "axes": (1,)
-    }
+    # Input 3: 2D int32 array, min over axes (0, 1)
+    a = np.array([[10, 20, 5], [3, 15, 8]], dtype=np.int32)
+    input_dict = {"func": CallableStr("min"), "a": a, "axes": (0, 1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D random array, min over axes 0 and 1
+    # Input 4: 3D float32 array, max over axis 1
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"func": CallableStr("max"), "a": a, "axes": (1,)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D float64 array, prod over axis 0
+    a = np.array([[1.5, 2.0], [3.0, 4.0]], dtype=np.float64)
+    input_dict = {"func": CallableStr("prod"), "a": a, "axes": (0,)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D float32 array, mean over axes (0, 2)
     a = np.random.randn(3, 4, 5).astype(np.float32)
-    input_dict = {
-        "func": CallableStr("min", lambda x, axis: x.min(axis=axis)),
-        "a": a,
-        "axes": (0, 1)
-    }
+    input_dict = {"func": CallableStr("mean"), "a": a, "axes": (0, 2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D int32 array, prod over axis 2
-    a = np.ones((2, 2, 2), dtype=np.int32) * 2
-    input_dict = {
-        "func": CallableStr("prod", lambda x, axis: x.prod(axis=axis)),
-        "a": a,
-        "axes": (2,)
-    }
+    # Input 7: 1D float64 array, sum over axis 0
+    a = np.array([1.0, -2.0, 3.0, -4.0, 5.0], dtype=np.float64)
+    input_dict = {"func": CallableStr("sum"), "a": a, "axes": (0,)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D random float32 array, std over axis 0
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "func": CallableStr("std", lambda x, axis: x.std(axis=axis)),
-        "a": a,
-        "axes": (0,)
-    }
+    # Input 8: 4D float32 array, max over axes (1, 3)
+    a = np.random.randn(2, 3, 2, 4).astype(np.float32)
+    input_dict = {"func": CallableStr("max"), "a": a, "axes": (1, 3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D float64 array, var over axes 1 and 2
-    a = np.random.rand(2, 3, 4).astype(np.float64)
-    input_dict = {
-        "func": CallableStr("var", lambda x, axis: x.var(axis=axis)),
-        "a": a,
-        "axes": (1, 2)
-    }
+    # Input 9: 3D int64 array, min over axes (0, 1)
+    a = np.random.randint(-100, 100, size=(3, 4, 5), dtype=np.int64)
+    input_dict = {"func": CallableStr("min"), "a": a, "axes": (0, 1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D int64 array, sum over all axes (0, 1, 2)
-    a = np.arange(24).reshape(2, 3, 4).astype(np.int64)
-    input_dict = {
-        "func": CallableStr("sum", lambda x, axis: x.sum(axis=axis)),
-        "a": a,
-        "axes": (0, 1, 2)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 3D int32 array, max over axes 0 and 2
-    a = np.random.randint(-10, 10, size=(4, 4, 4)).astype(np.int32)
-    input_dict = {
-        "func": CallableStr("max", lambda x, axis: x.max(axis=axis)),
-        "a": a,
-        "axes": (0, 2)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D float32 array, mean over axis 0
-    a = np.random.randn(10).astype(np.float32)
-    input_dict = {
-        "func": CallableStr("mean", lambda x, axis: x.mean(axis=axis)),
-        "a": a,
-        "axes": (0,)
-    }
+    # Input 10: 3D float32 array, prod over axes (0, 1, 2)
+    a = np.array(
+        [[[1.0, 2.0], [3.0, 4.0]], [[0.5, 1.5], [2.0, 0.5]]], dtype=np.float32
+    )
+    input_dict = {"func": CallableStr("prod"), "a": a, "axes": (0, 1, 2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.apply_over_axes_2"] = apply_over_axes_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# where tensor dimensions must not exceed input tensor dimensions (Rule 7)
+# axis integer must be within valid range for input array (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_ndim"] <= v["arg1_ndim"]) if n else
-          v["arg2_ndim"] <= v["arg1_ndim"])
+    s.add(Not(And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else
+          And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"]))
 )
 
 def rule_7_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_7_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 7
-        rule_7(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_7(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_7(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_7(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

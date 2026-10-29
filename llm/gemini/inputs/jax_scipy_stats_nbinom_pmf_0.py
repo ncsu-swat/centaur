@@ -4,93 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def nbinom_pmf_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar inputs (0D arrays)
-    k = np.array(5.0, dtype=np.float32)
-    n = np.array(10.0, dtype=np.float32)
-    p = np.array(0.5, dtype=np.float32)
-    loc = np.array(0.0, dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalars, float32
+    list_of_inputs.append(
+        {
+            "k": np.array(5.0, dtype=np.float32),
+            "n": np.array(10.0, dtype=np.float32),
+            "p": np.array(0.5, dtype=np.float32),
+            "loc": np.array(0.0, dtype=np.float32),
+        }
+    )
 
-    # Input 2: 1D arrays of floats
-    k = np.array([0, 1, 2, 3, 4], dtype=np.float32)
-    n = np.array([5.0, 5.0, 5.0, 5.0, 5.0], dtype=np.float32)
-    p = np.array([0.3, 0.3, 0.3, 0.3, 0.3], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D arrays, same shapes, float64
+    list_of_inputs.append(
+        {
+            "k": np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float64),
+            "n": np.array([5.0, 5.0, 5.0, 5.0, 5.0], dtype=np.float64),
+            "p": np.array([0.3, 0.3, 0.3, 0.3, 0.3], dtype=np.float64),
+            "loc": np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64),
+        }
+    )
 
-    # Input 3: 2D arrays (float64)
-    k = np.array([[1, 2], [3, 4]], dtype=np.float64)
-    n = np.array([[2.5, 3.5], [4.5, 5.5]], dtype=np.float64)
-    p = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float64)
-    loc = np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float64)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Non-zero loc
+    list_of_inputs.append(
+        {
+            "k": np.array([3.0, 4.0, 5.0, 6.0], dtype=np.float32),
+            "n": np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32),
+            "p": np.array([0.4, 0.4, 0.4, 0.4], dtype=np.float32),
+            "loc": np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32),
+        }
+    )
 
-    # Input 4: Broadcasting inputs of different shapes
-    k = np.array([2, 4, 6], dtype=np.float32)
-    n = np.array([[5], [10]], dtype=np.float32)
-    p = np.array([0.5], dtype=np.float32)
-    loc = np.array([0], dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D arrays, broadcastable shapes
+    list_of_inputs.append(
+        {
+            "k": np.array([[1.0], [2.0], [3.0]], dtype=np.float32),
+            "n": np.array([[4.0, 5.0]], dtype=np.float32),
+            "p": np.array([[0.2, 0.8]], dtype=np.float32),
+            "loc": np.array([[0.0]], dtype=np.float32),
+        }
+    )
 
-    # Input 5: High dimension (3D arrays)
-    k = np.ones((2, 2, 2), dtype=np.float32) * 3
-    n = np.ones((2, 2, 2), dtype=np.float32) * 5
-    p = np.ones((2, 2, 2), dtype=np.float32) * 0.7
-    loc = np.zeros((2, 2, 2), dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D arrays of matching shape (3, 3)
+    list_of_inputs.append(
+        {
+            "k": np.arange(9, dtype=np.float32).reshape(3, 3),
+            "n": np.full((3, 3), 10.0, dtype=np.float32),
+            "p": np.full((3, 3), 0.6, dtype=np.float32),
+            "loc": np.zeros((3, 3), dtype=np.float32),
+        }
+    )
 
-    # Input 6: Edge case with p close to 0 and 1
-    k = np.array([1, 2], dtype=np.float32)
-    n = np.array([2.0, 2.0], dtype=np.float32)
-    p = np.array([0.01, 0.99], dtype=np.float32)
-    loc = np.array([0.0, 0.0], dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D arrays
+    list_of_inputs.append(
+        {
+            "k": np.ones((2, 3, 4), dtype=np.float32) * 5,
+            "n": np.ones((2, 3, 4), dtype=np.float32) * 3,
+            "p": np.ones((2, 3, 4), dtype=np.float32) * 0.7,
+            "loc": np.zeros((2, 3, 4), dtype=np.float32),
+        }
+    )
 
-    # Input 7: Non-zero loc array offset
-    k = np.array([10.0, 12.0], dtype=np.float32)
-    n = np.array([5.0, 5.0], dtype=np.float32)
-    p = np.array([0.5, 0.5], dtype=np.float32)
-    loc = np.array([5.0, 5.0], dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Broadcasting scalar loc to 1D inputs
+    list_of_inputs.append(
+        {
+            "k": np.array([10.0, 20.0, 30.0], dtype=np.float32),
+            "n": np.array([15.0, 15.0, 15.0], dtype=np.float32),
+            "p": np.array([0.5, 0.5, 0.5], dtype=np.float32),
+            "loc": np.array(5.0, dtype=np.float32),
+        }
+    )
 
-    # Input 8: Int32 types for k and loc with float32 parameters
-    k = np.array([2, 5, 8], dtype=np.int32)
-    n = np.array([3.0, 4.0, 5.0], dtype=np.float32)
-    p = np.array([0.2, 0.5, 0.8], dtype=np.float32)
-    loc = np.array([1, 2, 3], dtype=np.int32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Varying parameters across batch
+    list_of_inputs.append(
+        {
+            "k": np.array([2.0, 4.0, 6.0, 8.0], dtype=np.float32),
+            "n": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
+            "p": np.array([0.1, 0.25, 0.5, 0.75], dtype=np.float32),
+            "loc": np.array([0.0, 1.0, 2.0, 3.0], dtype=np.float32),
+        }
+    )
 
-    # Input 9: Large 1D array size of 100 elements
-    k = np.arange(100, dtype=np.float32)
-    n = np.full((100,), 10.0, dtype=np.float32)
-    p = np.full((100,), 0.25, dtype=np.float32)
-    loc = np.zeros((100,), dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large values for k and n
+    list_of_inputs.append(
+        {
+            "k": np.array([100.0, 150.0], dtype=np.float64),
+            "n": np.array([50.0, 75.0], dtype=np.float64),
+            "p": np.array([0.35, 0.45], dtype=np.float64),
+            "loc": np.array([0.0, 0.0], dtype=np.float64),
+        }
+    )
 
-    # Input 10: High value parameters
-    k = np.array([1000], dtype=np.float32)
-    n = np.array([500.0], dtype=np.float32)
-    p = np.array([0.6], dtype=np.float32)
-    loc = np.array([100.0], dtype=np.float32)
-    input_dict = {"k": k, "n": n, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D tensors
+    list_of_inputs.append(
+        {
+            "k": np.ones((2, 2, 2, 2), dtype=np.float32) * 4,
+            "n": np.ones((2, 2, 2, 2), dtype=np.float32) * 6,
+            "p": np.ones((2, 2, 2, 2), dtype=np.float32) * 0.4,
+            "loc": np.zeros((2, 2, 2, 2), dtype=np.float32),
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.nbinom.pmf"] = nbinom_pmf_inputs()
 

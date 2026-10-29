@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scalar input must have its squared value less than 1 to remain in the real domain of atanh (Rule 11)
+# scalar float input must have magnitude strictly less than 1 for real-valued result (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
     s.add(Not(v["arg1_value"] * v["arg1_value"] < 1) if n else

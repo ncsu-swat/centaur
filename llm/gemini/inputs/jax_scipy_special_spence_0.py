@@ -4,63 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def spence_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar-like (0-D array), float32, positive
-    x = np.array(2.0, dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalar float32 (positive value)
+    x = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1-D array, float32, positive values
-    x = np.array([0.5, 1.0, 1.5, 2.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D scalar float64 (positive value)
+    x = np.array(2.5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2-D array, float64, positive values
-    x = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array float32 with values around 1
+    x = np.array([0.1, 0.5, 1.0, 1.5, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3-D array, float32, positive values
-    x = np.random.uniform(0.1, 10.0, size=(2, 3, 4)).astype(np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D array float64 including negative values (returns NaN per doc)
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1-D array, float64, positive values
-    x = np.array([0.001, 10.0, 100.0], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array float32
+    x = np.random.uniform(0.1, 10.0, size=(3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: Large 1-D array, float32, uniform distribution
-    x = np.random.uniform(1e-5, 1.0, size=(100,)).astype(np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D array float64
+    x = np.random.uniform(0.01, 1.0, size=(2, 5)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2-D array, float32, values around 1.0 where spence(1.0) = 0
-    x = np.array([[0.99, 1.0, 1.01], [0.95, 1.0, 1.05]], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array float32
+    x = np.random.uniform(1.0, 100.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4-D array, float64, random positive values
-    x = np.random.exponential(scale=2.0, size=(2, 2, 2, 2)).astype(np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D array float64 with special values (0, 1, inf)
+    x = np.array(
+        [[[0.0, 1.0], [2.0, np.inf]], [[0.5, 1.5], [np.nan, 3.0]]],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1-D array, float32, containing extremely small positive values
-    x = np.array([1e-10, 1e-8, 1e-6, 1e-4], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D array float32
+    x = np.random.uniform(0.5, 5.0, size=(2, 2, 2, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1-D array, float64, containing very large values
-    x = np.array([1e4, 1e5, 1e6], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D empty array float32
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array float64 with small values close to 0
+    x = np.array([1e-6, 1e-4, 1e-2, 0.9999], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.spence"] = spence_inputs()
 

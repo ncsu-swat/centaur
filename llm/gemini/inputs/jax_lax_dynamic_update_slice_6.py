@@ -4,133 +4,191 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dynamic_update_slice_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, positive start index, negative indices allowed
-    operand = np.arange(10, dtype=np.float32)
-    update = np.array([100.0, 200.0, 300.0], dtype=np.float32)
+    # Input 1: 1D float32 array, positive start index
+    operand = np.zeros((10,), dtype=np.float32)
+    update = np.ones((3,), dtype=np.float32)
     start_indices = np.array([2], dtype=np.int32)
     allow_negative_indices = [True]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
 
-    # Input 2: 1D array, int32, negative start index
-    operand = np.arange(8, dtype=np.int32)
-    update = np.array([-10, -20], dtype=np.int32)
-    start_indices = np.array([-3], dtype=np.int32)
-    allow_negative_indices = [True]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
-
-    # Input 3: 2D array, float64, mixed allow_negative_indices
-    operand = np.ones((5, 5), dtype=np.float64)
-    update = np.zeros((2, 2), dtype=np.float64)
-    start_indices = np.array([1, 2], dtype=np.int64)
-    allow_negative_indices = [False, False]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
-
-    # Input 4: 2D array, int64, out-of-bound start index (to test automatic adjustment/clamping)
-    operand = np.zeros((4, 4), dtype=np.int64)
-    update = np.ones((2, 3), dtype=np.int64)
-    start_indices = np.array([3, 2], dtype=np.int32)
+    # Input 2: 2D int32 array, standard update
+    operand = np.arange(20, dtype=np.int32).reshape(4, 5)
+    update = -np.ones((2, 3), dtype=np.int32)
+    start_indices = np.array([1, 2], dtype=np.int32)
     allow_negative_indices = [True, True]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
 
-    # Input 5: 3D array, float32, all positive indices
-    operand = np.random.randn(4, 4, 4).astype(np.float32)
-    update = np.ones((2, 2, 2), dtype=np.float32)
+    # Input 3: 2D float64 array, negative start indices
+    operand = np.zeros((6, 6), dtype=np.float64)
+    update = np.full((2, 2), 5.0, dtype=np.float64)
+    start_indices = np.array([-2, -3], dtype=np.int64)
+    allow_negative_indices = [True, True]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
+
+    # Input 4: 3D float32 array, allow_negative_indices mixed False/True
+    operand = np.random.randn(4, 5, 6).astype(np.float32)
+    update = np.ones((2, 2, 3), dtype=np.float32)
     start_indices = np.array([0, 1, 2], dtype=np.int32)
+    allow_negative_indices = [False, True, False]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
+
+    # Input 5: 1D bool array, full update
+    operand = np.zeros((5,), dtype=np.bool_)
+    update = np.ones((5,), dtype=np.bool_)
+    start_indices = np.array([0], dtype=np.int32)
+    allow_negative_indices = [False]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
+
+    # Input 6: 4D float32 array, unit update slice size
+    operand = np.zeros((3, 4, 5, 2), dtype=np.float32)
+    update = np.ones((1, 1, 1, 1), dtype=np.float32)
+    start_indices = np.array([2, 1, 3, 0], dtype=np.int32)
+    allow_negative_indices = [True, True, True, True]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
+
+    # Input 7: 2D complex64 array
+    operand = np.zeros((5, 4), dtype=np.complex64)
+    update = np.ones((2, 2), dtype=np.complex64) + 2j
+    start_indices = np.array([1, 0], dtype=np.int32)
+    allow_negative_indices = [False, False]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
+
+    # Input 8: 1D int64 array, out-of-bounds start index (clamped by dynamic_update_slice)
+    operand = np.arange(8, dtype=np.int64)
+    update = np.array([100, 200, 300], dtype=np.int64)
+    start_indices = np.array([15], dtype=np.int64)
+    allow_negative_indices = [True]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
+
+    # Input 9: 3D uint8 array
+    operand = np.zeros((8, 8, 3), dtype=np.uint8)
+    update = np.full((4, 4, 3), 255, dtype=np.uint8)
+    start_indices = np.array([2, 2, 0], dtype=np.int32)
     allow_negative_indices = [True, True, True]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
 
-    # Input 6: 1D array, boolean dtype
-    operand = np.array([True, False, True, False, True, False], dtype=bool)
-    update = np.array([True, True, True], dtype=bool)
-    start_indices = np.array([3], dtype=np.int32)
-    allow_negative_indices = [False]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
+    # Input 10: 0D scalar arrays
+    operand = np.array(42.0, dtype=np.float32)
+    update = np.array(7.0, dtype=np.float32)
+    start_indices = np.array([], dtype=np.int32)
+    allow_negative_indices = []
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
 
-    # Input 7: 4D array, float32, diverse shapes
-    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    update = np.zeros((1, 2, 2, 2), dtype=np.float32)
-    start_indices = np.array([1, 0, 1, 2], dtype=np.int32)
-    allow_negative_indices = [True, False, True, False]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
-
-    # Input 8: 2D array, complex64
-    operand = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    update = np.array([[1.0 + 1j, 2.0 - 2j]], dtype=np.complex64)
-    start_indices = np.array([2, 1], dtype=np.int32)
-    allow_negative_indices = [True, True]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
-
-    # Input 9: 1D array, negative index but allow_negative_indices is False (clamps to 0)
-    operand = np.arange(10, dtype=np.float32)
-    update = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    start_indices = np.array([-2], dtype=np.int32)
-    allow_negative_indices = [False]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
-
-    # Input 10: 5D array, float32, update size 1 along all dimensions
-    operand = np.zeros((2, 2, 2, 2, 2), dtype=np.float32)
-    update = np.ones((1, 1, 1, 1, 1), dtype=np.float32)
-    start_indices = np.array([1, 1, 0, 1, 0], dtype=np.int32)
-    allow_negative_indices = [True, True, True, True, True]
-    list_of_inputs.append({
-        "operand": operand,
-        "update": update,
-        "start_indices": start_indices,
-        "allow_negative_indices": allow_negative_indices
-    })
+    # Input 11: 5D float32 array
+    operand = np.zeros((2, 3, 4, 5, 2), dtype=np.float32)
+    update = np.ones((1, 2, 2, 2, 1), dtype=np.float32)
+    start_indices = np.array([0, 1, 1, 2, 1], dtype=np.int32)
+    allow_negative_indices = [True, False, True, False, True]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "operand": operand,
+                "update": update,
+                "start_indices": start_indices,
+                "allow_negative_indices": allow_negative_indices,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.dynamic_update_slice_6"] = dynamic_update_slice_inputs()
 

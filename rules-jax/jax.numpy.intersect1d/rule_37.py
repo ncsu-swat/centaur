@@ -7,16 +7,17 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The sum of dimensions of both input tensors must be 2, indicating both are 1D arrays (Rule 37)
+# ar1 and ar2 must have matching data types and size must be non-negative (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] + v["arg2_ndim"] == 2, v["arg1_ndim"] == 1)) if n else
-          And(v["arg1_ndim"] + v["arg2_ndim"] == 2, v["arg1_ndim"] == 1))
+    s.add(Not(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg3_value"] >= 0)) if n else
+          And(v["arg1_dtype"] == v["arg2_dtype"], v["arg3_value"] >= 0))
 )
 
-def rule_37_func(arg1, arg2, solver=None, neg=False):
+def rule_37_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
@@ -24,20 +25,24 @@ def rule_37_func(arg1, arg2, solver=None, neg=False):
             return False
         if not isinstance(arg2, np.ndarray):
             return False
+        if not (isinstance(arg3, (int, np.integer)) and not isinstance(arg3, bool)):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_dtype = Int('arg1_dtype')
+        arg2_dtype = Int('arg2_dtype')
+        arg3_value = Int('arg3_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 37
-        rule_37(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_37(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_37(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_37(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype'], 'arg3_value': arg3['value']}, neg)

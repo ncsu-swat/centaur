@@ -10,44 +10,48 @@ import copy
 def negative_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array
-    x = np.array([0., -3., 7.], dtype=np.float32)
+    # Input 1: 1D float32 array with negative, zero, and positive values
+    x = np.array([0.0, -3.0, 7.5, -1.2], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: 2D float32 array
-    x = np.random.randn(3, 4).astype(np.float32)
+    # Input 2: 0D scalar array (float64)
+    x = np.array(-42.0, dtype=np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: 3D float32 array
-    x = np.random.randn(2, 3, 2).astype(np.float32)
+    # Input 3: 2D int32 array
+    x = np.array([[-1, 2, -3], [4, -5, 6]], dtype=np.int32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 4D float32 array
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    # Input 4: 1D complex64 array
+    x = np.array([1 - 2j, -3 + 4j, 5 - 6j], dtype=np.complex64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: 1D float64 array
-    x = np.array([-1.5, 0.0, 3.14, -99.9], dtype=np.float64)
+    # Input 5: 3D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: 2D float64 array
-    x = np.random.randn(5, 5).astype(np.float64)
+    # Input 6: 1D int32 array
+    x = np.array([5, 0, 10, -15], dtype=np.int32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: 1D int32 array
-    x = np.array([-10, 0, 10, 20], dtype=np.int32)
+    # Input 7: 4D float64 array
+    x = np.random.randn(2, 2, 3, 3).astype(np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: 2D int32 array
-    x = np.random.randint(-100, 100, size=(4, 3)).astype(np.int32)
+    # Input 8: 1D float32 array containing special values (inf, -inf, nan)
+    x = np.array([np.inf, -np.inf, np.nan, 0.0, -0.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: 1D int64 array
-    x = np.array([-123456789, 0, 987654321], dtype=np.int64)
+    # Input 9: 2D complex128 array
+    x = np.array([[2.5 - 1.5j, -0.5 + 3.0j], [1.0 + 0.0j, -4.0 - 2.0j]], dtype=np.complex128)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: 2D int64 array
-    x = np.random.randint(-1000, 1000, size=(3, 5)).astype(np.int64)
+    # Input 10: 1D int64 array with extreme values
+    x = np.array([np.iinfo(np.int64).min + 1, -1, 0, 1, np.iinfo(np.int64).max], dtype=np.int64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: Empty array
+    x = np.array([], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs

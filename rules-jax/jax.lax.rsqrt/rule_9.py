@@ -7,35 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If accuracy is specified as a tuple of floats, its length must be 1 or 2 and all tolerance values must be non-negative (Rule 9)
+# accuracy mode string must be a valid option while x has floating-point or complex dtype (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_length"] >= 1, v["arg1_length"] <= 2), And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)]))) if n else
-          And(And(v["arg1_length"] >= 1, v["arg1_length"] <= 2), And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])))
+    s.add(Not(And(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), (Or(Or(Or(v["arg2_value"] == 37, v["arg2_value"] == 38), v["arg2_value"] == 39), v["arg2_value"] == 5)))) if n else
+          And(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), (Or(Or(Or(v["arg2_value"] == 37, v["arg2_value"] == 38), v["arg2_value"] == 39), v["arg2_value"] == 5))))
 )
 
-def rule_9_func(arg1, solver=None, neg=False):
+def rule_9_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_dtype = Int('arg1_dtype')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_9(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_9(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)

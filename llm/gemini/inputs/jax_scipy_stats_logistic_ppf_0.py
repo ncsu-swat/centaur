@@ -4,75 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_stats_logistic_ppf_inputs():
+
+def logistic_ppf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D standard case, float32
-    x = np.array([0.1, 0.5, 0.9], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    # Input 1: 0D scalar arrays, standard logistic
+    x = np.array(0.5, dtype=np.float32)
+    loc = np.array(0.0, dtype=np.float32)
+    scale = np.array(1.0, dtype=np.float32)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 2: 2D arrays, negative loc, scale > 1
-    x = np.array([[0.2, 0.4], [0.6, 0.8]], dtype=np.float32)
-    loc = np.array([[-1.0, -2.0], [-3.0, -4.0]], dtype=np.float32)
-    scale = np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float32)
+    # Input 2: 1D array, uniform quantiles, default loc and scale
+    x = np.array([0.1, 0.25, 0.5, 0.75, 0.9], dtype=np.float32)
+    loc = np.array(0.0, dtype=np.float32)
+    scale = np.array(1.0, dtype=np.float32)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 3: float64, 3D arrays
-    x = np.random.uniform(0.1, 0.9, size=(2, 2, 2)).astype(np.float64)
-    loc = np.random.normal(0, 1, size=(2, 2, 2)).astype(np.float64)
-    scale = np.random.uniform(0.5, 2.0, size=(2, 2, 2)).astype(np.float64)
+    # Input 3: 1D arrays with matching dimensions, negative loc
+    x = np.array([0.05, 0.2, 0.8, 0.95], dtype=np.float64)
+    loc = np.array([-2.0, -1.0, 0.0, 1.0], dtype=np.float64)
+    scale = np.array([0.5, 1.0, 1.5, 2.0], dtype=np.float64)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 4: Scalar arrays (0D)
-    x = np.array(0.25, dtype=np.float32)
+    # Input 4: 2D array, float32, broadcasting scalar loc and scale
+    x = np.random.uniform(0.1, 0.9, size=(3, 4)).astype(np.float32)
     loc = np.array(5.0, dtype=np.float32)
-    scale = np.array(0.5, dtype=np.float32)
+    scale = np.array(2.5, dtype=np.float32)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 5: Broadcastable shapes (x: (3, 1), loc: (1, 3), scale: (1, 1))
-    x = np.array([[0.1], [0.5], [0.9]], dtype=np.float32)
-    loc = np.array([[0.0, 1.0, 2.0]], dtype=np.float32)
-    scale = np.array([[1.5]], dtype=np.float32)
+    # Input 5: 2D arrays with row/column broadcasting
+    x = np.random.uniform(0.01, 0.99, size=(4, 1)).astype(np.float64)
+    loc = np.random.randn(1, 5).astype(np.float64)
+    scale = np.random.uniform(0.5, 3.0, size=(4, 5)).astype(np.float64)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 6: Large scale values, float64
-    x = np.linspace(0.01, 0.99, 5).astype(np.float64)
-    loc = np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float64)
-    scale = np.array([100.0, 200.0, 300.0, 400.0, 500.0], dtype=np.float64)
+    # Input 6: 3D array, float32, with positive loc and small scale
+    x = np.random.uniform(0.2, 0.8, size=(2, 3, 4)).astype(np.float32)
+    loc = np.zeros((2, 3, 4), dtype=np.float32)
+    scale = np.full((2, 3, 4), 0.1, dtype=np.float32)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 7: Very small scale (precision test)
-    x = np.array([0.05, 0.95], dtype=np.float32)
-    loc = np.array([-0.5, 0.5], dtype=np.float32)
-    scale = np.array([1e-3, 1e-3], dtype=np.float32)
+    # Input 7: 3D broadcasting across dimensions
+    x = np.random.uniform(0.1, 0.9, size=(2, 1, 4)).astype(np.float32)
+    loc = np.random.randn(1, 3, 1).astype(np.float32)
+    scale = np.random.uniform(0.5, 2.0, size=(2, 3, 4)).astype(np.float32)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 8: Extreme probabilities (near 0 and 1)
-    x = np.array([1e-6, 0.5, 1 - 1e-6], dtype=np.float64)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float64)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float64)
+    # Input 8: Extreme tail quantiles, float64
+    x = np.array([1e-5, 1e-3, 0.5, 1.0 - 1e-3, 1.0 - 1e-5], dtype=np.float64)
+    loc = np.array([0.0], dtype=np.float64)
+    scale = np.array([1.0], dtype=np.float64)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 9: float16 type inputs
-    x = np.array([0.3, 0.7], dtype=np.float16)
-    loc = np.array([1.0, -1.0], dtype=np.float16)
-    scale = np.array([0.5, 2.0], dtype=np.float16)
+    # Input 9: 4D arrays
+    x = np.random.uniform(0.05, 0.95, size=(2, 2, 3, 3)).astype(np.float32)
+    loc = np.random.uniform(-5.0, 5.0, size=(2, 2, 3, 3)).astype(np.float32)
+    scale = np.random.uniform(0.1, 5.0, size=(2, 2, 3, 3)).astype(np.float32)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 10: High-dimensional array
-    x = np.random.uniform(0.01, 0.99, size=(1, 2, 3, 4)).astype(np.float32)
-    loc = np.zeros((1, 2, 3, 4), dtype=np.float32)
-    scale = np.ones((1, 2, 3, 4), dtype=np.float32)
+    # Input 10: 1D array with single element tensors
+    x = np.array([0.7], dtype=np.float32)
+    loc = np.array([-10.0], dtype=np.float32)
+    scale = np.array([0.01], dtype=np.float32)
     list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    return list_of_inputs
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
-generated_inputs["jax.scipy.stats.logistic.ppf"] = jax_scipy_stats_logistic_ppf_inputs()
+
+generated_inputs["jax.scipy.stats.logistic.ppf"] = logistic_ppf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

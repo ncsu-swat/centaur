@@ -7,39 +7,35 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# indices tensor must be 1-dimensional with integer type (Rule 51)
+# split indices in list are strictly increasing for non-empty splits (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg1_ndim"] >= 3, v["arg2_ndim"] == 1), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5)) if n else
-          And(And(And(v["arg1_ndim"] >= 3, v["arg2_ndim"] == 1), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5))
+    s.add(Not(And([Implies(i < (v["arg1_length"] - 2 + 1), Select(v["arg1_values"], i) < Select(v["arg1_values"], i + 1)) for i in range(6)])) if n else
+          And([Implies(i < (v["arg1_length"] - 2 + 1), Select(v["arg1_values"], i) < Select(v["arg1_values"], i + 1)) for i in range(6)]))
 )
 
-def rule_51_func(arg1, arg2, solver=None, neg=False):
+def rule_51_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
-            return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
-        arg2_dtype = Int('arg2_dtype')
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 51
-        rule_51(solver, {'arg1_ndim': arg1_ndim, 'arg2_dtype': arg2_dtype, 'arg2_ndim': arg2_ndim})
+        rule_51(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_51(solver, {'arg1_ndim': arg1['ndim'], 'arg2_dtype': arg2['dtype'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_51(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

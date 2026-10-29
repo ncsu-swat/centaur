@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The normalized axis2 after resolving negative indices must be a valid non-negative index (Rule 42)
+# axis1 bounded using difference from tensor dimension (Rule 42)
 
 rule_42 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] + v["arg1_ndim"] < v["arg1_ndim"]), And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]))) if n else
-          If(v["arg2_value"] < 0, And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] + v["arg1_ndim"] < v["arg1_ndim"]), And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"])))
+    s.add(Not(And(1 <= v["arg1_ndim"] - v["arg2_value"], v["arg1_ndim"] - v["arg2_value"] <= v["arg1_ndim"] * 2)) if n else
+          And(1 <= v["arg1_ndim"] - v["arg2_value"], v["arg1_ndim"] - v["arg2_value"] <= v["arg1_ndim"] * 2))
 )
 
 def rule_42_func(arg1, arg2, solver=None, neg=False):

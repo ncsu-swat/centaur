@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the first dimension of both tensors must be non-empty if they are 1D or higher (Rule 18)
+# first 1D input tensor has greater length than the second 1D input tensor (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(And((If(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], 0) > 0, True)), (If(v["arg2_ndim"] >= 1, Select(v["arg2_shape"], 0) > 0, True)))) if n else
-          And((If(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], 0) > 0, True)), (If(v["arg2_ndim"] >= 1, Select(v["arg2_shape"], 0) > 0, True))))
+    s.add(Not(And(And(v["arg1_ndim"] == 1, v["arg2_ndim"] == 1), Select(v["arg1_shape"], 0) > Select(v["arg2_shape"], 0))) if n else
+          And(And(v["arg1_ndim"] == 1, v["arg2_ndim"] == 1), Select(v["arg1_shape"], 0) > Select(v["arg2_shape"], 0)))
 )
 
 def rule_18_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_18_func(arg1, arg2, solver=None, neg=False):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_18(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_18(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from collections import defaultdict
 from utils.defaults import list_of_string_values_torch, list_of_string_values_tf, list_of_string_values_jax
 from utils.new_api_utils import get_signature, get_n_variations
-from llm.llm_utils import OAChatWrapper, Response, collect_token_usage
+from llm.llm_utils import OAChatWrapper, BedrockChatWrapper, Response, collect_token_usage
 
 with open("grammar.lark", "r", encoding="utf-8") as f:
     grammar = f.read()
@@ -92,6 +92,20 @@ def log_response(label, prompt, response, dir_path, num_failures=0, token_usage=
         else:
             log_file.write("\n\n")
 
+def send_with_retry(chat, prompt, max_retries=8):
+    """Send a prompt, retrying transient Gemini 5xx/ServerErrors with backoff so
+    a single 503 doesn't kill the whole run. Bedrock/OAChatWrapper retry
+    internally; this guards the gemini path (which otherwise raises straight up)."""
+    for attempt in range(max_retries):
+        try:
+            return chat.send_message(prompt)
+        except genai.errors.ServerError as e:
+            wait = min(2 ** attempt, 60)
+            print(f"[rulegen] transient LLM ServerError ({e}); retry {attempt + 1}/{max_retries} in {wait}s")
+            time.sleep(wait)
+    # last attempt: if it still fails, let the exception propagate
+    return chat.send_message(prompt)
+
 def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
     num_failures = 0
     num_rules = 1
@@ -105,10 +119,17 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
         elif lib == "jax":
             dir_path = os.path.join("../rules-jax", api)
     else:
-        dir_path = os.path.join(f"{llm}/rules-torch" if lib == "torch" else f"{llm}/rules-tf", api)
+        dir_path = os.path.join(f"{llm}/rules-{lib}", api)
 
     os.makedirs(dir_path, exist_ok=True)
     file_path = os.path.join(dir_path, "rules-ebnf")
+
+    # Resume mode (opt-in via RULEGEN_RESUME=1): skip APIs that already have
+    # rules, so a re-run after a timeout only fills the gaps instead of
+    # re-processing (and inflating) completed APIs.
+    if os.getenv("RULEGEN_RESUME") and os.path.exists(file_path) and os.path.getsize(file_path) > 0:
+        print(f"[rulegen] RESUME: {api} already has rules-ebnf, skipping.")
+        return
 
     if os.path.exists(file_path):
         with open(file_path, "r") as f:
@@ -132,11 +153,14 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
         # chat = model.start_chat(history=[])
         gemini_key = os.getenv("gemini_key")
         client = genai.Client(api_key=gemini_key)
-        chat = client.chats.create(model="gemini-3.5-flash")
-    elif llm == "openai":
-        chat = OAChatWrapper()
+        chat = client.chats.create(model="gemini-3.8-flash")
     else:
-        raise ValueError("Unsupported LLM. Choose 'gemini' or 'openai'.")
+        # non-gemini label: use Bedrock directly (boto3) when BEDROCK_MODEL is set,
+        # otherwise an OpenAI-compatible endpoint via OAChatWrapper (MODEL_URL/MODEL_NAME).
+        if os.getenv("BEDROCK_MODEL"):
+            chat = BedrockChatWrapper()
+        else:
+            chat = OAChatWrapper()
 
     feedback = ""
     base_time = time.time()
@@ -267,7 +291,7 @@ def generate_rules(api, lib, max_failures=100, timeout=60, llm="gemini"):
         prompt += "** IMPORTANT: Rules should comply with API signature(s). If there are multiple, cover all signatures with diverse rules. **\n"
         prompt += "** IMPORTANT: For module classes returning instances, include rules for their parameters. **\n"
 
-        raw_response = chat.send_message(prompt)
+        raw_response = send_with_retry(chat, prompt)
         if isinstance(raw_response, Response):
             response_obj = raw_response
         else:

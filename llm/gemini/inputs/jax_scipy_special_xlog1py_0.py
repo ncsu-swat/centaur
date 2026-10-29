@@ -4,63 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def xlog1py_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D scalar-like tensors, float32
+    # Input 1: 0D scalars, float32, positive values
     x = np.array(2.5, dtype=np.float32)
-    y = np.array(4.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    y = np.array(3.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 1D arrays, float32, standard range
-    x = np.array([0.0, 1.5, 3.0], dtype=np.float32)
-    y = np.array([0.5, 2.0, 4.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 2: 0D special case (x=0, y=-1)
+    x = np.array(0.0, dtype=np.float64)
+    y = np.array(-1.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: Special case where x = 0 and y = -1 (defined to return 0)
-    x = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    y = np.array([-1.0, -1.0, -1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 3: 1D arrays, float32
+    x = np.array([0.0, 1.5, -2.0, 3.2], dtype=np.float32)
+    y = np.array([-1.0, 0.5, 2.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 2D arrays, float64, positive values
-    x = np.random.uniform(0.1, 10.0, (3, 4)).astype(np.float64)
-    y = np.random.uniform(0.1, 10.0, (3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 4: 1D array with y in (-1, 0)
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+    y = np.array([-0.5, -0.2, -0.9], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: Broadcastable shapes (3, 1) and (1, 4)
-    x = np.array([[1.0], [2.0], [3.0]], dtype=np.float32)
-    y = np.array([[0.1, 0.2, 0.3, 0.4]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: 2D arrays, same shape
+    x = np.random.uniform(0.1, 5.0, size=(3, 4)).astype(np.float32)
+    y = np.random.uniform(-0.5, 5.0, size=(3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 3D arrays with negative x and positive y
-    x = np.random.uniform(-5.0, 0.0, (2, 2, 3)).astype(np.float32)
-    y = np.random.uniform(0.0, 5.0, (2, 2, 3)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 6: 2D broadcasting (x is (3, 1), y is (1, 4))
+    x = np.array([[0.0], [1.0], [2.0]], dtype=np.float64)
+    y = np.array([[0.0, 1.0, 2.0, 3.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: Small y values (tests precision log(1+y) ~ y)
-    x = np.array([10.0, 100.0, 1000.0], dtype=np.float64)
-    y = np.array([1e-8, 1e-7, 1e-6], dtype=np.float64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: 3D arrays with float64
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    y = np.abs(np.random.randn(2, 3, 4)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: All zeros for x, arbitrary negative values for y (should all return 0)
-    x = np.zeros((4, 2), dtype=np.float32)
-    y = np.random.uniform(-0.99, -0.1, (4, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: 3D with 1D broadcasting
+    x = np.random.uniform(-2.0, 2.0, size=(2, 4, 3)).astype(np.float32)
+    y = np.array([0.1, 1.0, 2.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Large multi-dimensional array with float64
-    x = np.random.uniform(1.0, 100.0, (2, 3, 4, 2)).astype(np.float64)
-    y = np.random.uniform(-0.5, 50.0, (2, 3, 4, 2)).astype(np.float64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 9: 4D arrays, float32
+    x = np.ones((2, 2, 3, 3), dtype=np.float32)
+    y = np.full((2, 2, 3, 3), 4.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: Complex broadcasting with higher dimensions
-    x = np.random.uniform(0.1, 5.0, (1, 4, 1, 3)).astype(np.float32)
-    y = np.random.uniform(0.1, 5.0, (2, 1, 3, 1)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 10: Empty arrays
+    x = np.empty((0, 5), dtype=np.float32)
+    y = np.empty((0, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: Large positive values of y
+    x = np.array([1e-5, 2.0, 10.0], dtype=np.float64)
+    y = np.array([1e6, 1e8, 1e10], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 12: Integer tensor inputs
+    x = np.array([[0, 2], [3, 5]], dtype=np.int32)
+    y = np.array([[0, 1], [2, 3]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.xlog1py"] = xlog1py_inputs()
 

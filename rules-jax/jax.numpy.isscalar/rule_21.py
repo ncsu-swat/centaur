@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dtype parameter corresponds to a valid index in the types list (Rule 21)
+# valid string input selected from permissible strings (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(0 <= v["arg1_value"], v["arg1_value"] <= 12)) if n else
-          And(0 <= v["arg1_value"], v["arg1_value"] <= 12))
+    s.add(Not(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 20), v["arg1_value"] == 19)) if n else
+          Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 20), v["arg1_value"] == 19))
 )
 
 def rule_21_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_21_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Constraints for rule 21
         rule_21(solver, {'arg1_value': arg1_value})

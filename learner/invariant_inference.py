@@ -13,6 +13,44 @@ import time
 from z3 import *
 import numpy as np
 
+# Cap on the raw byte size of a z3-sampled concrete input before it is handed to
+# the crash oracle. oracle_crash -> utils.proc.run executes the API *in-process*
+# (no subprocess isolation), so a single oversized tensor materialized in jax
+# OOM-kills the whole job rather than being caught. reduce_ruleset removes rules
+# and thereby loosens shape constraints, which lets z3 sample very large shapes;
+# this guard skips those samples the same way the _ArrayMemoryError guard does.
+MAX_INPUT_BYTES = 128 * 1024 * 1024  # 128 MB
+
+def _free_jax_memory(lib):
+    # oracle_crash runs the API in-process (utils.proc.run has no subprocess
+    # isolation), so jax's XLA compilation cache and device buffers accumulate
+    # across the many sampled trials in reduce_ruleset and grow RSS without
+    # bound. Clear them periodically to keep memory flat. No-op for other libs.
+    if lib != "jax":
+        return
+    try:
+        import gc
+        import jax
+        jax.clear_caches()
+        gc.collect()
+    except Exception:
+        pass
+
+def _concrete_input_nbytes(concrete_input):
+    total = 0
+    try:
+        vals = concrete_input.values() if isinstance(concrete_input, dict) else concrete_input
+        for v in vals:
+            if isinstance(v, np.ndarray):
+                total += v.nbytes
+            elif isinstance(v, (list, tuple)):
+                for x in v:
+                    if isinstance(x, np.ndarray):
+                        total += x.nbytes
+    except Exception:
+        pass
+    return total
+
 def save_invariants(api, ruleset, invariant_file):
     if len(ruleset) > 0:
         # If there are rules that have been passed, write them
@@ -58,7 +96,7 @@ def reduce_ruleset(ruleset, signature, api, z3_args, max_trial=30, time_budget=3
         perma_block = set()
 
         start_time = time.time()
-        while time.time() - start_time < time_budget_per_rule or trial < max_trial:
+        while time.time() - start_time < time_budget_per_rule and trial < max_trial:
             block_one = []
             remaining_ruleset = set(ruleset)
             if rule is not None: 
@@ -121,9 +159,18 @@ def reduce_ruleset(ruleset, signature, api, z3_args, max_trial=30, time_budget=3
             except np.core._exceptions._ArrayMemoryError as e:
                 print("Skipping input due to the tensor being too large.")
                 continue
-            
+
+            if _concrete_input_nbytes(concrete_input) > MAX_INPUT_BYTES:
+                # In-process oracle would OOM-kill the whole job on this sample; skip it.
+                print(f"Skipping oversized sampled input ({_concrete_input_nbytes(concrete_input)/1e6:.1f} MB > {MAX_INPUT_BYTES/1e6:.0f} MB).", flush=True)
+                trial += 1
+                continue
+
             status, exception_message = oracle_crash(api, concrete_input, cpu=True, lib=lib)
-            
+
+            if trial % 5 == 0:
+                _free_jax_memory(lib)
+
             if status != "invalid":
                 valid += 1
             elif print_details and exception_message:
@@ -183,7 +230,15 @@ def update_ruleset(api, input_dict, ruleset, lib="torch"):
                 _, _, *args = rule
                 if any(arg in optional_none_params for arg in args):
                     preserved.add(rule)
-            ruleset = ruleset.intersection(check_rules_z3(api, input_dict, lib=lib)).union(preserved)
+            passed, errored = check_rules_z3(api, input_dict, lib=lib, return_errored=True)
+            # keep rules that PASSED or were INDETERMINATE (errored) on this input; only drop
+            # rules that were evaluable AND genuinely violated -- an un-evaluable rule is not a counterexample
+            new_ruleset = ruleset.intersection(passed | errored).union(preserved)
+            # A single VALID input that invalidates EVERY surviving invariant is almost always a
+            # degenerate/mishandled input (e.g. a negated scalar) rather than genuine evidence that
+            # no rule holds -- skip it instead of nuking the whole API's invariant set.
+            if new_ruleset:
+                ruleset = new_ruleset
 
     return ruleset, status, exception_message
 
@@ -250,7 +305,7 @@ def infer_invariants(api, print_details=False, regen=False, lib="torch", time_bu
             else:
                 raise ValueError(f"Invalid library: {lib}")
             
-            api_signature = get_signature(api, lib=lib, suffix=suffix)
+            api_signature = get_signature(api, lib=lib, suffix=suff)
             llm_inputs = []
             raw_op_map = get_raw_op_mapping()
 

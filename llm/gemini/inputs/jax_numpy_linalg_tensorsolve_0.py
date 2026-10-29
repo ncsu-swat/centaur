@@ -4,90 +4,131 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tensorsolve_inputs():
     list_of_inputs = []
 
-    # Input 1
-    a = np.random.randn(2, 2, 4).astype(np.float32)
-    b = np.random.randn(2, 2).astype(np.float32)
-    axes = (2,)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    def make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32):
+        n = int(np.prod(b_shape))
+        ndim = len(b_shape) + len(q_shape)
 
-    # Input 2
-    a = np.random.randn(4, 2, 2).astype(np.float64)
-    b = np.random.randn(2, 2).astype(np.float64)
+        allaxes = list(range(ndim))
+        for k in axes:
+            allaxes.remove(k)
+            allaxes.append(k)
+
+        inv_axes = np.argsort(allaxes)
+
+        if np.issubdtype(dtype, np.complexfloating):
+            m = np.eye(n, dtype=dtype) + 0.1 * (
+                np.random.randn(n, n) + 1j * np.random.randn(n, n)
+            ).astype(dtype)
+        else:
+            m = np.eye(n, dtype=dtype) + 0.1 * np.random.randn(n, n).astype(
+                dtype
+            )
+
+        a_transposed = m.reshape(b_shape + q_shape)
+        a = a_transposed.transpose(inv_axes)
+        return a
+
+    # Input 1: 1D b, 1D x, float32, axes=()
+    b_shape = (4,)
+    q_shape = (4,)
+    axes = ()
+    b = np.random.randn(*b_shape).astype(np.float32)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
+
+    # Input 2: 2D b, 1D x, float32, axes=()
+    b_shape = (2, 2)
+    q_shape = (4,)
+    axes = ()
+    b = np.random.randn(*b_shape).astype(np.float32)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
+
+    # Input 3: 2D b, 2D x, float64, axes=(0,)
+    b_shape = (2, 3)
+    q_shape = (3, 2)
     axes = (0,)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    b = np.random.randn(*b_shape).astype(np.float64)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 3
-    a = np.random.randn(3, 3).astype(np.float32)
-    b = np.random.randn(3).astype(np.float32)
+    # Input 4: 1D b, 2D x, float32, axes=(1,)
+    b_shape = (6,)
+    q_shape = (2, 3)
     axes = (1,)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    b = np.random.randn(*b_shape).astype(np.float32)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 4
-    a = np.random.randn(2, 3, 1, 6).astype(np.float32)
-    b = np.random.randn(2, 3).astype(np.float32)
-    axes = (2, 3)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D b, 1D x, float32, axes=()
+    b_shape = (2, 2, 2)
+    q_shape = (8,)
+    axes = ()
+    b = np.random.randn(*b_shape).astype(np.float32)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 5
-    a = np.random.randn(2, 1, 6, 3).astype(np.float64)
-    b = np.random.randn(2, 3).astype(np.float64)
-    axes = (1, 2)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: complex64, 2D b, 1D x, axes=()
+    b_shape = (2, 2)
+    q_shape = (4,)
+    axes = ()
+    b = (
+        np.random.randn(*b_shape) + 1j * np.random.randn(*b_shape)
+    ).astype(np.complex64)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 6
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    b = np.random.randn(2, 2).astype(np.float32)
-    axes = (2, 3)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: complex128, 1D b, 1D x, axes=(0,)
+    b_shape = (5,)
+    q_shape = (5,)
+    axes = (0,)
+    b = (
+        np.random.randn(*b_shape) + 1j * np.random.randn(*b_shape)
+    ).astype(np.complex128)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 7
-    a = np.random.randn(1, 4, 1, 4).astype(np.float32)
-    b = np.random.randn(1, 4).astype(np.float32)
-    axes = (2, 3)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D b, 2D x, multiple axes reordered, float32
+    b_shape = (2, 2)
+    q_shape = (2, 2)
+    axes = (0, 2)
+    b = np.random.randn(*b_shape).astype(np.float32)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 8
-    a = np.random.randn(3, 1, 3).astype(np.float64)
-    b = np.random.randn(3).astype(np.float64)
-    axes = (1, 2)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: float64, 3D b, 2D x, axes=(1, 3)
+    b_shape = (2, 1, 3)
+    q_shape = (3, 2)
+    axes = (1, 3)
+    b = np.random.randn(*b_shape).astype(np.float64)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 9
-    a = np.random.randn(2, 5, 2, 5).astype(np.float32)
-    b = np.random.randn(2, 5).astype(np.float32)
-    axes = (2, 3)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D b, 3D x, float32, axes=(2,)
+    b_shape = (8,)
+    q_shape = (2, 2, 2)
+    axes = (2,)
+    b = -np.random.rand(*b_shape).astype(np.float32)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
-    # Input 10
-    a = np.random.randn(8, 8).astype(np.float64)
-    b = np.random.randn(8).astype(np.float64)
-    axes = (1,)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11
-    a = np.random.randn(2, 2, 2, 2, 16).astype(np.float32)
-    b = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    axes = (4,)
-    input_dict = {"a": a, "b": b, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 4D b, 1D x, float32, axes=()
+    b_shape = (2, 1, 2, 2)
+    q_shape = (8,)
+    axes = ()
+    b = np.random.randn(*b_shape).astype(np.float32)
+    a = make_well_conditioned_a(b_shape, q_shape, axes, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "axes": axes}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.tensorsolve"] = tensorsolve_inputs()
 

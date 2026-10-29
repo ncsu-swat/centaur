@@ -4,7 +4,6 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def radians_inputs():
@@ -14,40 +13,48 @@ def radians_inputs():
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive 180 degrees
+    # Input 2: Common positive angle (180 degrees -> pi)
     input_dict = {"x": 180.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative 180 degrees
-    input_dict = {"x": -180.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Positive 90 degrees
-    input_dict = {"x": 90.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Negative 45 degrees
-    input_dict = {"x": -45.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Positive 360 degrees
+    # Input 3: Full circle
     input_dict = {"x": 360.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Approx one radian in degrees
-    input_dict = {"x": 57.29577951308232}
+    # Input 4: Negative angle
+    input_dict = {"x": -90.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small negative value
-    input_dict = {"x": -0.01}
+    # Input 5: Fractional angle
+    input_dict = {"x": 45.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Very small positive value
-    input_dict = {"x": 1e-5}
+    # Input 6: Negative 180 degrees
+    input_dict = {"x": -180.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Large positive value
-    input_dict = {"x": 720.0}
+    # Input 7: Very small positive float
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Very large positive float
+    input_dict = {"x": 1e6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: NaN value
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative fractional angle
+    input_dict = {"x": -270.25}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

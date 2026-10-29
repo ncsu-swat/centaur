@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# number of dimensions to squeeze cannot exceed the tensor rank (Rule 3)
+# Number of squeezed dimensions cannot exceed array rank (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
     s.add(Not(v["arg2_length"] <= v["arg1_ndim"]) if n else
@@ -22,7 +22,7 @@ def rule_3_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not ((isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)) or (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2))):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations

@@ -4,7 +4,6 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def sinh_inputs():
@@ -14,40 +13,48 @@ def sinh_inputs():
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Small positive integer
+    # Input 2: Positive integer 1
     input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Small negative integer
+    # Input 3: Negative integer -1
     input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Medium positive integer
+    # Input 4: Small positive integer
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Small negative integer
+    input_dict = {"x": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Medium positive integer
     input_dict = {"x": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Medium negative integer
+    # Input 7: Medium negative integer
     input_dict = {"x": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger positive integer
+    # Input 8: Larger positive integer
     input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Larger negative integer
+    # Input 9: Larger negative integer
     input_dict = {"x": -10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Another positive integer
-    input_dict = {"x": 3}
+    # Input 10: Positive integer 20
+    input_dict = {"x": 20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Another negative integer
-    input_dict = {"x": -3}
+    # Input 11: Negative integer -20
+    input_dict = {"x": -20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger integer value
-    input_dict = {"x": 15}
+    # Input 12: Positive integer 42
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

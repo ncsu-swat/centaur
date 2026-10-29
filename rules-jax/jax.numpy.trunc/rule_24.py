@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if input is an integer, it must be positive to ensure non-negative truncation (Rule 24)
+# scalar float input bounded symmetrically around zero (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] > 0) if n else
-          v["arg1_value"] > 0)
+    s.add(Not(If(v["arg1_value"] >= 0.0, v["arg1_value"] <= 1e+20, v["arg1_value"] >= -1e+20)) if n else
+          If(v["arg1_value"] >= 0.0, v["arg1_value"] <= 1e+20, v["arg1_value"] >= -1e+20))
 )
 
 def rule_24_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_24_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 24
         rule_24(solver, {'arg1_value': arg1_value})

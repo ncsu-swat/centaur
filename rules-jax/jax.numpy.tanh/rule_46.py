@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input is a float, it should be within the stable float32 exponentiation limit to avoid overflow (Rule 46)
+# scalar float input is non-zero (Rule 46)
 
 rule_46 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -88.0, v["arg1_value"] < 88.0)) if n else
-          And(v["arg1_value"] > -88.0, v["arg1_value"] < 88.0))
+    s.add(Not(v["arg1_value"] != 0.0) if n else
+          v["arg1_value"] != 0.0)
 )
 
 def rule_46_func(arg1, solver=None, neg=False):

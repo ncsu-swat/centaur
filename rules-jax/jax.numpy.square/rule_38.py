@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input tensor has a standard numeric dtype, its elements must be bounded to prevent squaring overflow (Rule 38)
+# 3-element float tuple with non-negative sum of squares of initial elements (Rule 38)
 
 rule_38 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_dtype"] <= 8, And(Select(v["arg1_range"], 0) > -50000.0, Select(v["arg1_range"], 1) < 50000.0), True)) if n else
-          If(v["arg1_dtype"] <= 8, And(Select(v["arg1_range"], 0) > -50000.0, Select(v["arg1_range"], 1) < 50000.0), True))
+    s.add(Not(And(v["arg1_length"] == 3, Select(v["arg1_values"], 0) * Select(v["arg1_values"], 0) + Select(v["arg1_values"], 1) * Select(v["arg1_values"], 1) >= 0.0)) if n else
+          And(v["arg1_length"] == 3, Select(v["arg1_values"], 0) * Select(v["arg1_values"], 0) + Select(v["arg1_values"], 1) * Select(v["arg1_values"], 1) >= 0.0))
 )
 
 def rule_38_func(arg1, solver=None, neg=False):
@@ -19,23 +19,23 @@ def rule_38_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), RealSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 38
-        rule_38(solver, {'arg1_dtype': arg1_dtype, 'arg1_range': arg1_range})
+        rule_38(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_38(solver, {'arg1_dtype': arg1['dtype'], 'arg1_range': arg1['range']}, neg)
+        rule_38(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# global_scale cannot be of boolean type (Rule 16)
+# global_scale must not be a boolean tensor (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
     s.add(Not(v["arg1_dtype"] != 0) if n else

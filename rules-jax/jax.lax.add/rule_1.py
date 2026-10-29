@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# matching numerical dtypes (Rule 1)
+# Matching numerical dtypes for both inputs (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 10)) if n else

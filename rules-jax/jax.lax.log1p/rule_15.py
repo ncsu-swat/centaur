@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Valid accuracy string values conditioned on non-negative dimensions (Rule 15)
+# when accuracy is "highest", input tensor x must be of floating-point or complex type (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] >= 0, Or(v["arg2_value"] == 37, v["arg2_value"] == 5), False)) if n else
-          If(v["arg1_ndim"] >= 0, Or(v["arg2_value"] == 37, v["arg2_value"] == 5), False))
+    s.add(Not(If(v["arg2_value"] == 37, And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), True)) if n else
+          If(v["arg2_value"] == 37, And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), True))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):
@@ -27,17 +27,17 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        arg1_dtype = Int('arg1_dtype')
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_15(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_15(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)

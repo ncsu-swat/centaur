@@ -4,83 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def kaiser_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero window size, zero beta
-    input_dict = {
-        "M": int(0),
-        "beta": float(0.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic small window with float beta
+    list_of_inputs.append(copy.deepcopy({"M": 4, "beta": 1.5}))
 
-    # Input 2: Size 1, positive beta
-    input_dict = {
-        "M": int(1),
-        "beta": float(5.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Zero length window
+    list_of_inputs.append(copy.deepcopy({"M": 0, "beta": 14.0}))
 
-    # Input 3: Size 10, zero beta (equivalent to rectangular window)
-    input_dict = {
-        "M": int(10),
-        "beta": float(0.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Length 1 window with zero beta
+    list_of_inputs.append(copy.deepcopy({"M": 1, "beta": 0.0}))
 
-    # Input 4: Size 5, beta = 14.0 (high sidelobe attenuation)
-    input_dict = {
-        "M": int(5),
-        "beta": float(14.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Length 2 window
+    list_of_inputs.append(copy.deepcopy({"M": 2, "beta": 2.0}))
 
-    # Input 5: Size 12, beta = 6.0
-    input_dict = {
-        "M": int(12),
-        "beta": float(6.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Odd window size with zero beta (boxcar window)
+    list_of_inputs.append(copy.deepcopy({"M": 5, "beta": 0.0}))
 
-    # Input 6: Size 50, beta = 8.6
-    input_dict = {
-        "M": int(50),
-        "beta": float(8.6)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Typical signal processing window size with moderate beta
+    list_of_inputs.append(copy.deepcopy({"M": 10, "beta": 5.0}))
 
-    # Input 7: Size 100, beta = 10.0
-    input_dict = {
-        "M": int(100),
-        "beta": float(10.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Window size 12 with standard Kaiser beta
+    list_of_inputs.append(copy.deepcopy({"M": 12, "beta": 8.6}))
 
-    # Input 8: Size 256, beta = 5.0
-    input_dict = {
-        "M": int(256),
-        "beta": float(5.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Larger window with high beta
+    list_of_inputs.append(copy.deepcopy({"M": 64, "beta": 14.0}))
 
-    # Input 9: Size 3, negative beta
-    input_dict = {
-        "M": int(3),
-        "beta": float(-1.5)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large window size with fractional beta
+    list_of_inputs.append(copy.deepcopy({"M": 128, "beta": 0.5}))
 
-    # Input 10: Size 1000, large beta
-    input_dict = {
-        "M": int(1000),
-        "beta": float(20.0)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Negative beta value
+    list_of_inputs.append(copy.deepcopy({"M": 15, "beta": -3.5}))
+
+    # Input 11: Even window size with large beta
+    list_of_inputs.append(copy.deepcopy({"M": 256, "beta": 20.0}))
+
+    # Input 12: Odd window size with small beta
+    list_of_inputs.append(copy.deepcopy({"M": 33, "beta": 0.1}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.kaiser_1"] = kaiser_inputs()
 

@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def mish_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, basic mix of negative, zero, positive
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 2: 2D array, float32, random values
-    x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 3: 3D array, float32, random values
-    x = np.random.randn(2, 3, 5).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: 0D array (scalar tensor), float32
+    # Input 1: 0D scalar float32
     x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D array, float64
-    x = np.random.randn(10).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with positive and negative values
+    x = np.array([-3.0, -1.0, 0.0, 1.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D array, float16
-    x = np.random.randn(2, 2, 4, 4).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array float64
+    x = np.random.randn(4, 5).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Larger 2D array, float32
-    x = np.random.randn(128, 128).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array float32
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Array of zeros, float32
-    x = np.zeros((5, 5), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 4D array float32 (typical CNN feature map shape)
+    x = np.random.randn(2, 8, 16, 16).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Array with large magnitudes (both positive and negative)
-    x = np.array([-100.0, -50.0, 50.0, 100.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: float16 precision
+    x = np.linspace(-5.0, 5.0, 20, dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D array, float32
-    x = np.random.randn(2, 1, 3, 2, 2).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Large positive and negative values (check numerical stability)
+    x = np.array([-100.0, -50.0, -20.0, 0.0, 20.0, 50.0, 100.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 2D array with all zeros
+    x = np.zeros((3, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 5D array
+    x = np.random.uniform(-2.0, 2.0, size=(2, 2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array with small magnitude values near zero
+    x = np.array([-1e-5, -1e-7, 0.0, 1e-7, 1e-5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.mish"] = mish_inputs()
 

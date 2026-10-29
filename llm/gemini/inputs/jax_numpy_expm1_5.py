@@ -4,66 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.numpy as jnp
-import jax._src.numpy.ufuncs as ufuncs
+import numpy as np
 
-_original_expm1 = jnp.expm1
-
-def patched_expm1(x, *args, **kwargs):
-    if isinstance(x, tuple):
-        x = jnp.array(x)
-    return _original_expm1(x, *args, **kwargs)
-
-# Monkeypatch expm1 to accept tuple inputs
-jnp.expm1 = patched_expm1
-ufuncs.expm1 = patched_expm1
 
 def expm1_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float tuple
-    input_dict = {"x": (1.0, 2.0, -3.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array with positive values
+    x = np.array([0.1, 0.5, 1.0, 2.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: Zeros
-    input_dict = {"x": (0.0, -0.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float64 array with negative values
+    x = np.array([-0.1, -0.5, -1.0, -5.0], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: Very small float values
-    input_dict = {"x": (1e-15, -1e-12, 5e-8)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D int32 array
+    x = np.array([0, 1, -1, 2, -2], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: Integer tuple
-    input_dict = {"x": (1, -2, 3, 0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D array with values close to zero
+    x = np.array([1e-4, 1e-6, 2e-10, -1e-8], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: 2D nested tuple
-    input_dict = {"x": ((1.0, 2.0), (3.0, 4.0))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D float32 array
+    x = np.array([[1.0, 2.0], [-1.0, -2.0]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: Boolean tuple
-    input_dict = {"x": (True, False, True)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: Single element tuple
-    input_dict = {"x": (10.5,)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D complex64 array
+    x = np.array([1.0 + 2.0j, -0.5 + 0.1j, 0.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: 3D nested tuple
-    input_dict = {"x": (((1.0, 2.0), (3.0, 4.0)), ((5.0, 6.0), (7.0, 8.0)))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D single-element float32 array
+    x = np.array([0.5], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: Large negative values
-    input_dict = {"x": (-10.0, -20.0, -100.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D float32 array
+    x = np.random.uniform(-2.0, 2.0, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: Moderate float values
-    input_dict = {"x": (0.5, -0.5, 0.1, -0.1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D rectangular float64 array with special values (inf, -inf)
+    x = np.array([[0.0, np.inf], [-np.inf, 1.0]], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: 1D boolean array
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.expm1_5"] = expm1_inputs()
 

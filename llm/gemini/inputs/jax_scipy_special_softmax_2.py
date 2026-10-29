@@ -4,65 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_special_softmax_inputs():
+
+def softmax_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, axis=(0,)
-    x = np.random.randn(4, 5).astype(np.float32)
+    # Input 1: 1D array, single axis
+    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
     axis = (0,)
-    list_of_inputs.append({"x": x, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 2: 2D array, axis=(1,)
-    x = np.random.randn(3, 6).astype(np.float32)
-    axis = (1,)
-    list_of_inputs.append({"x": x, "axis": axis})
+    # Input 2: 2D array, axis along last dimension
+    x = np.random.randn(3, 4).astype(np.float32)
+    axis = (-1,)
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 3: 3D array, axis=(0, 1)
-    x = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 3: 2D array, multi-axis
+    x = np.random.randn(4, 5).astype(np.float64)
     axis = (0, 1)
-    list_of_inputs.append({"x": x, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 4: 3D array, axis=(1, 2)
-    x = np.random.randn(3, 4, 5).astype(np.float64)
+    # Input 4: 3D array, axis across multiple inner dimensions
+    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
     axis = (1, 2)
-    list_of_inputs.append({"x": x, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 5: 1D array, axis=(0,)
-    x = np.random.randn(10).astype(np.float32)
-    axis = (0,)
-    list_of_inputs.append({"x": x, "axis": axis})
+    # Input 5: 3D array, negative axis index
+    x = np.random.randn(2, 4, 6).astype(np.float32)
+    axis = (-2,)
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 6: 4D array, axis=(2, 3)
-    x = np.random.randn(2, 2, 3, 4).astype(np.float32)
-    axis = (2, 3)
-    list_of_inputs.append({"x": x, "axis": axis})
-
-    # Input 7: 2D array with negative values, axis=(0, 1)
-    x = np.array([[-1.0, -2.0], [-3.0, -4.0]]).astype(np.float32)
-    axis = (0, 1)
-    list_of_inputs.append({"x": x, "axis": axis})
-
-    # Input 8: 3D array, axis=(0, 2)
-    x = np.random.randn(4, 3, 2).astype(np.float32)
+    # Input 6: 4D array, non-consecutive axes
+    x = np.random.randn(2, 3, 4, 5).astype(np.float32)
     axis = (0, 2)
-    list_of_inputs.append({"x": x, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 9: 5D array, axis=(1, 3, 4)
-    x = np.random.randn(2, 3, 2, 4, 2).astype(np.float32)
-    axis = (1, 3, 4)
-    list_of_inputs.append({"x": x, "axis": axis})
+    # Input 7: 4D array, single intermediate axis
+    x = np.random.randn(3, 2, 4, 3).astype(np.float64)
+    axis = (1,)
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 10: 2D array with uniform distribution, axis=(0,)
-    x = np.random.uniform(-10, 10, (5, 5)).astype(np.float64)
+    # Input 8: 2D array with large negative numbers
+    x = np.array([[-100.0, -200.0, -300.0], [0.0, -50.0, -10.0]], dtype=np.float32)
     axis = (0,)
-    list_of_inputs.append({"x": x, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
+
+    # Input 9: 3D array across all axes
+    x = np.random.randn(2, 2, 2).astype(np.float64)
+    axis = (0, 1, 2)
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
+
+    # Input 10: 5D array, negative axes
+    x = np.random.randn(2, 2, 3, 2, 4).astype(np.float32)
+    axis = (-3, -1)
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
+
+    # Input 11: 1D array with negative axis
+    x = np.array([-1.5, 0.0, 1.5, 3.0], dtype=np.float64)
+    axis = (-1,)
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.special.softmax_2"] = jax_scipy_special_softmax_inputs()
+
+generated_inputs["jax.scipy.special.softmax_2"] = softmax_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

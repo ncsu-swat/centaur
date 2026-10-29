@@ -10,71 +10,104 @@ import copy
 def polymul_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 1D arrays, trim_leading_zeros=False
-    a1 = np.array([2.0, 1.0, 0.0], dtype=np.float32)
-    a2 = np.array([5.0, 0.0, 3.0], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic 1D float32 arrays with trim_leading_zeros=False
+    a1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    a2 = np.array([4.0, 5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": False
+    }))
 
-    # Input 2: Integer arrays with negative values, trim_leading_zeros=True
-    a1 = np.array([-1, 2, -3], dtype=np.int32)
-    a2 = np.array([4, -5], dtype=np.int32)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Leading zeros with trim_leading_zeros=True
+    a1 = np.array([0.0, 2.0, 1.0, 0.0], dtype=np.float32)
+    a2 = np.array([0.0, 5.0, 0.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": True
+    }))
 
-    # Input 3: Float64 arrays, trim_leading_zeros=False
-    a1 = np.array([1.5, -2.5, 3.0], dtype=np.float64)
-    a2 = np.array([0.5, 2.0], dtype=np.float64)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Negative integer values
+    a1 = np.array([-1, 3, -5], dtype=np.int32)
+    a2 = np.array([2, -4], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": False
+    }))
 
-    # Input 4: Complex numbers, trim_leading_zeros=False
-    a1 = np.array([2.0, 1.0 + 2.0j, 1.0 - 2.0j], dtype=np.complex64)
-    a2 = np.array([0.0, 5.0, 0.0, 3.0], dtype=np.complex64)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Float64 inputs with mixed positive/negative values
+    a1 = np.array([1.5, -2.5, 0.5], dtype=np.float64)
+    a2 = np.array([-3.0, 4.0, -1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": True
+    }))
 
-    # Input 5: Complex numbers, trim_leading_zeros=True
-    a1 = np.array([2.0, 1.0 + 2.0j, 1.0 - 2.0j], dtype=np.complex64)
-    a2 = np.array([0.0, 5.0, 0.0, 3.0], dtype=np.complex64)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Leading zeros in inputs, trim_leading_zeros=False
-    a1 = np.array([0.0, 0.0, 3.0, 4.0], dtype=np.float32)
-    a2 = np.array([0.0, 2.0, 1.0], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Leading zeros in inputs, trim_leading_zeros=True
-    a1 = np.array([0.0, 0.0, 3.0, 4.0], dtype=np.float32)
-    a2 = np.array([0.0, 2.0, 1.0], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Single element arrays (scalars as 1D arrays), trim_leading_zeros=False
+    # Input 5: Single element arrays (scalars as 1D tensors)
     a1 = np.array([5.0], dtype=np.float32)
-    a2 = np.array([10.0], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    a2 = np.array([-3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": False
+    }))
 
-    # Input 9: Large random arrays, trim_leading_zeros=False
-    a1 = np.random.randn(50).astype(np.float32)
-    a2 = np.random.randn(50).astype(np.float32)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Complex numbers (complex64)
+    a1 = np.array([2.0 + 1.0j, 1.0 - 2.0j], dtype=np.complex64)
+    a2 = np.array([3.0 + 0.0j, -1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": False
+    }))
 
-    # Input 10: Int64 arrays, trim_leading_zeros=True
-    a1 = np.array([1, 0, 0, 2], dtype=np.int64)
-    a2 = np.array([0, 0, 3, 4], dtype=np.int64)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Complex numbers with trim_leading_zeros=True
+    a1 = np.array([0.0 + 0.0j, 1.0 + 2.0j, 3.0 + 0.0j], dtype=np.complex128)
+    a2 = np.array([2.0 - 1.0j, 4.0 + 0.0j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": True
+    }))
 
-    # Input 11: All zeros, trim_leading_zeros=True
-    a1 = np.array([0.0, 0.0], dtype=np.float32)
-    a2 = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2, "trim_leading_zeros": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Highly asymmetric lengths
+    a1 = np.array([1.0, 0.0, 2.0, -1.0, 3.0, -2.0, 1.0], dtype=np.float32)
+    a2 = np.array([2.0, 1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": False
+    }))
+
+    # Input 9: All zeros polynomial
+    a1 = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+    a2 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": True
+    }))
+
+    # Input 10: Int64 inputs of different sizes
+    a1 = np.array([10, -20, 30, -40], dtype=np.int64)
+    a2 = np.array([1, -1, 1], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": False
+    }))
+
+    # Input 11: Longer 1D polynomials
+    a1 = np.arange(10, dtype=np.float32)
+    a2 = np.arange(-5, 5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({
+        "a1": a1,
+        "a2": a2,
+        "trim_leading_zeros": True
+    }))
 
     return list_of_inputs
 

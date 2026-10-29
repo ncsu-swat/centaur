@@ -4,53 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ndim_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of floats
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 1: 0-D scalar array (float32)
+    a = np.array(3.14, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 2: 2D array of integers
-    a = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 2: 1-D array (int32)
+    a = np.arange(10, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 3: 3D array of booleans
-    a = np.ones((2, 2, 2), dtype=bool)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 3: 2-D array with negative values (float64)
+    a = np.array([[-1.0, 2.5], [-3.2, 4.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 4: 0D array (scalar)
-    a = np.array(3.14, dtype=np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 4: 3-D array (int64)
+    a = np.zeros((2, 3, 4), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 5: 4D array of float16
-    a = np.random.randn(2, 3, 1, 5).astype(np.float16)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 5: 4-D array (bool)
+    a = np.ones((2, 2, 3, 1), dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 6: 5D array of int16
-    a = np.random.randint(-10, 10, size=(1, 2, 1, 3, 1)).astype(np.int16)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 6: 5-D array (complex64)
+    a = np.ones((1, 2, 1, 3, 1), dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 7: Empty 1D array
+    # Input 7: Empty 1-D array
     a = np.array([], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 8: 2D complex array
-    a = np.array([[1+2j, 3+4j]], dtype=np.complex128)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 8: Empty 3-D array with zero-sized dimension
+    a = np.zeros((0, 2, 5), dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 9: 3D uint8 array
-    a = np.random.randint(0, 255, size=(4, 4, 3)).astype(np.uint8)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 9: 2-D array (uint8)
+    a = np.full((5, 5), 255, dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 10: 6D empty-like array of int64
-    a = np.zeros((1, 1, 1, 1, 1, 1), dtype=np.int64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 10: 6-D array (float16)
+    a = np.zeros((1, 1, 1, 1, 1, 1), dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ndim_1"] = ndim_inputs()
 

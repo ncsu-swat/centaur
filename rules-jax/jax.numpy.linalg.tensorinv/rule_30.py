@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For 5D tensor with ind equal to 3, the product of the first three dimensions must equal the product of the last two dimensions (Rule 30)
+# for a 5D tensor when ind is 4, the product of the first four dimensions must equal the last dimension (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == 5, v["arg2_value"] == 3), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) == Select(v["arg1_shape"], 3) * Select(v["arg1_shape"], 4), True)) if n else
-          If(And(v["arg1_ndim"] == 5, v["arg2_value"] == 3), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) == Select(v["arg1_shape"], 3) * Select(v["arg1_shape"], 4), True))
+    s.add(Not(If(And(v["arg1_ndim"] == 5, v["arg2_value"] == 4), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) * Select(v["arg1_shape"], 3) == Select(v["arg1_shape"], 4), True)) if n else
+          If(And(v["arg1_ndim"] == 5, v["arg2_value"] == 4), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) * Select(v["arg1_shape"], 3) == Select(v["arg1_shape"], 4), True))
 )
 
 def rule_30_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_30_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 30
-        rule_30(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_30(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_30(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_30(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

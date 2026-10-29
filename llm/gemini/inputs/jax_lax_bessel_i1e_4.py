@@ -10,35 +10,41 @@ import copy
 def bessel_i1e_inputs():
     list_of_inputs = []
 
-    # Input 1: float32 scalar representing True
-    list_of_inputs.append({"x": np.float32(1.0)})
+    input_dict = {"x": float(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: float32 scalar representing False
-    list_of_inputs.append({"x": np.float32(0.0)})
+    input_dict = {"x": float(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D float32 array representing [True]
-    list_of_inputs.append({"x": np.array([1.0], dtype=np.float32)})
+    input_dict = {"x": np.float32(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D float32 array representing [True, False, True]
-    list_of_inputs.append({"x": np.array([1.0, 0.0, 1.0], dtype=np.float32)})
+    input_dict = {"x": np.float32(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D float32 array representing [[True, False], [False, True]]
-    list_of_inputs.append({"x": np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float32)})
+    input_dict = {"x": np.float64(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D float32 array representing all True
-    list_of_inputs.append({"x": np.ones((3, 3), dtype=np.float32)})
+    input_dict = {"x": np.float64(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D float32 array representing all False
-    list_of_inputs.append({"x": np.zeros((2, 5), dtype=np.float32)})
+    input_dict = {"x": np.float32(-1.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D float32 array representing booleans
-    list_of_inputs.append({"x": np.array([[[1.0, 0.0]], [[0.0, 1.0]]], dtype=np.float32)})
+    input_dict = {"x": np.float64(-1.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: High-dimensional float32 array representing all True
-    list_of_inputs.append({"x": np.ones((2, 2, 2, 2), dtype=np.float32)})
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D float64 array representing booleans
-    list_of_inputs.append({"x": np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float64)})
+    input_dict = {"x": -0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    input_dict = {"x": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    input_dict = {"x": -2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

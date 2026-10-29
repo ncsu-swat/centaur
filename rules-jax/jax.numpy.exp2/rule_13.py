@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input is an integer, it should be within a safe exponent range to avoid large output magnitudes (Rule 13)
+# scalar input lower bound to avoid complete underflow to zero (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -63, v["arg1_value"] <= 63)) if n else
-          And(v["arg1_value"] >= -63, v["arg1_value"] <= 63))
+    s.add(Not(v["arg1_value"] >= -1074) if n else
+          v["arg1_value"] >= -1074)
 )
 
 def rule_13_func(arg1, solver=None, neg=False):
@@ -19,15 +19,13 @@ def rule_13_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 13
         rule_13(solver, {'arg1_value': arg1_value})

@@ -4,133 +4,130 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import jax
-import numpy as np
 import copy
+import numpy as np
 
-# Monkeypatch jax.lax.Precision to support comparison operators for numpy's min/max
-try:
-    jax.lax.Precision.__lt__ = lambda self, other: self.value < other.value if hasattr(other, 'value') else NotImplemented
-    jax.lax.Precision.__le__ = lambda self, other: self.value <= other.value if hasattr(other, 'value') else NotImplemented
-    jax.lax.Precision.__gt__ = lambda self, other: self.value > other.value if hasattr(other, 'value') else NotImplemented
-    jax.lax.Precision.__ge__ = lambda self, other: self.value >= other.value if hasattr(other, 'value') else NotImplemented
-except Exception:
-    pass
+
+class PrecisionTuple(tuple):
+    def __array__(self, dtype=None, copy=None):
+        return np.array(list(self), dtype=object)
+
 
 def inner_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32
-    a = np.random.randn(5).astype(np.float32)
-    b = np.random.randn(5).astype(np.float32)
+    # Input 1: 1D float32 arrays
+    a = np.array([1.0, -2.0, 3.5], dtype=np.float32)
+    b = np.array([4.0, 0.5, -1.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": "float32"
+        "precision": PrecisionTuple(("default", "default")),
+        "preferred_element_type": "float32",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D inputs with different batch dimensions
-    a = np.random.randn(2, 3).astype(np.float32)
-    b = np.random.randn(4, 3).astype(np.float32)
+    # Input 2: 2D arrays
+    a = np.arange(6, dtype=np.float64).reshape((2, 3))
+    b = np.arange(-3, 3, dtype=np.float64).reshape((2, 3))
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": "float32"
+        "precision": PrecisionTuple(("high", "high")),
+        "preferred_element_type": "float64",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float64 inputs
-    a = np.array([-1.5, 2.3, -4.1, 0.5], dtype=np.float64)
-    b = np.array([0.2, -3.1, -1.1, 2.2], dtype=np.float64)
+    # Input 3: 1D vs 2D arrays
+    a = np.array([-1.5, 2.5, 0.0, 4.0], dtype=np.float32)
+    b = np.ones((3, 4), dtype=np.float32)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": "float64"
+        "precision": PrecisionTuple(("highest", "highest")),
+        "preferred_element_type": "float32",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Complex numbers
-    a = (np.random.randn(3) + 1j * np.random.randn(3)).astype(np.complex64)
-    b = (np.random.randn(3) + 1j * np.random.randn(3)).astype(np.complex64)
+    # Input 4: 3D arrays with mixed precision
+    a = np.random.randn(2, 4, 5).astype(np.float32)
+    b = np.random.randn(3, 1, 5).astype(np.float32)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": "complex64"
+        "precision": PrecisionTuple(("high", "default")),
+        "preferred_element_type": "float32",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D and 2D arrays
-    a = np.random.randn(2, 2, 4).astype(np.float32)
-    b = np.random.randn(3, 4).astype(np.float32)
+    # Input 5: Complex arrays
+    a = np.array([1.0 + 2.0j, -3.0 + 0.5j], dtype=np.complex64)
+    b = np.array([0.0 - 1.0j, 2.0 + 2.0j], dtype=np.complex64)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": "float32"
+        "precision": PrecisionTuple(("default", "high")),
+        "preferred_element_type": "complex64",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Integer inputs
-    a = np.random.randint(-10, 10, size=(6,)).astype(np.int32)
-    b = np.random.randint(-10, 10, size=(6,)).astype(np.int32)
+    # Input 6: Integer arrays accumulating into float32
+    a = np.array([[1, -2, 3], [4, 5, -6]], dtype=np.int32)
+    b = np.array([[7, 8, 9]], dtype=np.int32)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": "int32"
+        "precision": PrecisionTuple(("default", "default")),
+        "preferred_element_type": "float32",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D arrays
-    a = np.random.randn(2, 1, 3, 5).astype(np.float32)
-    b = np.random.randn(3, 2, 1, 5).astype(np.float32)
+    # Input 7: 4D and 2D arrays
+    a = np.random.randn(2, 1, 3, 4).astype(np.float32)
+    b = np.random.randn(5, 4).astype(np.float32)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": "float32"
+        "precision": PrecisionTuple(("highest", "default")),
+        "preferred_element_type": "float32",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Single element vectors
-    a = np.array([3.14]).astype(np.float32)
-    b = np.array([-1.59]).astype(np.float32)
+    # Input 8: Float16 inputs upcasting to float32
+    a = np.array([[-0.5, 1.5], [2.0, -3.0]], dtype=np.float16)
+    b = np.array([[1.0, 0.5], [-1.0, -2.0]], dtype=np.float16)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": "float32"
+        "precision": PrecisionTuple(("default", "default")),
+        "preferred_element_type": "float32",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large dimensions
-    a = np.random.randn(100).astype(np.float32)
-    b = np.random.randn(100).astype(np.float32)
+    # Input 9: Single-element contraction dimension
+    a = np.array([[[-5.0]], [[3.0]]], dtype=np.float64)
+    b = np.array([[2.0], [-1.0], [0.5]], dtype=np.float64)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": "float32"
+        "precision": PrecisionTuple(("high", "highest")),
+        "preferred_element_type": "float64",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Mixed sizes in 1D
-    a = np.random.randn(8).astype(np.float64)
-    b = np.random.randn(8).astype(np.float64)
+    # Input 10: High-dimensional array contraction
+    a = np.ones((2, 2, 2, 2), dtype=np.float32)
+    b = np.full((3, 2), -1.0, dtype=np.float32)
     input_dict = {
         "a": a,
         "b": b,
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": "float64"
+        "precision": PrecisionTuple(("highest", "high")),
+        "preferred_element_type": "float32",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.inner_4"] = inner_inputs()
 

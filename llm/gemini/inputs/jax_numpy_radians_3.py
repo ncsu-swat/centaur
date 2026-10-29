@@ -4,69 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax._src.numpy.util as jax_util
-import jax._src.numpy.ufuncs as jax_ufuncs
+import numpy as np
 
-# Patch JAX's promote_args_inexact to automatically convert tuples to JAX arrays 
-# before any array-like checks or float0 checks are run.
-def patch_promote(module):
-    if hasattr(module, 'promote_args_inexact'):
-        orig_promote = module.promote_args_inexact
-        def custom_promote(fun_name, *args):
-            new_args = tuple(jax.numpy.asarray(x) if isinstance(x, tuple) else x for x in args)
-            return orig_promote(fun_name, *new_args)
-        module.promote_args_inexact = custom_promote
-
-patch_promote(jax_util)
-patch_promote(jax_ufuncs)
 
 def radians_inputs():
     list_of_inputs = []
 
-    # Input 1: Single element float tuple
-    input_dict = {"x": (0.0,)}
+    # Input 1: 1D array of standard float32 angles
+    input_dict = {
+        "x": np.array([0.0, 30.0, 45.0, 60.0, 90.0, 180.0], dtype=np.float32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard angles in float tuple
-    input_dict = {"x": (180.0, 90.0, 45.0)}
+    # Input 2: 1D array with negative float64 angles
+    input_dict = {
+        "x": np.array([-360.0, -180.0, -90.0, -45.0, 0.0], dtype=np.float64)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative angles in float tuple
-    input_dict = {"x": (-180.0, -360.0)}
+    # Input 3: Single element 1D array
+    input_dict = {"x": np.array([180.0], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Integer tuple
-    input_dict = {"x": (0, 30, 45, 60, 90)}
+    # Input 4: 1D array of int32 values
+    input_dict = {"x": np.array([0, 90, 180, 270, 360], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive angles
-    input_dict = {"x": (360.0, 720.0, 1080.0)}
+    # Input 5: 1D array of negative int64 values
+    input_dict = {"x": np.array([-360, -270, -180, -90, 0], dtype=np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Floating point angles with precision
-    input_dict = {"x": (12.34, 56.78, -90.12)}
+    # Input 6: 1D array with special float values (nan, inf)
+    input_dict = {
+        "x": np.array([0.0, np.nan, np.inf, -np.inf], dtype=np.float32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Zero variations
-    input_dict = {"x": (0.0, -0.0)}
+    # Input 7: 1D array with large angle values
+    input_dict = {
+        "x": np.array([720.0, 1080.0, 1440.0, -720.0], dtype=np.float32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Larger tuple of integers
-    input_dict = {"x": (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)}
+    # Input 8: 1D array with small angle values
+    input_dict = {
+        "x": np.array([1e-4, -1e-4, 1e-6, -1e-6], dtype=np.float64)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Floating point scales
-    input_dict = {"x": (1e-3, 1e2, 1.5e3)}
+    # Input 9: 1D array of booleans
+    input_dict = {"x": np.array([True, False, True, True], dtype=bool)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Mixed positive and negative float tuple
-    input_dict = {"x": (-45.5, 0.0, 45.5, -135.0, 225.0)}
+    # Input 10: Finely-spaced 1D array of angles
+    input_dict = {"x": np.linspace(0.0, 360.0, 37, dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D array of fractional angles
+    input_dict = {
+        "x": np.array([12.5, 37.3, 89.9, 179.9, 359.1], dtype=np.float32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.radians_3"] = radians_inputs()
 

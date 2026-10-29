@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axes list elements must contain unique dimensions (Rule 30)
+# all axes entries in tuple must be non-negative (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_length"] <= 1, (And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg1_length"] - 1 + 1), Or(i == j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j))) for j in range(6)])) for i in range(6)])))) if n else
-          Or(v["arg1_length"] <= 1, (And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg1_length"] - 1 + 1), Or(i == j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j))) for j in range(6)])) for i in range(6)]))))
+    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])) if n else
+          And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)]))
 )
 
 def rule_30_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_30_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
@@ -33,9 +33,9 @@ def rule_30_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 30
-        rule_30(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_30(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_30(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_30(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

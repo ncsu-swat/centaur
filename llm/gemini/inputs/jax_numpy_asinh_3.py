@@ -4,43 +4,21 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asinh_inputs():
     list_of_inputs = []
 
-    # Input 1: positive python integer
-    list_of_inputs.append({"x": 5})
+    integers = [0, 1, -1, 2, -2, 10, -10, 42, -100, 1000, -65536, 1000000]
 
-    # Input 2: negative python integer
-    list_of_inputs.append({"x": -5})
-
-    # Input 3: zero python integer
-    list_of_inputs.append({"x": 0})
-
-    # Input 4: np.int32 positive
-    list_of_inputs.append({"x": np.int32(10)})
-
-    # Input 5: np.int32 negative
-    list_of_inputs.append({"x": np.int32(-10)})
-
-    # Input 6: np.int64 large positive
-    list_of_inputs.append({"x": np.int64(100000)})
-
-    # Input 7: np.int64 large negative
-    list_of_inputs.append({"x": np.int64(-100000)})
-
-    # Input 8: np.int16 positive
-    list_of_inputs.append({"x": np.int16(123)})
-
-    # Input 9: np.int8 positive boundary
-    list_of_inputs.append({"x": np.int8(127)})
-
-    # Input 10: np.int8 negative boundary
-    list_of_inputs.append({"x": np.int8(-128)})
+    for val in integers:
+        input_dict = {"x": val}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asinh_3"] = asinh_inputs()
 

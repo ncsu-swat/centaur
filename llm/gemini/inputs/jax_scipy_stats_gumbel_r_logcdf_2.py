@@ -4,85 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_stats_gumbel_r_logcdf_inputs():
+
+def gumbel_r_logcdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard Gumbel distribution at mode
-    list_of_inputs.append({
-        'x': float(0.0),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 1: Standard Gumbel at x=0.0
+    input_dict = {"x": 0.0, "loc": 0.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Right tail
-    list_of_inputs.append({
-        'x': float(2.5),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 2: Positive x, loc, scale
+    input_dict = {"x": 1.5, "loc": 0.5, "scale": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Left tail
-    list_of_inputs.append({
-        'x': float(-2.5),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 3: Negative x
+    input_dict = {"x": -2.0, "loc": 0.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Shifted distribution with small scale
-    list_of_inputs.append({
-        'x': float(1.5),
-        'loc': float(1.0),
-        'scale': float(0.2)
-    })
+    # Input 4: Large positive x with smaller scale
+    input_dict = {"x": 10.0, "loc": 5.0, "scale": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive parameters
-    list_of_inputs.append({
-        'x': float(10.0),
-        'loc': float(5.0),
-        'scale': float(2.5)
-    })
+    # Input 5: Large negative x with large scale
+    input_dict = {"x": -100.0, "loc": 0.0, "scale": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative location parameter
-    list_of_inputs.append({
-        'x': float(-5.0),
-        'loc': float(-10.0),
-        'scale': float(3.0)
-    })
+    # Input 6: Positive x with negative loc
+    input_dict = {"x": 50.0, "loc": -10.0, "scale": 3.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Very small scale parameter
-    list_of_inputs.append({
-        'x': float(0.1),
-        'loc': float(0.0),
-        'scale': float(0.05)
-    })
+    # Input 7: x at 0 with negative loc and small scale
+    input_dict = {"x": 0.0, "loc": -5.0, "scale": 0.1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large scale parameter
-    list_of_inputs.append({
-        'x': float(50.0),
-        'loc': float(10.0),
-        'scale': float(100.0)
-    })
+    # Input 8: Floating point mathematical constants
+    input_dict = {"x": 3.1415926535, "loc": 2.7182818284, "scale": 1.41421356}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large negative x
-    list_of_inputs.append({
-        'x': float(-50.0),
-        'loc': float(0.0),
-        'scale': float(10.0)
-    })
+    # Input 9: Negative x and negative loc
+    input_dict = {"x": -0.5, "loc": -1.5, "scale": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Equal inputs
-    list_of_inputs.append({
-        'x': float(0.5),
-        'loc': float(0.5),
-        'scale': float(0.5)
-    })
+    # Input 10: Small values
+    input_dict = {"x": 1e-3, "loc": 0.0, "scale": 1e-2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Matching x and loc with large scale
+    input_dict = {"x": 100.0, "loc": 100.0, "scale": 50.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative x, positive loc, moderate scale
+    input_dict = {"x": -5.5, "loc": 2.0, "scale": 4.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.gumbel_r.logcdf_2"] = jax_scipy_stats_gumbel_r_logcdf_inputs()
+
+generated_inputs["jax.scipy.stats.gumbel_r.logcdf_2"] = gumbel_r_logcdf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The last dimension of a non-scalar input tensor must be non-negative (Rule 14)
+# leading and trailing dimensions must be positive for multi-dimensional arrays (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 1) >= 0, True)) if n else
-          If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 1) >= 0, True))
+    s.add(Not(If(v["arg1_ndim"] >= 2, And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0), True)) if n else
+          If(v["arg1_ndim"] >= 2, And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0), True))
 )
 
 def rule_14_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_14_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_14(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_14(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

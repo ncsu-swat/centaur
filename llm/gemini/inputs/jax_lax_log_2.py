@@ -4,70 +4,106 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.lax
+import jax.lax as lax
+import numpy as np
 
-_orig_log = jax.lax.log
-def _patched_log(x, *, accuracy=None):
-    return _orig_log(x, accuracy=None)
-jax.lax.log = _patched_log
+
+class IterableTolerance(lax.Tolerance):
+
+    def __init__(self, atol=0.0, rtol=0.0, ulps=0):
+        super().__init__(atol=float(atol), rtol=float(rtol), ulps=int(ulps))
+
+    def __iter__(self):
+        return iter((float(self.atol), float(self.rtol), int(self.ulps)))
+
+    def __len__(self):
+        return 3
+
+    def __getitem__(self, idx):
+        return (float(self.atol), float(self.rtol), int(self.ulps))[idx]
+
 
 def log_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 positive array, accuracy tuple
-    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    accuracy = (1e-4, 1e-4)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 1: 0D scalar float32
+    x = np.array(2.71828, dtype=np.float32)
+    accuracy = IterableTolerance(atol=0.0, rtol=0.0, ulps=2)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 positive array, accuracy tuple
-    x = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
-    accuracy = (1e-5, 1e-5)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 2: 1D float32 array
+    x = np.array([0.5, 1.0, 2.0, 10.0, 100.0], dtype=np.float32)
+    accuracy = IterableTolerance(atol=1e-3, rtol=1e-3, ulps=2)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 positive array, accuracy tuple
-    x = np.random.uniform(0.1, 100.0, size=(2, 2, 2)).astype(np.float64)
-    accuracy = (1e-7, 1e-7)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 3: 2D float64 matrix
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    accuracy = IterableTolerance(atol=0.0, rtol=0.0, ulps=2)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D float16 positive array, accuracy tuple
-    x = np.array([0.5, 1.5, 2.5], dtype=np.float16)
-    accuracy = (1e-2, 1e-2)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 4: 3D float32 array
+    x = np.random.uniform(1.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    accuracy = IterableTolerance(atol=0.0, rtol=0.0, ulps=4)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D complex64 array, accuracy tuple
-    x = (np.random.uniform(0.1, 5.0, size=(2, 3)) + 1j * np.random.uniform(0.1, 5.0, size=(2, 3))).astype(np.complex64)
-    accuracy = (1e-4, 1e-4)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 5: 1D float16 array
+    x = np.array([0.1, 0.5, 1.0, 2.0], dtype=np.float16)
+    accuracy = IterableTolerance(atol=1e-2, rtol=1e-2, ulps=0)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D complex128 array, accuracy tuple
-    x = np.array([1.0 + 1j, 2.0 - 2j, 0.5 + 0.5j], dtype=np.complex128)
-    accuracy = (1e-6, 1e-6)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 6: 2D complex64 array
+    x = np.array(
+        [[1.0 + 1.0j, 2.0 - 0.5j], [1.0 + 2.0j, 0.5 + 1.5j]],
+        dtype=np.complex64,
+    )
+    accuracy = IterableTolerance(atol=1e-3, rtol=1e-3, ulps=0)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 0D (scalar-like) float32 array, accuracy tuple
-    x = np.array(5.0, dtype=np.float32)
-    accuracy = (1e-3, 1e-3)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 7: 1D complex128 array
+    x = np.array([1.0 + 0.0j, 2.0 + 1.0j, 0.5 + 3.0j], dtype=np.complex128)
+    accuracy = IterableTolerance(atol=0.0, rtol=0.0, ulps=4)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D float32 positive array, accuracy tuple
-    x = np.random.uniform(1.0, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
-    accuracy = (1e-4, 1e-4)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 8: 4D float32 array
+    x = np.random.uniform(0.1, 5.0, size=(2, 2, 3, 3)).astype(np.float32)
+    accuracy = IterableTolerance(atol=0.01, rtol=0.01, ulps=4)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D float64 positive array with large values, accuracy tuple
-    x = np.random.uniform(10.0, 1000.0, size=(4, 2)).astype(np.float64)
-    accuracy = (1e-8, 1e-8)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 9: 1D float32 array with small fractions
+    x = np.array([0.01, 0.1, 0.25, 0.5, 1.0], dtype=np.float32)
+    accuracy = IterableTolerance(atol=0.05, rtol=0.05, ulps=0)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D complex64 array, accuracy tuple
-    x = (np.random.uniform(1.0, 10.0, size=(2, 1, 3)) + 1j * np.random.uniform(1.0, 10.0, size=(2, 1, 3))).astype(np.complex64)
-    accuracy = (1e-5, 1e-5)
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 10: 5D float32 array
+    x = np.random.uniform(1.0, 20.0, size=(1, 2, 2, 2, 2)).astype(np.float32)
+    accuracy = IterableTolerance(atol=0.0, rtol=0.0, ulps=8)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D float64 array with small values
+    x = np.array([[1e-10, 1e-5], [1e-3, 1e-1]], dtype=np.float64)
+    accuracy = IterableTolerance(atol=1e-4, rtol=1e-4, ulps=2)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 1D float64 array with large values
+    x = np.array([1e3, 1e6, 1e9], dtype=np.float64)
+    accuracy = IterableTolerance(atol=1e-3, rtol=0.0, ulps=0)
+    input_dict = {"x": x, "accuracy": accuracy}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.log_2"] = log_inputs()
 

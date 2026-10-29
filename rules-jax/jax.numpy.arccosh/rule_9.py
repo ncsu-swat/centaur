@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input list of floats must have a non-negative length (Rule 9)
+# for real-valued input tensors, elements must be at least 1 to prevent NaN outputs (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] >= 0) if n else
-          v["arg1_length"] >= 0)
+    s.add(Not(If(v["arg1_dtype"] <= 8, Select(v["arg1_range"], 0) >= 1, True)) if n else
+          If(v["arg1_dtype"] <= 8, Select(v["arg1_range"], 0) >= 1, True))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_9_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_dtype = Int('arg1_dtype')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_length': arg1_length})
+        rule_9(solver, {'arg1_range': arg1_range, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_length': arg1['length']}, neg)
+        rule_9(solver, {'arg1_range': arg1['range'], 'arg1_dtype': arg1['dtype']}, neg)

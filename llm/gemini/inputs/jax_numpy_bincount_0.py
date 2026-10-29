@@ -4,123 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bincount_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive values with float weights
-    x = np.array([1, 1, 2, 3, 3, 3], dtype=np.int32)
-    weights = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 0,
-        "length": 5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic 1D int32 array with float32 weights
+    x = np.array([1, 2, 3, 3, 2, 1], dtype=np.int32)
+    weights = np.array([0.5, 1.0, 1.5, 2.0, 0.5, 1.0], dtype=np.float32)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 0, "length": 5}
+    )
 
-    # Input 2: Negative integers (clipped to 0 in JAX)
-    x = np.array([-1, -2, 1, 2, -1], dtype=np.int32)
-    weights = np.array([0.5, 1.5, 2.5, 3.5, 4.5], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 0,
-        "length": 4
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Int64 array with matching int64 weights
+    x = np.array([0, 1, 0, 1, 4], dtype=np.int64)
+    weights = np.array([1, 2, 3, 4, 5], dtype=np.int64)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 5, "length": 6}
+    )
 
-    # Input 3: Large scale inputs with integer weights
-    x = np.random.randint(0, 10, size=100).astype(np.int32)
-    weights = np.ones(100, dtype=np.int32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 5,
-        "length": 12
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Array containing negative values (clipped to 0 in JAX)
+    x = np.array([-3, -1, 0, 2, 4], dtype=np.int32)
+    weights = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 0, "length": 6}
+    )
 
-    # Input 4: Out of bounds values (larger than length + 1 are dropped)
-    x = np.array([1, 2, 10, 15, 2], dtype=np.int32)
+    # Input 4: Empty arrays
+    x = np.array([], dtype=np.int32)
+    weights = np.array([], dtype=np.float32)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 0, "length": 0}
+    )
+
+    # Input 5: Single element array with minlength equal to length
+    x = np.array([3], dtype=np.int32)
+    weights = np.array([2.5], dtype=np.float32)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 4, "length": 4}
+    )
+
+    # Input 6: Values exceeding length (dropped by JAX bincount)
+    x = np.array([1, 2, 10, 20, 30], dtype=np.int32)
     weights = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 0,
-        "length": 5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 0, "length": 4}
+    )
 
-    # Input 5: Minlength larger than length
-    x = np.array([1, 2, 2], dtype=np.int32)
-    weights = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 8,
-        "length": 5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: uint8 array with float16 weights
+    x = np.array([0, 1, 2, 1, 0], dtype=np.uint8)
+    weights = np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float16)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 2, "length": 5}
+    )
 
-    # Input 6: High precision float weights
-    x = np.array([0, 0, 1, 1], dtype=np.int64)
-    weights = np.array([0.123456789, 0.987654321, 1.111111111, 2.222222222], dtype=np.float64)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 2,
-        "length": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Larger array with random integers
+    x = np.random.randint(0, 10, size=50).astype(np.int32)
+    weights = np.random.randn(50).astype(np.float32)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 5, "length": 15}
+    )
 
-    # Input 7: Single element arrays
-    x = np.array([4], dtype=np.int32)
-    weights = np.array([10.0], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 1,
-        "length": 6
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: All zeros input
+    # Input 9: All zero array with int32 weights
     x = np.zeros(10, dtype=np.int32)
-    weights = np.linspace(0, 1, 10, dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 2,
-        "length": 5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    weights = np.ones(10, dtype=np.int32)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 1, "length": 3}
+    )
 
-    # Input 9: Complex negative and positive mix
-    x = np.array([-5, 0, 5, -10, 10], dtype=np.int32)
-    weights = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 0,
-        "length": 8
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Int16 array with negative and positive values
+    x = np.array([-5, -2, 0, 1, 3, 5], dtype=np.int16)
+    weights = np.array([0.5, 0.5, 1.0, 1.5, 2.0, 2.5], dtype=np.float64)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 3, "length": 8}
+    )
 
-    # Input 10: Larger length limitation with elements at the boundary
-    x = np.array([18, 19, 20, 21, 2], dtype=np.int32)
-    weights = np.array([1.5, 2.5, 3.5, 4.5, 5.5], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "weights": weights,
-        "minlength": 0,
-        "length": 20
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: All identical positive elements with large length
+    x = np.full(8, 2, dtype=np.int64)
+    weights = np.full(8, 1.5, dtype=np.float32)
+    list_of_inputs.append(
+        {"x": x, "weights": weights, "minlength": 0, "length": 10}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bincount"] = bincount_inputs()
 

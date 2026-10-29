@@ -4,53 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def block_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 2D float32 array
-    arrays = np.random.randn(3, 3).astype(np.float32)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 1: 2D float32 array
+    arr = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 2: 3D float32 array
-    arrays = np.zeros((2, 4, 3), dtype=np.float32)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 2: 1D int64 array with negative values
+    arr = np.array([-5, -3, 0, 2, 7], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 3: 4D float64 array
-    arrays = np.ones((2, 2, 2, 2), dtype=np.float64)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 3: 3D float64 array
+    arr = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 4: 1D int32 array
-    arrays = np.arange(12, dtype=np.int32)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 4: 0D scalar array
+    arr = np.array(42.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 5: 2D float32 array with negative values
-    arrays = np.full((4, 5), -8.5, dtype=np.float32)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 5: 4D boolean array
+    arr = np.array([[[[True, False], [False, True]]]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 6: 2D int64 identity matrix
-    arrays = np.eye(5, dtype=np.int64)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 6: 2D int32 array
+    arr = np.array([[-10, 20], [30, -40]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 7: 3D int32 array with mixed positive/negative values
-    arrays = np.random.randint(-50, 50, size=(2, 3, 2)).astype(np.int32)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 7: 1D float32 array
+    arr = np.array([0.0, 1.5, -2.5, 3.14], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 8: Small 2D float32 array explicitly created
-    arrays = np.array([[1.5, -2.5], [3.5, -4.5]], dtype=np.float32)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 8: 3D empty array with zero dimension
+    arr = np.zeros((0, 2, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 9: 2D uint8 array
-    arrays = np.ones((6, 6), dtype=np.uint8)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 9: 5D int32 array
+    arr = np.ones((1, 2, 1, 3, 2), dtype=np.int32) * -10
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
-    # Input 10: 4D float32 array with singleton dimensions
-    arrays = np.zeros((1, 5, 1, 5), dtype=np.float32)
-    list_of_inputs.append({"arrays": arrays})
+    # Input 10: 2D float64 array
+    arr = np.array([[-1.5, 0.0], [2.5, -3.5]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"arrays": arr}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.block_1"] = block_inputs()
 

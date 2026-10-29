@@ -4,65 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_fabs_inputs():
+def fabs_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar boolean
-    x = np.bool_(True)
-    input_dict = {"x": x}
+    # Input 1: Python True
+    input_dict = {"x": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D boolean array
-    x = np.array([True, False, True], dtype=bool)
-    input_dict = {"x": x}
+    # Input 2: Python False
+    input_dict = {"x": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D boolean array
-    x = np.array([[True, False], [False, True]], dtype=bool)
-    input_dict = {"x": x}
+    # Input 3: NumPy bool True
+    input_dict = {"x": np.bool_(True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D boolean array
-    x = np.array([[[True, False], [False, True]], [[False, False], [True, True]]], dtype=bool)
-    input_dict = {"x": x}
+    # Input 4: NumPy bool False
+    input_dict = {"x": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 0D boolean array
-    x = np.array(False, dtype=bool)
-    input_dict = {"x": x}
+    # Input 5: Python bool from int 1
+    input_dict = {"x": bool(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D boolean array
-    x = np.random.choice([True, False], size=(2, 2, 2, 2)).astype(bool)
-    input_dict = {"x": x}
+    # Input 6: Python bool from int 0
+    input_dict = {"x": bool(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D all True array
-    x = np.ones((10,), dtype=bool)
-    input_dict = {"x": x}
+    # Input 7: NumPy bool from int 1
+    input_dict = {"x": np.bool_(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D all False array
-    x = np.zeros((5,), dtype=bool)
-    input_dict = {"x": x}
+    # Input 8: NumPy bool from int 0
+    input_dict = {"x": np.bool_(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D large boolean array
-    x = np.random.choice([True, False], size=(10, 10)).astype(bool)
-    input_dict = {"x": x}
+    # Input 9: NumPy True_ constant
+    input_dict = {"x": np.True_}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D boolean array
-    x = np.random.choice([True, False], size=(2, 1, 3, 1, 2)).astype(bool)
-    input_dict = {"x": x}
+    # Input 10: NumPy False_ constant
+    input_dict = {"x": np.False_}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.fabs_4"] = jax_numpy_fabs_inputs()
+generated_inputs["jax.numpy.fabs_4"] = fabs_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

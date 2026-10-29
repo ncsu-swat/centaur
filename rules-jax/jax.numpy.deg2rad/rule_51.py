@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor x must have 32 or fewer dimensions (Rule 51)
+# integer scalar angle is an exact multiple of 60 degrees (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 32) if n else
-          v["arg1_ndim"] <= 32)
+    s.add(Not(v["arg1_value"] % 60 == 0) if n else
+          v["arg1_value"] % 60 == 0)
 )
 
 def rule_51_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_51_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 51
-        rule_51(solver, {'arg1_ndim': arg1_ndim})
+        rule_51(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_51(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_51(solver, {'arg1_value': arg1['value']}, neg)

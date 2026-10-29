@@ -8,46 +8,61 @@ import copy
 import numpy as np
 
 
-def jax_numpy_sin_inputs():
+def sin_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0.0})
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 2: Positive angle (pi / 2)
+    input_dict = {"x": float(np.pi / 2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 3: Positive angle (pi)
+    input_dict = {"x": float(np.pi)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Pi
-    list_of_inputs.append({"x": 3.141592653589793})
+    # Input 4: Negative angle (-pi / 2)
+    input_dict = {"x": float(-np.pi / 2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Pi/2
-    list_of_inputs.append({"x": 1.5707963267948966})
+    # Input 5: Full circle (2 * pi)
+    input_dict = {"x": float(2 * np.pi)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: -Pi/2
-    list_of_inputs.append({"x": -1.5707963267948966})
+    # Input 6: Arbitrary positive float
+    input_dict = {"x": 1.2345}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small positive float
-    list_of_inputs.append({"x": 1e-5})
+    # Input 7: Arbitrary negative float
+    input_dict = {"x": -45.67}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small negative float
-    list_of_inputs.append({"x": -1e-5})
+    # Input 8: Very small positive float
+    input_dict = {"x": 1e-7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large positive float
-    list_of_inputs.append({"x": 100.0})
+    # Input 9: Large float
+    input_dict = {"x": 1e6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Large negative float
-    list_of_inputs.append({"x": -100.0})
+    # Input 10: Special float (inf)
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Arbitrary float
-    list_of_inputs.append({"x": 12.34})
+    # Input 11: Special float (nan)
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
 
-generated_inputs["jax.numpy.sin_2"] = jax_numpy_sin_inputs()
+generated_inputs["jax.numpy.sin_2"] = sin_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

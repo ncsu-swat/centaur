@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the unstacking axis is non-negative, it must be strictly less than the number of dimensions of the tensor (Rule 22)
+# for a 2-dimensional tensor, the unstack axis must lie between -2 and 1 inclusive (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], True)) if n else
-          If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], True))
+    s.add(Not(If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True)) if n else
+          If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True))
 )
 
 def rule_22_func(arg1, arg2, solver=None, neg=False):

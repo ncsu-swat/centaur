@@ -4,68 +4,80 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_or_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D int32 array and integer
-    x = 5
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 1: Basic 1D int32 array
+    input_dict = {"x": 1, "y": np.array([0, 1, 2, 3], dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative integer and 2D int16 array
-    x = -1
-    y = np.array([[0, 1], [2, 3]], dtype=np.int16)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 2: 2D int64 array with zero
+    input_dict = {
+        "x": 0,
+        "y": np.array([[10, 20], [30, 40]], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero and 2D random int32 array
-    x = 0
-    y = np.random.randint(-100, 100, size=(5, 5), dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 3: Negative integer and negative int32 array
+    input_dict = {"x": -1, "y": np.array([-5, 0, 5], dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large integer and 3D int64 array
-    x = 1024
-    y = np.array([[[12], [24]]], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 4: 3D int32 array
+    input_dict = {
+        "x": 7,
+        "y": np.random.randint(0, 100, size=(2, 3, 4), dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Boolean array and integer 1
-    x = 1
-    y = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 5: Empty 1D int32 array
+    input_dict = {"x": 2, "y": np.array([], dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative integer and uint8 3D array
-    x = -50
-    y = np.random.randint(0, 255, size=(2, 3, 4), dtype=np.uint8)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 6: 0D scalar int32 array
+    input_dict = {"x": 15, "y": np.array(5, dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Hex mask integer and 1D int32 array
-    x = 0xFFFF
-    y = np.array([256, 512, 1024], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 7: 3D int64 array
+    input_dict = {
+        "x": 3,
+        "y": np.array([[[1, -2]], [[3, -4]]], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very large integer and int64 array
-    x = 123456789
-    y = np.array([1, 2, 3, 4, 5], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 8: 2D int32 array
+    input_dict = {
+        "x": 255,
+        "y": np.random.randint(0, 255, size=(4, 4), dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative integer and int8 1D array
-    x = -2
-    y = np.random.randint(-10, 10, size=(10,), dtype=np.int8)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 9: 4D int64 array with negative scalar
+    input_dict = {
+        "x": -10,
+        "y": np.random.randint(-100, 100, size=(2, 2, 2, 2), dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Integer with 3D broadcastable array
-    x = 7
-    y = np.random.randint(0, 10, size=(3, 1, 3), dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 10: 2D column vector with int32
+    input_dict = {
+        "x": 42,
+        "y": np.random.randint(0, 1000, size=(5, 1), dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Zero and boolean array
-    x = 0
-    y = np.array([[True, False], [False, True]], dtype=bool)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 11: 1D int64 array
+    input_dict = {
+        "x": 1024,
+        "y": np.array([100, 200, 300, 400], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_or_4"] = bitwise_or_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor has floating-point or complex type of any dimension (Rule 7)
+# integer tolerance tuple must have length 2 with non-negative bounds (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] >= 0, v["arg1_dtype"] > 5), v["arg1_dtype"] < 11)) if n else
-          And(And(v["arg1_ndim"] >= 0, v["arg1_dtype"] > 5), v["arg1_dtype"] < 11))
+    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) >= 0), Select(v["arg1_values"], 1) >= 0)) if n else
+          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) >= 0), Select(v["arg1_values"], 1) >= 0))
 )
 
 def rule_7_func(arg1, solver=None, neg=False):
@@ -19,22 +19,23 @@ def rule_7_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_dtype = Int('arg1_dtype')
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 7
-        rule_7(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim})
+        rule_7(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_7(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_7(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

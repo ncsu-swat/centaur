@@ -4,68 +4,20 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.lax
+import numpy as np
+
 
 def digamma_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D array (scalar-like)
-    x = np.array(1.0, dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Another 0D array
-    x = np.array(2.5, dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 1D array
-    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 2D array (2x2)
-    x = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 2D array (larger)
-    x = np.abs(np.random.randn(5, 5)).astype(np.float32) + 0.5
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 3D array
-    x = np.abs(np.random.randn(2, 3, 4)).astype(np.float32) + 0.5
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 4D array
-    x = np.abs(np.random.randn(2, 2, 2, 2)).astype(np.float32) + 0.5
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: float64 1D array
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: float64 2D array
-    x = np.abs(np.random.randn(3, 3)).astype(np.float64) + 0.5
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 5D array
-    x = np.abs(np.random.randn(2, 1, 3, 1, 2)).astype(np.float32) + 0.5
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11: 1D array with positive values
-    x = np.array([0.1, 0.5, 1.5, 10.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    values = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 7.5, 10.0]
+    for val in values:
+        list_of_inputs.append({"x": float(val)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.digamma_4"] = digamma_inputs()
 

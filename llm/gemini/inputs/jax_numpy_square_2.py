@@ -4,57 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def square_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive python integer
-    input_dict = {"x": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative python integer
-    input_dict = {"x": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero python integer
+    # Input 1: Zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 0D numpy array (scalar) of type np.int32
-    input_dict = {"x": np.array(42, dtype=np.int32)}
+    # Input 2: Positive unit integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D numpy array of np.int64
-    input_dict = {"x": np.array([1, -2, 3, -4], dtype=np.int64)}
+    # Input 3: Negative unit integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D numpy array of np.int32
-    input_dict = {"x": np.array([[1, 2], [3, 4]], dtype=np.int32)}
+    # Input 4: Small positive integer
+    input_dict = {"x": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D numpy array of np.int16
-    input_dict = {"x": np.array([[[1, -1], [2, -2]], [[3, -3], [4, -4]]], dtype=np.int16)}
+    # Input 5: Small negative integer
+    input_dict = {"x": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D numpy array of np.int8
-    input_dict = {"x": np.array([-128, 0, 127], dtype=np.int8)}
+    # Input 6: Moderate positive integer
+    input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large positive python integer
-    input_dict = {"x": 1000}
+    # Input 7: Moderate negative integer
+    input_dict = {"x": -16}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D numpy array of np.uint32 (unsigned integer)
-    input_dict = {"x": np.array([[10, 20], [30, 40]], dtype=np.uint32)}
+    # Input 8: Larger positive integer
+    input_dict = {"x": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 1D numpy array of np.uint16
-    input_dict = {"x": np.array([0, 1, 500], dtype=np.uint16)}
+    # Input 9: Larger negative integer
+    input_dict = {"x": -250}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Odd positive integer
+    input_dict = {"x": 37}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative integer
+    input_dict = {"x": -42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Big integer within standard 32-bit range
+    input_dict = {"x": 1024}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.square_2"] = square_inputs()
 

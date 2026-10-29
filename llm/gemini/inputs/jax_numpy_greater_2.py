@@ -10,60 +10,60 @@ import copy
 def greater_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array and a positive float
-    x = np.array([1.5, -2.3, 0.0, 4.7], dtype=np.float32)
+    # Input 1: 1D float32 array and positive float
+    x = np.array([-1.5, 0.0, 2.3, 5.7], dtype=np.float32)
     y = 2.0
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D float32 array and a negative float
-    x = np.random.randn(3, 3).astype(np.float32)
-    y = -1.5
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 2: 2D int32 array and negative float
+    x = np.array([[-10, 5], [0, -3]], dtype=np.int32)
+    y = -2.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D float64 array and 0.0 float
-    x = np.random.randn(2, 2, 2).astype(np.float64)
+    # Input 3: Scalar (0D) float64 array and zero float
+    x = np.array(0.0, dtype=np.float64)
     y = 0.0
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 1D int32 array and a float
-    x = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    y = 3.5
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 4: 3D float32 array and float with infinity
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    y = 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 2D int64 array and a float
-    x = np.array([[10, 20], [30, 40]], dtype=np.int64)
-    y = 25.0
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: 1D float64 array with special values (inf, -inf, nan)
+    x = np.array([-np.inf, 0.0, np.nan, np.inf], dtype=np.float64)
+    y = 1.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 4D float32 array and a float
-    x = np.random.uniform(-10, 10, size=(2, 2, 3, 3)).astype(np.float32)
-    y = 5.25
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 6: 4D uint8 array and integer-valued float
+    x = np.arange(16, dtype=np.uint8).reshape(2, 2, 2, 2)
+    y = 7.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: 0D scalar array and a float
-    x = np.array(4.5, dtype=np.float32)
-    y = 4.0
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    y = 3.14
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 1D float16 array and a float
-    x = np.array([-5.0, -4.0, -3.0], dtype=np.float16)
-    y = -3.5
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: 2D float16 array and very small float
+    x = np.array([[1e-4, -1e-4], [2e-4, -2e-4]], dtype=np.float16)
+    y = 1e-5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Large 1D array of float32 and a float
-    x = np.linspace(-100, 100, 1000, dtype=np.float32)
-    y = 50.0
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 9: 1D int64 array and large float
+    x = np.array([1000000, 2000000, -3000000], dtype=np.int64)
+    y = 1500000.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 2D array of zeros and a non-zero float
-    x = np.zeros((5, 5), dtype=np.float32)
-    y = -0.1
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 10: 2D boolean array and float threshold
+    x = np.array([[True, False], [False, True]], dtype=bool)
+    y = 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 11: 3D array of ints and a very large float
-    x = np.ones((2, 3, 4), dtype=np.int32) * 10
-    y = 100.0
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 11: 3D float32 array with negative values
+    x = -np.ones((3, 1, 2), dtype=np.float32)
+    y = -1.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
 

@@ -4,53 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asinh_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with positive and negative values
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 0D scalar float32
+    x = np.array(0.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array
-    x = np.random.uniform(-10.0, 10.0, size=(3, 5)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with positive, negative, zero float32
+    x = np.array([-5.0, -1.0, 0.0, 1.0, 5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D int32 array (implicitly cast to float)
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array float64
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D complex64 array
-    x = np.array([-1.0 + 1.0j, 0.0 + 0.0j, 1.0 - 1.0j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array int32
+    x = np.array([[[-10, 0], [2, 5]], [[-1, 3], [7, -4]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D float32 array
-    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D array float16
+    x = np.array([-2.5, -0.5, 0.5, 2.5], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D float32 array
-    x = np.random.uniform(-1.0, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D array float32
+    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 0D (scalar) float64 array
-    x = np.array(1.5, dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D complex64 array
+    x = np.array(
+        [[1.0 + 2.0j, -2.0 + 1.0j], [0.0 - 1.0j, 3.0 + 0.0j]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 2D float16 array
-    x = np.random.uniform(-2.0, 2.0, size=(3, 3)).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D boolean array
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D float32 array with large values
-    x = np.array([-1e6, -1e3, 0.0, 1e3, 1e6], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 1D array with extreme values float64
+    x = np.array([-1e12, -1e6, 0.0, 1e6, 1e12], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float32 array with very small values
-    x = np.array([-1e-6, -1e-9, 0.0, 1e-9, 1e-6], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 2D int64 array
+    x = np.arange(-6, 6, dtype=np.int64).reshape((3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D empty array float32
+    x = np.empty((2, 0, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asinh_1"] = asinh_inputs()
 

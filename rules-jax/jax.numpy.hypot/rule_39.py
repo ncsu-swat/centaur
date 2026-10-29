@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensors must not contain empty dimensions (Rule 39)
+# broadcast row vector 2D tensor with column vector 2D tensor (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(And((If(v["arg1_ndim"] > 0, (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])), True)), (If(v["arg2_ndim"] > 0, (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Select(v["arg2_shape"], i) > 0) for i in range(6)])), True)))) if n else
-          And((If(v["arg1_ndim"] > 0, (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])), True)), (If(v["arg2_ndim"] > 0, (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Select(v["arg2_shape"], i) > 0) for i in range(6)])), True))))
+    s.add(Not(And(And(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == 1), Select(v["arg2_shape"], 1) == 1)) if n else
+          And(And(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == 1), Select(v["arg2_shape"], 1) == 1))
 )
 
 def rule_39_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_39_func(arg1, arg2, solver=None, neg=False):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_39(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

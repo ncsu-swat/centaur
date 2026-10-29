@@ -4,83 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def empty_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, dtype float32, shape 5
-    prototype = np.random.randn(10).astype(np.float32)
-    dtype = np.dtype('float32')
+    # Input 1: 1D float32 prototype, int32 dtype, shape 5
+    prototype = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    dtype = np.dtype(np.int32)
     shape = 5
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
 
-    # Input 2: 2D int32 array, dtype int32, shape 3
-    prototype = np.random.randint(-10, 10, size=(4, 4)).astype(np.int32)
-    dtype = np.dtype('int32')
-    shape = 3
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 3D bool array, dtype bool, shape 10
-    prototype = np.random.choice([True, False], size=(2, 2, 2))
-    dtype = np.dtype('bool')
+    # Input 2: 2D int32 prototype, float64 dtype, shape 10
+    prototype = np.array([[-1, 2], [3, -4]], dtype=np.int32)
+    dtype = np.dtype(np.float64)
     shape = 10
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
 
-    # Input 4: 1D float64 array, dtype float64, shape 8
-    prototype = np.random.randn(3).astype(np.float64)
-    dtype = np.dtype('float64')
-    shape = 8
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 4D int16 array, dtype int16, shape 1
-    prototype = np.random.randint(-100, 100, size=(2, 2, 2, 2)).astype(np.int16)
-    dtype = np.dtype('int16')
+    # Input 3: 3D float64 prototype, bool dtype, shape 1
+    prototype = np.ones((2, 3, 4), dtype=np.float64)
+    dtype = np.dtype(np.bool_)
     shape = 1
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
 
-    # Input 6: 2D complex64 array, dtype complex64, shape 2
-    prototype = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    dtype = np.dtype('complex64')
-    shape = 2
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 3D uint8 array, dtype uint8, shape 6
-    prototype = np.random.randint(0, 255, size=(3, 3, 3)).astype(np.uint8)
-    dtype = np.dtype('uint8')
-    shape = 6
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 1D int64 array, dtype int64, shape 12
-    prototype = np.random.randint(-1000, 1000, size=(5,)).astype(np.int64)
-    dtype = np.dtype('int64')
-    shape = 12
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D float16 array, dtype float16, shape 4
-    prototype = np.random.randn(2, 5).astype(np.float16)
-    dtype = np.dtype('float16')
+    # Input 4: 0D scalar prototype, complex64 dtype, shape 4
+    prototype = np.array(3.14, dtype=np.float32)
+    dtype = np.dtype(np.complex64)
     shape = 4
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
 
-    # Input 10: 5D bool array, dtype bool, shape 7
-    prototype = np.random.choice([True, False], size=(1, 2, 1, 2, 1))
-    dtype = np.dtype('bool')
+    # Input 5: 1D bool prototype, uint8 dtype, shape 0 (empty dimension)
+    prototype = np.array([True, False, True], dtype=np.bool_)
+    dtype = np.dtype(np.uint8)
+    shape = 0
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 6: 4D uint8 prototype, int16 dtype, shape 8
+    prototype = np.zeros((1, 2, 2, 1), dtype=np.uint8)
+    dtype = np.dtype(np.int16)
+    shape = 8
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 7: 2D complex64 prototype, float32 dtype, shape 16
+    prototype = np.array([[1 + 2j, -2 - 1j], [0j, 3j]], dtype=np.complex64)
+    dtype = np.dtype(np.float32)
+    shape = 16
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 8: 1D int64 prototype with negative values, uint32 dtype, shape 3
+    prototype = np.array([-100, -200, 300], dtype=np.int64)
+    dtype = np.dtype(np.uint32)
+    shape = 3
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 9: 2D float16 prototype, int8 dtype, shape 7
+    prototype = np.random.randn(3, 3).astype(np.float16)
+    dtype = np.dtype(np.int8)
     shape = 7
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 10: 3D int8 prototype, complex128 dtype, shape 12
+    prototype = np.random.randint(-10, 10, size=(2, 2, 3), dtype=np.int8)
+    dtype = np.dtype(np.complex128)
+    shape = 12
+    list_of_inputs.append(
+        copy.deepcopy({"prototype": prototype, "dtype": dtype, "shape": shape})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.empty_like_2"] = empty_like_inputs()
 

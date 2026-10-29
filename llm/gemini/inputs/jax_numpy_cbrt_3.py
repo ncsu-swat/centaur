@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cbrt_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar integer
-    input_dict = {"x": np.int32(8)}
+    # Input 1: Zero
+    input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of positive integers (perfect cubes)
-    input_dict = {"x": np.array([1, 8, 27, 64, 125], dtype=np.int32)}
+    # Input 2: Positive one
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array of negative and positive integers (perfect cubes)
-    input_dict = {"x": np.array([-1, -8, -27, 0, 1, 8, 27], dtype=np.int64)}
+    # Input 3: Negative one
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array of integers (int32)
-    input_dict = {"x": np.array([[216, 125, 64], [-27, -8, -1]], dtype=np.int32)}
+    # Input 4: Positive perfect cube
+    input_dict = {"x": 8}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array of integers (int16)
-    input_dict = {"x": np.array([[[1, 8], [27, 64]], [[-1, -8], [-27, -64]]], dtype=np.int16)}
+    # Input 5: Negative perfect cube
+    input_dict = {"x": -8}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array with larger integers (int64)
-    input_dict = {"x": np.array([1000000, -1000000, 8000000, -8000000], dtype=np.int64)}
+    # Input 6: Larger positive perfect cube
+    input_dict = {"x": 27}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array of small integers (int8)
-    input_dict = {"x": np.array([[-125, -64, -27], [27, 64, 125]], dtype=np.int8)}
+    # Input 7: Larger negative perfect cube
+    input_dict = {"x": -27}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D array of unsigned integers (uint32)
-    input_dict = {"x": np.array([[[[1, 8], [27, 64]]]], dtype=np.uint32)}
+    # Input 8: Non-perfect positive cube
+    input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 0D array (scalar array) of int64
-    input_dict = {"x": np.array(-343, dtype=np.int64)}
+    # Input 9: Non-perfect negative cube
+    input_dict = {"x": -50}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array of random integers (int32)
-    input_dict = {"x": np.random.randint(-1000, 1000, size=(100,)).astype(np.int32)}
+    # Input 10: Larger positive integer
+    input_dict = {"x": 1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Larger negative integer
+    input_dict = {"x": -1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cbrt_3"] = cbrt_inputs()
 

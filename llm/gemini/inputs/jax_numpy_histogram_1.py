@@ -4,133 +4,196 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def histogram_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32 array
-    a = np.random.randn(100).astype(np.float32)
-    weights = np.random.rand(100).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 10,
-        "range": (-3.0, 3.0),
-        "weights": weights,
-        "density": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, standard float32, density=False
+    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    bins = 5
+    range_val = (0.0, 6.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 2: Positive values, density=True
-    a = np.random.rand(50).astype(np.float32) * 10.0
-    weights = np.random.rand(50).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 5,
-        "range": (0.0, 10.0),
-        "weights": weights,
-        "density": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array with negative values, density=True
+    a = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float64)
+    bins = 10
+    range_val = (-15.0, 15.0)
+    weights = np.array([0.1, 0.2, 0.4, 0.2, 0.1], dtype=np.float64)
+    density = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 3: 2D array (will be flattened)
-    a = np.random.randn(10, 10).astype(np.float32)
-    weights = np.random.rand(10, 10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 15,
-        "range": (-4.0, 4.0),
-        "weights": weights,
-        "density": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, integer data
+    a = np.arange(12, dtype=np.int32).reshape(3, 4)
+    bins = 6
+    range_val = (0, 12)
+    weights = np.ones((3, 4), dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 4: Int32 array with float32 weights
-    a = np.random.randint(0, 100, size=(80,)).astype(np.int32)
-    weights = np.random.rand(80).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 8,
-        "range": (0, 100),
-        "weights": weights,
-        "density": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D array, density=True
+    a = np.linspace(-1.0, 1.0, 24, dtype=np.float32).reshape(2, 3, 4)
+    bins = 8
+    range_val = (-1.0, 1.0)
+    weights = np.abs(a)
+    density = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 5: float64 array, 50 bins
-    a = np.random.randn(1000).astype(np.float64)
-    weights = np.random.rand(1000).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "bins": 50,
-        "range": (-5.0, 5.0),
-        "weights": weights,
-        "density": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Broadcasted weights (1D weights for 2D data)
+    a = np.ones((4, 5), dtype=np.float32)
+    bins = 4
+    range_val = (0.0, 2.0)
+    weights = np.full((4, 5), 0.5, dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 6: 3D array
-    a = np.random.rand(5, 5, 4).astype(np.float32) * 5.0
-    weights = np.random.rand(5, 5, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 20,
-        "range": (0.0, 5.0),
-        "weights": weights,
-        "density": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Large 1D array from normal distribution
+    np.random.seed(42)
+    a = np.random.randn(100).astype(np.float64)
+    bins = 20
+    range_val = (-3.0, 3.0)
+    weights = np.random.rand(100).astype(np.float64)
+    density = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 7: Float64 1D array
-    a = np.random.uniform(-10.0, 10.0, 200).astype(np.float64)
-    weights = np.random.uniform(0.1, 1.0, 200).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "bins": 12,
-        "range": (-10.0, 10.0),
-        "weights": weights,
-        "density": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Single element array
+    a = np.array([42.0], dtype=np.float32)
+    bins = 1
+    range_val = (40.0, 50.0)
+    weights = np.array([1.5], dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 8: Small 1D array with manual values
-    a = np.array([1.5, 2.5, 3.5, 4.5, 5.5], dtype=np.float32)
-    weights = np.array([1.0, 2.0, 1.0, 2.0, 1.0], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 4,
-        "range": (1.0, 6.0),
-        "weights": weights,
-        "density": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Int64 input data with large range
+    a = np.array([-1000, 0, 500, 1000], dtype=np.int64)
+    bins = 4
+    range_val = (-1000, 1000)
+    weights = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 9: Large range with negative values
-    a = np.random.uniform(-100.0, 100.0, 500).astype(np.float32)
-    weights = np.random.rand(500).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 40,
-        "range": (-100.0, 100.0),
-        "weights": weights,
-        "density": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D tensor input
+    a = np.random.uniform(0.0, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
+    bins = 5
+    range_val = (0.0, 10.0)
+    weights = np.ones((2, 2, 2, 2), dtype=np.float32)
+    density = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # Input 10: Int16 array with float32 weights
-    a = np.random.randint(-50, 50, size=(150,)).astype(np.int16)
-    weights = np.random.rand(150).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "bins": 25,
-        "range": (-50, 50),
-        "weights": weights,
-        "density": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Float16 precision
+    a = np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float16)
+    bins = 3
+    range_val = (0.0, 1.0)
+    weights = np.array([1.0, 1.0, 2.0, 2.0, 1.0], dtype=np.float16)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "bins": bins,
+                "range": range_val,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.histogram_1"] = histogram_inputs()
 

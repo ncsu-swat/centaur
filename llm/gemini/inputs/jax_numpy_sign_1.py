@@ -4,55 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_sign_inputs():
+
+def sign_inputs():
     list_of_inputs = []
 
     # Input 1: 1D float32 array with positive, negative, and zero values
-    x = np.array([-10.0, -0.5, 0.0, 0.5, 10.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.array([-5.0, 0.0, 3.5, -0.0, 10.2], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array
-    x = np.array([[-1.5, 2.3, 0.0], [4.5, -5.6, -0.0]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D int32 array
+    x = np.array([[-10, 0, 5], [20, -1, 0]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D int32 array
-    x = np.array([[[1, -2], [0, 3]], [[-4, 5], [6, -7]]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 3D float64 array
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D complex64 array
-    x = np.array([1.0 + 1.0j, -2.0 - 2.0j, 0.0 + 0.0j, 3.0j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar array
+    x = np.array(-42.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 2D complex128 array
-    x = np.array([[1j, -1j], [2 + 3j, 0]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D int64 array with various numbers
+    x = np.array([-1000000000, 0, 1000000000], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 0D float32 array (scalar tensor)
-    x = np.array(-5.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 2D float32 array
+    x = np.array([[1.5, -2.5], [0.0, -0.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D int64 array
-    x = np.random.randint(-100, 100, size=(2, 2, 2, 2)).astype(np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 4D float32 array
+    x = np.random.randn(1, 2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float16 array
-    x = np.array([-0.1, 0.0, 0.2, -0.3], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D float32 array with inf and nan
+    x = np.array([-np.inf, np.inf, np.nan, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Large 2D float32 array with random values
-    x = np.random.uniform(-10.0, 10.0, size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 2D int64 array
+    x = np.array([[0, -5], [10, -15]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D int8 array
-    x = np.array([-128, -1, 0, 1, 127], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 5D float64 array
+    x = np.random.randn(1, 2, 1, 2, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sign_1"] = generate_sign_inputs()
+
+generated_inputs["jax.numpy.sign_1"] = sign_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

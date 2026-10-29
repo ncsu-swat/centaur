@@ -10,55 +10,60 @@ import copy
 def bitwise_xor_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D int32 array and a positive integer
+    # Input 1: 1D int32 array, positive int
     x = np.array([0, 1, 2, 3], dtype=np.int32)
     y = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D int16 array with negative values and a negative integer
-    x = np.array([[10, -20], [30, -40]], dtype=np.int16)
-    y = -5
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 3: 3D int32 array and a positive integer
-    x = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
-    y = 7
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 4: 1D int64 array with larger values and zero
-    x = np.array([-1000000, 2000000, -3000000], dtype=np.int64)
-    y = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 5: 4D int8 array and integer 1
-    x = np.ones((2, 2, 2, 2), dtype=np.int8)
-    y = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 6: 0D array (scalar) of int32 and integer 13
-    x = np.array(42, dtype=np.int32)
-    y = 13
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 7: 2D int32 array and integer 1
-    x = np.array([[1, 0], [0, 1]], dtype=np.int32)
-    y = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 8: Random 2D int32 array with both positive and negative values and integer -1
-    x = np.random.randint(-1000, 1000, size=(5, 5), dtype=np.int32)
+    # Input 2: 2D int64 array, negative int
+    x = np.array([[-5, 10], [15, -20]], dtype=np.int64)
     y = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: 3D int8 array and integer 127
-    x = np.zeros((3, 3, 3), dtype=np.int8)
-    y = 127
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 3: 3D int32 array, zero
+    x = np.arange(12, dtype=np.int32).reshape(2, 2, 3)
+    y = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 1D int64 array and integer 4095
-    x = np.array([128, 256, 512, 1024], dtype=np.int64)
-    y = 4095
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 4: 0D scalar int32 array, positive int
+    x = np.array(42, dtype=np.int32)
+    y = 255
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 5: 1D int64 array, positive int
+    x = np.array([0, 127, 255, 1024, 65535], dtype=np.int64)
+    y = 15
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: 4D int32 array, positive int
+    x = np.random.randint(-100, 100, size=(1, 2, 3, 2), dtype=np.int32)
+    y = 7
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: 2D int64 array, large int
+    x = np.array([[1000, 2000], [3000, 4000]], dtype=np.int64)
+    y = 1024
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: 1D int32 array with powers of 2
+    x = np.array([1, 2, 4, 8, 16, 32, 64], dtype=np.int32)
+    y = 4096
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: 2D int32 array with negatives, negative int
+    x = np.array([[-1, -2, -3], [-4, -5, -6]], dtype=np.int32)
+    y = -8
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 5D int32 array, positive int
+    x = np.ones((2, 1, 2, 1, 3), dtype=np.int32)
+    y = 3
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 3D int64 array with zeros
+    x = np.zeros((2, 3, 2), dtype=np.int64)
+    y = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
 

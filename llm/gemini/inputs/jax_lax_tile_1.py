@@ -4,63 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tile_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of integers, small rep
-    operand = np.array([1, 2, 3], dtype=np.int32)
+    # Input 1: 1D int32 array
+    operand = np.array([1, -2, 3], dtype=np.int32)
     reps = (3,)
-    list_of_inputs.append({"operand": operand, "reps": reps})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
 
-    # Input 2: 2D array of floats, medium reps
-    operand = np.random.randn(2, 3).astype(np.float32)
-    reps = (2, 4)
-    list_of_inputs.append({"operand": operand, "reps": reps})
+    # Input 2: 2D float32 array
+    operand = np.array([[-1.5, 2.0], [3.2, -4.8]], dtype=np.float32)
+    reps = (2, 3)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
 
-    # Input 3: 3D array of float64, with reps=1 on some dimensions
-    operand = np.random.randn(2, 2, 2).astype(np.float64)
-    reps = (1, 3, 2)
-    list_of_inputs.append({"operand": operand, "reps": reps})
+    # Input 3: 2D float64 array with reps (1, 1)
+    operand = np.random.randn(4, 5).astype(np.float64)
+    reps = (1, 1)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
 
     # Input 4: 1D boolean array
-    operand = np.array([True, False, True], dtype=bool)
+    operand = np.array([True, False, True], dtype=np.bool_)
+    reps = (4,)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
+
+    # Input 5: 3D float32 array
+    operand = np.arange(24, dtype=np.float32).reshape(2, 3, 4) - 12.0
+    reps = (2, 1, 3)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
+
+    # Input 6: 4D int16 array
+    operand = np.ones((2, 1, 3, 2), dtype=np.int16) * -5
+    reps = (1, 3, 1, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
+
+    # Input 7: 2D complex64 array
+    operand = np.array([[1 + 2j, -3 - 4j], [5j, -6]], dtype=np.complex64)
+    reps = (3, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
+
+    # Input 8: 0D scalar float32 array
+    operand = np.array(3.14, dtype=np.float32)
+    reps = ()
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
+
+    # Input 9: 5D uint8 array
+    operand = np.full((1, 2, 1, 2, 1), 255, dtype=np.uint8)
+    reps = (2, 1, 2, 1, 3)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
+
+    # Input 10: 3D int64 array with zero/negative integers
+    operand = np.array([[[-10, 0], [20, -30]]], dtype=np.int64)
+    reps = (3, 2, 1)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
+
+    # Input 11: 1D float32 array with zeros
+    operand = np.zeros((10,), dtype=np.float32)
     reps = (5,)
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 5: 2D array of int64 containing negative numbers
-    operand = np.array([[-1, -2], [3, 4]], dtype=np.int64)
-    reps = (3, 1)
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 6: 4D array, all reps are 1 (no-op tiling)
-    operand = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    reps = (1, 1, 1, 1)
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 7: 3D array with zeros and negative values
-    operand = np.array([[[0, -1], [2, -3]], [[4, 5], [-6, 7]]], dtype=np.int32)
-    reps = (2, 1, 2)
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 8: 2D float32 array, large reps
-    operand = np.random.randn(3, 3).astype(np.float32)
-    reps = (10, 5)
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 9: 1D array with single element
-    operand = np.array([42], dtype=np.int16)
-    reps = (10,)
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 10: 5D array, float32, various reps
-    operand = np.random.randn(1, 2, 1, 3, 1).astype(np.float32)
-    reps = (2, 1, 3, 1, 4)
-    list_of_inputs.append({"operand": operand, "reps": reps})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": reps})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.tile_1"] = tile_inputs()
 

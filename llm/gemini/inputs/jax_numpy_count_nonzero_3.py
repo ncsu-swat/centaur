@@ -4,78 +4,76 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.numpy as jnp
+import numpy as np
 
-# Monkeypatch jax.numpy.count_nonzero to convert list axis to tuple 
-# to bypass JAX's limitation with unhashable list static arguments.
-orig_count_nonzero = jnp.count_nonzero
-
-def patched_count_nonzero(*args, **kwargs):
-    new_args = list(args)
-    if 'axis' in kwargs and isinstance(kwargs['axis'], list):
-        kwargs['axis'] = tuple(kwargs['axis'])
-    elif len(args) > 1 and isinstance(args[1], list):
-        new_args[1] = tuple(args[1])
-    return orig_count_nonzero(*new_args, **kwargs)
-
-jnp.count_nonzero = patched_count_nonzero
 
 def count_nonzero_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D integer array, axis=[0], keepdims=False
-    a = np.array([[0, 1, 0], [2, 0, 3]], dtype=np.int32)
-    input_dict = {"a": a, "axis": [0], "keepdims": False}
+    # Input 1: 1D integer array
+    a = np.array([0, 1, 0, -3, 5, 0], dtype=np.int32)
+    input_dict = {"a": a, "axis": (0,), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 3D float array, axis=[1], keepdims=True
-    a = np.array([[[1.0, 0.0], [0.0, -0.5]], [[0.0, 0.0], [2.3, 0.0]]], dtype=np.float32)
-    input_dict = {"a": a, "axis": [1], "keepdims": True}
+    # Input 2: 2D float array with keepdims=True
+    a = np.array([[0.0, 1.5, 0.0], [-2.3, 0.0, 4.1]], dtype=np.float32)
+    input_dict = {"a": a, "axis": (1,), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D integer array, axis=[0], keepdims=False
-    a = np.array([0, -1, 3, 0, 5], dtype=np.int64)
-    input_dict = {"a": a, "axis": [0], "keepdims": False}
+    # Input 3: 2D integer array counting along axis 0
+    a = np.array([[1, 0, 2], [0, 0, -4], [5, 6, 0]], dtype=np.int64)
+    input_dict = {"a": a, "axis": (0,), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D boolean array, axis=[1], keepdims=False
-    a = np.array([[True, False, True], [False, False, True]], dtype=bool)
-    input_dict = {"a": a, "axis": [1], "keepdims": False}
+    # Input 4: 3D boolean array with multiple axes
+    a = np.array(
+        [[[True, False], [False, False]], [[True, True], [False, True]]],
+        dtype=bool,
+    )
+    input_dict = {"a": a, "axis": (0, 2), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D double array with zeros, axis=[0, 2], keepdims=True
-    a = np.random.choice([0.0, 1.2, -3.4], size=(3, 4, 2)).astype(np.float64)
-    input_dict = {"a": a, "axis": [0, 2], "keepdims": True}
+    # Input 5: 3D float array with negative axis
+    a = np.random.randn(2, 3, 4).astype(np.float64)
+    a[a < 0] = 0.0
+    input_dict = {"a": a, "axis": (-1,), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D int array, axis=[1, 3], keepdims=False
-    a = np.random.choice([0, 1], size=(2, 3, 2, 4)).astype(np.int16)
-    input_dict = {"a": a, "axis": [1, 3], "keepdims": False}
+    # Input 6: 4D float array with multiple reduction axes
+    a = np.zeros((2, 3, 4, 5), dtype=np.float32)
+    a[0, 1, 2, 3] = 1.0
+    a[1, 2, 0, 4] = -2.5
+    input_dict = {"a": a, "axis": (1, 2), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D float array with negative numbers, axis=[1], keepdims=True
-    a = np.array([[-1.0, 0.0, 2.0], [0.0, -3.0, 0.0]], dtype=np.float32)
-    input_dict = {"a": a, "axis": [1], "keepdims": True}
+    # Input 7: 2D complex array
+    a = np.array(
+        [[0 + 0j, 1 + 2j, 0 + 0j], [-1 + 0j, 0 + 3j, 0 + 0j]],
+        dtype=np.complex64,
+    )
+    input_dict = {"a": a, "axis": (0,), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D float array with high precision, axis=[0], keepdims=True
-    a = np.array([0.0, 0.0001, -0.0002, 0.0], dtype=np.float64)
-    input_dict = {"a": a, "axis": [0], "keepdims": True}
+    # Input 8: 1D float array with negative axis index
+    a = np.array([-1.0, 0.0, 2.0, -3.0, 0.0], dtype=np.float32)
+    input_dict = {"a": a, "axis": (-1,), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D complex array, axis=[0, 1], keepdims=False
-    a = np.array([[[1+1j, 0], [0, 2-2j]], [[0, 0], [3j, 0]]], dtype=np.complex64)
-    input_dict = {"a": a, "axis": [0, 1], "keepdims": False}
+    # Input 9: 4D integer array reducing outer dimensions
+    a = np.random.choice([0, 1, -1, 2], size=(3, 2, 2, 4)).astype(np.int32)
+    input_dict = {"a": a, "axis": (0, 3), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D int array, axis=[2, 4], keepdims=True
-    a = np.random.choice([0, 5], size=(2, 2, 3, 2, 4)).astype(np.int32)
-    input_dict = {"a": a, "axis": [2, 4], "keepdims": True}
+    # Input 10: 3D integer array reducing along middle axis
+    a = np.array(
+        [[[0, 1], [-2, 0], [3, 0]], [[0, 0], [1, -1], [0, 2]]], dtype=np.int16
+    )
+    input_dict = {"a": a, "axis": (1,), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.count_nonzero_3"] = count_nonzero_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if input is a 0D tensor, then alpha tensor must also be 0D (Rule 15)
+# alpha tensor elements must be non-negative and its rank cannot exceed input rank (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0, True)) if n else
-          If(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0, True))
+    s.add(Not(And(Select(v["arg2_range"], 0) >= 0, v["arg2_ndim"] <= v["arg1_ndim"])) if n else
+          And(Select(v["arg2_range"], 0) >= 0, v["arg2_ndim"] <= v["arg1_ndim"]))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):
@@ -29,15 +29,18 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg2_ndim = Int('arg2_ndim')
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_ndim == arg2.ndim)
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg2_range': arg2_range, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg2_range': arg2['range'], 'arg2_ndim': arg2['ndim']}, neg)

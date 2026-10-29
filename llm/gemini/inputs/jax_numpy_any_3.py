@@ -4,136 +4,117 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_any_inputs():
+
+def any_inputs():
     list_of_inputs = []
 
-    # Input 1: Small 2D boolean array, reduce along axis 0, keepdims=True
-    a = np.array([[True, False], [False, True]], dtype=np.bool_)
+    # Input 1: 1D boolean array
+    a = np.array([False, True, False, False], dtype=bool)
     axis = [0]
-    keepdims = True
-    where = np.array([[True, True], [True, True]], dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
-
-    # Input 2: 3D float array with negative values, reduce along axes [0, 2], keepdims=False
-    a = np.array([[[1.0, -2.0], [0.0, 3.0]], [[0.0, 0.0], [4.0, 0.0]]], dtype=np.float32)
-    axis = [0, 2]
     keepdims = False
-    where = np.ones_like(a, dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
+    where = np.array([True, True, False, True], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
 
-    # Input 3: 1D integer array, reduce along axis 0, keepdims=True
-    a = np.array([0, 1, 0, 2, 0], dtype=np.int32)
-    axis = [0]
-    keepdims = True
-    where = np.array([True, False, True, False, True], dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
-
-    # Input 4: 4D boolean array, reduce along axes [1, 2], keepdims=False
-    a = np.random.choice([True, False], size=(2, 3, 2, 2))
-    axis = [1, 2]
-    keepdims = False
-    where = np.random.choice([True, False], size=(2, 3, 2, 2))
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
-
-    # Input 5: 2D float array, broadcasted 'where' array, reduce along axis 1, keepdims=True
-    a = np.array([[1.5, -0.5], [0.0, 2.3], [1.1, 0.0]], dtype=np.float64)
+    # Input 2: 2D float32 array with negative and positive values
+    a = np.array([[-1.5, 0.0, 2.3], [0.0, 0.0, -0.1]], dtype=np.float32)
     axis = [1]
     keepdims = True
-    where = np.array([[True], [False], [True]], dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
+    where = np.array([[True, False, True], [True, True, True]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
 
-    # Input 6: 3D array, empty axis list, keepdims=False
-    a = np.array([[[True]]], dtype=np.bool_)
-    axis = []
-    keepdims = False
-    where = np.array([[[True]]], dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
-
-    # Input 7: 2D int16 array, reduce along axis 1, keepdims=False
-    a = np.array([[-1, 0], [0, 5]], dtype=np.int16)
-    axis = [1]
-    keepdims = False
-    where = np.array([[True, False], [True, True]], dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
-
-    # Input 8: Large 2D float64 array, reduce along axis 0, keepdims=True
-    a = np.zeros((10, 10), dtype=np.float64)
-    a[5, 5] = 1.0
-    axis = [0]
-    keepdims = True
-    where = np.ones((10, 10), dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
-
-    # Input 9: 3D uint8 array, reduce along axes [0, 1], keepdims=False
-    a = np.array([[[0], [0]], [[1], [0]]], dtype=np.uint8)
+    # Input 3: 2D integer array, reduce along multiple axes
+    a = np.array([[0, 1, 0], [0, 0, 0]], dtype=np.int32)
     axis = [0, 1]
     keepdims = False
-    where = np.ones((2, 2, 1), dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
+    where = np.ones((2, 3), dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
 
-    # Input 10: 1D boolean array with no True elements, reduce along axis 0, keepdims=True
-    a = np.array([False, False, False], dtype=np.bool_)
-    axis = [0]
+    # Input 4: 3D float array with broadcastable where
+    a = np.random.randn(2, 3, 4).astype(np.float64)
+    axis = [0, 2]
     keepdims = True
-    where = np.array([True, True, True], dtype=np.bool_)
-    list_of_inputs.append({
-        "a": copy.deepcopy(a),
-        "axis": copy.deepcopy(axis),
-        "keepdims": keepdims,
-        "where": copy.deepcopy(where)
-    })
+    where = np.random.choice([True, False], size=(1, 3, 1))
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
+
+    # Input 5: 1D integer array with negative index axis
+    a = np.array([-5, 0, 10, -2], dtype=np.int64)
+    axis = [-1]
+    keepdims = True
+    where = np.array([False, True, True, False], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
+
+    # Input 6: 4D boolean array, reduce over non-consecutive axes
+    a = np.random.choice([True, False], size=(2, 3, 2, 4))
+    axis = [1, 3]
+    keepdims = False
+    where = np.random.choice([True, False], size=(2, 1, 2, 1))
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
+
+    # Input 7: 2D int8 array
+    a = np.array([[0, -1], [1, 0]], dtype=np.int8)
+    axis = [0]
+    keepdims = False
+    where = np.array([[True, False], [False, True]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
+
+    # Input 8: 3D array with negative axis
+    a = np.zeros((3, 4, 5), dtype=np.float32)
+    a[1, 2, 3] = 1.0
+    axis = [-2]
+    keepdims = True
+    where = np.ones((3, 4, 5), dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
+
+    # Input 9: 2D float16 array with zeros
+    a = np.array([[0.0, 0.0], [0.0, 3.14]], dtype=np.float16)
+    axis = [1]
+    keepdims = False
+    where = np.array([[True, True], [True, False]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
+
+    # Input 10: 3D uint8 array
+    a = np.array([[[1, 0], [0, 0]], [[0, 0], [2, 0]]], dtype=np.uint8)
+    axis = [0, 1]
+    keepdims = True
+    where = np.array([[[True, True], [True, False]], [[False, True], [True, True]]])
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
+
+    # Input 11: 2D array, broadcasting 1D where
+    a = np.array([[10, 20, 30], [0, -1, 0]], dtype=np.int32)
+    axis = [-1]
+    keepdims = False
+    where = np.array([[True, False, True]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": axis, "keepdims": keepdims, "where": where})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.any_3"] = jax_numpy_any_inputs()
+
+generated_inputs["jax.numpy.any_3"] = any_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

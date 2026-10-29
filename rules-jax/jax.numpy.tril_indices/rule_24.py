@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimensions of the array must be non-negative (Rule 24)
+# Total elements in an n by m array must be positive with both dimensions at least 1 (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -1, v["arg2_value"] > -1)) if n else
-          And(v["arg1_value"] > -1, v["arg2_value"] > -1))
+    s.add(Not(And(And(v["arg1_value"] >= 1, v["arg2_value"] >= 1), v["arg1_value"] * v["arg2_value"] >= 1)) if n else
+          And(And(v["arg1_value"] >= 1, v["arg2_value"] >= 1), v["arg1_value"] * v["arg2_value"] >= 1))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):

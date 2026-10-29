@@ -4,53 +4,60 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ndtri_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, standard values in (0, 1)
-    p = np.array([0.1, 0.3, 0.5, 0.7, 0.9], dtype=np.float32)
-    list_of_inputs.append({"p": p})
-
-    # Input 2: 0D array (scalar), float32
+    # Input 1: 0D scalar array, float32
     p = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"p": p})
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 3: 2D array, float64, random values in (0, 1)
-    p = np.random.uniform(1e-5, 1-1e-5, size=(3, 4)).astype(np.float64)
-    list_of_inputs.append({"p": p})
+    # Input 2: 0D scalar array, float64
+    p = np.array(0.8413447, dtype=np.float64)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 4: 3D array, float32, random values in (0, 1)
-    p = np.random.uniform(0.01, 0.99, size=(2, 2, 3)).astype(np.float32)
-    list_of_inputs.append({"p": p})
+    # Input 3: 1D array with standard quantiles, float32
+    p = np.array([0.025, 0.05, 0.25, 0.5, 0.75, 0.95, 0.975], dtype=np.float32)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 5: 1D array, float64, values very close to boundaries 0 and 1
-    p = np.array([1e-7, 1e-4, 0.5, 1-1e-4, 1-1e-7], dtype=np.float64)
-    list_of_inputs.append({"p": p})
+    # Input 4: 1D array with boundary values (0 and 1), float64
+    p = np.array([0.0, 0.5, 1.0], dtype=np.float64)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 6: 4D array, float32
-    p = np.random.uniform(0.1, 0.9, size=(1, 2, 2, 3)).astype(np.float32)
-    list_of_inputs.append({"p": p})
+    # Input 5: 2D array, float32
+    p = np.linspace(0.1, 0.9, 12, dtype=np.float32).reshape(3, 4)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 7: 1D array, float32, uniform distribution
-    p = np.linspace(0.01, 0.99, 10, dtype=np.float32)
-    list_of_inputs.append({"p": p})
+    # Input 6: 2D array, float64
+    rng = np.random.default_rng(42)
+    p = rng.uniform(0.01, 0.99, size=(4, 5)).astype(np.float64)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 8: 2D array, float64
-    p = np.linspace(0.1, 0.9, 9, dtype=np.float64).reshape((3, 3))
-    list_of_inputs.append({"p": p})
+    # Input 7: 3D array, float32
+    p = rng.uniform(1e-4, 1.0 - 1e-4, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 9: 1D array, float64, single element
-    p = np.array([0.25], dtype=np.float64)
-    list_of_inputs.append({"p": p})
+    # Input 8: 4D array, float64
+    p = rng.uniform(0.1, 0.9, size=(2, 2, 3, 2)).astype(np.float64)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
-    # Input 10: 3D array, float32, shape (4, 1, 2)
-    p = np.random.uniform(0.2, 0.8, size=(4, 1, 2)).astype(np.float32)
-    list_of_inputs.append({"p": p})
+    # Input 9: Extreme values near 0 and 1, float64
+    p = np.array([1e-12, 1e-6, 0.5, 1.0 - 1e-6, 1.0 - 1e-12], dtype=np.float64)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
+
+    # Input 10: Empty 1D array, float32
+    p = np.array([], dtype=np.float32)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
+
+    # Input 11: 1-element 2D array, float64
+    p = np.array([[0.3]], dtype=np.float64)
+    list_of_inputs.append({"p": copy.deepcopy(p)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.ndtri"] = ndtri_inputs()
 

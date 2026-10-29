@@ -10,82 +10,75 @@ import copy
 def irfftn_inputs():
     list_of_inputs = []
 
-    # Input 1: 3D complex array, transforming all axes
-    a = (np.random.randn(4, 4, 3) + 1j * np.random.randn(4, 4, 3)).astype(np.complex64)
-    s = (4, 4, 4)
-    axes = (0, 1, 2)
-    norm = "backward"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 2: 2D complex array, transforming all axes, ortho norm
-    a = (np.random.randn(8, 5) + 1j * np.random.randn(8, 5)).astype(np.complex64)
-    s = (8, 8)
-    axes = (0, 1)
-    norm = "ortho"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 3: 3D complex array, transforming last 2 axes, forward norm
-    a = (np.random.randn(3, 3, 3) + 1j * np.random.randn(3, 3, 3)).astype(np.complex64)
-    s = (3, 4)
-    axes = (1, 2)
-    norm = "forward"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 4: 3D float array, backward norm
-    a = np.random.randn(2, 2, 3).astype(np.float32)
-    s = (2, 4)
-    axes = (1, 2)
-    norm = "backward"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 5: 2D complex array, ortho norm, odd last dimension output
-    a = (np.random.randn(6, 6) + 1j * np.random.randn(6, 6)).astype(np.complex64)
-    s = (6, 11)
-    axes = (0, 1)
-    norm = "ortho"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 6: 4D complex128 array
-    a = (np.random.randn(4, 4, 4, 3) + 1j * np.random.randn(4, 4, 4, 3)).astype(np.complex128)
-    s = (4, 4, 4)
-    axes = (1, 2, 3)
-    norm = "forward"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 7: 2D complex64, backward norm
-    a = (np.random.randn(5, 3) + 1j * np.random.randn(5, 3)).astype(np.complex64)
-    s = (8, 4)
-    axes = (0, 1)
-    norm = "backward"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 8: 3D float64 array, ortho norm
-    a = np.random.randn(10, 10, 6).astype(np.float64)
-    s = (10, 10)
-    axes = (1, 2)
-    norm = "ortho"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 9: 4D complex64, transforming 3 axes
-    a = (np.random.randn(2, 3, 4, 5) + 1j * np.random.randn(2, 3, 4, 5)).astype(np.complex64)
-    s = (3, 4, 8)
-    axes = (1, 2, 3)
-    norm = "forward"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 10: 2D float32 array
-    a = np.random.randn(8, 2).astype(np.float32)
-    s = (8, 2)
-    axes = (0, 1)
-    norm = "backward"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
-
-    # Input 11: 1D complex64 array (with tuple axes of size 1)
+    # Input 1: 1D array, backward normalization
     a = (np.random.randn(5) + 1j * np.random.randn(5)).astype(np.complex64)
     s = (8,)
     axes = (0,)
+    norm = "backward"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 2: 2D array, all axes transformed, ortho normalization
+    a = (np.random.randn(4, 5) + 1j * np.random.randn(4, 5)).astype(np.complex64)
+    s = (4, 8)
+    axes = (0, 1)
     norm = "ortho"
-    list_of_inputs.append({"a": a, "s": s, "axes": axes, "norm": norm})
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 3: 3D array, complex128 dtype, forward normalization
+    a = (np.random.randn(3, 4, 5) + 1j * np.random.randn(3, 4, 5)).astype(np.complex128)
+    s = (3, 4, 8)
+    axes = (0, 1, 2)
+    norm = "forward"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 4: 3D array, transformed along subset of negative axes
+    a = (np.random.randn(6, 5, 4) + 1j * np.random.randn(6, 5, 4)).astype(np.complex64)
+    s = (5, 6)
+    axes = (-2, -1)
+    norm = "backward"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 5: 4D array, all axes transformed
+    a = (np.random.randn(2, 3, 4, 5) + 1j * np.random.randn(2, 3, 4, 5)).astype(np.complex64)
+    s = (2, 3, 4, 8)
+    axes = (0, 1, 2, 3)
+    norm = "ortho"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 6: 2D array with permuted axes order
+    a = (np.random.randn(5, 4) + 1j * np.random.randn(5, 4)).astype(np.complex64)
+    s = (6, 4)
+    axes = (1, 0)
+    norm = "forward"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 7: 3D array transformed along a single intermediate axis
+    a = (np.random.randn(4, 4, 4) + 1j * np.random.randn(4, 4, 4)).astype(np.complex64)
+    s = (6,)
+    axes = (1,)
+    norm = "backward"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 8: 2D array with odd-sized output dimension along the real FFT axis
+    a = (np.random.randn(3, 5) + 1j * np.random.randn(3, 5)).astype(np.complex64)
+    s = (3, 9)
+    axes = (0, 1)
+    norm = "ortho"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 9: 4D array with real float32 input
+    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    s = (4, 4)
+    axes = (2, 3)
+    norm = "backward"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
+
+    # Input 10: 3D array with negative values and float64 dtype
+    a = -np.abs(np.random.randn(4, 4, 4)).astype(np.float64)
+    s = (4, 4, 6)
+    axes = (-3, -2, -1)
+    norm = "forward"
+    list_of_inputs.append(copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm}))
 
     return list_of_inputs
 

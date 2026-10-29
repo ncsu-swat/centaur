@@ -4,51 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def bessel_i0e_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D float32
-    x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: float32 zero
+    input_dict = {"x": np.float32(0.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 0D float64
-    x = np.array(-2.5, dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: float32 positive
+    input_dict = {"x": np.float32(1.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D float32 positive
-    x = np.array([0.0, 1.0, 2.0, 3.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: float32 negative
+    input_dict = {"x": np.float32(-1.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D float32 negative and zero
-    x = np.array([-1.2, 0.0, -0.5, -10.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: float32 fractional positive
+    input_dict = {"x": np.float32(2.5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D float64
-    x = np.array([[1.0, -1.0], [2.0, -2.0]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: float32 large negative
+    input_dict = {"x": np.float32(-5.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D float32
-    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: float32 large positive
+    input_dict = {"x": np.float32(10.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Scalar float
-    x = np.float32(0.5)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: float32 small positive
+    input_dict = {"x": np.float32(0.25)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar float64
-    x = np.float64(-1.5)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: float64 zero
+    input_dict = {"x": np.float64(0.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large 1D float32
-    x = np.linspace(-10.0, 10.0, 100).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: float64 positive
+    input_dict = {"x": np.float64(1.5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D float32
-    x = np.random.uniform(-1.0, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: float64 negative
+    input_dict = {"x": np.float64(-3.5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: float64 large value
+    input_dict = {"x": np.float64(50.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Python float positive
+    input_dict = {"x": float(0.75)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 13: Python float negative
+    input_dict = {"x": float(-2.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

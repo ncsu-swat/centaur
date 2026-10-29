@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the window size M is strictly positive, the beta parameter as a float must be non-negative (Rule 44)
+# window size M conditioned on boolean beta for rectangular vs non-rectangular window (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg2_value"] >= 0, True)) if n else
-          If(v["arg1_value"] > 0, v["arg2_value"] >= 0, True))
+    s.add(Not(If(v["arg2_value"] == False, v["arg1_value"] >= 1, v["arg1_value"] >= 3)) if n else
+          If(v["arg2_value"] == False, v["arg1_value"] >= 1, v["arg1_value"] >= 3))
 )
 
 def rule_44_func(arg1, arg2, solver=None, neg=False):
@@ -22,13 +22,13 @@ def rule_44_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not isinstance(arg2, bool):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_value = Int('arg1_value')
-        arg2_value = Real('arg2_value')
+        arg2_value = Bool('arg2_value')
 
         # Value assignments
         solver.add(arg1_value == int(arg1))

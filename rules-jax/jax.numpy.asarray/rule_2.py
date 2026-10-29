@@ -7,32 +7,42 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input list of integers must have a positive length (Rule 2)
+# when copy is false, target dtype must match the input tensor dtype to avoid copying (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] > 0) if n else
-          v["arg1_length"] > 0)
+    s.add(Not(If(v["arg3_value"] == False, v["arg1_dtype"] == v["arg2_value"], True)) if n else
+          If(v["arg3_value"] == False, v["arg1_dtype"] == v["arg2_value"], True))
 )
 
-def rule_2_func(arg1, solver=None, neg=False):
+def rule_2_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+            return False
+        if not isinstance(arg3, bool):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_dtype = Int('arg1_dtype')
+        arg2_value = Int('arg2_value')
+        arg3_value = Bool('arg3_value')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg3_value == arg3)
 
         # Constraints for rule 2
-        rule_2(solver, {'arg1_length': arg1_length})
+        rule_2(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_2(solver, {'arg1_length': arg1['length']}, neg)
+        rule_2(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)

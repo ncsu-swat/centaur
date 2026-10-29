@@ -4,123 +4,137 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def linspace_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic scalar inputs (as 0D arrays)
-    list_of_inputs.append({
+    # Input 1: 0D scalar arrays, default axis 0, endpoint True, retstep False
+    input_dict = {
         "start": np.array(0.0, dtype=np.float32),
         "stop": np.array(10.0, dtype=np.float32),
-        "num": 5,
+        "num": 50,
         "endpoint": True,
         "retstep": False,
-        "dtype": np.dtype('float32'),
-        "axis": 0
-    })
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D arrays with endpoint=False and retstep=True
-    list_of_inputs.append({
-        "start": np.array([0.0, 5.0], dtype=np.float32),
-        "stop": np.array([10.0, 15.0], dtype=np.float32),
-        "num": 10,
+    # Input 2: 0D scalar arrays with float64, endpoint False, retstep True
+    input_dict = {
+        "start": np.array(-5.0, dtype=np.float64),
+        "stop": np.array(5.0, dtype=np.float64),
+        "num": 25,
         "endpoint": False,
         "retstep": True,
-        "dtype": np.dtype('float32'),
-        "axis": 0
-    })
+        "dtype": np.dtype(np.float64),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Float64 arrays with negative values
-    list_of_inputs.append({
-        "start": np.array([-5.0, -10.0], dtype=np.float64),
-        "stop": np.array([5.0, 10.0], dtype=np.float64),
-        "num": 20,
+    # Input 3: 1D arrays, axis 0, endpoint True
+    input_dict = {
+        "start": np.array([0.0, 1.0, 2.0], dtype=np.float32),
+        "stop": np.array([10.0, 20.0, 30.0], dtype=np.float32),
+        "num": 10,
         "endpoint": True,
         "retstep": False,
-        "dtype": np.dtype('float64'),
-        "axis": 0
-    })
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D arrays, using negative axis (-1)
-    list_of_inputs.append({
-        "start": np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float32),
-        "stop": np.array([[10.0, 11.0], [12.0, 13.0]], dtype=np.float32),
-        "num": 5,
-        "endpoint": True,
-        "retstep": True,
-        "dtype": np.dtype('float32'),
-        "axis": -1
-    })
-
-    # Input 5: Integer source arrays, float output dtype
-    list_of_inputs.append({
-        "start": np.array([0, 10], dtype=np.int32),
-        "stop": np.array([100, 110], dtype=np.int32),
+    # Input 4: 1D arrays, axis 1 (inserted at end), endpoint False, retstep True
+    input_dict = {
+        "start": np.array([1.0, -1.0, 5.0, -5.0], dtype=np.float64),
+        "stop": np.array([2.0, -2.0, 10.0, -10.0], dtype=np.float64),
         "num": 8,
         "endpoint": False,
-        "retstep": False,
-        "dtype": np.dtype('float32'),
-        "axis": 0
-    })
-
-    # Input 6: 0D float64 arrays with retstep
-    list_of_inputs.append({
-        "start": np.array(-1.5, dtype=np.float64),
-        "stop": np.array(1.5, dtype=np.float64),
-        "num": 15,
-        "endpoint": True,
         "retstep": True,
-        "dtype": np.dtype('float64'),
-        "axis": 0
-    })
+        "dtype": np.dtype(np.float64),
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Multi-dimensional arrays with axis=1
-    list_of_inputs.append({
-        "start": np.ones((2, 3), dtype=np.float32),
-        "stop": np.ones((2, 3), dtype=np.float32) * 10,
-        "num": 4,
-        "endpoint": True,
-        "retstep": False,
-        "dtype": np.dtype('float32'),
-        "axis": 1
-    })
-
-    # Input 8: 3D arrays with axis=2, endpoint=False
-    list_of_inputs.append({
-        "start": np.zeros((2, 2, 2), dtype=np.float32),
-        "stop": np.ones((2, 2, 2), dtype=np.float32) * 5,
-        "num": 6,
-        "endpoint": False,
-        "retstep": True,
-        "dtype": np.dtype('float32'),
-        "axis": 2
-    })
-
-    # Input 9: Float16 precision arrays
-    list_of_inputs.append({
-        "start": np.array([1.0], dtype=np.float16),
-        "stop": np.array([2.0], dtype=np.float16),
-        "num": 3,
-        "endpoint": True,
-        "retstep": False,
-        "dtype": np.dtype('float16'),
-        "axis": 0
-    })
-
-    # Input 10: Single element interval generation (num=1)
-    list_of_inputs.append({
-        "start": np.array(0.0, dtype=np.float32),
-        "stop": np.array(1.0, dtype=np.float32),
+    # Input 5: 1D arrays, axis -1, num=1
+    input_dict = {
+        "start": np.array([-10.0, 0.0], dtype=np.float32),
+        "stop": np.array([10.0, 5.0], dtype=np.float32),
         "num": 1,
         "endpoint": True,
+        "retstep": False,
+        "dtype": np.dtype(np.float32),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D arrays, axis 0
+    input_dict = {
+        "start": np.zeros((2, 3), dtype=np.float32),
+        "stop": np.ones((2, 3), dtype=np.float32) * 5.0,
+        "num": 5,
+        "endpoint": True,
+        "retstep": False,
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D arrays, axis 1, endpoint False
+    input_dict = {
+        "start": np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float64),
+        "stop": np.array(
+            [[10.0, 20.0], [30.0, 40.0], [50.0, 60.0]], dtype=np.float64
+        ),
+        "num": 12,
+        "endpoint": False,
+        "retstep": False,
+        "dtype": np.dtype(np.float64),
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 2D arrays, axis 2 (new axis at end), retstep True, complex dtype
+    input_dict = {
+        "start": np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.complex64),
+        "stop": np.array([[1.0j, 2.0j], [3.0j, 4.0j]], dtype=np.complex64),
+        "num": 6,
+        "endpoint": True,
         "retstep": True,
-        "dtype": np.dtype('float32'),
-        "axis": 0
-    })
+        "dtype": np.dtype(np.complex64),
+        "axis": 2,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D arrays, axis -1, endpoint False, retstep True
+    input_dict = {
+        "start": np.arange(6, dtype=np.float32).reshape(1, 2, 3),
+        "stop": (np.arange(6, dtype=np.float32) * 2.0).reshape(1, 2, 3),
+        "num": 4,
+        "endpoint": False,
+        "retstep": True,
+        "dtype": np.dtype(np.float32),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Broadcastable arrays (start shape (2, 1), stop shape (1, 3)), axis 0
+    input_dict = {
+        "start": np.array([[1.0], [2.0]], dtype=np.float64),
+        "stop": np.array([[10.0, 20.0, 30.0]], dtype=np.float64),
+        "num": 15,
+        "endpoint": True,
+        "retstep": False,
+        "dtype": np.dtype(np.float64),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linspace_2"] = linspace_inputs()
 

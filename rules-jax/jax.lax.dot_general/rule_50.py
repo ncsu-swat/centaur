@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# rank of lhs and rhs should not exceed 8 (Rule 50)
+# complex128 lhs tensor requires complex128 preferred_element_type (Rule 50)
 
 rule_50 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] <= 8, v["arg2_ndim"] <= 8)) if n else
-          And(v["arg1_ndim"] <= 8, v["arg2_ndim"] <= 8))
+    s.add(Not(If(v["arg1_dtype"] == 10, v["arg2_value"] == 10, True)) if n else
+          If(v["arg1_dtype"] == 10, v["arg2_value"] == 10, True))
 )
 
 def rule_50_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_50_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_dtype = Int('arg1_dtype')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 50
-        rule_50(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_50(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_50(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_50(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# x and scale must have the same dtype (Rule 9)
+# floating-point input tensor x requires scale to also be floating-point (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] == v["arg2_dtype"]) if n else
-          v["arg1_dtype"] == v["arg2_dtype"])
+    s.add(Not(If(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 8), True)) if n else
+          If(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 8), True))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):

@@ -4,95 +4,102 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_scipy_stats_cauchy_ppf_inputs():
+def cauchy_ppf_inputs():
     list_of_inputs = []
 
     # Input 1: Standard median
     input_dict = {
-        "q": float(0.5),
-        "loc": float(0.0),
-        "scale": float(1.0)
+        "q": 0.5,
+        "loc": 0.0,
+        "scale": 1.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Lower quartile, negative loc, larger scale
+    # Input 2: Lower quartile
     input_dict = {
-        "q": float(0.25),
-        "loc": float(-2.5),
-        "scale": float(1.5)
+        "q": 0.25,
+        "loc": 0.0,
+        "scale": 1.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Upper quartile, positive loc, smaller scale
+    # Input 3: Upper quartile
     input_dict = {
-        "q": float(0.75),
-        "loc": float(3.0),
-        "scale": float(0.5)
+        "q": 0.75,
+        "loc": 0.0,
+        "scale": 1.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Low probability, small scale
+    # Input 4: Negative location, scale > 1
     input_dict = {
-        "q": float(0.05),
-        "loc": float(0.0),
-        "scale": float(0.1)
+        "q": 0.1,
+        "loc": -5.0,
+        "scale": 2.5,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: High probability, large scale
+    # Input 5: Positive location, small scale
     input_dict = {
-        "q": float(0.95),
-        "loc": float(10.0),
-        "scale": float(10.0)
+        "q": 0.9,
+        "loc": 10.0,
+        "scale": 0.5,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Near zero probability, large negative loc
+    # Input 6: Boundary near zero
     input_dict = {
-        "q": float(0.001),
-        "loc": float(-100.0),
-        "scale": float(5.0)
+        "q": 0.001,
+        "loc": 0.0,
+        "scale": 0.1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Near one probability, large positive loc
+    # Input 7: Boundary near one
     input_dict = {
-        "q": float(0.999),
-        "loc": float(100.0),
-        "scale": float(5.0)
+        "q": 0.999,
+        "loc": -2.0,
+        "scale": 3.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small scale, zero loc
+    # Input 8: Very small scale
     input_dict = {
-        "q": float(0.4),
-        "loc": float(0.0),
-        "scale": float(0.01)
+        "q": 0.4,
+        "loc": 1.23,
+        "scale": 1e-4,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large scale, negative loc
+    # Input 9: Large location and scale
     input_dict = {
-        "q": float(0.6),
-        "loc": float(-50.0),
-        "scale": float(100.0)
+        "q": 0.6,
+        "loc": 1000.0,
+        "scale": 500.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Standard Cauchy with extreme q
+    # Input 10: Extreme tails (0.0)
     input_dict = {
-        "q": float(0.99),
-        "loc": float(0.0),
-        "scale": float(1.0)
+        "q": 0.0,
+        "loc": 0.0,
+        "scale": 1.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Extreme tails (1.0)
+    input_dict = {
+        "q": 1.0,
+        "loc": 0.0,
+        "scale": 1.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.cauchy.ppf_2"] = jax_scipy_stats_cauchy_ppf_inputs()
+generated_inputs["jax.scipy.stats.cauchy.ppf_2"] = cauchy_ppf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

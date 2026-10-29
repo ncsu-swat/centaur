@@ -4,44 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def helmert_inputs():
     list_of_inputs = []
 
-    # Input 1: size 1, full matrix
-    list_of_inputs.append({"n": 1, "full": True})
+    # Input 1: n=1, full=True
+    input_dict = {"n": 1, "full": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: size 2, contrast block
-    list_of_inputs.append({"n": 2, "full": False})
+    # Input 2: n=1, full=False
+    input_dict = {"n": 1, "full": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: size 2, full matrix
-    list_of_inputs.append({"n": 2, "full": True})
+    # Input 3: n=2, full=True
+    input_dict = {"n": 2, "full": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: size 3, contrast block
-    list_of_inputs.append({"n": 3, "full": False})
+    # Input 4: n=2, full=False
+    input_dict = {"n": 2, "full": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: size 3, full matrix
-    list_of_inputs.append({"n": 3, "full": True})
+    # Input 5: n=3, full=True
+    input_dict = {"n": 3, "full": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: size 5, contrast block
-    list_of_inputs.append({"n": 5, "full": False})
+    # Input 6: n=3, full=False
+    input_dict = {"n": 3, "full": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: size 5, full matrix
-    list_of_inputs.append({"n": 5, "full": True})
+    # Input 7: n=4, full=True
+    input_dict = {"n": 4, "full": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: size 10, contrast block
-    list_of_inputs.append({"n": 10, "full": False})
+    # Input 8: n=5, full=False
+    input_dict = {"n": 5, "full": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: size 10, full matrix
-    list_of_inputs.append({"n": 10, "full": True})
+    # Input 9: n=8, full=True
+    input_dict = {"n": 8, "full": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: size 50, contrast block
-    list_of_inputs.append({"n": 50, "full": False})
+    # Input 10: n=10, full=False
+    input_dict = {"n": 10, "full": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: size 100, full matrix
-    list_of_inputs.append({"n": 100, "full": True})
+    # Input 11: n=16, full=True
+    input_dict = {"n": 16, "full": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: n=32, full=False
+    input_dict = {"n": 32, "full": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

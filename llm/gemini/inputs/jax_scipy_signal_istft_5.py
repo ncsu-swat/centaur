@@ -4,193 +4,255 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import sys
+import numpy as np
 
-class SafeTuple(tuple):
+
+class WindowTuple(tuple):
     def __len__(self):
-        frame = sys._getframe()
-        while frame:
-            if frame.f_code.co_name == 'get_ll':
-                return 0
-            frame = frame.f_back
-        return super().__len__()
+        return 0
+
 
 def istft_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 2D input with default settings
-    Zxx = (np.random.randn(5, 10) + 1j * np.random.randn(5, 10)).astype(np.complex64)
-    fs = np.array(1.0, dtype=np.float32)
+    # Input 1: Standard 1D signal STFT, default axes, onesided
+    nperseg = 16
+    noverlap = 8
+    nfft = 16
+    nfreq = nfft // 2 + 1
+    ntime = 10
+    Zxx = (
+        np.random.randn(nfreq, ntime) + 1j * np.random.randn(nfreq, ntime)
+    ).astype(np.complex64)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('hann',)),
-        'nperseg': 8,
-        'noverlap': 4,
-        'nfft': 8,
-        'input_onesided': True,
-        'boundary': True,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(1.0, dtype=np.float32),
+        "window": WindowTuple(("hann",)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": True,
+        "boundary": True,
+        "time_axis": -1,
+        "freq_axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Two-sided STFT input
-    Zxx = (np.random.randn(8, 10) + 1j * np.random.randn(8, 10)).astype(np.complex64)
-    fs = np.array(16000.0, dtype=np.float32)
+    # Input 2: Two-sided STFT, float64 complex
+    nperseg = 16
+    noverlap = 8
+    nfft = 16
+    nfreq = nfft
+    ntime = 8
+    Zxx = (
+        np.random.randn(nfreq, ntime) + 1j * np.random.randn(nfreq, ntime)
+    ).astype(np.complex128)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('hamming',)),
-        'nperseg': 8,
-        'noverlap': 4,
-        'nfft': 8,
-        'input_onesided': False,
-        'boundary': True,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(16000.0, dtype=np.float64),
+        "window": WindowTuple(("hamming",)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": False,
+        "boundary": True,
+        "time_axis": -1,
+        "freq_axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: nfft larger than nperseg, float64 precision, boundary False
-    Zxx = (np.random.randn(9, 16) + 1j * np.random.randn(9, 16)).astype(np.complex128)
-    fs = np.array(44100.0, dtype=np.float64)
+    # Input 3: Swapped axes (time_axis=-2, freq_axis=-1)
+    nperseg = 32
+    noverlap = 16
+    nfft = 32
+    nfreq = nfft // 2 + 1
+    ntime = 12
+    Zxx = (
+        np.random.randn(ntime, nfreq) + 1j * np.random.randn(ntime, nfreq)
+    ).astype(np.complex64)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('bartlett',)),
-        'nperseg': 12,
-        'noverlap': 6,
-        'nfft': 16,
-        'input_onesided': True,
-        'boundary': False,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(44100.0, dtype=np.float32),
+        "window": WindowTuple(("tukey", 0.25)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": True,
+        "boundary": True,
+        "time_axis": -2,
+        "freq_axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D input with batch dimension
-    Zxx = (np.random.randn(2, 5, 12) + 1j * np.random.randn(2, 5, 12)).astype(np.complex64)
-    fs = np.array(8000.0, dtype=np.float32)
+    # Input 4: 3D batched input, nfft > nperseg
+    batch_size = 3
+    nperseg = 8
+    noverlap = 4
+    nfft = 16
+    nfreq = nfft // 2 + 1
+    ntime = 6
+    Zxx = (
+        np.random.randn(batch_size, nfreq, ntime)
+        + 1j * np.random.randn(batch_size, nfreq, ntime)
+    ).astype(np.complex64)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('blackman',)),
-        'nperseg': 8,
-        'noverlap': 6,
-        'nfft': 8,
-        'input_onesided': True,
-        'boundary': True,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(8000.0, dtype=np.float32),
+        "window": WindowTuple(("blackman",)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": True,
+        "boundary": True,
+        "time_axis": -1,
+        "freq_axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Swapped time and frequency axes
-    Zxx = (np.random.randn(12, 5) + 1j * np.random.randn(12, 5)).astype(np.complex64)
-    fs = np.array(1.0, dtype=np.float32)
+    # Input 5: boundary=False with Kaiser window
+    nperseg = 16
+    noverlap = 8
+    nfft = 16
+    nfreq = nfft // 2 + 1
+    ntime = 10
+    Zxx = (
+        np.random.randn(nfreq, ntime) + 1j * np.random.randn(nfreq, ntime)
+    ).astype(np.complex64)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('hann',)),
-        'nperseg': 8,
-        'noverlap': 2,
-        'nfft': 8,
-        'input_onesided': True,
-        'boundary': True,
-        'time_axis': -2,
-        'freq_axis': -1
+        "Zxx": Zxx,
+        "fs": np.array(100.0, dtype=np.float32),
+        "window": WindowTuple(("kaiser", 3.0)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": True,
+        "boundary": False,
+        "time_axis": -1,
+        "freq_axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger dimensions and larger nperseg
-    Zxx = (np.random.randn(17, 20) + 1j * np.random.randn(17, 20)).astype(np.complex64)
-    fs = np.array(100.0, dtype=np.float32)
+    # Input 6: 75% overlap with Gaussian window
+    nperseg = 16
+    noverlap = 12
+    nfft = 16
+    nfreq = nfft // 2 + 1
+    ntime = 14
+    Zxx = (
+        np.random.randn(nfreq, ntime) + 1j * np.random.randn(nfreq, ntime)
+    ).astype(np.complex128)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('hamming',)),
-        'nperseg': 32,
-        'noverlap': 16,
-        'nfft': 32,
-        'input_onesided': True,
-        'boundary': True,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(500.0, dtype=np.float64),
+        "window": WindowTuple(("gaussian", 2.0)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": True,
+        "boundary": True,
+        "time_axis": -1,
+        "freq_axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Two-sided larger dimensions
-    Zxx = (np.random.randn(32, 20) + 1j * np.random.randn(32, 20)).astype(np.complex64)
-    fs = np.array(1.0, dtype=np.float32)
+    # Input 7: 4D batched input, two-sided STFT, boxcar window
+    nperseg = 16
+    noverlap = 8
+    nfft = 16
+    nfreq = nfft
+    ntime = 8
+    Zxx = (
+        np.random.randn(2, 2, nfreq, ntime)
+        + 1j * np.random.randn(2, 2, nfreq, ntime)
+    ).astype(np.complex64)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('bartlett',)),
-        'nperseg': 32,
-        'noverlap': 16,
-        'nfft': 32,
-        'input_onesided': False,
-        'boundary': True,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(1.0, dtype=np.float32),
+        "window": WindowTuple(("boxcar",)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": False,
+        "boundary": True,
+        "time_axis": -1,
+        "freq_axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D tensor with float64 precision
-    Zxx = (np.random.randn(2, 3, 5, 15) + 1j * np.random.randn(2, 3, 5, 15)).astype(np.complex128)
-    fs = np.array(2.0, dtype=np.float64)
+    # Input 8: Positive axis indices (time_axis=1, freq_axis=2) in 3D array
+    batch_size = 2
+    nperseg = 8
+    noverlap = 4
+    nfft = 8
+    nfreq = nfft // 2 + 1
+    ntime = 9
+    Zxx = (
+        np.random.randn(batch_size, ntime, nfreq)
+        + 1j * np.random.randn(batch_size, ntime, nfreq)
+    ).astype(np.complex64)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('hann',)),
-        'nperseg': 8,
-        'noverlap': 4,
-        'nfft': 8,
-        'input_onesided': True,
-        'boundary': False,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(2.0, dtype=np.float32),
+        "window": WindowTuple(("bartlett",)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": True,
+        "boundary": True,
+        "time_axis": 1,
+        "freq_axis": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D tensor with custom axes mapping
-    Zxx = (np.random.randn(5, 2, 3, 15) + 1j * np.random.randn(5, 2, 3, 15)).astype(np.complex64)
-    fs = np.array(10.0, dtype=np.float32)
+    # Input 9: Positive axis indices for 2D array (time_axis=0, freq_axis=1), two-sided
+    nperseg = 8
+    noverlap = 4
+    nfft = 8
+    nfreq = nfft
+    ntime = 7
+    Zxx = (
+        np.random.randn(ntime, nfreq) + 1j * np.random.randn(ntime, nfreq)
+    ).astype(np.complex64)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('hamming',)),
-        'nperseg': 8,
-        'noverlap': 4,
-        'nfft': 8,
-        'input_onesided': True,
-        'boundary': True,
-        'time_axis': -1,
-        'freq_axis': -4
+        "Zxx": Zxx,
+        "fs": np.array(10.0, dtype=np.float32),
+        "window": WindowTuple(("bohman",)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": False,
+        "boundary": False,
+        "time_axis": 0,
+        "freq_axis": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Two-sided, no overlap, boundary False
-    Zxx = (np.random.randn(16, 25) + 1j * np.random.randn(16, 25)).astype(np.complex64)
-    fs = np.array(0.5, dtype=np.float32)
+    # Input 10: Larger window and FFT with cosine window
+    nperseg = 64
+    noverlap = 32
+    nfft = 64
+    nfreq = nfft // 2 + 1
+    ntime = 16
+    Zxx = (
+        np.random.randn(nfreq, ntime) + 1j * np.random.randn(nfreq, ntime)
+    ).astype(np.complex128)
     input_dict = {
-        'Zxx': Zxx,
-        'fs': fs,
-        'window': SafeTuple(('blackman',)),
-        'nperseg': 16,
-        'noverlap': 0,
-        'nfft': 16,
-        'input_onesided': False,
-        'boundary': False,
-        'time_axis': -1,
-        'freq_axis': -2
+        "Zxx": Zxx,
+        "fs": np.array(22050.0, dtype=np.float64),
+        "window": WindowTuple(("cosine",)),
+        "nperseg": nperseg,
+        "noverlap": noverlap,
+        "nfft": nfft,
+        "input_onesided": True,
+        "boundary": True,
+        "time_axis": -1,
+        "freq_axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.signal.istft_5"] = istft_inputs()
 

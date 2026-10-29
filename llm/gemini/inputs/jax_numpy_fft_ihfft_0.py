@@ -4,113 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ihfft_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, default axis, backward norm
-    a = np.random.randn(8).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 8,
-        "axis": -1,
-        "norm": "backward"
-    }
+    # Input 1: 1D float32 array, even n, default-like settings
+    a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    input_dict = {"a": a, "n": 4, "axis": -1, "norm": "backward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D float32 array, axis 0, ortho norm
-    a = np.random.randn(16).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 16,
-        "axis": 0,
-        "norm": "ortho"
-    }
+    # Input 2: 1D float64 array, odd n, ortho norm
+    a = np.array([-1.5, 0.0, 2.5, -3.0, 4.2], dtype=np.float64)
+    input_dict = {"a": a, "n": 5, "axis": 0, "norm": "ortho"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float64 array, axis 1, forward norm
-    a = np.random.randn(4, 8).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 8,
-        "axis": 1,
-        "norm": "forward"
-    }
+    # Input 3: 2D float32 array, axis 0, forward norm
+    a = np.random.randn(6, 4).astype(np.float32)
+    input_dict = {"a": a, "n": 6, "axis": 0, "norm": "forward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D float64 array, axis 0, backward norm, n larger than dimension
-    a = np.random.randn(6, 6).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 10,
-        "axis": 0,
-        "norm": "backward"
-    }
+    # Input 4: 2D int32 array, axis 1, n truncated
+    a = np.array([[1, -2, 3, -4], [5, 6, -7, 8]], dtype=np.int32)
+    input_dict = {"a": a, "n": 3, "axis": 1, "norm": "backward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D float32 array, axis 2, ortho norm, n smaller than dimension
-    a = np.random.randn(2, 3, 10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 5,
-        "axis": 2,
-        "norm": "ortho"
-    }
+    # Input 5: 3D float32 array, n padded
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"a": a, "n": 8, "axis": -1, "norm": "ortho"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D float32 array, axis 1, forward norm
-    a = np.random.randn(3, 4, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 4,
-        "axis": 1,
-        "norm": "forward"
-    }
+    # Input 6: 3D float64 array, middle axis
+    a = np.random.randn(4, 5, 6).astype(np.float64)
+    input_dict = {"a": a, "n": 5, "axis": 1, "norm": "forward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D float64 array, axis -2, backward norm
-    a = np.random.randn(2, 2, 4, 4).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 4,
-        "axis": -2,
-        "norm": "backward"
-    }
+    # Input 7: 1D float32 array with negative values
+    a = np.array([-10.0, -5.0, 0.0, 5.0, 10.0, 15.0], dtype=np.float32)
+    input_dict = {"a": a, "n": 6, "axis": 0, "norm": "backward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D float32 array, axis 0, ortho norm, odd n
-    a = np.random.randn(7).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 7,
-        "axis": 0,
-        "norm": "ortho"
-    }
+    # Input 8: 4D float32 array, negative axis
+    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    input_dict = {"a": a, "n": 4, "axis": -2, "norm": "ortho"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D float32 array, negative axis, forward norm
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 5,
-        "axis": -1,
-        "norm": "forward"
-    }
+    # Input 9: 2D float64 array with zero values, odd n
+    a = np.zeros((7, 9), dtype=np.float64)
+    input_dict = {"a": a, "n": 7, "axis": -2, "norm": "forward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D float64 array, axis 0, backward norm, odd n
-    a = np.random.randn(3, 3, 3).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 3,
-        "axis": 0,
-        "norm": "backward"
-    }
+    # Input 10: 1D float32 array, n larger than array length
+    a = np.array([10.0, -20.0, 30.0], dtype=np.float32)
+    input_dict = {"a": a, "n": 10, "axis": -1, "norm": "backward"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D float32 array, first axis
+    a = np.random.uniform(-5.0, 5.0, size=(5, 3, 2)).astype(np.float32)
+    input_dict = {"a": a, "n": 6, "axis": 0, "norm": "ortho"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.ihfft"] = ihfft_inputs()
 

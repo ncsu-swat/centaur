@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor must have a valid numeric data type (Rule 38)
+# input tensor c has a boolean or signed integer data type (Rule 38)
 
 rule_38 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 1, v["arg1_dtype"] < 11)) if n else
-          And(v["arg1_dtype"] >= 1, v["arg1_dtype"] < 11))
+    s.add(Not(Or(v["arg1_dtype"] == 0, (And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 4)))) if n else
+          Or(v["arg1_dtype"] == 0, (And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 4))))
 )
 
 def rule_38_func(arg1, solver=None, neg=False):

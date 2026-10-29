@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor must have valid shape dimensions where all dimensions are greater than zero (Rule 58)
+# hypercube tensor where all dimensions have the same size (Rule 58)
 
 rule_58 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]))
+    s.add(Not(And(v["arg1_ndim"] >= 2, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) == Select(v["arg1_shape"], 0)) for i in range(6)]))) if n else
+          And(v["arg1_ndim"] >= 2, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) == Select(v["arg1_shape"], 0)) for i in range(6)])))
 )
 
 def rule_58_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_58_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 58
-        rule_58(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_58(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_58(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_58(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

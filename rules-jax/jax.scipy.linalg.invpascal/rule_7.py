@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the dimension n must be in the range [1, 500] to prevent memory issues (Rule 7)
+# matrix dimension n must not be zero (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 1, v["arg1_value"] <= 500)) if n else
-          And(v["arg1_value"] >= 1, v["arg1_value"] <= 500))
+    s.add(Not(v["arg1_value"] != 0) if n else
+          v["arg1_value"] != 0)
 )
 
 def rule_7_func(arg1, solver=None, neg=False):

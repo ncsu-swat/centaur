@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Tuple representation of input array elements must not be empty (Rule 13)
+# input tensor is a 0-dimensional scalar array (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] > 0) if n else
-          v["arg1_length"] > 0)
+    s.add(Not(v["arg1_ndim"] == 0) if n else
+          v["arg1_ndim"] == 0)
 )
 
 def rule_13_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_13_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1))):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 13
-        rule_13(solver, {'arg1_length': arg1_length})
+        rule_13(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_13(solver, {'arg1_length': arg1['length']}, neg)
+        rule_13(solver, {'arg1_ndim': arg1['ndim']}, neg)

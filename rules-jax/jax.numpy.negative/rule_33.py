@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor should have a dimension count of at most 8 (Rule 33)
+# minimum element of the tensor must be less than or equal to its maximum element (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 8) if n else
-          v["arg1_ndim"] <= 8)
+    s.add(Not(Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1)) if n else
+          Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1))
 )
 
 def rule_33_func(arg1, solver=None, neg=False):
@@ -24,15 +24,16 @@ def rule_33_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 33
-        rule_33(solver, {'arg1_ndim': arg1_ndim})
+        rule_33(solver, {'arg1_range': arg1_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_33(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_33(solver, {'arg1_range': arg1['range']}, neg)

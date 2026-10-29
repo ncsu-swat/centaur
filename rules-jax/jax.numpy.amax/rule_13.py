@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis integer must be within the valid range of input tensor dimensions (Rule 13)
+# integer axis must be a valid dimension index for non-empty dimensional tensor a (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] >= 1, v["arg2_value"] < v["arg1_ndim"]), v["arg2_value"] + v["arg1_ndim"] >= 0)) if n else
-          And(And(v["arg1_ndim"] >= 1, v["arg2_value"] < v["arg1_ndim"]), v["arg2_value"] + v["arg1_ndim"] >= 0))
+    s.add(Not(And(And(v["arg1_ndim"] > 0, v["arg2_value"] < v["arg1_ndim"]), v["arg2_value"] + v["arg1_ndim"] >= 0)) if n else
+          And(And(v["arg1_ndim"] > 0, v["arg2_value"] < v["arg1_ndim"]), v["arg2_value"] + v["arg1_ndim"] >= 0))
 )
 
 def rule_13_func(arg1, arg2, solver=None, neg=False):

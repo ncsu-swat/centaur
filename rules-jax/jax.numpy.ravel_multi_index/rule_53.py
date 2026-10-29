@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The mode parameter must be 'clip' (Rule 53)
+# output dtype restricted specifically to 32-bit signed integer (Rule 53)
 
 rule_53 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == 34) if n else
-          v["arg1_value"] == 34)
+    s.add(Not(v["arg1_value"] == 3) if n else
+          v["arg1_value"] == 3)
 )
 
 def rule_53_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_53_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 53
         rule_53(solver, {'arg1_value': arg1_value})

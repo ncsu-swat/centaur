@@ -4,53 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isrealobj_inputs():
     list_of_inputs = []
 
-    # Input 1: Python boolean True
-    input_dict = {"x": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Python True
+    list_of_inputs.append({"x": True})
 
-    # Input 2: Python boolean False
-    input_dict = {"x": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Python False
+    list_of_inputs.append({"x": False})
 
-    # Input 3: NumPy boolean scalar True
-    input_dict = {"x": np.bool_(True)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: NumPy bool_ True
+    list_of_inputs.append({"x": np.bool_(True)})
 
-    # Input 4: NumPy boolean scalar False
-    input_dict = {"x": np.bool_(False)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: NumPy bool_ False
+    list_of_inputs.append({"x": np.bool_(False)})
 
-    # Input 5: 0D NumPy boolean array
-    input_dict = {"x": np.array(True, dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: NumPy np.True_ singleton
+    list_of_inputs.append({"x": np.True_})
 
-    # Input 6: 1D NumPy boolean array
-    input_dict = {"x": np.array([True, False, True], dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: NumPy np.False_ singleton
+    list_of_inputs.append({"x": np.False_})
 
-    # Input 7: 2D NumPy boolean array
-    input_dict = {"x": np.array([[True, False], [False, True]], dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Boolean from comparison True
+    list_of_inputs.append({"x": bool(1 < 2)})
 
-    # Input 8: 3D NumPy boolean array
-    input_dict = {"x": np.zeros((2, 2, 2), dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Boolean from comparison False
+    list_of_inputs.append({"x": bool(1 > 2)})
 
-    # Input 9: Large 1D NumPy boolean array
-    input_dict = {"x": np.ones(100, dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: NumPy bool cast from int
+    list_of_inputs.append({"x": np.bool_(1)})
 
-    # Input 10: 4D NumPy boolean array
-    input_dict = {"x": np.ones((2, 3, 4, 5), dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: NumPy bool cast from zero
+    list_of_inputs.append({"x": np.bool_(0)})
 
-    return list_of_inputs
+    # Input 11: Python bool from int
+    list_of_inputs.append({"x": bool(0)})
+
+    # Input 12: Python bool from negative int
+    list_of_inputs.append({"x": bool(-5)})
+
+    return [copy.deepcopy(x) for x in list_of_inputs]
+
 
 generated_inputs["jax.numpy.isrealobj_4"] = isrealobj_inputs()
 

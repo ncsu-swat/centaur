@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The string parameter must designate a valid float format (Rule 55)
+# string input corresponds to a valid einsum subscript notation (Rule 55)
 
 rule_55 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 39, v["arg1_value"] == 38)) if n else
-          Or(v["arg1_value"] == 39, v["arg1_value"] == 38))
+    s.add(Not(Or(Or(Or(Or(v["arg1_value"] == 0, v["arg1_value"] == 1), v["arg1_value"] == 2), v["arg1_value"] == 3), v["arg1_value"] == 4)) if n else
+          Or(Or(Or(Or(v["arg1_value"] == 0, v["arg1_value"] == 1), v["arg1_value"] == 2), v["arg1_value"] == 3), v["arg1_value"] == 4))
 )
 
 def rule_55_func(arg1, solver=None, neg=False):

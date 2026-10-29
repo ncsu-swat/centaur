@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# complex tensor input requires the other input to be complex or floating-point (Rule 34)
+# both input tensors have double-precision float64 data types (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(If((And(9 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)), (And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 10)), True)) if n else
-          If((And(9 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)), (And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 10)), True))
+    s.add(Not(And(v["arg1_dtype"] == 8, v["arg2_dtype"] == 8)) if n else
+          And(v["arg1_dtype"] == 8, v["arg2_dtype"] == 8))
 )
 
 def rule_34_func(arg1, arg2, solver=None, neg=False):

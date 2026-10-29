@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def polyadd_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32, same length
-    a1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    a2 = np.array([4.0, 5.0, 6.0], dtype=np.float32)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 1: 1D int32 arrays of different lengths
+    a1 = np.array([1, 2, 3], dtype=np.int32)
+    a2 = np.array([4, 5], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 2: 1D int32, different lengths
-    a1 = np.array([1, 2], dtype=np.int32)
-    a2 = np.array([3, 4, 5, 6], dtype=np.int32)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 2: 1D float32 arrays with negative values
+    a1 = np.array([-2.5, 3.0], dtype=np.float32)
+    a2 = np.array([1.0, -0.5, 4.2, -3.1], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 3: 1D float64, negative values
-    a1 = np.array([-1.5, 2.5, -3.5], dtype=np.float64)
-    a2 = np.array([0.5, -0.5], dtype=np.float64)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 3: 1D float64 arrays of identical lengths
+    a1 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
+    a2 = np.array([-1.0, -2.0, 0.0, 5.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 4: 1D int64, one scalar-like
-    a1 = np.array([10], dtype=np.int64)
-    a2 = np.array([1, 2, 3, 4, 5], dtype=np.int64)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 4: 1D int64 arrays, scalar constant added to polynomial
+    a1 = np.array([7], dtype=np.int64)
+    a2 = np.array([3, -2, 1], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 5: 2D float32, same shape
-    a1 = np.random.randn(3, 4).astype(np.float32)
-    a2 = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 5: 1D float32 arrays with different signs and sizes
+    a1 = np.array([1.5, -3.2, 0.0, 4.1], dtype=np.float32)
+    a2 = np.array([2.0, -1.1], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 6: 2D int32, different first dimension
-    a1 = np.array([[1, 2, 3]], dtype=np.int32)
-    a2 = np.array([[4, 5, 6], [7, 8, 9]], dtype=np.int32)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 6: 2D float32 arrays with identical shapes
+    a1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    a2 = np.array([[-1.0, 0.5], [2.0, -3.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 7: 3D float32, same shape
-    a1 = np.random.randn(2, 2, 3).astype(np.float32)
-    a2 = np.random.randn(2, 2, 3).astype(np.float32)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 7: 2D int32 arrays with different leading dimensions
+    a1 = np.array([[2, 3, 1]], dtype=np.int32)
+    a2 = np.array([[5, 7, 3], [8, 2, 6]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 8: 3D int32, different first dimension
-    a1 = np.ones((1, 2, 2), dtype=np.int32)
-    a2 = np.ones((3, 2, 2), dtype=np.int32) * 2
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 8: 2D float64 arrays with different leading dimensions
+    a1 = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float64)
+    a2 = np.array([[7.0, 8.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 9: 1D complex64
-    a1 = np.array([1+2j, 3+4j], dtype=np.complex64)
-    a2 = np.array([5+6j], dtype=np.complex64)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 9: 3D float32 arrays of identical shapes
+    a1 = np.ones((2, 2, 3), dtype=np.float32)
+    a2 = np.zeros((2, 2, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 10: 1D float16
-    a1 = np.array([0.1, 0.2, 0.3], dtype=np.float16)
-    a2 = np.array([0.4, 0.5], dtype=np.float16)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 10: 1D int32 arrays with zero coefficients
+    a1 = np.array([0, 0, 1, -5, 6], dtype=np.int32)
+    a2 = np.array([1, 0, 0], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 11: 1D int16, zeros
-    a1 = np.zeros(5, dtype=np.int16)
-    a2 = np.ones(5, dtype=np.int16)
-    list_of_inputs.append({"a1": copy.deepcopy(a1), "a2": copy.deepcopy(a2)})
+    # Input 11: 1D float64 arrays with larger order
+    a1 = np.array([1e-5, -2e-3, 3.5, -4.2, 5.1, -6.0], dtype=np.float64)
+    a2 = np.array([10.0, -20.0, 30.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.polyadd"] = polyadd_inputs()
 

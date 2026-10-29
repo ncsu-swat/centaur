@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor elements should be strictly positive or strictly negative to avoid division by zero (Rule 4)
+# the rank of the input tensor must be non-negative (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0)) if n else
-          Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0))
+    s.add(Not(v["arg1_ndim"] >= 0) if n else
+          v["arg1_ndim"] >= 0)
 )
 
 def rule_4_func(arg1, solver=None, neg=False):
@@ -24,16 +24,15 @@ def rule_4_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 4
-        rule_4(solver, {'arg1_range': arg1_range})
+        rule_4(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_4(solver, {'arg1_range': arg1['range']}, neg)
+        rule_4(solver, {'arg1_ndim': arg1['ndim']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if axis is an integer, the tensor dimension must be compatible with the specified axis (Rule 26)
+# reducing over two or more axes requires the input tensor to have rank at least 2 (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], v["arg1_ndim"] >= 1)) if n else
-          If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], v["arg1_ndim"] >= 1))
+    s.add(Not(If(v["arg2_length"] >= 2, v["arg1_ndim"] >= 2, True)) if n else
+          If(v["arg2_length"] >= 2, v["arg1_ndim"] >= 2, True))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_26_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_value = Int('arg2_value')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 26
-        rule_26(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_26(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_26(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_26(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

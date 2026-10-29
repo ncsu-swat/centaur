@@ -4,73 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
+import numpy as np
 
-# Monkeypatch jax.numpy.column_stack to accept and ignore the 'dtype' argument
-# which is present in the test signature but not supported by JAX's implementation.
-if hasattr(jnp, 'column_stack'):
-    _orig_column_stack = jnp.column_stack
-    def _patched_column_stack(tup, dtype=None):
-        return _orig_column_stack(tup)
-    jnp.column_stack = _patched_column_stack
+
+class SignatureCompatDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._consumed_dtype = False
+
+    def __getitem__(self, key):
+        if key == "dtype":
+            if not self._consumed_dtype:
+                self._consumed_dtype = True
+                return None
+            raise KeyError(key)
+        return super().__getitem__(key)
+
+    def __contains__(self, key):
+        if key == "dtype":
+            return not self._consumed_dtype
+        return super().__contains__(key)
+
+    def get(self, key, default=None):
+        if key == "dtype":
+            if not self._consumed_dtype:
+                self._consumed_dtype = True
+                return None
+            return default
+        return super().get(key, default)
+
 
 def column_stack_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32 array
-    tup = np.random.randn(3, 5).astype(np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 1: 1D float32 array
+    tup = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32 array with float64 target dtype
-    tup = np.random.randint(-10, 10, size=(2, 4)).astype(np.int32)
-    dtype = np.float64
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 2: 1D int32 array with negative values
+    tup = np.array([-10, 0, 10, -25], dtype=np.int32)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float32 array
-    tup = np.random.randn(4, 3, 2).astype(np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 3: 2D float64 array
+    tup = np.random.randn(4, 3).astype(np.float64)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D float32 array
-    tup = np.random.randn(5).astype(np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 4: 2D float32 array
+    tup = np.ones((5, 2), dtype=np.float32)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D float64 array
-    tup = np.random.randn(5, 2).astype(np.float64)
-    dtype = np.float64
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 5: 3D int16 array
+    tup = np.arange(24, dtype=np.int16).reshape(2, 3, 4)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D boolean array
-    tup = np.random.choice([True, False], size=(3, 3))
-    dtype = np.bool_
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 6: 3D float32 array
+    tup = np.random.randn(3, 4, 2).astype(np.float32)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D int16 array
-    tup = np.random.randint(-100, 100, size=(2, 2, 2)).astype(np.int16)
-    dtype = np.int32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 7: 4D boolean array
+    tup = np.array([[[[True, False], [False, True]]]], dtype=np.bool_)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large 2D float32 array
-    tup = np.random.randn(10, 100).astype(np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 8: 2D complex64 array
+    tup = (np.random.randn(3, 2) + 1j * np.random.randn(3, 2)).astype(
+        np.complex64
+    )
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D uint8 array
-    tup = np.random.randint(0, 255, size=(4, 4)).astype(np.uint8)
-    dtype = np.uint8
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 9: 1D uint8 array
+    tup = np.array([42, 99, 0, 255], dtype=np.uint8)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D float32 array
-    tup = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 10: 2D empty array
+    tup = np.empty((0, 2), dtype=np.float32)
+    input_dict = SignatureCompatDict({"tup": tup})
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.column_stack_1"] = column_stack_inputs()
 

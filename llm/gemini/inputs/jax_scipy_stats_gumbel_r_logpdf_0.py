@@ -4,83 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gumbel_r_logpdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays with float32
-    x = np.array([0.0, 1.0, 2.0], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalars (float32)
+    x = np.array(0.5, dtype=np.float32)
+    loc = np.array(0.0, dtype=np.float32)
+    scale = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 2: 0D arrays (scalars)
-    x = np.array(1.5, dtype=np.float32)
-    loc = np.array(0.5, dtype=np.float32)
-    scale = np.array(2.0, dtype=np.float32)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D arrays with matching shapes
+    x = np.array([-2.0, -0.5, 0.0, 1.5, 3.0], dtype=np.float32)
+    loc = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+    scale = np.array([1.0, 1.0, 2.0, 2.0, 0.5], dtype=np.float32)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 3: Negative x and loc values, varying scales
-    x = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    loc = np.array([-1.5, -1.5, -1.5], dtype=np.float32)
-    scale = np.array([0.5, 1.5, 2.5], dtype=np.float32)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Float64 precision
+    x = np.array([1.23456789, -0.98765432], dtype=np.float64)
+    loc = np.array([-1.0, 2.0], dtype=np.float64)
+    scale = np.array([0.5, 3.5], dtype=np.float64)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 4: 2D arrays with float64
-    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    loc = np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float64)
-    scale = np.array([[1.0, 1.5], [2.0, 2.5]], dtype=np.float64)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D arrays
+    x = np.array([[-1.0, 0.0, 1.0], [2.0, -2.0, 0.5]], dtype=np.float32)
+    loc = np.array([[0.0, 0.5, -0.5], [1.0, -1.0, 0.0]], dtype=np.float32)
+    scale = np.array([[1.0, 2.0, 0.5], [0.8, 1.2, 1.5]], dtype=np.float32)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 5: Broadcast-compatible shapes (2, 1) and (1, 2)
-    x = np.array([[1.0], [2.0]], dtype=np.float32)
-    loc = np.array([[0.0, 1.0]], dtype=np.float32)
-    scale = np.array([[1.0, 1.0]], dtype=np.float32)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Broadcasting - 2D x with 1D loc and 0D scale
+    x = np.ones((3, 4), dtype=np.float32) * 2.0
+    loc = np.array([0.0, 1.0, -1.0, 0.5], dtype=np.float32)
+    scale = np.array(1.5, dtype=np.float32)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 6: Randomly generated values (float32)
-    x = np.random.randn(5).astype(np.float32)
-    loc = np.random.randn(5).astype(np.float32)
-    scale = np.abs(np.random.randn(5).astype(np.float32)) + 0.1
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Broadcasting - loc column vector, scale row vector
+    x = np.zeros((4, 3), dtype=np.float64)
+    loc = np.array([[-1.0], [0.0], [1.0], [2.0]], dtype=np.float64)
+    scale = np.array([[0.5, 1.0, 2.0]], dtype=np.float64)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 7: 3D arrays (float32)
-    x = np.random.randn(2, 3, 4).astype(np.float32)
-    loc = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 7: 3D tensors
+    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    loc = np.random.uniform(-2.0, 2.0, size=(2, 3, 4)).astype(np.float32)
     scale = np.random.uniform(0.1, 5.0, size=(2, 3, 4)).astype(np.float32)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 8: Small scale values (float64)
-    x = np.array([10.0, 20.0], dtype=np.float64)
-    loc = np.array([5.0, 5.0], dtype=np.float64)
-    scale = np.array([1e-5, 1e-4], dtype=np.float64)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Integer arrays promoted to floats
+    x = np.array([-3, -1, 0, 2, 5], dtype=np.int32)
+    loc = np.array([0, 0, 1, 1, 2], dtype=np.int32)
+    scale = np.array([1, 2, 1, 3, 2], dtype=np.int32)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 9: Large x and loc values
-    x = np.array([100.0, -100.0], dtype=np.float64)
-    loc = np.array([0.0, 0.0], dtype=np.float64)
-    scale = np.array([10.0, 20.0], dtype=np.float64)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large positive and negative values
+    x = np.array([-50.0, -10.0, 10.0, 50.0], dtype=np.float32)
+    loc = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+    scale = np.array([5.0, 5.0, 10.0, 10.0], dtype=np.float32)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
-    # Input 10: Single element 1D arrays
-    x = np.array([0.5], dtype=np.float32)
-    loc = np.array([-0.5], dtype=np.float32)
-    scale = np.array([2.5], dtype=np.float32)
-    input_dict = {"x": x, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D tensor with broadcasted scale
+    x = np.ones((2, 1, 3, 2), dtype=np.float32)
+    loc = np.zeros((2, 1, 3, 2), dtype=np.float32)
+    scale = np.array([[[[2.0]]]], dtype=np.float32)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+
+    # Input 11: Small scale values
+    x = np.array([0.001, -0.002, 0.005], dtype=np.float64)
+    loc = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+    scale = np.array([0.01, 0.05, 0.02], dtype=np.float64)
+    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.gumbel_r.logpdf"] = gumbel_r_logpdf_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scalar numeric input must be a valid real number (Rule 7)
+# tensor has a supported numeric or boolean dtype (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] - v["arg1_value"] == 0) if n else
-          v["arg1_value"] - v["arg1_value"] == 0)
+    s.add(Not(And(0 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
+          And(0 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
 )
 
 def rule_7_func(arg1, solver=None, neg=False):
@@ -19,18 +19,20 @@ def rule_7_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 7
-        rule_7(solver, {'arg1_value': arg1_value})
+        rule_7(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_7(solver, {'arg1_value': arg1['value']}, neg)
+        rule_7(solver, {'arg1_dtype': arg1['dtype']}, neg)

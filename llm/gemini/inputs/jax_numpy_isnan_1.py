@@ -4,60 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isnan_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of float32 containing NaN, Inf, and normal numbers
-    x = np.array([1.0, np.nan, np.inf, -np.inf, 0.0, -1.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with NaN, Inf, and finite values
+    x = np.array([np.nan, 1.0, -2.5, np.inf, -np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D array of float64 with no NaNs
-    x = np.random.randn(3, 4).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D float64 array with mixed values and NaNs
+    x = np.array([[np.nan, -1.0], [0.0, np.nan]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D array of float16 containing NaNs
-    x = np.array([[[np.nan, 1.0], [2.0, np.nan]], [[3.0, 4.0], [np.nan, np.nan]]], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: 1D complex array (complex64) with NaN real/imaginary parts
-    x = np.array([1 + 2j, np.nan + 3j, 4 + np.nan*1j, np.nan + np.nan*1j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: 0D array (scalar) float32 with NaN
+    # Input 3: 0D scalar float32 array with NaN
     x = np.array(np.nan, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D array of float32 with random numbers
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar float64 array without NaN
+    x = np.array(3.14159, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D complex128 array
-    x = np.array([[1.0 + 1.0j, np.nan + 0.0j], [np.inf - 1j, -np.nan * 1j]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D float16 array
+    x = np.array(
+        [[[np.nan, 1.0], [-1.0, 0.0]], [[2.0, np.nan], [np.inf, -np.nan]]],
+        dtype=np.float16,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D array of int32 (valid, should return all False)
-    x = np.array([-10, 0, 5, 100], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D int32 array (contains no NaNs)
+    x = np.array([-10, 0, 10, 100], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Large 2D array of float32 with sparse NaNs
-    x = np.random.randn(50, 50).astype(np.float32)
-    x[12, 15] = np.nan
-    x[34, 42] = np.nan
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D complex64 array with NaNs in real and imaginary parts
+    x = np.array(
+        [[1.0 + 2.0j, np.nan + 0.0j], [0.0 + np.nan * 1j, -1.0 - 1.0j]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D boolean array (valid input type)
-    x = np.array([True, False, True, True], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D float32 array
+    x = np.zeros((2, 3, 4, 5), dtype=np.float32)
+    x[0, 1, 2, 3] = np.nan
+    x[1, 2, 1, 0] = np.nan
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: 5D array of float64
-    x = np.zeros((2, 2, 2, 2, 2), dtype=np.float64)
-    x[1, 0, 1, 0, 1] = np.nan
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Empty 1D float32 array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 2D boolean array
+    x = np.array([[True, False], [False, True]], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D complex128 array with inf and nan
+    x = np.array(
+        [complex(np.nan, np.inf), complex(1.0, 2.0), complex(np.nan, np.nan)],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isnan_1"] = isnan_inputs()
 

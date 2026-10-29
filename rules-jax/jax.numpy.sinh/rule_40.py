@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# float scalar input must be within a safe domain to prevent infinite outputs (Rule 40)
+# floating point scalar input bounded within conservative numerical range (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -85.0, v["arg1_value"] <= 85.0)) if n else
-          And(v["arg1_value"] >= -85.0, v["arg1_value"] <= 85.0))
+    s.add(Not(And(v["arg1_value"] >= -350.0, v["arg1_value"] <= 350.0)) if n else
+          And(v["arg1_value"] >= -350.0, v["arg1_value"] <= 350.0))
 )
 
 def rule_40_func(arg1, solver=None, neg=False):

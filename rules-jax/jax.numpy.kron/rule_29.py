@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# floating-point precision consistency for both input tensors (Rule 29)
+# both input tensors have single-precision float32 data types (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(If(And((And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)), (And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 8))), v["arg1_dtype"] == v["arg2_dtype"], True)) if n else
-          If(And((And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)), (And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 8))), v["arg1_dtype"] == v["arg2_dtype"], True))
+    s.add(Not(And(v["arg1_dtype"] == 7, v["arg2_dtype"] == 7)) if n else
+          And(v["arg1_dtype"] == 7, v["arg2_dtype"] == 7))
 )
 
 def rule_29_func(arg1, arg2, solver=None, neg=False):

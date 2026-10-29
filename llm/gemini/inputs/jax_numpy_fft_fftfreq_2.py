@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fftfreq_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {"n": 8, "d": 1, "dtype": np.float32}
+    # Input 1: Basic positive even n, unit d, float32
+    input_dict = {"n": int(8), "d": int(1), "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    input_dict = {"n": 16, "d": 2, "dtype": np.float64}
+    # Input 2: Odd n, unit d, float64
+    input_dict = {"n": int(9), "d": int(1), "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    input_dict = {"n": 5, "d": 1, "dtype": np.float32}
+    # Input 3: Larger even n, non-unit positive d, float32
+    input_dict = {"n": int(64), "d": int(2), "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    input_dict = {"n": 10, "d": -1, "dtype": np.float64}
+    # Input 4: Negative d, even n, float64
+    input_dict = {"n": int(16), "d": int(-1), "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    input_dict = {"n": 128, "d": 3, "dtype": np.float32}
+    # Input 5: Minimal positive n = 1, d = 1, float32
+    input_dict = {"n": int(1), "d": int(1), "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    input_dict = {"n": 256, "d": 10, "dtype": np.float64}
+    # Input 6: Zero n, positive d, float64
+    input_dict = {"n": int(0), "d": int(1), "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    input_dict = {"n": 3, "d": 5, "dtype": np.float32}
+    # Input 7: Odd n, large positive d, float32
+    input_dict = {"n": int(15), "d": int(10), "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    input_dict = {"n": 1024, "d": 1, "dtype": np.float64}
+    # Input 8: Large n, d = -5, float64
+    input_dict = {"n": int(128), "d": int(-5), "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    input_dict = {"n": 7, "d": -2, "dtype": np.float32}
+    # Input 9: Small odd n, negative d, float32
+    input_dict = {"n": int(5), "d": int(-2), "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    input_dict = {"n": 50, "d": 4, "dtype": np.float64}
+    # Input 10: Large odd n, unit d, float32
+    input_dict = {"n": int(255), "d": int(3), "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Even n, larger spacing d, float64
+    input_dict = {"n": int(32), "d": int(8), "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.fftfreq_2"] = fftfreq_inputs()
 

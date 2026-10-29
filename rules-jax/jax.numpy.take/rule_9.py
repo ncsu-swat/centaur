@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Single integer index must be within the bounds of the specified axis (Rule 9)
+# integer index must be in bounds for axis (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg3_value"] + v["arg1_ndim"] >= 0, v["arg3_value"] < v["arg1_ndim"]), (If(v["arg3_value"] < 0, And(v["arg2_value"] >= 0, v["arg2_value"] < Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"])), And(v["arg2_value"] >= 0, v["arg2_value"] < Select(v["arg1_shape"], v["arg3_value"])))))) if n else
-          And(And(v["arg3_value"] + v["arg1_ndim"] >= 0, v["arg3_value"] < v["arg1_ndim"]), (If(v["arg3_value"] < 0, And(v["arg2_value"] >= 0, v["arg2_value"] < Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"])), And(v["arg2_value"] >= 0, v["arg2_value"] < Select(v["arg1_shape"], v["arg3_value"]))))))
+    s.add(Not(And(And(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), 0 <= v["arg2_value"]), v["arg2_value"] < Select(v["arg1_shape"], v["arg3_value"]))) if n else
+          And(And(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), 0 <= v["arg2_value"]), v["arg2_value"] < Select(v["arg1_shape"], v["arg3_value"])))
 )
 
 def rule_9_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -43,9 +43,9 @@ def rule_9_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
+        rule_9(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)
+        rule_9(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)

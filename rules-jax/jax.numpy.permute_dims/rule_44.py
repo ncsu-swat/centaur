@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for 3D tensors, the sum of the resolved axes must be 3 (Rule 44)
+# second dimension index must be present in full permutation of tensor with rank at least 2 (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 3), (If(Select(v["arg2_values"], 0) < 0, Select(v["arg2_values"], 0) + 3, Select(v["arg2_values"], 0))) + (If(Select(v["arg2_values"], 1) < 0, Select(v["arg2_values"], 1) + 3, Select(v["arg2_values"], 1))) + (If(Select(v["arg2_values"], 2) < 0, Select(v["arg2_values"], 2) + 3, Select(v["arg2_values"], 2))) == 3, True)) if n else
-          If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 3), (If(Select(v["arg2_values"], 0) < 0, Select(v["arg2_values"], 0) + 3, Select(v["arg2_values"], 0))) + (If(Select(v["arg2_values"], 1) < 0, Select(v["arg2_values"], 1) + 3, Select(v["arg2_values"], 1))) + (If(Select(v["arg2_values"], 2) < 0, Select(v["arg2_values"], 2) + 3, Select(v["arg2_values"], 2))) == 3, True))
+    s.add(Not(If(And(v["arg1_ndim"] >= 2, v["arg2_length"] == v["arg1_ndim"]), Or([And(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) == 1) for i in range(6)]), True)) if n else
+          If(And(v["arg1_ndim"] >= 2, v["arg2_length"] == v["arg1_ndim"]), Or([And(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) == 1) for i in range(6)]), True))
 )
 
 def rule_44_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_44_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 44
-        rule_44(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_44(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_44(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_44(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

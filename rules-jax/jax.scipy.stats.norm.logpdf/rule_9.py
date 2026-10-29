@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The size of the x list must match the first dimension of the loc tensor (Rule 9)
+# scale tensor rank must not exceed input x tensor rank (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] == Select(v["arg2_shape"], 0)) if n else
-          v["arg1_length"] == Select(v["arg2_shape"], 0))
+    s.add(Not(v["arg2_ndim"] <= v["arg1_ndim"]) if n else
+          v["arg2_ndim"] <= v["arg1_ndim"])
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):
@@ -20,25 +20,24 @@ def rule_9_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
         if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(arg2.ndim):
-            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_length': arg1_length, 'arg2_shape': arg2_shape})
+        rule_9(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_length': arg1['length'], 'arg2_shape': arg2['shape']}, neg)
+        rule_9(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)

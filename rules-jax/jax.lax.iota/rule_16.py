@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# size must be greater than zero and dtype must be an integer or floating-point type (Rule 16)
+# floating-point iota requires strictly positive size (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_value"] > 0, 1 <= v["arg2_value"]), v["arg2_value"] <= 8)) if n else
-          And(And(v["arg1_value"] > 0, 1 <= v["arg2_value"]), v["arg2_value"] <= 8))
+    s.add(Not(And((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), v["arg2_value"] > 0)) if n else
+          And((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), v["arg2_value"] > 0))
 )
 
 def rule_16_func(arg1, arg2, solver=None, neg=False):
@@ -20,9 +20,9 @@ def rule_16_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
@@ -31,8 +31,8 @@ def rule_16_func(arg1, arg2, solver=None, neg=False):
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 16
         rule_16(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})

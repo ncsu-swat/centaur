@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dtype of the iota array must be a valid numerical or boolean type, and size must be positive (Rule 6)
+# dtype must be a valid numeric type and size must be non-negative (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] <= 10, v["arg2_value"] >= 1)) if n else
-          And(v["arg1_value"] <= 10, v["arg2_value"] >= 1))
+    s.add(Not(And(And(1 <= v["arg1_value"], v["arg1_value"] <= 10), v["arg2_value"] >= 0)) if n else
+          And(And(1 <= v["arg1_value"], v["arg1_value"] <= 10), v["arg2_value"] >= 0))
 )
 
 def rule_6_func(arg1, arg2, solver=None, neg=False):

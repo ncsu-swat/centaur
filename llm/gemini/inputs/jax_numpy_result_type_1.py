@@ -4,57 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def result_type_inputs():
     list_of_inputs = []
 
-    # Input 1: int32 dtype
-    input_dict = {"args": np.dtype('int32')}
+    # Input 1: int32
+    input_dict = {"args": np.dtype("int32")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: float32 dtype
-    input_dict = {"args": np.dtype('float32')}
+    # Input 2: float32
+    input_dict = {"args": np.dtype("float32")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: int64 dtype
-    input_dict = {"args": np.dtype('int64')}
+    # Input 3: float64
+    input_dict = {"args": np.dtype("float64")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: float64 dtype
-    input_dict = {"args": np.dtype('float64')}
+    # Input 4: int64
+    input_dict = {"args": np.dtype("int64")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: bool dtype
-    input_dict = {"args": np.dtype('bool')}
+    # Input 5: bool
+    input_dict = {"args": np.dtype("bool")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: uint8 dtype
-    input_dict = {"args": np.dtype('uint8')}
+    # Input 6: uint8
+    input_dict = {"args": np.dtype("uint8")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: uint32 dtype
-    input_dict = {"args": np.dtype('uint32')}
+    # Input 7: int16
+    input_dict = {"args": np.dtype("int16")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: complex64 dtype
-    input_dict = {"args": np.dtype('complex64')}
+    # Input 8: uint32
+    input_dict = {"args": np.dtype("uint32")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: complex128 dtype
-    input_dict = {"args": np.dtype('complex128')}
+    # Input 9: complex64
+    input_dict = {"args": np.dtype("complex64")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: int16 dtype
-    input_dict = {"args": np.dtype('int16')}
+    # Input 10: complex128
+    input_dict = {"args": np.dtype("complex128")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: float16 dtype
-    input_dict = {"args": np.dtype('float16')}
+    # Input 11: float16
+    input_dict = {"args": np.dtype("float16")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: int8
+    input_dict = {"args": np.dtype("int8")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.result_type_1"] = result_type_inputs()
 

@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def leslie_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays with float32
+    # Input 1: Minimal size N=2, 1D float32
+    f = np.array([1.5, 0.5], dtype=np.float32)
+    s = np.array([0.8], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
+
+    # Input 2: Typical 1D float32 from documentation (N=4)
     f = np.array([0.1, 2.0, 1.0, 0.1], dtype=np.float32)
     s = np.array([0.2, 0.8, 0.7], dtype=np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 2: Minimal dimension N=2
-    f = np.array([1.5, 0.5], dtype=np.float32)
-    s = np.array([0.9], dtype=np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D float64 with negative values (N=5)
+    f = np.array([-0.5, 1.2, -0.3, 2.1, 0.0], dtype=np.float64)
+    s = np.array([0.4, -0.6, 0.9, 0.1], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 3: Float64 precision
-    f = np.array([0.5, 1.2, 3.0, 2.5, 0.1], dtype=np.float64)
-    s = np.array([0.95, 0.85, 0.75, 0.50], dtype=np.float64)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D integer values (N=3)
+    f = np.array([2, 5, 1], dtype=np.int32)
+    s = np.array([1, 1], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 4: 1D batch dimension (shape: (3, 4) and (3, 3))
-    f = np.random.uniform(0, 3, size=(3, 4)).astype(np.float32)
-    s = np.random.uniform(0, 1, size=(3, 3)).astype(np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D int64 (N=6)
+    f = np.array([0, 10, 20, 15, 5, 0], dtype=np.int64)
+    s = np.array([1, 2, 3, 2, 1], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 5: 2D batch dimension (shape: (2, 2, 3) and (2, 2, 2))
-    f = np.random.uniform(0, 5, size=(2, 2, 3)).astype(np.float64)
-    s = np.random.uniform(0, 1, size=(2, 2, 2)).astype(np.float64)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D batched inputs (2, 3) and (2, 2) float32
+    f = np.random.uniform(0, 5, size=(2, 3)).astype(np.float32)
+    s = np.random.uniform(0, 1, size=(2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 6: Large size N
-    f = np.random.uniform(0, 2, size=(100,)).astype(np.float32)
-    s = np.random.uniform(0, 1, size=(99,)).astype(np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D batched inputs (3, 5) and (3, 4) float64
+    f = np.random.randn(3, 5).astype(np.float64)
+    s = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 7: Negative values
-    f = np.array([-0.5, -1.0, -2.0], dtype=np.float32)
-    s = np.array([-0.1, -0.2], dtype=np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D batched inputs (2, 2, 4) and (2, 2, 3) float32
+    f = np.random.uniform(0, 2, size=(2, 2, 4)).astype(np.float32)
+    s = np.random.uniform(0, 1, size=(2, 2, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 8: Batch dimension with size 1
-    f = np.random.uniform(0, 1, size=(1, 5)).astype(np.float32)
-    s = np.random.uniform(0, 1, size=(1, 4)).astype(np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Complex numbers (complex64, N=3)
+    f = np.array([1.0 + 2.0j, 0.5 - 1.0j, 3.0 + 0.0j], dtype=np.complex64)
+    s = np.array([0.5 + 0.5j, 0.8 - 0.2j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 9: 3D batch dimension (shape: (1, 2, 3, 4) and (1, 2, 3, 3))
-    f = np.random.uniform(0, 2, size=(1, 2, 3, 4)).astype(np.float32)
-    s = np.random.uniform(0, 1, size=(1, 2, 3, 3)).astype(np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Complex numbers (complex128, N=4)
+    f = np.array([0.2 - 0.1j, 1.5 + 0.3j, -0.5j, 2.0], dtype=np.complex128)
+    s = np.array([0.9, 0.6 + 0.1j, -0.4j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
-    # Input 10: Zero and positive values representing realistic survival/fecundity
-    f = np.array([0.0, 0.0, 2.5, 1.8, 0.2], dtype=np.float32)
-    s = np.array([0.8, 0.9, 0.7, 0.5], dtype=np.float32)
-    input_dict = {"f": f, "s": s}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Larger size N=8, 1D float32
+    f = np.linspace(0.0, 1.0, 8, dtype=np.float32)
+    s = np.linspace(0.1, 0.9, 7, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"f": f, "s": s}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.leslie"] = leslie_inputs()
 

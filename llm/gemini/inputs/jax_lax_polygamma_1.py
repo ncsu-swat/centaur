@@ -4,83 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def polygamma_inputs():
     list_of_inputs = []
 
-    # Input 1: m=0.0, 1D float32 array
-    input_dict = {
-        "m": 0.0,
-        "x": np.array([1.0, 2.0, 3.0, 4.5], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: m=0.0 (digamma), 1D array float32
+    m = 0.0
+    x = np.array([0.5, 1.0, 1.5, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 2: m=1.0, 2D float32 array
-    input_dict = {
-        "m": 1.0,
-        "x": np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: m=1.0 (trigamma), 2D array float32
+    m = 1.0
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 3: m=2.0, 3D float32 array
-    input_dict = {
-        "m": 2.0,
-        "x": np.ones((2, 2, 2), dtype=np.float32) * 5.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: m=2.0 (tetragamma), 1D array float64
+    m = 2.0
+    x = np.linspace(0.1, 5.0, 10, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 4: m=3.0, 1D float64 array
-    input_dict = {
-        "m": 3.0,
-        "x": np.array([0.5, 1.5, 2.5], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: m=0.0, 0D scalar array float32
+    m = 0.0
+    x = np.array(2.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 5: m=0.0, 4D float32 array
-    input_dict = {
-        "m": 0.0,
-        "x": np.random.uniform(0.1, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: m=3.0, 3D array float64
+    m = 3.0
+    x = np.arange(1, 9, dtype=np.float64).reshape((2, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 6: m=4.0, 2D float64 array
-    input_dict = {
-        "m": 4.0,
-        "x": np.random.uniform(1.0, 5.0, size=(3, 3)).astype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: m=1.0, 4D array float32
+    m = 1.0
+    x = np.ones((2, 1, 3, 2), dtype=np.float32) * 1.5
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 7: m=1.0, 0D (scalar) float32 array
-    input_dict = {
-        "m": 1.0,
-        "x": np.array(2.0, dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: m=4.0, 1D array with larger values float32
+    m = 4.0
+    x = np.array([10.0, 20.0, 50.0, 100.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 8: m=2.0, 1D float32 array with negative non-integer values
-    input_dict = {
-        "m": 2.0,
-        "x": np.array([-0.5, -1.5, -2.5], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: m=5.0, 2D array float64
+    m = 5.0
+    x = np.array([[0.25, 0.75, 1.25], [1.75, 2.25, 2.75]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 9: m=5.0, 2D float32 array, large values
-    input_dict = {
-        "m": 5.0,
-        "x": np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: m=0.0, 1D array with non-integer negative numbers
+    m = 0.0
+    x = np.array([-0.5, -1.5, -2.5, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
-    # Input 10: m=0.0, 3D float64 array
-    input_dict = {
-        "m": 0.0,
-        "x": np.random.uniform(0.5, 2.5, size=(2, 3, 2)).astype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: m=2.0, 3D array float32
+    m = 2.0
+    x = np.full((3, 3, 3), 4.2, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
+
+    # Input 11: m=6.0, 1D array float64
+    m = 6.0
+    x = np.array([1.1, 2.2, 3.3, 4.4], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"m": m, "x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.polygamma_1"] = polygamma_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# first argument is a string and second is a numeric/boolean dtype (Rule 12)
+# valid dtype parameters when both arg1 and arg2 are dtypes (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And((And(v["arg2_value"] >= 0, v["arg2_value"] <= 10)), (v["arg1_value"] == v["arg1_value"]))) if n else
-          And((And(v["arg2_value"] >= 0, v["arg2_value"] <= 10)), (v["arg1_value"] == v["arg1_value"])))
+    s.add(Not(And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 12), 0 <= v["arg2_value"]), v["arg2_value"] <= 12)) if n else
+          And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 12), 0 <= v["arg2_value"]), v["arg2_value"] <= 12))
 )
 
 def rule_12_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,18 @@ def rule_12_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 12

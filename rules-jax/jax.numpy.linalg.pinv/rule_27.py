@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# rtol tensor must have a floating-point data type (Rule 27)
+# input tensor `a` must have standard floating-point or complex dtype: float32, float64, complex64, or complex128 (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8)) if n else
-          And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8))
+    s.add(Not(Or(Or(Or(v["arg1_dtype"] == 7, v["arg1_dtype"] == 8), v["arg1_dtype"] == 9), v["arg1_dtype"] == 10)) if n else
+          Or(Or(Or(v["arg1_dtype"] == 7, v["arg1_dtype"] == 8), v["arg1_dtype"] == 9), v["arg1_dtype"] == 10))
 )
 
 def rule_27_func(arg1, solver=None, neg=False):

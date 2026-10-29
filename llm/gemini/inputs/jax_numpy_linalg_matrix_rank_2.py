@@ -4,118 +4,124 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_linalg_matrix_rank_inputs():
+
+def matrix_rank_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 square matrix, rtol as scalar tensor
-    M1 = np.random.randn(5, 5).astype(np.float32)
-    rtol1 = np.array(1e-4, dtype=np.float32)
-    list_of_inputs.append({
-        "M": M1,
-        "rtol": rtol1,
-        "hermitian": False,
-        "tol": None
-    })
+    # Input 1: Basic 2D float32 full-rank square matrix (testing tol)
+    M = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    rtol = None
+    hermitian = False
+    tol = np.array(1e-5, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 2: float64 rectangular matrix, tol as scalar tensor
-    M2 = np.random.randn(6, 4).astype(np.float64)
-    tol2 = np.array(1e-6, dtype=np.float64)
-    list_of_inputs.append({
-        "M": M2,
-        "rtol": None,
-        "hermitian": False,
-        "tol": tol2
-    })
+    # Input 2: 2D float64 rank-deficient square matrix (testing tol)
+    M = np.array([[1.0, 2.0], [2.0, 4.0]], dtype=np.float64)
+    rtol = None
+    hermitian = False
+    tol = np.array(1e-7, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 3: Hermitian complex matrix, rtol as scalar tensor
-    B = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
-    M3 = B + B.conj().T
-    rtol3 = np.array(1e-5, dtype=np.float32)
-    list_of_inputs.append({
-        "M": M3,
-        "rtol": rtol3,
-        "hermitian": True,
-        "tol": None
-    })
+    # Input 3: 2D float32 symmetric matrix with hermitian=True (testing tol)
+    M = np.array([[2.0, -1.0], [-1.0, 2.0]], dtype=np.float32)
+    rtol = None
+    hermitian = True
+    tol = np.array(1e-4, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 4: Rank deficient matrix (rank 1), tol as scalar tensor
-    u = np.random.randn(5, 1).astype(np.float32)
-    v = np.random.randn(1, 5).astype(np.float32)
-    M4 = np.dot(u, v)
-    tol4 = np.array(1e-3, dtype=np.float32)
-    list_of_inputs.append({
-        "M": M4,
-        "rtol": None,
-        "hermitian": False,
-        "tol": tol4
-    })
+    # Input 4: 2D complex64 Hermitian matrix with hermitian=True (testing tol)
+    M = np.array(
+        [[2.0 + 0.0j, 1.0 - 1.0j], [1.0 + 1.0j, 3.0 + 0.0j]],
+        dtype=np.complex64,
+    )
+    rtol = None
+    hermitian = True
+    tol = np.array(1e-5, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 5: Batch of matrices (shape 2, 3, 3), rtol as scalar tensor
-    M5 = np.random.randn(2, 3, 3).astype(np.float32)
-    rtol5 = np.array(1e-4, dtype=np.float32)
-    list_of_inputs.append({
-        "M": M5,
-        "rtol": rtol5,
-        "hermitian": False,
-        "tol": None
-    })
+    # Input 5: Rectangular tall matrix (M > N) with negative entries (testing tol)
+    M = np.array(
+        [[-1.0, 2.0], [3.0, -4.0], [-5.0, 6.0], [7.0, -8.0]],
+        dtype=np.float32,
+    )
+    rtol = None
+    hermitian = False
+    tol = np.array(1e-6, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 6: Batch of matrices with a batch of tolerances
-    M6 = np.random.randn(3, 4, 5).astype(np.float32)
-    rtol6 = np.array([1e-4, 1e-5, 1e-6], dtype=np.float32)
-    list_of_inputs.append({
-        "M": M6,
-        "rtol": rtol6,
-        "hermitian": False,
-        "tol": None
-    })
+    # Input 6: Rectangular wide matrix (M < N) (testing tol)
+    M = np.array(
+        [[1.5, -2.5, 3.5, -4.5], [5.5, -6.5, 7.5, -8.5]], dtype=np.float64
+    )
+    rtol = None
+    hermitian = False
+    tol = np.array(1e-8, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 7: Hermitian real matrix, tol as scalar tensor
-    B = np.random.randn(5, 5).astype(np.float32)
-    M7 = B + B.T
-    tol7 = np.array(1e-5, dtype=np.float32)
-    list_of_inputs.append({
-        "M": M7,
-        "rtol": None,
-        "hermitian": True,
-        "tol": tol7
-    })
+    # Input 7: 3D batched square matrices (testing tol)
+    M = np.random.randn(4, 3, 3).astype(np.float32)
+    rtol = None
+    hermitian = False
+    tol = np.array(1e-5, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 8: Integer matrix, rtol and tol as None
-    M8 = np.random.randint(-10, 10, size=(4, 4)).astype(np.int32)
-    list_of_inputs.append({
-        "M": M8,
-        "rtol": None,
-        "hermitian": False,
-        "tol": None
-    })
+    # Input 8: 3D batched matrices with batched tol
+    M = np.random.randn(3, 4, 2).astype(np.float64)
+    rtol = None
+    hermitian = False
+    tol = np.array([1e-5, 1e-4, 1e-3], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 9: Large rectangular matrix (100, 50), rtol as scalar tensor
-    M9 = np.random.randn(100, 50).astype(np.float32)
-    rtol9 = np.array(1e-5, dtype=np.float32)
-    list_of_inputs.append({
-        "M": M9,
-        "rtol": rtol9,
-        "hermitian": False,
-        "tol": None
-    })
+    # Input 9: 4D tensor representing a batch of matrices (testing tol)
+    M = np.random.randn(2, 2, 4, 4).astype(np.float32)
+    rtol = None
+    hermitian = False
+    tol = np.array(1e-6, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
-    # Input 10: 4D batch of matrices, tol as scalar tensor
-    M10 = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    tol10 = np.array(1e-4, dtype=np.float32)
-    list_of_inputs.append({
-        "M": M10,
-        "rtol": None,
-        "hermitian": False,
-        "tol": tol10
-    })
+    # Input 10: 2D integer matrix (testing tol)
+    M = np.array([[1, 0, 1], [-2, 3, 4], [0, 1, 2]], dtype=np.int32)
+    rtol = None
+    hermitian = False
+    tol = np.array(0.1, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
+
+    # Input 11: All-zero matrix (testing tol)
+    M = np.zeros((4, 4), dtype=np.float32)
+    rtol = None
+    hermitian = False
+    tol = np.array(1e-5, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"M": M, "rtol": rtol, "hermitian": hermitian, "tol": tol})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.linalg.matrix_rank_2"] = jax_numpy_linalg_matrix_rank_inputs()
+
+generated_inputs["jax.numpy.linalg.matrix_rank_2"] = matrix_rank_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

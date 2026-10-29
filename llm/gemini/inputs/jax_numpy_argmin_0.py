@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def argmin_inputs():
     list_of_inputs = []
 
     # Input 1: 1D float32 array, axis 0, keepdims False
-    a = np.array([3.0, 1.0, 2.0, 0.5, 4.0], dtype=np.float32)
+    a = np.array([3.5, 1.2, -0.4, 2.8, -1.5, 0.0], dtype=np.float32)
     input_dict = {"a": a, "axis": 0, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array, axis 1, keepdims True
-    a = np.array([[5.0, 2.0, 9.0], [1.0, 7.0, 3.0]], dtype=np.float32)
-    input_dict = {"a": a, "axis": 1, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 2D int32 array, axis 0, keepdims False
-    a = np.array([[10, 20], [5, 30], [15, 2]], dtype=np.int32)
-    input_dict = {"a": a, "axis": 0, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 3D float64 array, axis -1, keepdims True
-    a = np.random.randn(2, 3, 4).astype(np.float64)
+    # Input 2: 1D int32 array with negative axis, keepdims True
+    a = np.array([-10, 20, -30, 40, -50], dtype=np.int32)
     input_dict = {"a": a, "axis": -1, "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D int64 array, axis 2, keepdims False
-    a = np.random.randint(-100, 100, size=(3, 2, 5)).astype(np.int64)
-    input_dict = {"a": a, "axis": 2, "keepdims": False}
+    # Input 3: 2D float64 array, axis 0, keepdims True
+    a = np.array([[1.0, 5.0, 3.0], [4.0, 2.0, 6.0]], dtype=np.float64)
+    input_dict = {"a": a, "axis": 0, "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float32 array, axis 1, keepdims True
-    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    input_dict = {"a": a, "axis": 1, "keepdims": True}
+    # Input 4: 2D int64 array, axis 1, keepdims False
+    a = np.random.randint(-100, 100, size=(5, 4), dtype=np.int64)
+    input_dict = {"a": a, "axis": 1, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D int32 array with negative numbers, axis -1, keepdims False
-    a = np.array([-10, -50, 0, 20, -50, 30], dtype=np.int32)
+    # Input 5: 2D float32 array with negative axis, keepdims False
+    a = np.random.randn(3, 7).astype(np.float32)
+    input_dict = {"a": a, "axis": -2, "keepdims": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D float32 array, axis 2, keepdims True
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"a": a, "axis": 2, "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D int16 array, axis -1, keepdims False
+    a = np.random.randint(-50, 50, size=(4, 2, 6), dtype=np.int16)
     input_dict = {"a": a, "axis": -1, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D float32 array, negative axis, keepdims True
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {"a": a, "axis": -2, "keepdims": True}
+    # Input 8: 4D float64 array, axis 1, keepdims True
+    a = np.random.randn(2, 3, 2, 4).astype(np.float64)
+    input_dict = {"a": a, "axis": 1, "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D int16 array, axis 3, keepdims False
-    a = np.random.randint(-10, 10, size=(2, 2, 2, 3, 2)).astype(np.int16)
+    # Input 9: 4D uint8 array, axis 3, keepdims False
+    a = np.random.randint(0, 256, size=(2, 2, 3, 5), dtype=np.uint8)
     input_dict = {"a": a, "axis": 3, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D float64 array with duplicate minimums, axis 1, keepdims False
-    a = np.array([[1.0, 1.0, 2.0], [3.0, 0.5, 0.5]], dtype=np.float64)
+    # Input 10: 2D boolean array, axis 0, keepdims True
+    a = np.array([[True, False, True], [False, True, False]], dtype=np.bool_)
+    input_dict = {"a": a, "axis": 0, "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D float32 array with duplicate minimum values, axis 1, keepdims False
+    a = np.zeros((3, 4, 2), dtype=np.float32)
     input_dict = {"a": a, "axis": 1, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.argmin"] = argmin_inputs()
 

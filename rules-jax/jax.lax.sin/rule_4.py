@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# floating-point or complex input tensor with tolerance tuple of non-negative floats (Rule 4)
+# accuracy specified as a tuple of tolerances must contain non-negative values (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10)), (And(And(v["arg2_length"] == 2, Select(v["arg2_values"], 0) >= 0.0), Select(v["arg2_values"], 1) >= 0.0)))) if n else
-          And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10)), (And(And(v["arg2_length"] == 2, Select(v["arg2_values"], 0) >= 0.0), Select(v["arg2_values"], 1) >= 0.0))))
+    s.add(Not(And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10)), (And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 0) for i in range(6)])))) if n else
+          And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10)), (And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 0) for i in range(6)]))))
 )
 
 def rule_4_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_4_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 4
-        rule_4(solver, {'arg1_dtype': arg1_dtype, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_4(solver, {'arg1_dtype': arg1_dtype, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_4(solver, {'arg1_dtype': arg1['dtype'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_4(solver, {'arg1_dtype': arg1['dtype'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

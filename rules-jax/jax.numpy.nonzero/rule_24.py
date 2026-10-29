@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the fill_value is a tensor, it must be a 0-dimensional scalar (Rule 24)
+# fill_value tensor dimensionality must not exceed 1 (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == 0) if n else
-          v["arg1_ndim"] == 0)
+    s.add(Not(v["arg1_ndim"] <= 1) if n else
+          v["arg1_ndim"] <= 1)
 )
 
 def rule_24_func(arg1, solver=None, neg=False):

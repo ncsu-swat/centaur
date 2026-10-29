@@ -4,113 +4,141 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def sort_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array
-    operand = np.array([3.0, 1.0, 2.0, -5.0, 0.0], dtype=np.float32)
+    # Input 1: 1D float32 array, default dimension
+    operand = np.array([3.0, -1.0, 2.5, 0.0, -4.2], dtype=np.float32)
     input_dict = {
         "operand": operand,
         "dimension": -1,
         "is_stable": True,
-        "num_keys": 1
+        "num_keys": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32 array, sort along axis 0
-    operand = np.array([[5, 3, 2], [1, 4, 6]], dtype=np.int32)
+    # Input 2: 1D int32 array, unstable sort along dimension 0
+    operand = np.array([10, -5, 0, 7, -2, 100, -50], dtype=np.int32)
     input_dict = {
         "operand": operand,
         "dimension": 0,
         "is_stable": False,
-        "num_keys": 1
+        "num_keys": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 array, sort along axis 1
-    operand = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {
-        "operand": operand,
-        "dimension": 1,
-        "is_stable": True,
-        "num_keys": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D array with negative values
-    operand = np.array([-10, -5, -20, 0, 15, -3], dtype=np.int32)
+    # Input 3: 2D float64 array, sort along dimension 0
+    operand = np.array(
+        [[1.5, -2.3, 0.0], [4.1, 1.1, -3.2], [-0.5, 2.2, 5.0]],
+        dtype=np.float64,
+    )
     input_dict = {
         "operand": operand,
         "dimension": 0,
         "is_stable": True,
-        "num_keys": 1
+        "num_keys": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D float32 array
-    operand = np.random.randn(5, 5).astype(np.float32)
+    # Input 4: 2D float32 array, sort along dimension 1
+    operand = np.random.randn(5, 8).astype(np.float32)
+    input_dict = {
+        "operand": operand,
+        "dimension": 1,
+        "is_stable": False,
+        "num_keys": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D int64 array, sort along last dimension
+    operand = np.random.randint(-100, 100, size=(3, 4, 5), dtype=np.int64)
     input_dict = {
         "operand": operand,
         "dimension": -1,
         "is_stable": True,
-        "num_keys": 1
+        "num_keys": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D int64 array, sort along axis 2
-    operand = np.random.randint(-100, 100, size=(2, 2, 3, 2)).astype(np.int64)
+    # Input 6: 3D float32 array, sort along middle dimension
+    operand = np.random.randn(2, 6, 4).astype(np.float32)
+    input_dict = {
+        "operand": operand,
+        "dimension": 1,
+        "is_stable": False,
+        "num_keys": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 4D float32 array, sort along dimension 2
+    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
     input_dict = {
         "operand": operand,
         "dimension": 2,
+        "is_stable": True,
+        "num_keys": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D float32 array with special values (NaN, inf, signed zero)
+    operand = np.array([np.nan, -0.0, 0.0, np.inf, -np.inf, 1.0], dtype=np.float32)
+    input_dict = {
+        "operand": operand,
+        "dimension": 0,
+        "is_stable": True,
+        "num_keys": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 2D complex64 array, sort along last dimension
+    operand = np.array(
+        [[1.0 + 2.0j, 1.0 + 1.0j], [2.0 - 1.0j, -1.0 + 0.0j]],
+        dtype=np.complex64,
+    )
+    input_dict = {
+        "operand": operand,
+        "dimension": -1,
         "is_stable": False,
-        "num_keys": 1
+        "num_keys": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float32 array with NaNs and Infs
-    operand = np.array([np.nan, 3.0, -np.inf, np.inf, 2.0, np.nan], dtype=np.float32)
+    # Input 10: 1D boolean array
+    operand = np.array([True, False, True, True, False, False], dtype=bool)
     input_dict = {
         "operand": operand,
-        "dimension": -1,
+        "dimension": 0,
         "is_stable": True,
-        "num_keys": 1
+        "num_keys": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D float32 array with -0.0 and 0.0
-    operand = np.array([[-0.0, 0.0, -1.0], [2.0, -0.0, 1.0]], dtype=np.float32)
-    input_dict = {
-        "operand": operand,
-        "dimension": 1,
-        "is_stable": True,
-        "num_keys": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 3D int32 array, sort along axis -1
-    operand = np.random.randint(-50, 50, size=(3, 3, 3)).astype(np.int32)
-    input_dict = {
-        "operand": operand,
-        "dimension": -1,
-        "is_stable": True,
-        "num_keys": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D int32 array
-    operand = np.array([10, 5, 20, 0, 15], dtype=np.int32)
+    # Input 11: 2D uint8 array, sort along dimension 0
+    operand = np.random.randint(0, 256, size=(6, 4), dtype=np.uint8)
     input_dict = {
         "operand": operand,
         "dimension": 0,
         "is_stable": False,
-        "num_keys": 1
+        "num_keys": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 5D float32 array, sort along negative dimension
+    operand = np.random.randn(2, 2, 3, 2, 4).astype(np.float32)
+    input_dict = {
+        "operand": operand,
+        "dimension": -2,
+        "is_stable": True,
+        "num_keys": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.sort_1"] = sort_inputs()
 

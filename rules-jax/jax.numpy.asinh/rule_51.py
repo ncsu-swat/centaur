@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input tuple elements should be within a stable numerical range (Rule 51)
+# for a 5-dimensional tensor, the first two dimension sizes must be strictly positive (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And(-1000000.0 < Select(v["arg1_values"], i), Select(v["arg1_values"], i) < 1000000.0)) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), And(-1000000.0 < Select(v["arg1_values"], i), Select(v["arg1_values"], i) < 1000000.0)) for i in range(6)]))
+    s.add(Not(If(v["arg1_ndim"] == 5, And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], 1) > 0), True)) if n else
+          If(v["arg1_ndim"] == 5, And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], 1) > 0), True))
 )
 
 def rule_51_func(arg1, solver=None, neg=False):
@@ -19,23 +19,23 @@ def rule_51_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 51
-        rule_51(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_51(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_51(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_51(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

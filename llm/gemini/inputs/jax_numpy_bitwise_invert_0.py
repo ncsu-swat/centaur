@@ -4,53 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_invert_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array
-    x = np.array([1, -2, 3], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D int32 array with positive and negative integers
+    x = np.array([-10, -1, 0, 1, 10, 42], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D int32 array
-    x = np.array([[-1, 2], [3, -4]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D int64 array
+    x = np.array([[-100, 200], [0, -1]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D int32 array
-    x = np.array([[[1, 2], [3, 4]]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar int32 array
+    x = np.array(-5, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D int64 array
-    x = np.array([-100, 200, -300], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D boolean array
+    x = np.array([True, False, False, True], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 2D int64 array
-    x = np.array([[123456789, -987654321]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 6: 1D bool array
-    x = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 7: 2D bool array
+    # Input 5: 2D boolean array
     x = np.array([[True, False], [False, True]], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 0D int32 array
-    x = np.array(-42, dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 3D int32 array
+    x = np.arange(24, dtype=np.int32).reshape((2, 3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 0D int64 array
-    x = np.array(999999, dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D int64 array with larger values
+    x = np.array([0, 1, 1000000, -1000000], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 0D bool array
+    # Input 8: 4D int32 array
+    x = np.zeros((2, 2, 3, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 1D empty int32 array
+    x = np.array([], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 0D boolean array
     x = np.array(True, dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D int64 array with negative and positive values
+    x = np.array(
+        [[[-5, 4], [3, -2]], [[1, 0], [-1, 6]], [[-10, 20], [30, -40]]],
+        dtype=np.int64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_invert"] = bitwise_invert_inputs()
 

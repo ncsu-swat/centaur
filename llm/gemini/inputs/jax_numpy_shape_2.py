@@ -4,43 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def shape_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero as np.int64
-    list_of_inputs.append({"a": np.int64(0)})
+    # Input 1: Zero
+    input_dict = {"a": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive small integer as np.int32
-    list_of_inputs.append({"a": np.int32(1)})
+    # Input 2: Positive integer
+    input_dict = {"a": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative small integer as np.int64
-    list_of_inputs.append({"a": np.int64(-1)})
+    # Input 3: Negative integer
+    input_dict = {"a": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Larger positive integer as np.int32
-    list_of_inputs.append({"a": np.int32(42)})
+    # Input 4: Large positive integer
+    input_dict = {"a": 1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Larger negative integer as np.int64
-    list_of_inputs.append({"a": np.int64(-100)})
+    # Input 5: Large negative integer
+    input_dict = {"a": -1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large positive integer as np.int32
-    list_of_inputs.append({"a": np.int32(100000)})
+    # Input 6: Python int power of 2
+    input_dict = {"a": 256}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large negative integer as np.int64
-    list_of_inputs.append({"a": np.int64(-100000)})
+    # Input 7: Arbitrary positive integer
+    input_dict = {"a": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Integer near 32-bit limit as np.int64
-    list_of_inputs.append({"a": np.int64(2147483647)})
+    # Input 8: Arbitrary negative integer
+    input_dict = {"a": -42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative integer near 32-bit limit as np.int64
-    list_of_inputs.append({"a": np.int64(-2147483648)})
+    # Input 9: 64-bit int boundary value
+    input_dict = {"a": 2**31 - 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Value ten as np.int32
-    list_of_inputs.append({"a": np.int32(10)})
+    # Input 10: Negative 64-bit int boundary value
+    input_dict = {"a": -(2**31)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Small positive integer
+    input_dict = {"a": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.shape_2"] = shape_inputs()
 

@@ -4,153 +4,135 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dynamic_slice_in_dim_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, slicing axis 0, positive start_index
-    operand = np.arange(10).astype(np.float32)
+    # Input 1: 1D array, basic slice
+    operand = np.arange(10, dtype=np.float32)
     start_index = np.array(2, dtype=np.int32)
-    slice_size = 4
-    axis = 0
-    allow_negative_indices = True
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 4,
+        "axis": 0,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, slicing axis 1
-    operand = np.random.randn(5, 5).astype(np.float32)
-    start_index = np.array(1, dtype=np.int32)
-    slice_size = 3
-    axis = 1
-    allow_negative_indices = False
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
+    # Input 2: 2D array, slice along axis 0
+    operand = np.random.randn(8, 6).astype(np.float64)
+    start_index = np.array(3, dtype=np.int64)
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 3,
+        "axis": 0,
+        "allow_negative_indices": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, negative index along axis 0
-    operand = np.random.randn(10, 10).astype(np.float64)
+    # Input 3: 2D array, slice along axis 1 with negative index
+    operand = np.arange(24, dtype=np.int32).reshape(4, 6)
     start_index = np.array(-3, dtype=np.int32)
-    slice_size = 2
-    axis = 0
-    allow_negative_indices = True
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 2,
+        "axis": 1,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, slicing axis 2 with int64 start index
-    operand = np.random.randint(0, 100, size=(4, 4, 4)).astype(np.int32)
-    start_index = np.array(0, dtype=np.int64)
-    slice_size = 2
-    axis = 2
-    allow_negative_indices = True
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
+    # Input 4: 3D array, slice along axis 2
+    operand = np.random.randn(3, 4, 5).astype(np.float32)
+    start_index = np.array(1, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 3,
+        "axis": 2,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large start index that causes clipping
-    operand = np.arange(8).astype(np.int64)
-    start_index = np.array(10, dtype=np.int32)
-    slice_size = 3
-    axis = 0
-    allow_negative_indices = True
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
+    # Input 5: 3D array, negative axis index
+    operand = np.ones((5, 7, 9), dtype=np.complex64)
+    start_index = np.array(2, dtype=np.int64)
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 4,
+        "axis": -2,
+        "allow_negative_indices": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D array, slicing axis 3
-    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    # Input 6: 4D array, slice_size 0 (empty slice)
+    operand = np.zeros((2, 3, 4, 5), dtype=np.uint8)
+    start_index = np.array(1, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 0,
+        "axis": 3,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Boolean tensor, slice full dimension length
+    operand = np.array([[True, False], [False, True]], dtype=np.bool_)
+    start_index = np.array(0, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 2,
+        "axis": 0,
+        "allow_negative_indices": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D array with start_index out of bounds (clipped by lax)
+    operand = np.linspace(0, 1, 20, dtype=np.float32)
+    start_index = np.array(25, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 5,
+        "axis": 0,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D array, slice middle axis
+    operand = np.arange(2 * 3 * 4 * 2 * 2, dtype=np.int64).reshape(2, 3, 4, 2, 2)
     start_index = np.array(2, dtype=np.int32)
-    slice_size = 2
-    axis = 3
-    allow_negative_indices = False
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 2,
+        "axis": 2,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D array of int16, negative start index
-    operand = np.array([10, 20, 30, 40, 50, 60]).astype(np.int16)
-    start_index = np.array(-4, dtype=np.int32)
-    slice_size = 3
-    axis = 0
-    allow_negative_indices = True
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
-
-    # Input 8: 3D float32, slicing axis 1
-    operand = np.random.randn(3, 8, 3).astype(np.float32)
-    start_index = np.array(5, dtype=np.int32)
-    slice_size = 3
-    axis = 1
-    allow_negative_indices = True
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
-
-    # Input 9: 2D complex64, slicing axis 0
-    operand = (np.random.randn(6, 6) + 1j * np.random.randn(6, 6)).astype(np.complex64)
-    start_index = np.array(2, dtype=np.int32)
-    slice_size = 4
-    axis = 0
-    allow_negative_indices = False
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
-
-    # Input 10: 5D array, slicing axis 4
-    operand = np.zeros((2, 2, 2, 2, 6)).astype(np.float32)
-    start_index = np.array(-2, dtype=np.int32)
-    slice_size = 2
-    axis = 4
-    allow_negative_indices = True
-    list_of_inputs.append({
-        'operand': operand,
-        'start_index': start_index,
-        'slice_size': slice_size,
-        'axis': axis,
-        'allow_negative_indices': allow_negative_indices
-    })
+    # Input 10: 2D array, slice size 1 along axis 0
+    operand = np.random.uniform(-5, 5, size=(10, 10)).astype(np.float32)
+    start_index = np.array(-5, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "start_index": start_index,
+        "slice_size": 1,
+        "axis": 0,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.dynamic_slice_in_dim_2"] = dynamic_slice_in_dim_inputs()
 

@@ -4,63 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cond_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D square float32 matrix, p=2
-    x = np.random.randn(3, 3).astype(np.float32)
+    # Input 1: 2D square matrix, float32, p=2
+    x = np.array([[1.0, 2.0], [2.0, 1.0]], dtype=np.float32)
     p = 2
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 2: 2D square float32 matrix, p=1
-    x = np.random.randn(4, 4).astype(np.float32)
+    # Input 2: 2D square matrix, float32, p=1
+    x = np.array([[3.0, -1.0], [2.0, 4.0]], dtype=np.float32)
     p = 1
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 3: 2D square float64 matrix, p=-1
-    x = np.random.randn(5, 5).astype(np.float64)
+    # Input 3: 2D square matrix, float64, p=-1
+    x = np.array([[4.0, 1.0], [1.0, 3.0]], dtype=np.float64)
     p = -1
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 4: 2D rectangular float32 matrix, p=2
-    x = np.random.randn(3, 4).astype(np.float32)
+    # Input 4: 2D square matrix, float32, p=-2
+    x = np.array([[2.0, 0.5], [0.5, 3.0]], dtype=np.float32)
+    p = -2
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
+
+    # Input 5: 2D rectangular matrix (M > N), float32, p=2
+    np.random.seed(42)
+    x = np.random.randn(4, 3).astype(np.float32)
     p = 2
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 5: 3D batched square float32 matrix, p=1
+    # Input 6: 2D rectangular matrix (M < N), float64, p=-2
+    x = np.random.randn(3, 5).astype(np.float64)
+    p = -2
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
+
+    # Input 7: 3D batched square matrices, float32, p=1
     x = np.random.randn(2, 3, 3).astype(np.float32)
     p = 1
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 6: 3D batched rectangular float64 matrix, p=-2
-    x = np.random.randn(2, 3, 2).astype(np.float64)
-    p = -2
-    list_of_inputs.append({"x": x, "p": p})
-
-    # Input 7: 2D square float32 matrix, p=-2
-    x = np.random.randn(6, 6).astype(np.float32)
-    p = -2
-    list_of_inputs.append({"x": x, "p": p})
-
-    # Input 8: 3D batched square float32 matrix, p=2
-    x = np.random.randn(2, 4, 4).astype(np.float32)
+    # Input 8: 3D batched rectangular matrices, float32, p=2
+    x = np.random.randn(3, 4, 2).astype(np.float32)
     p = 2
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 9: 3D batched square float64 matrix, p=-1
-    x = np.random.randn(1, 5, 5).astype(np.float64)
+    # Input 9: 4D batched square matrices, float64, p=-1
+    x = np.random.randn(2, 2, 4, 4).astype(np.float64)
     p = -1
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 10: 2D rectangular float32 matrix, p=-2
-    x = np.random.randn(4, 2).astype(np.float32)
+    # Input 10: 2D complex matrix, complex64, p=1
+    x = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex64
+    )
+    p = 1
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
+
+    # Input 11: 3D batched complex matrix, complex128, p=-2
+    x = (np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)).astype(
+        np.complex128
+    )
     p = -2
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.cond_1"] = cond_inputs()
 

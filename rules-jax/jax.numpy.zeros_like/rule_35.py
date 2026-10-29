@@ -7,16 +7,17 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dtype specified as string must be a valid float type with valid input tensor (Rule 35)
+# tensor, string dtype override, and tuple shape override validity (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39)))) if n else
-          And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39))))
+    s.add(Not(And(And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39))), (And([Implies(i < (v["arg3_length"] - 1 + 1), Select(v["arg3_values"], i) >= 0) for i in range(6)])))) if n else
+          And(And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39))), (And([Implies(i < (v["arg3_length"] - 1 + 1), Select(v["arg3_values"], i) >= 0) for i in range(6)]))))
 )
 
-def rule_35_func(arg1, arg2, solver=None, neg=False):
+def rule_35_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
@@ -24,20 +25,27 @@ def rule_35_func(arg1, arg2, solver=None, neg=False):
             return False
         if not isinstance(arg2, str):
             return False
+        if not (isinstance(arg3, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
+            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 35
-        rule_35(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_35(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_35(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_35(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

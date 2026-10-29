@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# type compatibility when the first input is boolean (Rule 20)
+# both operands have integer dtypes (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_dtype"] == 0, Or(v["arg2_dtype"] == 0, (And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5))), True)) if n else
-          If(v["arg1_dtype"] == 0, Or(v["arg2_dtype"] == 0, (And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5))), True))
+    s.add(Not(And(And(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5)) if n else
+          And(And(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5))
 )
 
 def rule_20_func(arg1, arg2, solver=None, neg=False):

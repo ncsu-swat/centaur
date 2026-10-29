@@ -4,179 +4,200 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import inspect
+import numpy as np
 
-class JaxConvTuple(tuple):
-    def __len__(self):
-        frame = inspect.currentframe()
-        try:
-            while frame:
-                filename = frame.f_code.co_filename
-                name = frame.f_code.co_name
-                if 'input_generators' in filename or 'get_ll' in name:
-                    return 0
-                frame = frame.f_back
-        except Exception:
-            pass
-        finally:
-            del frame
-        return 3
-
-    def __deepcopy__(self, memo):
-        return JaxConvTuple(self)
+class DimTuple(tuple):
+    def __array__(self, *args, **kwargs):
+        return np.array(list(self), dtype=object)
 
 def conv_transpose_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D, standard, float32, consistent padding
+    # Input 1: 1D convolution transpose, NCW format
+    lhs = np.random.randn(1, 2, 8).astype(np.float32)
+    rhs = np.random.randn(2, 2, 3).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(2, 4, 8, 8).astype(np.float32),
-        'rhs': np.random.randn(4, 4, 3, 3).astype(np.float32),
-        'strides': (1, 1),
-        'padding': ((0, 0), (0, 0)),
-        'rhs_dilation': (1, 1),
-        'dimension_numbers': JaxConvTuple(('NCHW', 'OIHW', 'NCHW')),
-        'transpose_kernel': False,
-        'precision': 'default',
-        'preferred_element_type': np.dtype('float32'),
-        'use_consistent_padding': True
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (1,),
+        "padding": ((0, 0),),
+        "rhs_dilation": (1,),
+        "dimension_numbers": DimTuple(("NCW", "OIW", "NCW")),
+        "transpose_kernel": False,
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D, float64, transpose_kernel, inconsistent padding
+    # Input 2: 1D convolution transpose, NWC format, stride 2, transposed kernel
+    lhs = np.random.randn(2, 16, 4).astype(np.float32)
+    rhs = np.random.randn(3, 4, 4).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(1, 8, 16, 16).astype(np.float64),
-        'rhs': np.random.randn(8, 8, 4, 4).astype(np.float64),
-        'strides': (2, 2),
-        'padding': ((1, 1), (1, 1)),
-        'rhs_dilation': (1, 1),
-        'dimension_numbers': JaxConvTuple(('NCHW', 'OIHW', 'NCHW')),
-        'transpose_kernel': True,
-        'precision': 'high',
-        'preferred_element_type': np.dtype('float64'),
-        'use_consistent_padding': False
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (2,),
+        "padding": ((1, 1),),
+        "rhs_dilation": (1,),
+        "dimension_numbers": DimTuple(("NWC", "WIO", "NWC")),
+        "transpose_kernel": True,
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D, standard, float32, consistent padding
+    # Input 3: 2D convolution transpose, NCHW, consistent padding
+    lhs = np.random.randn(1, 3, 7, 7).astype(np.float32)
+    rhs = np.random.randn(3, 3, 3, 3).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(3, 2, 10).astype(np.float32),
-        'rhs': np.random.randn(2, 2, 3).astype(np.float32),
-        'strides': (1,),
-        'padding': ((1, 1),),
-        'rhs_dilation': (1,),
-        'dimension_numbers': JaxConvTuple(('NCW', 'OIW', 'NCW')),
-        'transpose_kernel': False,
-        'precision': 'highest',
-        'preferred_element_type': np.dtype('float32'),
-        'use_consistent_padding': True
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (1, 1),
+        "padding": ((0, 0), (0, 0)),
+        "rhs_dilation": (1, 1),
+        "dimension_numbers": DimTuple(("NCHW", "OIHW", "NCHW")),
+        "transpose_kernel": False,
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D, standard, float32, transpose_kernel, consistent padding
+    # Input 4: 2D convolution transpose, NHWC, stride 2, transposed kernel
+    lhs = np.random.randn(2, 8, 8, 4).astype(np.float32)
+    rhs = np.random.randn(3, 3, 4, 4).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(1, 4, 6, 6, 6).astype(np.float32),
-        'rhs': np.random.randn(4, 4, 2, 2, 2).astype(np.float32),
-        'strides': (2, 2, 2),
-        'padding': ((1, 1), (1, 1), (1, 1)),
-        'rhs_dilation': (1, 1, 1),
-        'dimension_numbers': JaxConvTuple(('NCDHW', 'OIDHW', 'NCDHW')),
-        'transpose_kernel': True,
-        'precision': 'default',
-        'preferred_element_type': np.dtype('float32'),
-        'use_consistent_padding': True
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (2, 2),
+        "padding": ((1, 1), (1, 1)),
+        "rhs_dilation": (1, 1),
+        "dimension_numbers": DimTuple(("NHWC", "HWIO", "NHWC")),
+        "transpose_kernel": True,
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D, float16, dilation > 1, consistent padding
+    # Input 5: 2D convolution transpose with dilation on rhs
+    lhs = np.random.randn(1, 2, 10, 10).astype(np.float32)
+    rhs = np.random.randn(2, 2, 3, 3).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(2, 4, 12, 12).astype(np.float16),
-        'rhs': np.random.randn(4, 4, 3, 3).astype(np.float16),
-        'strides': (1, 1),
-        'padding': ((2, 2), (2, 2)),
-        'rhs_dilation': (2, 2),
-        'dimension_numbers': JaxConvTuple(('NCHW', 'OIHW', 'NCHW')),
-        'transpose_kernel': False,
-        'precision': 'default',
-        'preferred_element_type': np.dtype('float16'),
-        'use_consistent_padding': True
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (1, 1),
+        "padding": ((1, 1), (1, 1)),
+        "rhs_dilation": (2, 2),
+        "dimension_numbers": DimTuple(("NCHW", "OIHW", "NCHW")),
+        "transpose_kernel": False,
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float64),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D, NHWC format
+    # Input 6: 2D convolution transpose with asymmetric strides and padding
+    lhs = np.random.randn(4, 3, 12, 16).astype(np.float32)
+    rhs = np.random.randn(3, 3, 2, 4).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(2, 8, 8, 4).astype(np.float32),
-        'rhs': np.random.randn(3, 3, 4, 4).astype(np.float32),
-        'strides': (1, 1),
-        'padding': ((1, 1), (1, 1)),
-        'rhs_dilation': (1, 1),
-        'dimension_numbers': JaxConvTuple(('NHWC', 'HWIO', 'NHWC')),
-        'transpose_kernel': False,
-        'precision': 'high',
-        'preferred_element_type': np.dtype('float32'),
-        'use_consistent_padding': True
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (1, 2),
+        "padding": ((0, 1), (2, 1)),
+        "rhs_dilation": (1, 1),
+        "dimension_numbers": DimTuple(("NCHW", "OIHW", "NCHW")),
+        "transpose_kernel": False,
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D, NWC format, inconsistent padding
+    # Input 7: 3D convolution transpose, NCDHW format
+    lhs = np.random.randn(1, 2, 4, 6, 6).astype(np.float32)
+    rhs = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(2, 12, 4).astype(np.float32),
-        'rhs': np.random.randn(3, 4, 4).astype(np.float32),
-        'strides': (2,),
-        'padding': ((0, 0),),
-        'rhs_dilation': (1,),
-        'dimension_numbers': JaxConvTuple(('NWC', 'WIO', 'NWC')),
-        'transpose_kernel': True,
-        'precision': 'default',
-        'preferred_element_type': np.dtype('float32'),
-        'use_consistent_padding': False
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (1, 1, 1),
+        "padding": ((0, 0), (0, 0), (0, 0)),
+        "rhs_dilation": (1, 1, 1),
+        "dimension_numbers": DimTuple(("NCDHW", "OIDHW", "NCDHW")),
+        "transpose_kernel": False,
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D, float64, precision highest, large padding
+    # Input 8: 3D convolution transpose, NDHWC format, stride 2
+    lhs = np.random.randn(2, 4, 4, 4, 2).astype(np.float32)
+    rhs = np.random.randn(3, 3, 3, 2, 2).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(1, 16, 14, 14).astype(np.float64),
-        'rhs': np.random.randn(16, 16, 5, 5).astype(np.float64),
-        'strides': (1, 1),
-        'padding': ((2, 2), (2, 2)),
-        'rhs_dilation': (1, 1),
-        'dimension_numbers': JaxConvTuple(('NCHW', 'OIHW', 'NCHW')),
-        'transpose_kernel': False,
-        'precision': 'highest',
-        'preferred_element_type': np.dtype('float64'),
-        'use_consistent_padding': True
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (2, 2, 2),
+        "padding": ((1, 1), (1, 1), (1, 1)),
+        "rhs_dilation": (1, 1, 1),
+        "dimension_numbers": DimTuple(("NDHWC", "DHWIO", "NDHWC")),
+        "transpose_kernel": True,
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D, non-square everything
+    # Input 9: 2D convolution transpose with float64 inputs
+    lhs = np.random.randn(2, 2, 5, 5).astype(np.float64)
+    rhs = np.random.randn(2, 2, 3, 3).astype(np.float64)
     input_dict = {
-        'lhs': np.random.randn(2, 4, 10, 12).astype(np.float32),
-        'rhs': np.random.randn(4, 4, 3, 5).astype(np.float32),
-        'strides': (2, 1),
-        'padding': ((1, 1), (2, 2)),
-        'rhs_dilation': (1, 2),
-        'dimension_numbers': JaxConvTuple(('NCHW', 'OIHW', 'NCHW')),
-        'transpose_kernel': False,
-        'precision': 'default',
-        'preferred_element_type': np.dtype('float32'),
-        'use_consistent_padding': True
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (2, 1),
+        "padding": ((0, 0), (1, 1)),
+        "rhs_dilation": (1, 2),
+        "dimension_numbers": DimTuple(("NCHW", "OIHW", "NCHW")),
+        "transpose_kernel": False,
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float64),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D, non-square dimensions, inconsistent padding
+    # Input 10: 1D convolution transpose with use_consistent_padding=True
+    lhs = np.random.randn(3, 1, 10).astype(np.float32)
+    rhs = np.random.randn(1, 1, 3).astype(np.float32)
     input_dict = {
-        'lhs': np.random.randn(1, 2, 8, 10, 12).astype(np.float32),
-        'rhs': np.random.randn(2, 2, 2, 3, 4).astype(np.float32),
-        'strides': (1, 2, 1),
-        'padding': ((1, 1), (0, 0), (2, 2)),
-        'rhs_dilation': (1, 1, 1),
-        'dimension_numbers': JaxConvTuple(('NCDHW', 'OIDHW', 'NCDHW')),
-        'transpose_kernel': False,
-        'precision': 'default',
-        'preferred_element_type': np.dtype('float32'),
-        'use_consistent_padding': False
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (1,),
+        "padding": ((1, 1),),
+        "rhs_dilation": (1,),
+        "dimension_numbers": DimTuple(("NCW", "OIW", "NCW")),
+        "transpose_kernel": False,
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D convolution transpose with 1x1 kernel
+    lhs = np.random.randn(1, 4, 4, 8).astype(np.float32)
+    rhs = np.random.randn(1, 1, 8, 8).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "strides": (2, 2),
+        "padding": ((0, 0), (0, 0)),
+        "rhs_dilation": (1, 1),
+        "dimension_numbers": DimTuple(("NHWC", "HWIO", "NHWC")),
+        "transpose_kernel": False,
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+        "use_consistent_padding": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 

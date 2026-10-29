@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The operand tensor must have a real-valued numeric data type, excluding booleans, complex numbers, and strings (Rule 9)
+# operand data type must be numeric or boolean, excluding string (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)) if n else
-          And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 8))
+    s.add(Not(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10)) if n else
+          And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):

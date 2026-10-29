@@ -7,35 +7,32 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# output tensor must be a scalar when input x is a scalar float or integer (Rule 3)
+# output tensor must be a boolean array (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_ndim"] == 0, v["arg1_value"] == v["arg1_value"])) if n else
-          And(v["arg2_ndim"] == 0, v["arg1_value"] == v["arg1_value"]))
+    s.add(Not(v["arg1_dtype"] == 0) if n else
+          v["arg1_dtype"] == 0)
 )
 
-def rule_3_func(arg1, arg2, solver=None, neg=False):
+def rule_3_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (float, np.floating)) or (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool))):
-            return False
-        if not isinstance(arg2, np.ndarray):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg2_ndim = Int('arg2_ndim')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 3
-        rule_3(solver, {'arg1_value': arg1_value, 'arg2_ndim': arg2_ndim})
+        rule_3(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_3(solver, {'arg1_value': arg1['value'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_3(solver, {'arg1_dtype': arg1['dtype']}, neg)

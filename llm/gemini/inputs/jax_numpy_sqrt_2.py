@@ -4,48 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_numpy_sqrt_inputs():
+def sqrt_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar python integer
-    list_of_inputs.append({"x": 4})
+    # Input 1: zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative scalar python integer
-    list_of_inputs.append({"x": -9})
+    # Input 2: one
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero python integer
-    list_of_inputs.append({"x": 0})
+    # Input 3: small perfect square
+    input_dict = {"x": 4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Numpy scalar int32
-    list_of_inputs.append({"x": np.int32(16)})
+    # Input 4: non-perfect square positive integer
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Numpy scalar int64
-    list_of_inputs.append({"x": np.int64(25)})
+    # Input 5: another perfect square
+    input_dict = {"x": 9}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D Numpy array of int32
-    list_of_inputs.append({"x": np.array([1, 4, 9, 16], dtype=np.int32)})
+    # Input 6: negative one (returns nan)
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D Numpy array of int64
-    list_of_inputs.append({"x": np.array([[0, 25], [36, 49]], dtype=np.int64)})
+    # Input 7: larger negative integer
+    input_dict = {"x": -16}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D Numpy array of int16
-    list_of_inputs.append({"x": np.array([[[1, 4], [9, 16]], [[25, 36], [49, 64]]], dtype=np.int16)})
+    # Input 8: medium perfect square
+    input_dict = {"x": 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Numpy array of uint8
-    list_of_inputs.append({"x": np.array([0, 1, 4, 9], dtype=np.uint8)})
+    # Input 9: prime integer
+    input_dict = {"x": 17}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D Numpy array with negative integers (int32)
-    list_of_inputs.append({"x": np.array([-4, -1, 0, 1, 4], dtype=np.int32)})
+    # Input 10: large positive integer
+    input_dict = {"x": 1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 4D Numpy array of int32
-    list_of_inputs.append({"x": np.ones((2, 2, 2, 2), dtype=np.int32) * 100})
+    # Input 11: negative prime integer
+    input_dict = {"x": -7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    return [copy.deepcopy(inp) for inp in list_of_inputs]
+    return list_of_inputs
 
-generated_inputs["jax.numpy.sqrt_2"] = jax_numpy_sqrt_inputs()
+generated_inputs["jax.numpy.sqrt_2"] = sqrt_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

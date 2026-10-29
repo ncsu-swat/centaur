@@ -4,57 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def expm1_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard Python integer (positive)
-    input_dict = {"x": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Standard Python integer (negative)
-    input_dict = {"x": -3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Standard Python integer (zero)
+    # Input 1: Zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: NumPy int32 positive integer
-    input_dict = {"x": np.int32(10)}
+    # Input 2: Positive small integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: NumPy int32 negative integer
-    input_dict = {"x": np.int32(-8)}
+    # Input 3: Negative small integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: NumPy int64 positive integer
-    input_dict = {"x": np.int64(20)}
+    # Input 4: Positive integer
+    input_dict = {"x": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: NumPy int64 negative integer
-    input_dict = {"x": np.int64(-15)}
+    # Input 5: Negative integer
+    input_dict = {"x": -2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: NumPy int16 positive integer
-    input_dict = {"x": np.int16(2)}
+    # Input 6: Moderate positive integer
+    input_dict = {"x": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: NumPy int8 negative integer
-    input_dict = {"x": np.int8(-1)}
+    # Input 7: Moderate negative integer
+    input_dict = {"x": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Large positive Python integer
-    input_dict = {"x": 40}
+    # Input 8: Larger positive integer
+    input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Large negative Python integer
+    # Input 9: Larger negative integer
+    input_dict = {"x": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Positive integer
+    input_dict = {"x": 20}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative integer approaching zero limit
     input_dict = {"x": -50}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
+    # Input 12: numpy integer scalar
+    input_dict = {"x": int(np.int64(3))}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.expm1_3"] = expm1_inputs()
 

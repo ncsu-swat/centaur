@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the tensor is 1D, the axis must be -1 or 0 (Rule 25)
+# when input tensor has at least one dimension, specified output index dtype must be an integer or unsigned integer type (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == -1, v["arg2_value"] == 0), True)) if n else
-          If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == -1, v["arg2_value"] == 0), True))
+    s.add(Not(If(v["arg1_ndim"] > 0, And(v["arg2_value"] >= 1, v["arg2_value"] <= 5), True)) if n else
+          If(v["arg1_ndim"] > 0, And(v["arg2_value"] >= 1, v["arg2_value"] <= 5), True))
 )
 
 def rule_25_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_25_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
@@ -32,7 +32,7 @@ def rule_25_func(arg1, arg2, solver=None, neg=False):
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 25
         rule_25(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis parameter must fall within the range of valid dimensions for the operand (Rule 27)
+# non-negative axis must be strictly within tensor rank (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(-1 * v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"] - 1)) if n else
-          And(-1 * v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"] - 1))
+    s.add(Not(If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True)) if n else
+          If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scatter_indices must have integer data type (Rule 2)
+# scatter_indices must have an integer data type (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5)) if n else

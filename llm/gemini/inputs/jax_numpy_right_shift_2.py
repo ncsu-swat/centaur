@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def right_shift_inputs():
     list_of_inputs = []
 
-    # Input 1: uint8 1D array, shift by 1
-    x1 = np.array([2, 4, 8, 16], dtype=np.uint8)
+    # Input 1: 1D int32 array, positive shift
+    x1 = np.array([1, 2, 4, 8, 16], dtype=np.int32)
     x2 = 1
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: uint8 2D array, shift by 2
-    x1 = np.array([[10, 20], [30, 40]], dtype=np.uint8)
+    # Input 2: 2D int32 array, shift by 2
+    x1 = np.array([[8, 16], [32, 64]], dtype=np.int32)
     x2 = 2
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: uint8 3D array, shift by 3
-    x1 = np.array([[[100, 200], [150, 250]]], dtype=np.uint8)
+    # Input 3: 0D scalar array int64, shift by 3
+    x1 = np.array(128, dtype=np.int64)
     x2 = 3
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: uint8 1D array, shift by 0
-    x1 = np.array([128, 255], dtype=np.uint8)
-    x2 = 0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # Input 5: uint8 1D array, shift by 4
-    x1 = np.array([240, 128, 64], dtype=np.uint8)
+    # Input 4: 3D int32 array, shift by 4
+    x1 = np.arange(24, dtype=np.int32).reshape((2, 3, 4))
     x2 = 4
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: uint8 4D array, shift by 5
-    x1 = np.ones((2, 2, 2, 2), dtype=np.uint8) * 128
-    x2 = 5
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # Input 7: uint8 1D array, shift by 7
-    x1 = np.array([128, 255], dtype=np.uint8)
-    x2 = 7
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # Input 8: uint8 5D array, shift by 1
-    x1 = np.arange(32, dtype=np.uint8).reshape((2, 2, 2, 2, 2))
+    # Input 5: 2D int32 array with negative values, shift by 1
+    x1 = np.array([[-16, -8], [-4, -2]], dtype=np.int32)
     x2 = 1
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: uint8 0-D array, shift by 1
-    x1 = np.array(16, dtype=np.uint8)
-    x2 = 1
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    # Input 6: 1D int64 array, shift by 0
+    x1 = np.array([0, 10, 100, 1000], dtype=np.int64)
+    x2 = 0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: uint8 3D random array, shift by 2
-    x1 = np.random.randint(0, 256, size=(3, 3, 3)).astype(np.uint8)
+    # Input 7: 4D int32 array, shift by 2
+    x1 = np.random.randint(0, 256, size=(2, 2, 3, 3), dtype=np.int32)
     x2 = 2
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 8: 2D int64 array, shift by 8
+    x1 = np.array([[256, 1024], [4096, 65536]], dtype=np.int64)
+    x2 = 8
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 9: 1D int32 array with mixed sign values, shift by 1
+    x1 = np.array([12, 24, -30, 60], dtype=np.int32)
+    x2 = 1
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 3D int64 array, shift by 5
+    x1 = np.random.randint(-1000, 1000, size=(2, 2, 2), dtype=np.int64)
+    x2 = 5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: 1D int64 array, shift by 6
+    x1 = np.array([128, 256, 512, 1024], dtype=np.int64)
+    x2 = 6
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.right_shift_2"] = right_shift_inputs()
 

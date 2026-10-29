@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For an input of union type of int or float, scaling by 2 preserves the sign and ordering relative to the original value (Rule 57)
+# dtype parameter specifying unsigned integer type (Rule 57)
 
 rule_57 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg1_value"] * 2 > v["arg1_value"], If(v["arg1_value"] < 0, v["arg1_value"] * 2 < v["arg1_value"], v["arg1_value"] == 0))) if n else
-          If(v["arg1_value"] > 0, v["arg1_value"] * 2 > v["arg1_value"], If(v["arg1_value"] < 0, v["arg1_value"] * 2 < v["arg1_value"], v["arg1_value"] == 0)))
+    s.add(Not(v["arg1_value"] == 5) if n else
+          v["arg1_value"] == 5)
 )
 
 def rule_57_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_57_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Int('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 57
         rule_57(solver, {'arg1_value': arg1_value})

@@ -4,93 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gumbel_l_logcdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive integers
-    input_dict = {
-        "x": int(2),
-        "loc": int(1),
-        "scale": int(1)
-    }
+    # Input 1: Basic standard parameters
+    input_dict = {"x": 0, "loc": 0, "scale": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Zero value for x, default-like loc and positive scale
-    input_dict = {
-        "x": int(0),
-        "loc": int(0),
-        "scale": int(2)
-    }
+    # Input 2: Positive x with standard loc and scale
+    input_dict = {"x": 2, "loc": 0, "scale": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative x and loc, positive scale
-    input_dict = {
-        "x": int(-5),
-        "loc": int(-2),
-        "scale": int(1)
-    }
+    # Input 3: Negative x with larger scale
+    input_dict = {"x": -3, "loc": 0, "scale": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large positive scale
-    input_dict = {
-        "x": int(10),
-        "loc": int(5),
-        "scale": int(100)
-    }
+    # Input 4: Shifted location and scaled
+    input_dict = {"x": 5, "loc": 2, "scale": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.int32 types
-    input_dict = {
-        "x": np.int32(3),
-        "loc": np.int32(-1),
-        "scale": np.int32(5)
-    }
+    # Input 5: Negative location and negative x
+    input_dict = {"x": -10, "loc": -5, "scale": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int64 types
-    input_dict = {
-        "x": np.int64(-10),
-        "loc": np.int64(0),
-        "scale": np.int64(4)
-    }
+    # Input 6: x equals location
+    input_dict = {"x": 10, "loc": 10, "scale": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large x relative to loc
-    input_dict = {
-        "x": int(1000),
-        "loc": int(10),
-        "scale": int(5)
-    }
+    # Input 7: Negative x, positive location
+    input_dict = {"x": -4, "loc": 4, "scale": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small x relative to loc
-    input_dict = {
-        "x": int(-1000),
-        "loc": int(-10),
-        "scale": int(5)
-    }
+    # Input 8: Larger values with large scale
+    input_dict = {"x": 100, "loc": 50, "scale": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large loc
-    input_dict = {
-        "x": int(0),
-        "loc": int(500),
-        "scale": int(10)
-    }
+    # Input 9: x at 0 with negative location
+    input_dict = {"x": 0, "loc": -8, "scale": 4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: All ones (positive scale)
-    input_dict = {
-        "x": int(1),
-        "loc": int(1),
-        "scale": int(1)
-    }
+    # Input 10: Deep negative x value
+    input_dict = {"x": -50, "loc": 0, "scale": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Scale greater than difference
+    input_dict = {"x": 1, "loc": -1, "scale": 20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.gumbel_l.logcdf_3"] = gumbel_l_logcdf_inputs()
 

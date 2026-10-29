@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Promotion check with string parameter conditioning integer parameter (Rule 60)
+# promotion between signed integers where the first has strictly smaller bitwidth than the second (Rule 60)
 
 rule_60 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 38, And(v["arg2_value"] >= 6, v["arg2_value"] <= 8), And(v["arg2_value"] >= 0, v["arg2_value"] <= 10))) if n else
-          If(v["arg1_value"] == 38, And(v["arg2_value"] >= 6, v["arg2_value"] <= 8), And(v["arg2_value"] >= 0, v["arg2_value"] <= 10)))
+    s.add(Not(And(And(And(And(v["arg1_value"] >= 1, v["arg1_value"] <= 3), v["arg2_value"] >= 2), v["arg2_value"] <= 4), v["arg1_value"] < v["arg2_value"])) if n else
+          And(And(And(And(v["arg1_value"] >= 1, v["arg1_value"] <= 3), v["arg2_value"] >= 2), v["arg2_value"] <= 4), v["arg1_value"] < v["arg2_value"]))
 )
 
 def rule_60_func(arg1, arg2, solver=None, neg=False):
@@ -20,19 +20,19 @@ def rule_60_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 60
         rule_60(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})

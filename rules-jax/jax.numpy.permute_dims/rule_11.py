@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if input tensor has dimension 3, then axes must have length 3 (Rule 11)
+# 4D batch-channel transposition axes constraints (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 3, v["arg2_length"] == 3, True)) if n else
-          If(v["arg1_ndim"] == 3, v["arg2_length"] == 3, True))
+    s.add(Not(If(v["arg1_ndim"] == 4, And(v["arg2_length"] == 4, (And([Implies(i < (3 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) <= 3)) for i in range(6)]))), True)) if n else
+          If(v["arg1_ndim"] == 4, And(v["arg2_length"] == 4, (And([Implies(i < (3 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) <= 3)) for i in range(6)]))), True))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):
@@ -29,15 +29,18 @@ def rule_11_func(arg1, arg2, solver=None, neg=False):
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 11
-        rule_11(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
+        rule_11(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_11(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)
+        rule_11(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

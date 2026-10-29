@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input x must be of a float data type (Rule 2)
+# scale tensor should have a supported non-complex numerical data type (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8)) if n else
-          And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8))
+    s.add(Not(And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 8)) if n else
+          And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 8))
 )
 
 def rule_2_func(arg1, solver=None, neg=False):

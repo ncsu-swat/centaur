@@ -10,49 +10,49 @@ import copy
 def softplus_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D float32 array with negative, positive, and zero values
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 2: Standard 2D float32 array
-    x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 3: 3D float32 array
-    x = np.random.randn(2, 3, 5).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: Scalar (0D array) float32
+    # Input 1: 0D scalar array (float32)
     x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: float64 array
-    x = np.random.randn(5).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with positive, negative, and zero values (float32)
+    x = np.array([-5.0, -1.0, 0.0, 1.0, 5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: float16 array
-    x = np.random.randn(4, 2).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array standard normal values (float32)
+    x = np.random.randn(4, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Large positive values (testing numerical stability)
-    x = np.array([50.0, 100.0, 1000.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 2D array float64 precision
+    x = np.random.randn(3, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Large negative values (testing values near zero)
-    x = np.array([-50.0, -100.0, -1000.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D array (float32)
+    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Array with all zeros
-    x = np.zeros((2, 2), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D batch array representing feature maps (float32)
+    x = np.random.randn(2, 8, 8, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 4D float32 array
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D array with large positive numbers to test numerical stability
+    x = np.array([50.0, 100.0, 500.0, 1000.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: Uniform random values in a larger range
-    x = np.random.uniform(-10.0, 10.0, size=(10, 10)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D array with large negative numbers
+    x = np.array([-1000.0, -500.0, -100.0, -50.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 2D array float16 precision
+    x = np.array([[-2.0, -0.5], [0.5, 2.0]], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 5D array
+    x = np.random.randn(1, 2, 2, 2, 2).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 

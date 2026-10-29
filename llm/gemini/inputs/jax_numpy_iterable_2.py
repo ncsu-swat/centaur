@@ -4,48 +4,50 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def iterable_inputs():
+
+def jax_numpy_iterable_inputs():
     list_of_inputs = []
 
-    # Input 1: List of positive integers
+    # Input 1: Empty list
+    list_of_inputs.append({"y": []})
+
+    # Input 2: Single element integer list
+    list_of_inputs.append({"y": [0]})
+
+    # Input 3: List of positive integers
     list_of_inputs.append({"y": [1, 2, 3, 4, 5]})
 
-    # Input 2: List of negative integers
-    list_of_inputs.append({"y": [-10, -5, -1]})
+    # Input 4: List of negative integers
+    list_of_inputs.append({"y": [-10, -20, -30, -40]})
 
-    # Input 3: List of mixed sign integers
-    list_of_inputs.append({"y": [-5, 0, 5]})
+    # Input 5: List of mixed signed integers
+    list_of_inputs.append({"y": [-100, 0, 50, -25, 200]})
 
-    # Input 4: List of floats
-    list_of_inputs.append({"y": [1.1, 2.2, 3.3]})
+    # Input 6: List of floating point numbers
+    list_of_inputs.append({"y": [0.0, 1.5, -2.75, 3.14159]})
 
-    # Input 5: List of negative floats
-    list_of_inputs.append({"y": [-1.1, -2.2, -3.3]})
+    # Input 7: Nested 2D list of integers
+    list_of_inputs.append({"y": [[1, 2], [3, 4], [5, 6]]})
 
-    # Input 6: List of mixed sign floats
-    list_of_inputs.append({"y": [-1.5, 0.0, 1.5]})
+    # Input 8: Nested 2D list of floats
+    list_of_inputs.append({"y": [[-1.5, 2.5], [0.0, -4.2]]})
 
-    # Input 7: List of booleans
-    list_of_inputs.append({"y": [True, False, True]})
+    # Input 9: Deeply nested 3D list
+    list_of_inputs.append({"y": [[[1, 2]], [[3, 4]], [[-1, -2]]]})
 
-    # Input 8: List with a single integer
-    list_of_inputs.append({"y": [42]})
+    # Input 10: List of boolean values (0 and 1)
+    list_of_inputs.append({"y": [True, False, True, True]})
 
-    # Input 9: List with a single float
-    list_of_inputs.append({"y": [-0.001]})
-
-    # Input 10: List of larger integers
-    list_of_inputs.append({"y": [100, 200, 300, 400]})
-
-    # Input 11: List of mixed integers and floats
-    list_of_inputs.append({"y": [1, 2.5, -3, 4.2]})
+    # Input 11: List with extreme float values
+    list_of_inputs.append({"y": [1e-6, -1e6, 2.5e3, 0.0]})
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.iterable_2"] = iterable_inputs()
+
+generated_inputs["jax.numpy.iterable_2"] = jax_numpy_iterable_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

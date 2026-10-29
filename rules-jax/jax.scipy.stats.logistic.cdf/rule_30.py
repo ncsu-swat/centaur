@@ -7,37 +7,35 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if loc and scale are both integer tuples, they must have the same length (Rule 30)
+# scale parameter provided as a list of integers must contain strictly positive values (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] == v["arg2_length"]) if n else
-          v["arg1_length"] == v["arg2_length"])
+    s.add(Not(And(v["arg1_length"] > 0, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) > 0) for i in range(6)]))) if n else
+          And(v["arg1_length"] > 0, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) > 0) for i in range(6)])))
 )
 
-def rule_30_func(arg1, arg2, solver=None, neg=False):
+def rule_30_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
-            return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
-        arg2_length = Int('arg2_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
-        solver.add(arg2_length == len(arg2))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 30
-        rule_30(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length})
+        rule_30(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_30(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length']}, neg)
+        rule_30(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

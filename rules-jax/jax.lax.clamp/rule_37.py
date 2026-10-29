@@ -7,39 +7,42 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if boundaries are tensors, the maximum value of min should be less than or equal to the minimum value of max (Rule 37)
+# integer bounds must be ordered and operand must be an integer tensor (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 1) <= Select(v["arg2_range"], 0)) if n else
-          Select(v["arg1_range"], 1) <= Select(v["arg2_range"], 0))
+    s.add(Not(And(And(v["arg1_value"] <= v["arg3_value"], v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 5)) if n else
+          And(And(v["arg1_value"] <= v["arg3_value"], v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 5))
 )
 
-def rule_37_func(arg1, arg2, solver=None, neg=False):
+def rule_37_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
         if not isinstance(arg2, np.ndarray):
+            return False
+        if not (isinstance(arg3, (int, np.integer)) and not isinstance(arg3, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
-        arg2_range = Array('arg2_range', IntSort(), IntSort())
+        arg1_value = Int('arg1_value')
+        arg2_dtype = Int('arg2_dtype')
+        arg3_value = Int('arg3_value')
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
-        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
-        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
+        solver.add(arg1_value == int(arg1))
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 37
-        rule_37(solver, {'arg1_range': arg1_range, 'arg2_range': arg2_range})
+        rule_37(solver, {'arg1_value': arg1_value, 'arg2_dtype': arg2_dtype, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_37(solver, {'arg1_range': arg1['range'], 'arg2_range': arg2['range']}, neg)
+        rule_37(solver, {'arg1_value': arg1['value'], 'arg2_dtype': arg2['dtype'], 'arg3_value': arg3['value']}, neg)

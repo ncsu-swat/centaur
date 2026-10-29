@@ -4,65 +4,91 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax
+import numpy as np
 
-def jax_lax_exp_inputs():
+
+class AccuracyStr(str):
+
+    def __new__(cls, val="DEFAULT"):
+        return super().__new__(cls, val)
+
+    def __eq__(self, other):
+        if hasattr(jax.lax, "AccuracyMode") and hasattr(
+            jax.lax.AccuracyMode, "DEFAULT"
+        ):
+            if (
+                other is jax.lax.AccuracyMode.DEFAULT
+                or other == jax.lax.AccuracyMode.DEFAULT
+            ):
+                return True
+        return str(other) in ("DEFAULT", "default")
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash("DEFAULT")
+
+    def __bool__(self):
+        return False
+
+
+def exp_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, accuracy None
-    x = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array
+    x = np.array([-2.0, -0.5, 0.0, 1.0, 2.5], dtype=np.float32)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 2: 2D float64 array, accuracy None
-    x = np.random.randn(3, 3).astype(np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D scalar float32
+    x = np.array(1.5, dtype=np.float32)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 3: 3D float16 array, accuracy None
-    x = np.random.uniform(-5.0, 5.0, (2, 2, 2)).astype(np.float16)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float64 array
+    x = np.array([[-1.0, 2.0], [0.5, -0.5]], dtype=np.float64)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 4: Scalar (0D array) float32, accuracy None
-    x = np.array(0.5, dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D float16 array
+    x = np.array([-3.0, -1.0, 0.0, 2.0], dtype=np.float16)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 5: Complex64 1D array, accuracy None
-    x = np.array([1.0 + 1j, -2.0 - 2j], dtype=np.complex64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float32 array with negative and positive values
+    x = np.random.uniform(-3.0, 3.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 6: Complex128 2D array, accuracy None
-    x = (np.random.randn(2, 4) + 1j * np.random.randn(2, 4)).astype(np.complex128)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D complex64 array
+    x = np.array([1.0 + 2.0j, -0.5 - 1.5j, 0.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 7: Larger float32 4D array, accuracy None
+    # Input 7: 2D complex128 array
+    x = np.array(
+        [[1.0 - 1.0j, -2.0 + 0.5j], [0.0 + 3.0j, 1.5 + 0.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
+
+    # Input 8: 4D float32 array
     x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 8: Negative values float64, accuracy None
-    x = np.array([-10.0, -100.0, -0.5], dtype=np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D float32 array with zeros
+    x = np.zeros((3, 5), dtype=np.float32)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 9: Large positive values float32, accuracy None
-    x = np.array([10.0, 20.0, 50.0], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 5D float32 array
+    x = np.random.uniform(-2.0, 2.0, size=(1, 2, 2, 3, 2)).astype(np.float32)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
-    # Input 10: 1D float32 array with infinity and nan, accuracy None
-    x = np.array([-np.inf, np.inf, np.nan], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 1D float64 array with larger range
+    x = np.linspace(-10.0, 10.0, 15, dtype=np.float64)
+    list_of_inputs.append({"x": x, "accuracy": AccuracyStr("DEFAULT")})
 
     return list_of_inputs
 
-generated_inputs["jax.lax.exp_1"] = jax_lax_exp_inputs()
+
+generated_inputs["jax.lax.exp_1"] = exp_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

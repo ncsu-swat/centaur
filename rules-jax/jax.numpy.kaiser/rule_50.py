@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the window size M is strictly positive, the beta tensor must have a numeric or boolean dtype (Rule 50)
+# window size M must be at least 1 and beta tensor must be a scalar within standard filter range (Rule 50)
 
 rule_50 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg2_dtype"] <= 8, v["arg2_dtype"] <= 10)) if n else
-          If(v["arg1_value"] > 0, v["arg2_dtype"] <= 8, v["arg2_dtype"] <= 10))
+    s.add(Not(And(And(And(v["arg1_value"] >= 1, v["arg2_ndim"] == 0), Select(v["arg2_range"], 0) >= 0), Select(v["arg2_range"], 1) <= 30)) if n else
+          And(And(And(v["arg1_value"] >= 1, v["arg2_ndim"] == 0), Select(v["arg2_range"], 0) >= 0), Select(v["arg2_range"], 1) <= 30))
 )
 
 def rule_50_func(arg1, arg2, solver=None, neg=False):
@@ -28,16 +28,19 @@ def rule_50_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_value = Int('arg1_value')
-        arg2_dtype = Int('arg2_dtype')
+        arg2_ndim = Int('arg2_ndim')
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_value == int(arg1))
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg2_ndim == arg2.ndim)
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 50
-        rule_50(solver, {'arg1_value': arg1_value, 'arg2_dtype': arg2_dtype})
+        rule_50(solver, {'arg1_value': arg1_value, 'arg2_range': arg2_range, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_50(solver, {'arg1_value': arg1['value'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_50(solver, {'arg1_value': arg1['value'], 'arg2_range': arg2['range'], 'arg2_ndim': arg2['ndim']}, neg)

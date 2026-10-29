@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Broadcasting compatible dimensions for tuple target shape using conditional checking (Rule 43)
+# right-to-left trailing dimension alignment for target list shape (Rule 43)
 
 rule_43 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_length"] >= v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), (If(Select(v["arg1_shape"], i) != Select(v["arg2_values"], v["arg2_length"] - v["arg1_ndim"] + i), Select(v["arg1_shape"], i) == 1, True))) for i in range(6)])))) if n else
-          And(v["arg2_length"] >= v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), (If(Select(v["arg1_shape"], i) != Select(v["arg2_values"], v["arg2_length"] - v["arg1_ndim"] + i), Select(v["arg1_shape"], i) == 1, True))) for i in range(6)]))))
+    s.add(Not(And([Implies(i < (v["arg1_ndim"] - 1 + 1), Or(Select(v["arg1_shape"], v["arg1_ndim"] - 1 - i) == 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1 - i) == Select(v["arg2_values"], v["arg2_length"] - 1 - i))) for i in range(6)])) if n else
+          And([Implies(i < (v["arg1_ndim"] - 1 + 1), Or(Select(v["arg1_shape"], v["arg1_ndim"] - 1 - i) == 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1 - i) == Select(v["arg2_values"], v["arg2_length"] - 1 - i))) for i in range(6)]))
 )
 
 def rule_43_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_43_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
@@ -41,9 +41,9 @@ def rule_43_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 43
-        rule_43(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_43(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_43(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_43(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

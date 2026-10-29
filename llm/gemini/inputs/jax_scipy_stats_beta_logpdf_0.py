@@ -4,93 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def beta_logpdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D arrays, standard support [0, 1], float32
-    x = np.array([0.1, 0.5, 0.9], dtype=np.float32)
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    b = np.array([3.0, 2.0, 1.0], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 1: 0D scalars, float32
+    input_dict = {
+        "x": np.array(0.5, dtype=np.float32),
+        "a": np.array(2.0, dtype=np.float32),
+        "b": np.array(2.0, dtype=np.float32),
+        "loc": np.array(0.0, dtype=np.float32),
+        "scale": np.array(1.0, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D arrays, float32, standard support
-    x = np.array([[0.2, 0.4], [0.6, 0.8]], dtype=np.float32)
-    a = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float32)
-    b = np.array([[3.5, 2.5], [1.5, 0.5]], dtype=np.float32)
-    loc = np.zeros((2, 2), dtype=np.float32)
-    scale = np.ones((2, 2), dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 2: 1D arrays, same shapes, float64
+    input_dict = {
+        "x": np.array([0.1, 0.5, 0.9], dtype=np.float64),
+        "a": np.array([0.5, 1.0, 2.0], dtype=np.float64),
+        "b": np.array([0.5, 1.0, 2.0], dtype=np.float64),
+        "loc": np.array([0.0, 0.0, 0.0], dtype=np.float64),
+        "scale": np.array([1.0, 1.0, 1.0], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: float64, 3D arrays
-    x = np.random.uniform(0.1, 0.9, size=(2, 2, 2)).astype(np.float64)
-    a = np.random.uniform(0.5, 5.0, size=(2, 2, 2)).astype(np.float64)
-    b = np.random.uniform(0.5, 5.0, size=(2, 2, 2)).astype(np.float64)
-    loc = np.zeros((2, 2, 2), dtype=np.float64)
-    scale = np.ones((2, 2, 2), dtype=np.float64)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 3: Non-standard loc and scale, 1D
+    input_dict = {
+        "x": np.array([1.5, 2.0, 2.5], dtype=np.float32),
+        "a": np.array([2.0, 3.0, 4.0], dtype=np.float32),
+        "b": np.array([3.0, 2.0, 1.0], dtype=np.float32),
+        "loc": np.array([1.0, 1.0, 1.0], dtype=np.float32),
+        "scale": np.array([2.0, 2.0, 2.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Broadcasting, 1D with 0D-like (1-element) tensors
-    x = np.array([0.2, 0.5, 0.8], dtype=np.float32)
-    a = np.array([2.0], dtype=np.float32)
-    b = np.array([1.5], dtype=np.float32)
-    loc = np.array([0.0], dtype=np.float32)
-    scale = np.array([1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 4: Negative loc, float32
+    input_dict = {
+        "x": np.array([-0.5, 0.0, 0.5], dtype=np.float32),
+        "a": np.array([1.5, 1.5, 1.5], dtype=np.float32),
+        "b": np.array([2.5, 2.5, 2.5], dtype=np.float32),
+        "loc": np.array([-1.0, -1.0, -1.0], dtype=np.float32),
+        "scale": np.array([2.0, 2.0, 2.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Custom loc and scale (loc = 1.0, scale = 3.0), support [1.0, 4.0]
-    x = np.array([1.5, 2.0, 3.5], dtype=np.float32)
-    a = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    b = np.array([3.0, 3.0, 3.0], dtype=np.float32)
-    loc = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    scale = np.array([3.0, 3.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 5: 2D arrays
+    input_dict = {
+        "x": np.array([[0.2, 0.4], [0.6, 0.8]], dtype=np.float32),
+        "a": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
+        "b": np.array([[4.0, 3.0], [2.0, 1.0]], dtype=np.float32),
+        "loc": np.zeros((2, 2), dtype=np.float32),
+        "scale": np.ones((2, 2), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative loc (loc = -5.0, scale = 10.0), support [-5.0, 5.0]
-    x = np.array([-4.0, 0.0, 4.0], dtype=np.float32)
-    a = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    b = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    loc = np.array([-5.0, -5.0, -5.0], dtype=np.float32)
-    scale = np.array([10.0, 10.0, 10.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 6: Broadcasting shapes (2D x with 1D params)
+    input_dict = {
+        "x": np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], dtype=np.float64),
+        "a": np.array([1.0, 2.0, 3.0], dtype=np.float64),
+        "b": np.array([[2.0], [3.0]], dtype=np.float64),
+        "loc": np.array([0.0], dtype=np.float64),
+        "scale": np.array([1.0], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: High dimensions (4D)
-    x = np.random.uniform(0.01, 0.99, size=(2, 2, 2, 2)).astype(np.float32)
-    a = np.random.uniform(0.1, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
-    b = np.random.uniform(0.1, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
-    loc = np.zeros((2, 2, 2, 2), dtype=np.float32)
-    scale = np.ones((2, 2, 2, 2), dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 7: 3D tensors
+    input_dict = {
+        "x": np.full((2, 3, 4), 0.3, dtype=np.float32),
+        "a": np.full((2, 3, 4), 2.5, dtype=np.float32),
+        "b": np.full((2, 3, 4), 1.5, dtype=np.float32),
+        "loc": np.zeros((2, 3, 4), dtype=np.float32),
+        "scale": np.ones((2, 3, 4), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Boundary inputs (x near or at boundaries)
-    x = np.array([0.0, 0.5, 1.0], dtype=np.float32)
-    a = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    b = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    loc = np.zeros(3, dtype=np.float32)
-    scale = np.ones(3, dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 8: 0D parameters with multi-dimensional x
+    input_dict = {
+        "x": np.linspace(0.1, 0.9, 10, dtype=np.float32).reshape(5, 2),
+        "a": np.array(5.0, dtype=np.float32),
+        "b": np.array(2.0, dtype=np.float32),
+        "loc": np.array(0.0, dtype=np.float32),
+        "scale": np.array(1.0, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small positive shape parameters (a < 1, b < 1)
-    x = np.array([0.1, 0.5, 0.9], dtype=np.float32)
-    a = np.array([0.1, 0.2, 0.3], dtype=np.float32)
-    b = np.array([0.3, 0.2, 0.1], dtype=np.float32)
-    loc = np.zeros(3, dtype=np.float32)
-    scale = np.ones(3, dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 9: Boundary conditions (support boundary values)
+    input_dict = {
+        "x": np.array([0.0, 0.5, 1.0], dtype=np.float64),
+        "a": np.array([2.0, 2.0, 2.0], dtype=np.float64),
+        "b": np.array([2.0, 2.0, 2.0], dtype=np.float64),
+        "loc": np.array([0.0, 0.0, 0.0], dtype=np.float64),
+        "scale": np.array([1.0, 1.0, 1.0], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Mixed broadcasting shapes
-    x = np.array([[0.2, 0.5, 0.8]], dtype=np.float32)
-    a = np.array([[2.0], [3.0]], dtype=np.float32)
-    b = np.array([[3.0, 2.0, 1.0], [1.0, 2.0, 3.0]], dtype=np.float32)
-    loc = np.array([[0.0]], dtype=np.float32)
-    scale = np.array([[1.0]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 10: Asymmetric shape parameters with large scale
+    input_dict = {
+        "x": np.array([10.0, 25.0, 50.0, 90.0], dtype=np.float32),
+        "a": np.array([0.5, 1.0, 2.0, 5.0], dtype=np.float32),
+        "b": np.array([5.0, 2.0, 1.0, 0.5], dtype=np.float32),
+        "loc": np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        "scale": np.array([100.0, 100.0, 100.0, 100.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.beta.logpdf"] = beta_logpdf_inputs()
 

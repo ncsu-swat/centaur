@@ -4,66 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
+import numpy as np
 
-# Patch jax.numpy.cosh to accept tuples by converting them to JAX arrays
-orig_cosh = jnp.cosh
-
-def patched_cosh(x, *args, **kwargs):
-    if isinstance(x, tuple):
-        x = jnp.asarray(x)
-    return orig_cosh(x, *args, **kwargs)
-
-jnp.cosh = patched_cosh
-jax.numpy.cosh = patched_cosh
 
 def cosh_inputs():
     list_of_inputs = []
 
-    # Input 1: Flat tuple of positive floats
-    input_dict = {"x": (1.0, 2.0, 3.5)}
+    # Input 1: 1D float32 array with positive, negative, and zero values
+    x = np.array([0.0, 1.0, -1.0, 2.5, -2.5], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Flat tuple of negative floats
-    input_dict = {"x": (-1.0, -2.5, -5.0)}
+    # Input 2: 2D float64 array
+    x = np.array([[1.0, -2.0, 0.5], [-1.5, 3.0, 0.0]], dtype=np.float64)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Flat tuple with zero and small values
-    input_dict = {"x": (0.0, 0.1, -0.1, 1e-5)}
+    # Input 3: 1D int32 array
+    x = np.array([-3, -1, 0, 1, 4], dtype=np.int32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Tuple of integers
-    input_dict = {"x": (0, 1, 2, 3, 4, 5)}
+    # Input 4: 1D single-element float32 array
+    x = np.array([0.0], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Tuple of negative integers
-    input_dict = {"x": (-1, -2, -3, -4)}
+    # Input 5: 3D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Single-element tuple
-    input_dict = {"x": (2.5,)}
+    # Input 6: 1D complex64 array
+    x = np.array(
+        [1.0 + 2.0j, -0.5j, 0.0 + 0.0j, -1.5 - 1.5j], dtype=np.complex64
+    )
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Tuple of complex numbers
-    input_dict = {"x": (1.0 + 1j, 2.0 - 3j, -0.5 + 0.5j)}
+    # Input 7: 2D complex128 array
+    x = np.array(
+        [[1.0 - 1.0j, 2.0 + 0.5j], [-0.5 + 3.0j, 0.0 - 2.0j]],
+        dtype=np.complex128,
+    )
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Nested tuple (2D equivalent)
-    input_dict = {"x": ((1.0, -2.0), (3.0, -4.0))}
+    # Input 8: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Nested tuple with integers (2D equivalent)
-    input_dict = {"x": ((1, 2, 3), (4, 5, 6))}
+    # Input 9: 4D float32 array
+    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Nested tuple (3D equivalent)
-    input_dict = {"x": (((0.1, 0.2), (0.3, 0.4)), ((0.5, 0.6), (0.7, 0.8)))}
+    # Input 10: 1D boolean array
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cosh_5"] = cosh_inputs()
 

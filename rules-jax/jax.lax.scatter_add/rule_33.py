@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scatter_indices must be of int32 or int64 dtype for efficient and standard indexing (Rule 33)
+# scatter indices tensor must not have a boolean data type (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 4)) if n else
-          Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 4))
+    s.add(Not(v["arg1_dtype"] != 0) if n else
+          v["arg1_dtype"] != 0)
 )
 
 def rule_33_func(arg1, solver=None, neg=False):

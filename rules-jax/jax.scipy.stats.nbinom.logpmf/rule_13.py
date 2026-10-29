@@ -7,16 +7,18 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The minimum value of evaluation point k must be greater than or equal to the maximum value of offset parameter loc to ensure valid support (Rule 13)
+# all four distribution parameters share the same tensor rank (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) >= Select(v["arg2_range"], 1)) if n else
-          Select(v["arg1_range"], 0) >= Select(v["arg2_range"], 1))
+    s.add(Not(And(And(v["arg1_ndim"] == v["arg2_ndim"], v["arg2_ndim"] == v["arg3_ndim"]), v["arg3_ndim"] == v["arg4_ndim"])) if n else
+          And(And(v["arg1_ndim"] == v["arg2_ndim"], v["arg2_ndim"] == v["arg3_ndim"]), v["arg3_ndim"] == v["arg4_ndim"]))
 )
 
-def rule_13_func(arg1, arg2, solver=None, neg=False):
+def rule_13_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
@@ -24,22 +26,28 @@ def rule_13_func(arg1, arg2, solver=None, neg=False):
             return False
         if not isinstance(arg2, np.ndarray):
             return False
+        if not isinstance(arg3, np.ndarray):
+            return False
+        if not isinstance(arg4, np.ndarray):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
-        arg2_range = Array('arg2_range', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
+        arg3_ndim = Int('arg3_ndim')
+        arg4_ndim = Int('arg4_ndim')
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
-        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
-        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg3_ndim == arg3.ndim)
+        solver.add(arg4_ndim == arg4.ndim)
 
         # Constraints for rule 13
-        rule_13(solver, {'arg1_range': arg1_range, 'arg2_range': arg2_range})
+        rule_13(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg3_ndim': arg3_ndim, 'arg4_ndim': arg4_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_13(solver, {'arg1_range': arg1['range'], 'arg2_range': arg2['range']}, neg)
+        rule_13(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg3_ndim': arg3['ndim'], 'arg4_ndim': arg4['ndim']}, neg)

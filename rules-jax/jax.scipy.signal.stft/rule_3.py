@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The overlap size must be non-negative and less than the segment length (Rule 3)
+# noverlap must be non-negative and strictly less than nperseg (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
     s.add(Not(And(v["arg1_value"] >= 0, v["arg1_value"] < v["arg2_value"])) if n else

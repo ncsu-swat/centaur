@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# diagonal offset k should lie within the matrix dimensions (Rule 32)
+# when diagonal offset is zero, both matrix dimensions must be strictly positive (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(Or((And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg2_value"])), (And(v["arg3_value"] < 0, 0 - v["arg3_value"] < v["arg1_value"])))) if n else
-          Or((And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg2_value"])), (And(v["arg3_value"] < 0, 0 - v["arg3_value"] < v["arg1_value"]))))
+    s.add(Not(If(v["arg3_value"] == 0, And(v["arg1_value"] > 0, v["arg2_value"] > 0), And(v["arg1_value"] >= 0, v["arg2_value"] >= 0))) if n else
+          If(v["arg3_value"] == 0, And(v["arg1_value"] > 0, v["arg2_value"] > 0), And(v["arg1_value"] >= 0, v["arg2_value"] >= 0)))
 )
 
 def rule_32_func(arg1, arg2, arg3, solver=None, neg=False):

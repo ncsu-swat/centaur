@@ -5,46 +5,57 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import copy
-import numpy as np
 
-
-def tanh_inputs():
+def jax_nn_tanh_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0})
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive small integer
-    list_of_inputs.append({"x": 1})
+    # Input 2: Small positive integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative small integer
-    list_of_inputs.append({"x": -1})
+    # Input 3: Small negative integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Positive medium integer
-    list_of_inputs.append({"x": 5})
+    # Input 4: Moderate positive integer
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative medium integer
-    list_of_inputs.append({"x": -5})
+    # Input 5: Moderate negative integer
+    input_dict = {"x": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large positive integer
-    list_of_inputs.append({"x": 100})
+    # Input 6: Larger positive integer (saturates near 1)
+    input_dict = {"x": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large negative integer
-    list_of_inputs.append({"x": -100})
+    # Input 7: Larger negative integer (saturates near -1)
+    input_dict = {"x": -5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy int32 positive
-    list_of_inputs.append({"x": np.int32(10)})
+    # Input 8: Positive integer 10
+    input_dict = {"x": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy int64 negative
-    list_of_inputs.append({"x": np.int64(-10)})
+    # Input 9: Negative integer -10
+    input_dict = {"x": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy int16 positive
-    list_of_inputs.append({"x": np.int16(2)})
+    # Input 10: Arbitrary positive integer
+    input_dict = {"x": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Large negative integer
+    input_dict = {"x": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-
-generated_inputs["jax.nn.tanh_3"] = tanh_inputs()
+generated_inputs["jax.nn.tanh_3"] = jax_nn_tanh_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

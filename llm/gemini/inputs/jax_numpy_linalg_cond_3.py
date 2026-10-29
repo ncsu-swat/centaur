@@ -4,63 +4,83 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cond_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 2x2 float32 matrix
-    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2x2 float32 matrix
+    x = np.array([[2.0, 1.0], [1.0, 3.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 2: 3x3 float64 matrix with random values
-    x = np.random.randn(3, 3).astype(np.float64)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 3x3 float64 matrix with negative values
+    x = np.array(
+        [[-3.0, 1.0, 0.5], [1.0, -4.0, 2.0], [0.5, 2.0, -5.0]],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 3: 4x4 complex64 matrix
-    x = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 4x4 float32 diagonally dominant matrix
+    x = (np.eye(4) * 5.0 + np.random.randn(4, 4) * 0.1).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 4: 5x5 complex128 matrix
-    x = (np.random.randn(5, 5) + 1j * np.random.randn(5, 5)).astype(np.complex128)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D batched float32 matrices (batch size 2, 3x3)
+    rng = np.random.default_rng(42)
+    x = (
+        np.stack([np.eye(3), np.eye(3)]) * 3.0
+        + rng.standard_normal((2, 3, 3)) * 0.2
+    ).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 5: Batched 3D tensor (2, 3, 3) float32
-    x = np.random.randn(2, 3, 3).astype(np.float32)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D batched float64 matrices (batch size 4, 2x2)
+    x = (
+        np.stack([np.eye(2)] * 4) * 2.0 + rng.standard_normal((4, 2, 2)) * 0.1
+    ).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 6: Higher-dimensional batched tensor (3, 2, 4, 4) float64
-    x = np.random.randn(3, 2, 4, 4).astype(np.float64)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D batched float32 matrices (shape (2, 3, 2, 2))
+    x = (
+        np.broadcast_to(np.eye(2), (2, 3, 2, 2)) * 4.0
+        + rng.standard_normal((2, 3, 2, 2)) * 0.2
+    ).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 7: 2x2 matrix with negative values
-    x = np.array([[-1.0, -2.0], [-3.0, -4.0]], dtype=np.float32)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2x2 complex64 matrix
+    x = np.array(
+        [[2.0 + 1.0j, 0.5 - 0.5j], [0.5 + 0.5j, 3.0 + 0.0j]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 8: Well-conditioned diagonal-like 6x6 matrix
-    x = (np.eye(6) * 5.0).astype(np.float32)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3x3 complex128 matrix
+    x = (
+        np.eye(3, dtype=np.complex128) * (3.0 + 2.0j)
+        + (rng.standard_normal((3, 3)) + 1j * rng.standard_normal((3, 3))) * 0.1
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 9: Ill-conditioned/singular 2x2 matrix
-    x = np.array([[1.0, 2.0], [2.0, 4.0]], dtype=np.float32)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5x5 float32 well-conditioned symmetric matrix
+    a = rng.standard_normal((5, 5)).astype(np.float32)
+    x = a.T @ a + np.eye(5, dtype=np.float32) * 2.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
-    # Input 10: 1x5x5 float32 matrix
-    x = np.random.randn(1, 5, 5).astype(np.float32)
-    input_dict = {"x": x, "p": "fro"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D batched complex64 matrices (batch size 3, 3x3)
+    real_part = (
+        np.broadcast_to(np.eye(3), (3, 3, 3)) * 3.0
+        + rng.standard_normal((3, 3, 3)) * 0.1
+    )
+    imag_part = rng.standard_normal((3, 3, 3)) * 0.1
+    x = (real_part + 1j * imag_part).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
+
+    # Input 11: 6x6 float64 invertible matrix
+    x = np.diag(np.linspace(1.0, 10.0, 6)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": "fro"}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.cond_3"] = cond_inputs()
 

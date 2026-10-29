@@ -4,150 +4,195 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_nn_standardize_inputs():
+def standardize_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, axis=0, fast algorithm
-    x = np.random.randn(10).astype(np.float32)
+    # Input 1: 1D array, axis=0, fast algorithm, float32
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
     axis = 0
     mean = np.array([0.0], dtype=np.float32)
-    variance = np.array([1.0], dtype=np.float32)
+    variance = np.array([2.0], dtype=np.float32)
     epsilon = 1e-5
     where = np.ones_like(x, dtype=bool)
     algorithm = "fast"
     list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
     })
 
-    # Input 2: 2D array, axis=-1, stable algorithm, small epsilon
-    x = np.random.randn(5, 10).astype(np.float32)
+    # Input 2: 2D array, axis=-1, stable algorithm, float32
+    x = np.random.randn(4, 8).astype(np.float32)
     axis = -1
-    mean = np.random.randn(5, 1).astype(np.float32)
-    variance = np.abs(np.random.randn(5, 1)).astype(np.float32) + 0.1
-    epsilon = 1e-6
-    where = np.random.choice([True, False], size=x.shape, p=[0.9, 0.1])
-    algorithm = "stable"
-    list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
-    })
-
-    # Input 3: 2D array, axis=0, float64, fast algorithm
-    x = np.random.randn(8, 6).astype(np.float64)
-    axis = 0
-    mean = np.random.randn(1, 6).astype(np.float64)
-    variance = np.abs(np.random.randn(1, 6)).astype(np.float64) + 0.1
-    epsilon = 1e-5
-    where = np.ones_like(x, dtype=bool)
-    algorithm = "fast"
-    list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
-    })
-
-    # Input 4: 3D array, axis=1, stable algorithm
-    x = np.random.randn(2, 4, 3).astype(np.float32)
-    axis = 1
-    mean = np.random.randn(2, 1, 3).astype(np.float32)
-    variance = np.abs(np.random.randn(2, 1, 3)).astype(np.float32) + 0.1
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
     epsilon = 1e-4
-    where = np.ones_like(x, dtype=bool)
+    where = (x > -1.0)
     algorithm = "stable"
     list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
     })
 
-    # Input 5: 3D array, axis=-1, larger epsilon, fast algorithm
-    x = np.random.randn(3, 3, 5).astype(np.float32)
-    axis = -1
-    mean = np.random.randn(3, 3, 1).astype(np.float32)
-    variance = np.abs(np.random.randn(3, 3, 1)).astype(np.float32) + 0.1
-    epsilon = 1e-3
-    where = np.random.choice([True, False], size=x.shape, p=[0.8, 0.2])
-    algorithm = "fast"
-    list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
-    })
-
-    # Input 6: 4D array, axis=2, stable algorithm
-    x = np.random.randn(2, 2, 4, 3).astype(np.float32)
-    axis = 2
-    mean = np.random.randn(2, 2, 1, 3).astype(np.float32)
-    variance = np.abs(np.random.randn(2, 2, 1, 3)).astype(np.float32) + 0.1
-    epsilon = 1e-5
-    where = np.ones_like(x, dtype=bool)
-    algorithm = "stable"
-    list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
-    })
-
-    # Input 7: 1D array with negative values, float64, axis=0
-    x = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float64)
+    # Input 3: 2D array, axis=0, fast algorithm, float64
+    x = np.random.randn(5, 3).astype(np.float64)
     axis = 0
-    mean = np.array([0.0], dtype=np.float64)
-    variance = np.array([50.0], dtype=np.float64)
-    epsilon = 1e-8
-    where = np.ones_like(x, dtype=bool)
-    algorithm = "stable"
-    list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
-    })
-
-    # Input 8: 2D array, axis=1, high variance
-    x = np.random.randn(4, 4).astype(np.float32) * 100.0
-    axis = 1
-    mean = np.zeros((4, 1), dtype=np.float32)
-    variance = np.ones((4, 1), dtype=np.float32) * 10000.0
-    epsilon = 1e-5
-    where = np.ones_like(x, dtype=bool)
-    algorithm = "fast"
-    list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
-    })
-
-    # Input 9: 3D array, axis=0, stable algorithm, custom where mask
-    x = np.random.randn(4, 2, 2).astype(np.float32)
-    axis = 0
-    mean = np.random.randn(1, 2, 2).astype(np.float32)
-    variance = np.abs(np.random.randn(1, 2, 2)).astype(np.float32) + 0.2
-    epsilon = 1e-5
-    where = np.array([
-        [[True, False], [True, True]],
-        [[False, True], [True, False]],
-        [[True, True], [False, True]],
-        [[True, False], [True, True]]
-    ], dtype=bool)
-    algorithm = "stable"
-    list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
-    })
-
-    # Input 10: 4D array, axis=-1, float64, fast algorithm
-    x = np.random.randn(2, 2, 2, 2).astype(np.float64)
-    axis = -1
-    mean = np.random.randn(2, 2, 2, 1).astype(np.float64)
-    variance = np.abs(np.random.randn(2, 2, 2, 1)).astype(np.float64) + 0.05
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
     epsilon = 1e-6
-    where = np.ones_like(x, dtype=bool)
+    where = np.ones((5, 3), dtype=bool)
     algorithm = "fast"
     list_of_inputs.append({
-        "x": x, "axis": axis, "mean": mean, "variance": variance,
-        "epsilon": epsilon, "where": where, "algorithm": algorithm
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
+    })
+
+    # Input 4: 3D array, axis=1, stable algorithm, float32
+    x = np.random.randn(2, 6, 4).astype(np.float32)
+    axis = 1
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
+    epsilon = 1e-5
+    where = np.ones((2, 6, 4), dtype=bool)
+    algorithm = "stable"
+    list_of_inputs.append({
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
+    })
+
+    # Input 5: 3D array, axis=2, fast algorithm, float32
+    x = np.random.randn(3, 4, 5).astype(np.float32)
+    axis = 2
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
+    epsilon = 1e-3
+    where = (x < 1.0)
+    algorithm = "fast"
+    list_of_inputs.append({
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
+    })
+
+    # Input 6: 4D array, axis=-1, stable algorithm, float32
+    x = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    axis = -1
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
+    epsilon = 1e-5
+    where = np.ones((2, 3, 4, 5), dtype=bool)
+    algorithm = "stable"
+    list_of_inputs.append({
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
+    })
+
+    # Input 7: 4D array, axis=0, fast algorithm, float64
+    x = np.random.randn(4, 2, 2, 3).astype(np.float64)
+    axis = 0
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
+    epsilon = 1e-7
+    where = np.ones((4, 2, 2, 3), dtype=bool)
+    algorithm = "fast"
+    list_of_inputs.append({
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
+    })
+
+    # Input 8: 1D array, axis=-1, negative values, stable algorithm, float32
+    x = np.array([-10.0, -20.0, -30.0, -40.0], dtype=np.float32)
+    axis = -1
+    mean = np.array([-25.0], dtype=np.float32)
+    variance = np.array([125.0], dtype=np.float32)
+    epsilon = 1e-5
+    where = np.array([True, True, True, True])
+    algorithm = "stable"
+    list_of_inputs.append({
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
+    })
+
+    # Input 9: 3D array, axis=-2, fast algorithm, float32
+    x = np.random.randn(2, 5, 3).astype(np.float32)
+    axis = -2
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
+    epsilon = 1e-5
+    where = (x >= 0.0)
+    algorithm = "fast"
+    list_of_inputs.append({
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
+    })
+
+    # Input 10: 5D array, axis=4, stable algorithm, float32
+    x = np.random.randn(2, 2, 2, 2, 4).astype(np.float32)
+    axis = 4
+    mean = np.mean(x, axis=axis, keepdims=True)
+    variance = np.var(x, axis=axis, keepdims=True)
+    epsilon = 1e-5
+    where = np.ones((2, 2, 2, 2, 4), dtype=bool)
+    algorithm = "stable"
+    list_of_inputs.append({
+        "x": copy.deepcopy(x),
+        "axis": axis,
+        "mean": copy.deepcopy(mean),
+        "variance": copy.deepcopy(variance),
+        "epsilon": epsilon,
+        "where": copy.deepcopy(where),
+        "algorithm": algorithm
     })
 
     return list_of_inputs
 
-generated_inputs["jax.nn.standardize_1"] = jax_nn_standardize_inputs()
+generated_inputs["jax.nn.standardize_1"] = standardize_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

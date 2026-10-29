@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the matrix size must be a power of 2, which implies it is even if greater than 1 (Rule 2)
+# size n must be 1 or an even positive integer (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 1, v["arg1_value"] % 2 == 0, v["arg1_value"] == 1)) if n else
-          If(v["arg1_value"] > 1, v["arg1_value"] % 2 == 0, v["arg1_value"] == 1))
+    s.add(Not(And(v["arg1_value"] >= 1, (Or(v["arg1_value"] == 1, v["arg1_value"] % 2 == 0)))) if n else
+          And(v["arg1_value"] >= 1, (Or(v["arg1_value"] == 1, v["arg1_value"] % 2 == 0))))
 )
 
 def rule_2_func(arg1, solver=None, neg=False):

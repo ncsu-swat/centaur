@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The preferred element type must be a valid numeric datatype (Rule 72)
+# window strides tuple length must equal input rank minus two (Rule 72)
 
 rule_72 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] >= 3, v["arg2_value"] >= 1), v["arg2_value"] <= 10)) if n else
-          And(And(v["arg1_ndim"] >= 3, v["arg2_value"] >= 1), v["arg2_value"] <= 10))
+    s.add(Not(If(v["arg1_ndim"] >= 3, v["arg2_length"] == v["arg1_ndim"] - 2, True)) if n else
+          If(v["arg1_ndim"] >= 3, v["arg2_length"] == v["arg1_ndim"] - 2, True))
 )
 
 def rule_72_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_72_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_value = Int('arg2_value')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 72
-        rule_72(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_72(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_72(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_72(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

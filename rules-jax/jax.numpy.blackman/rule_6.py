@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Window size M must be at least 1 to produce a non-trivial Blackman window (Rule 6)
+# window size M as a scalar tensor must be rank 0 with positive value (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] - 1 >= 0) if n else
-          v["arg1_value"] - 1 >= 0)
+    s.add(Not(And(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) > 0)) if n else
+          And(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) > 0))
 )
 
 def rule_6_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_6_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 6
-        rule_6(solver, {'arg1_value': arg1_value})
+        rule_6(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_6(solver, {'arg1_value': arg1['value']}, neg)
+        rule_6(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim']}, neg)

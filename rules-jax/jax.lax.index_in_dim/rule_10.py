@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The index parameter must be within the bounds of the 0-th dimension when indexing the default axis (Rule 10)
+# non-negative index along the default axis 0 must be smaller than the leading dimension (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, (And(0 - Select(v["arg1_shape"], 0) <= v["arg2_value"], v["arg2_value"] < Select(v["arg1_shape"], 0))))) if n else
-          And(v["arg1_ndim"] >= 1, (And(0 - Select(v["arg1_shape"], 0) <= v["arg2_value"], v["arg2_value"] < Select(v["arg1_shape"], 0)))))
+    s.add(Not(If(v["arg1_ndim"] >= 1, And(0 <= v["arg2_value"], v["arg2_value"] < Select(v["arg1_shape"], 0)), True)) if n else
+          If(v["arg1_ndim"] >= 1, And(0 <= v["arg2_value"], v["arg2_value"] < Select(v["arg1_shape"], 0)), True))
 )
 
 def rule_10_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_10_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 10
-        rule_10(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_10(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_10(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_10(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

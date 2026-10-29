@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input tensor is 2D or higher, the size of both the first dimension and the last dimension must be at least 1 (Rule 30)
+# input tensor c is either a single vector or a batch of vectors with positive batch dimension (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, If(v["arg1_ndim"] >= 2, And(Select(v["arg1_shape"], 0) >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) >= 1), True))) if n else
-          And(v["arg1_ndim"] >= 1, If(v["arg1_ndim"] >= 2, And(Select(v["arg1_shape"], 0) >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) >= 1), True)))
+    s.add(Not(Or(v["arg1_ndim"] == 1, (And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) > 0)))) if n else
+          Or(v["arg1_ndim"] == 1, (And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) > 0))))
 )
 
 def rule_30_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_30_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 30
-        rule_30(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_30(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_30(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_30(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

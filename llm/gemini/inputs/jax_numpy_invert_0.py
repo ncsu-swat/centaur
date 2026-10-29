@@ -4,57 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def invert_inputs():
     list_of_inputs = []
 
-    # Input 1: boolean 1D array
+    # Input 1: 1D boolean array
     x = np.array([True, False, True, True, False], dtype=np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: int32 1D array
-    x = np.array([0, 1, 2, 128, 255], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D int32 array
+    x = np.arange(5, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: int32 2D array with negative and positive values
-    x = np.array([[-128, -1, 0], [1, 127, -50]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D int32 array with positive and negative integers
+    x = np.array([[-5, 0, 5], [10, -20, 30]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: int32 3D array
-    x = np.array([[[100, -200], [300, -400]], [[500, -600], [700, -800]]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar int64 array
+    x = np.array(42, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: int64 1D array
-    x = np.array([-9223372036854775808, 0, 9223372036854775807], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D int64 array
+    x = np.array([[[1, -2], [3, -4]], [[5, -6], [7, -8]]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: int32 4D array
-    x = np.zeros((2, 2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 7: int64 2D array
-    x = np.ones((3, 3), dtype=np.int64) * 5
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 8: int64 3D array
-    x = np.array([[[1000, -1000]]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 9: boolean 2D array
+    # Input 6: 2D boolean array
     x = np.array([[True, False], [False, True]], dtype=np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: int32 0D array (scalar)
-    x = np.array(-5, dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 4D int32 array
+    x = np.ones((2, 2, 2, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: boolean 3D array
-    x = np.array([[[True, False], [False, True]]], dtype=np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Empty 1D array of int32
+    x = np.array([], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 3D boolean array
+    x = np.array([[[True], [False]], [[False], [True]]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 2D int64 array
+    x = np.array([[0, -1], [1, -2]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.invert"] = invert_inputs()
 

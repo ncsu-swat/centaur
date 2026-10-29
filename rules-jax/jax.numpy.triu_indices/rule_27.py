@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# conditional constraint on dimensions based on negative diagonal offset k (Rule 27)
+# matrix dimensions must be at least 1 for main diagonal extraction (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg1_value"] > 0 - v["arg2_value"], (And(v["arg1_value"] >= 0, v["arg3_value"] >= 0)))) if n else
-          If(v["arg2_value"] < 0, v["arg1_value"] > 0 - v["arg2_value"], (And(v["arg1_value"] >= 0, v["arg3_value"] >= 0))))
+    s.add(Not(If(v["arg2_value"] == 0, And(v["arg1_value"] >= 1, v["arg3_value"] >= 1), And(v["arg1_value"] >= 0, v["arg3_value"] >= 0))) if n else
+          If(v["arg2_value"] == 0, And(v["arg1_value"] >= 1, v["arg3_value"] >= 1), And(v["arg1_value"] >= 0, v["arg3_value"] >= 0)))
 )
 
 def rule_27_func(arg1, arg2, arg3, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# preferred element type, if specified as a string, must be "none" (Rule 5)
+# precision string specification (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == 5) if n else
-          v["arg1_value"] == 5)
+    s.add(Not(v["arg1_value"] == 37) if n else
+          v["arg1_value"] == 37)
 )
 
 def rule_5_func(arg1, solver=None, neg=False):

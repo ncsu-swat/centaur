@@ -4,73 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fill_diagonal_inputs():
     list_of_inputs = []
 
-    # Input 1: 3x3 square matrix
-    a = np.zeros((3, 3), dtype=np.int32)
-    val = 1
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 1: 2D square int32 array
+    input_dict = {
+        "a": np.zeros((3, 3), dtype=np.int32),
+        "val": 1,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 5x5 square matrix with negative fill
-    a = np.ones((5, 5), dtype=np.float32)
-    val = -5
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 2: 2D square float32 array with negative val
+    input_dict = {
+        "a": np.ones((5, 5), dtype=np.float32),
+        "val": -5,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3x5 non-square matrix
-    a = np.zeros((3, 5), dtype=np.int32)
-    val = 2
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 3: 2D rectangular (more columns than rows) int64 array
+    input_dict = {
+        "a": np.zeros((3, 6), dtype=np.int64),
+        "val": 42,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 5x3 non-square matrix
-    a = np.zeros((5, 3), dtype=np.float32)
-    val = 4
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 4: 2D rectangular (more rows than columns) float64 array
+    input_dict = {
+        "a": np.zeros((6, 3), dtype=np.float64),
+        "val": 0,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D square array (2x2x2)
-    a = np.zeros((2, 2, 2), dtype=np.float32)
-    val = 9
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 5: 3D array with all equal dimensions
+    input_dict = {
+        "a": np.zeros((2, 2, 2), dtype=np.int32),
+        "val": 7,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D square array (3x3x3x3)
-    a = np.zeros((3, 3, 3, 3), dtype=np.int32)
-    val = -1
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 6: 3D float32 array with negative val
+    input_dict = {
+        "a": np.ones((3, 3, 3), dtype=np.float32),
+        "val": -1,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 10x10 float32 matrix
-    a = np.random.randn(10, 10).astype(np.float32)
-    val = 100
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 7: 4D equal dimension int16 array
+    input_dict = {
+        "a": np.zeros((2, 2, 2, 2), dtype=np.int16),
+        "val": 100,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 8x8 int32 matrix
-    a = np.random.randint(-10, 10, size=(8, 8)).astype(np.int32)
-    val = 7
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 8: Minimal 1x1 2D uint8 array
+    input_dict = {
+        "a": np.zeros((1, 1), dtype=np.uint8),
+        "val": 255,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D square array (4x4x4) float64
-    a = np.ones((4, 4, 4), dtype=np.float64)
-    val = 42
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 9: 2D float32 array with large negative integer
+    input_dict = {
+        "a": np.random.randn(4, 7).astype(np.float32),
+        "val": -1000,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 6x6 uint8 matrix
-    a = np.zeros((6, 6), dtype=np.uint8)
-    val = 0
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
+    # Input 10: 2D complex64 array
+    input_dict = {
+        "a": np.zeros((4, 4), dtype=np.complex64),
+        "val": 3,
+        "wrap": False,
+        "inplace": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D int8 array
+    input_dict = {
+        "a": np.zeros((5, 2), dtype=np.int8),
+        "val": -12,
+        "wrap": False,
+        "inplace": False,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fill_diagonal_2"] = fill_diagonal_inputs()
 

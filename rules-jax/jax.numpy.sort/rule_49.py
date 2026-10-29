@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For list inputs, the list must not be empty and the axis must be 0 or -1 (Rule 49)
+# descending sort on a tuple requires at least two elements, otherwise at least one (Rule 49)
 
 rule_49 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] > 0, (Or(v["arg2_value"] == 0, v["arg2_value"] == 0 - 1)))) if n else
-          And(v["arg1_length"] > 0, (Or(v["arg2_value"] == 0, v["arg2_value"] == 0 - 1))))
+    s.add(Not(If(v["arg2_value"] == True, v["arg1_length"] > 1, v["arg1_length"] > 0)) if n else
+          If(v["arg2_value"] == True, v["arg1_length"] > 1, v["arg1_length"] > 0))
 )
 
 def rule_49_func(arg1, arg2, solver=None, neg=False):
@@ -20,19 +20,19 @@ def rule_49_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1))):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not isinstance(arg2, bool):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
-        arg2_value = Int('arg2_value')
+        arg2_value = Bool('arg2_value')
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg2_value == arg2)
 
         # Constraints for rule 49
         rule_49(solver, {'arg1_length': arg1_length, 'arg2_value': arg2_value})

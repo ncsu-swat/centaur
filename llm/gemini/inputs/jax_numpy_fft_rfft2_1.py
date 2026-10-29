@@ -4,113 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rfft2_inputs():
     list_of_inputs = []
 
-    # Case 1: Simple 2D float32 array, default axes
-    a = np.random.randn(8, 8).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (8, 8),
-        "axes": (-2, -1),
-        "norm": "backward"
-    }
+    # Input 1: 2D array, default-like axes, backward norm
+    a = np.random.randn(4, 6).astype(np.float32)
+    s = (4, 6)
+    axes = (-2, -1)
+    norm = "backward"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 2: Padding using 's', ortho norm
-    a = np.random.randn(10, 10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (12, 12),
-        "axes": (0, 1),
-        "norm": "ortho"
-    }
+    # Input 2: 3D array, negative numbers, ortho norm
+    a = -np.abs(np.random.randn(2, 5, 8).astype(np.float64))
+    s = (5, 8)
+    axes = (1, 2)
+    norm = "ortho"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 3: 3D float64 array, specifying axes
-    a = np.random.randn(3, 16, 16).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "s": (16, 16),
-        "axes": (1, 2),
-        "norm": "forward"
-    }
+    # Input 3: 2D array, forward norm, truncated s
+    a = np.random.randn(8, 10).astype(np.float32)
+    s = (4, 6)
+    axes = (0, 1)
+    norm = "forward"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 4: Cropping using 's', backward norm
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (4, 4),
-        "axes": (-2, -1),
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 5: 3D array with non-contiguous axes (0, 2)
-    a = np.random.randn(4, 5, 6).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (4, 6),
-        "axes": (0, 2),
-        "norm": "ortho"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 6: Different size along dimensions in 's'
-    a = np.random.randn(8, 8).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "s": (6, 10),
-        "axes": (0, 1),
-        "norm": "forward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 7: 4D array, specifying inner axes
+    # Input 4: 4D array, padded s (larger than original dimensions)
     a = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (4, 5),
-        "axes": (2, 3),
-        "norm": "backward"
-    }
+    s = (8, 12)
+    axes = (-2, -1)
+    norm = "backward"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 8: Odd sizes in 's'
-    a = np.random.randn(3, 4, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (3, 5),
-        "axes": (0, 2),
-        "norm": "ortho"
-    }
+    # Input 5: 3D array with non-adjacent axes (0, 2)
+    a = np.random.randn(6, 4, 8).astype(np.float32)
+    s = (6, 8)
+    axes = (0, 2)
+    norm = "ortho"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 9: Large dimensions
-    a = np.random.randn(12, 12).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (8, 16),
-        "axes": (-2, -1),
-        "norm": "forward"
-    }
+    # Input 6: 2D array with odd output shape
+    a = np.random.randn(7, 7).astype(np.float64)
+    s = (7, 7)
+    axes = (-2, -1)
+    norm = "forward"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 10: 4D array, float64
-    a = np.random.randn(2, 2, 8, 8).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "s": (8, 8),
-        "axes": (-2, -1),
-        "norm": "backward"
-    }
+    # Input 7: 3D array with reversed negative axes
+    a = np.random.randn(3, 8, 6).astype(np.float32)
+    s = (6, 8)
+    axes = (-1, -2)
+    norm = "backward"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 2D array, float64
+    a = np.random.randn(6, 6).astype(np.float64)
+    s = (6, 6)
+    axes = (0, 1)
+    norm = "ortho"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D array, float32 type
+    a = np.random.randn(2, 2, 3, 4, 6).astype(np.float32)
+    s = (4, 6)
+    axes = (-2, -1)
+    norm = "backward"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D array, axes=(0, 1), odd padding
+    a = np.random.randn(3, 5, 2).astype(np.float32)
+    s = (5, 9)
+    axes = (0, 1)
+    norm = "forward"
+    input_dict = {"a": a, "s": s, "axes": axes, "norm": norm}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.rfft2_1"] = rfft2_inputs()
 

@@ -4,90 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def kaiser_inputs():
     list_of_inputs = []
 
     # Input 1
-    input_dict = {
-        "M": 0,
-        "beta": True
-    }
+    input_dict = {"M": 0, "beta": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 2
-    input_dict = {
-        "M": 1,
-        "beta": False
-    }
+    input_dict = {"M": 1, "beta": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 3
-    input_dict = {
-        "M": 5,
-        "beta": True
-    }
+    input_dict = {"M": 2, "beta": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 4
-    input_dict = {
-        "M": np.int32(10),
-        "beta": np.bool_(False)
-    }
+    input_dict = {"M": 3, "beta": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 5
-    input_dict = {
-        "M": np.int64(16),
-        "beta": np.bool_(True)
-    }
+    input_dict = {"M": 4, "beta": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 6
-    input_dict = {
-        "M": 20,
-        "beta": False
-    }
+    input_dict = {"M": 5, "beta": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 7
-    input_dict = {
-        "M": np.int16(32),
-        "beta": True
-    }
+    input_dict = {"M": 6, "beta": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 8
-    input_dict = {
-        "M": 50,
-        "beta": np.bool_(True)
-    }
+    input_dict = {"M": 7, "beta": np.bool_(True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 9
-    input_dict = {
-        "M": 100,
-        "beta": False
-    }
+    input_dict = {"M": 12, "beta": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 10
-    input_dict = {
-        "M": np.int8(8),
-        "beta": True
-    }
+    input_dict = {"M": 20, "beta": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 11
-    input_dict = {
-        "M": 1000,
-        "beta": False
-    }
+    input_dict = {"M": 64, "beta": np.bool_(True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.kaiser_4"] = kaiser_inputs()
 

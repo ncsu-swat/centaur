@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The scaling factors tensor b must have a rank less than or equal to the input tensor a for broadcasting compatibility (Rule 17)
+# reduction axes count in tuple cannot exceed input tensor rank (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_ndim"] <= v["arg1_ndim"]) if n else
-          v["arg2_ndim"] <= v["arg1_ndim"])
+    s.add(Not(v["arg2_length"] <= v["arg1_ndim"]) if n else
+          v["arg2_length"] <= v["arg1_ndim"])
 )
 
 def rule_17_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_17_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

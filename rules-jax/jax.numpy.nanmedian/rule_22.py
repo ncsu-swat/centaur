@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input tensor is 0-dimensional, the axis tuple must be empty (Rule 22)
+# input tensor must have a rank of at least 1 when an axis tuple is provided (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 0, v["arg2_length"] == 0, True)) if n else
-          If(v["arg1_ndim"] == 0, v["arg2_length"] == 0, True))
+    s.add(Not(If(v["arg2_length"] > 0, v["arg1_ndim"] >= 1, True)) if n else
+          If(v["arg2_length"] > 0, v["arg1_ndim"] >= 1, True))
 )
 
 def rule_22_func(arg1, arg2, solver=None, neg=False):

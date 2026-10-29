@@ -4,44 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def shape_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float as np.float64
-    list_of_inputs.append({"a": np.float64(3.14)})
+    # Input 1: Zero
+    input_dict = {"a": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative float as np.float32
-    list_of_inputs.append({"a": np.float32(-2.718)})
+    # Input 2: Positive float
+    input_dict = {"a": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero float as np.float64
-    list_of_inputs.append({"a": np.float64(0.0)})
+    # Input 3: Negative float
+    input_dict = {"a": -1.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero float as np.float32
-    list_of_inputs.append({"a": np.float32(-0.0)})
+    # Input 4: Standard mathematical constant approximation
+    input_dict = {"a": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large float as np.float64
-    list_of_inputs.append({"a": np.float64(1.23e10)})
+    # Input 5: Large positive float
+    input_dict = {"a": 1e10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small float as np.float32
-    list_of_inputs.append({"a": np.float32(4.56e-10)})
+    # Input 6: Small positive float
+    input_dict = {"a": 1e-8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Positive infinity as np.float64
-    list_of_inputs.append({"a": np.float64(float('inf'))})
+    # Input 7: Large negative float
+    input_dict = {"a": -1e6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative infinity as np.float32
-    list_of_inputs.append({"a": np.float32(float('-inf'))})
+    # Input 8: Positive infinity
+    input_dict = {"a": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: NaN as np.float64
-    list_of_inputs.append({"a": np.float64(float('nan'))})
+    # Input 9: Negative infinity
+    input_dict = {"a": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Float as np.float16
-    list_of_inputs.append({"a": np.float16(0.0001)})
+    # Input 10: NaN (Not a Number)
+    input_dict = {"a": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Specific value as np.float64
-    list_of_inputs.append({"a": np.float64(-999.999)})
+    # Input 11: Arbitrary precision decimal
+    input_dict = {"a": 42.4242}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

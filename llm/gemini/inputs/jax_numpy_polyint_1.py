@@ -4,73 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def polyint_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 1D array, order 1, constant 0
-    p = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    m = 1
-    k = 0
-    list_of_inputs.append({"p": p, "m": m, "k": k})
-
-    # Input 2: float32 1D array, order 1, positive constant
+    # Input 1: Basic float 1D polynomial with positive constant
     p = np.array([12.0, 12.0, 6.0], dtype=np.float32)
     m = 1
     k = 4
-    list_of_inputs.append({"p": p, "m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 3: float64 1D array with negative values, order 1, negative constant
-    p = np.array([-1.0, 0.0, 5.0], dtype=np.float64)
+    # Input 2: Integer polynomial with zero constant
+    p = np.array([3, 2, 1], dtype=np.int32)
     m = 1
-    k = -1
-    list_of_inputs.append({"p": p, "m": m, "k": k})
-
-    # Input 4: int32 1D array, order 2, constant 0
-    p = np.array([1, 2, 3, 4], dtype=np.int32)
-    m = 2
     k = 0
-    list_of_inputs.append({"p": p, "m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 5: int64 1D array, order 2, positive constant
-    p = np.array([10, -5, 2], dtype=np.int64)
-    m = 2
-    k = 5
-    list_of_inputs.append({"p": p, "m": m, "k": k})
-
-    # Input 6: Longer float32 array, order 1, constant 2
-    p = np.array([0.5, -0.2, 0.1, 9.0], dtype=np.float32)
-    m = 1
-    k = 2
-    list_of_inputs.append({"p": p, "m": m, "k": k})
-
-    # Input 7: Short float64 array, order 3, negative constant
-    p = np.array([3.0, 6.0], dtype=np.float64)
-    m = 3
-    k = -2
-    list_of_inputs.append({"p": p, "m": m, "k": k})
-
-    # Input 8: int32 1D array, order 4, larger constant
-    p = np.array([2, 4, 6], dtype=np.int32)
-    m = 4
-    k = 10
-    list_of_inputs.append({"p": p, "m": m, "k": k})
-
-    # Input 9: Negative float32 array, order 1, negative constant
-    p = np.array([-10.0, -20.0, -30.0], dtype=np.float32)
+    # Input 3: Float64 polynomial with negative constant
+    p = np.array([6.0, -4.0, 2.0, -1.0], dtype=np.float64)
     m = 1
     k = -5
-    list_of_inputs.append({"p": p, "m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 10: float64 array, order 2, large constant
-    p = np.array([1.5, 2.5, 3.5, 4.5, 5.5], dtype=np.float64)
-    m = 2
+    # Input 4: Single-element polynomial (constant polynomial)
+    p = np.array([5.0], dtype=np.float32)
+    m = 1
+    k = 2
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 5: Polynomial with zeros
+    p = np.array([1.0, 0.0, 0.0, 4.0], dtype=np.float32)
+    m = 1
+    k = 7
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 6: Higher-degree polynomial
+    p = np.array([10.0, -9.0, 8.0, -7.0, 6.0, -5.0], dtype=np.float64)
+    m = 1
+    k = -10
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 7: Int64 polynomial with positive constant
+    p = np.array([24, 12, 6, 0], dtype=np.int64)
+    m = 1
+    k = 1
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 8: Complex64 polynomial
+    p = np.array([1.0 + 2.0j, 3.0 - 4.0j], dtype=np.complex64)
+    m = 1
+    k = 3
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 9: Large degree polynomial
+    p = np.linspace(-5.0, 5.0, 10, dtype=np.float32)
+    m = 1
+    k = -1
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 10: Two-element linear polynomial
+    p = np.array([2.0, 1.0], dtype=np.float64)
+    m = 1
     k = 100
-    list_of_inputs.append({"p": p, "m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 11: Polynomial with negative coefficients
+    p = np.array([-16.0, -8.0, -4.0, -2.0], dtype=np.float32)
+    m = 1
+    k = -3
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.polyint_1"] = polyint_inputs()
 

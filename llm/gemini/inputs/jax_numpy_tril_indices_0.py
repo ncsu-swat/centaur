@@ -4,57 +4,50 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tril_indices_inputs():
     list_of_inputs = []
 
-    # Input 1: Square matrix, diagonal k=0
-    input_dict = {"n": 3, "k": 0, "m": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic square matrix, main diagonal
+    list_of_inputs.append({"n": 3, "k": 0, "m": 3})
 
-    # Input 2: Square matrix, positive k
-    input_dict = {"n": 3, "k": 1, "m": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Square matrix, sub-diagonal above main diagonal (k > 0)
+    list_of_inputs.append({"n": 4, "k": 1, "m": 4})
 
-    # Input 3: Square matrix, negative k
-    input_dict = {"n": 3, "k": -1, "m": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Square matrix, sub-diagonal below main diagonal (k < 0)
+    list_of_inputs.append({"n": 5, "k": -1, "m": 5})
 
-    # Input 4: Rectangular matrix (n < m), k=0
-    input_dict = {"n": 3, "k": 0, "m": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Rectangular matrix (rows < cols), main diagonal
+    list_of_inputs.append({"n": 3, "k": 0, "m": 6})
 
-    # Input 5: Rectangular matrix (n > m), k=0
-    input_dict = {"n": 5, "k": 0, "m": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Rectangular matrix (rows > cols), negative offset
+    list_of_inputs.append({"n": 6, "k": -2, "m": 3})
 
-    # Input 6: Rectangular matrix, positive k
-    input_dict = {"n": 4, "k": 2, "m": 6}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Rectangular matrix (rows < cols), positive offset
+    list_of_inputs.append({"n": 3, "k": 2, "m": 5})
 
-    # Input 7: Rectangular matrix, negative k
-    input_dict = {"n": 6, "k": -2, "m": 4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Single element matrix
+    list_of_inputs.append({"n": 1, "k": 0, "m": 1})
 
-    # Input 8: Larger dimensions
-    input_dict = {"n": 10, "k": 0, "m": 10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Empty matrix (0 rows, 0 cols)
+    list_of_inputs.append({"n": 0, "k": 0, "m": 0})
 
-    # Input 9: Large positive k exceeding dimensions
-    input_dict = {"n": 4, "k": 10, "m": 4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large positive k covering all elements
+    list_of_inputs.append({"n": 4, "k": 10, "m": 4})
 
-    # Input 10: Large negative k
-    input_dict = {"n": 5, "k": -5, "m": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Large negative k covering no elements
+    list_of_inputs.append({"n": 4, "k": -10, "m": 4})
 
-    # Input 11: Single element matrix
-    input_dict = {"n": 1, "k": 0, "m": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Using numpy integer types
+    list_of_inputs.append(
+        {"n": int(np.int64(7)), "k": int(np.int64(-3)), "m": int(np.int64(8))}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.tril_indices"] = tril_indices_inputs()
 

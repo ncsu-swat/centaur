@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tuple of integers or floats has a non-negative length (Rule 4)
+# input tuple of floats or integers must have a non-negative length (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
     s.add(Not(v["arg1_length"] >= 0) if n else
@@ -19,7 +19,7 @@ def rule_4_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1))):
+        if not ((isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)) or (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1))):
             return False
 
         # Variable declarations

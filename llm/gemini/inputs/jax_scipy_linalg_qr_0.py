@@ -4,133 +4,151 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def qr_inputs():
     list_of_inputs = []
 
-    # Input 1: Square matrix float32, basic defaults
-    a = np.random.randn(5, 5).astype(np.float32)
+    # Input 1: Basic 2D float32 square matrix, default mode 'full'
+    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
     input_dict = {
         "a": a,
         "overwrite_a": False,
         "lwork": 0,
         "mode": "full",
         "pivoting": False,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Tall matrix float64, mode "r"
-    a = np.random.randn(8, 4).astype(np.float64)
+    # Input 2: Tall matrix (M > N), float64, mode 'economic'
+    a = np.random.randn(5, 3).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "lwork": 1,
+        "mode": "economic",
+        "pivoting": False,
+        "check_finite": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Wide matrix (M < N), float32, mode 'r'
+    a = np.random.randn(3, 6).astype(np.float32)
     input_dict = {
         "a": a,
         "overwrite_a": True,
-        "lwork": 1,
+        "lwork": 10,
         "mode": "r",
         "pivoting": False,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Wide matrix float32, mode "economic", with pivoting
-    a = np.random.randn(3, 6).astype(np.float32)
+    # Input 4: Complex64 square matrix, mode 'full'
+    a = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "lwork": 4,
+        "mode": "full",
+        "pivoting": False,
+        "check_finite": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Complex128 matrix with negative components, mode 'economic'
+    a = (np.random.randn(6, 4) - 2j * np.random.randn(6, 4)).astype(
+        np.complex128
+    )
     input_dict = {
         "a": a,
         "overwrite_a": False,
         "lwork": -1,
         "mode": "economic",
-        "pivoting": True,
-        "check_finite": False
+        "pivoting": False,
+        "check_finite": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D batched matrix float32, mode "full"
-    a = np.random.randn(2, 4, 4).astype(np.float32)
+    # Input 6: 3D batched float32 matrices (batch_size, M, N)
+    a = np.random.randn(2, 4, 3).astype(np.float32)
     input_dict = {
         "a": a,
         "overwrite_a": False,
         "lwork": 0,
         "mode": "full",
         "pivoting": False,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Complex64 matrix, mode "economic"
-    a = (np.random.randn(6, 6) + 1j * np.random.randn(6, 6)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "overwrite_a": False,
-        "lwork": 0,
-        "mode": "economic",
-        "pivoting": False,
-        "check_finite": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 4D batched matrix float64
+    # Input 7: 4D batched float64 matrices
     a = np.random.randn(2, 3, 5, 5).astype(np.float64)
     input_dict = {
         "a": a,
         "overwrite_a": True,
         "lwork": 2,
-        "mode": "full",
+        "mode": "r",
         "pivoting": False,
-        "check_finite": False
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Square float32, mode "r" with pivoting
-    a = np.random.randn(7, 7).astype(np.float32)
+    # Input 8: Matrix with pivoting=True, mode 'full'
+    a = np.random.randn(5, 4).astype(np.float32)
     input_dict = {
         "a": a,
         "overwrite_a": False,
         "lwork": 0,
+        "mode": "full",
+        "pivoting": True,
+        "check_finite": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Matrix with pivoting=True, mode 'r'
+    a = np.random.randn(4, 4).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "overwrite_a": False,
+        "lwork": 5,
         "mode": "r",
         "pivoting": True,
-        "check_finite": True
+        "check_finite": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Complex128 3D batched matrix, mode "full" with pivoting
-    a = (np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)).astype(np.complex128)
-    input_dict = {
-        "a": a,
-        "overwrite_a": False,
-        "lwork": 0,
-        "mode": "full",
-        "pivoting": True,
-        "check_finite": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Small 2D matrix (2x2) float32, mode "economic" with pivoting
-    a = np.random.randn(2, 2).astype(np.float32)
+    # Input 10: Matrix with pivoting=True, mode 'economic'
+    a = np.random.randn(6, 3).astype(np.float32)
     input_dict = {
         "a": a,
         "overwrite_a": True,
         "lwork": 0,
         "mode": "economic",
         "pivoting": True,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Tall matrix (10x3) float32, mode "full"
-    a = np.random.randn(10, 3).astype(np.float32)
+    # Input 11: 3D batched complex64 with pivoting=False, mode 'economic'
+    a = (np.random.randn(3, 4, 2) + 1j * np.random.randn(3, 4, 2)).astype(
+        np.complex64
+    )
     input_dict = {
         "a": a,
         "overwrite_a": False,
-        "lwork": 100,
-        "mode": "full",
+        "lwork": 0,
+        "mode": "economic",
         "pivoting": False,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.qr"] = qr_inputs()
 

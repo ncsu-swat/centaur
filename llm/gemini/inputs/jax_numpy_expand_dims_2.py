@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def expand_dims_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, expanding axis 0
-    a = np.random.randn(5).astype(np.float32)
+    # Input 1: 1D array, single axis expansion at leading position
+    a = np.array([1, 2, 3], dtype=np.int32)
     axis = (0,)
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 2: 2D float32 array, expanding axis 1
-    a = np.random.randn(2, 3).astype(np.float32)
+    # Input 2: 1D array, single axis expansion at trailing position
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     axis = (1,)
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 3: 2D int32 array, expanding multiple axes
-    a = np.random.randint(0, 10, size=(2, 3)).astype(np.int32)
-    axis = (0, 2)
-    list_of_inputs.append({"a": a, "axis": axis})
+    # Input 3: 1D array, multiple axes expansion
+    a = np.array([True, False, True], dtype=np.bool_)
+    axis = (0, 1, 3)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 4: 1D float64 array, expanding negative axis
-    a = np.random.randn(4).astype(np.float64)
+    # Input 4: 2D array, expanding between existing axes
+    a = np.random.randn(3, 4).astype(np.float64)
+    axis = (1,)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 5: 2D array, negative axis index
+    a = np.arange(6, dtype=np.int64).reshape((2, 3))
     axis = (-1,)
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 5: 3D float32 array, expanding combination of positive and negative axes
-    a = np.random.randn(2, 2, 2).astype(np.float32)
-    axis = (1, -1)
-    list_of_inputs.append({"a": a, "axis": axis})
-
-    # Input 6: 0D (scalar) float32 array, expanding axis 0
-    a = np.array(42.0).astype(np.float32)
-    axis = (0,)
-    list_of_inputs.append({"a": a, "axis": axis})
-
-    # Input 7: 3D int64 array, expanding multiple positive axes
-    a = np.random.randint(0, 2, size=(2, 2, 2)).astype(np.int64)
-    axis = (0, 3)
-    list_of_inputs.append({"a": a, "axis": axis})
-
-    # Input 8: 2D boolean array, expanding multiple leading axes
-    a = (np.random.randn(5, 5) > 0).astype(bool)
+    # Input 6: 0D scalar array, expand to 2D
+    a = np.array(42, dtype=np.int16)
     axis = (0, 1)
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 9: 3D float32 array, expanding inner dimensions
-    a = np.random.randn(3, 4, 5).astype(np.float32)
-    axis = (2, -2)
-    list_of_inputs.append({"a": a, "axis": axis})
+    # Input 7: 3D array, negative axes
+    a = np.ones((2, 3, 4), dtype=np.uint8)
+    axis = (-2, -1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 10: 1D int16 array, expanding three sequential dimensions
-    a = np.random.randint(-10, 10, size=(10,)).astype(np.int16)
-    axis = (0, 1, 2)
-    list_of_inputs.append({"a": a, "axis": axis})
+    # Input 8: 4D array, empty axis tuple
+    a = np.zeros((2, 2, 2, 2), dtype=np.complex64)
+    axis = ()
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 9: 2D array, expanding multiple axes
+    a = np.random.uniform(-1, 1, size=(5, 5)).astype(np.float32)
+    axis = (0, 2, 4)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 10: 1D empty array
+    a = np.array([], dtype=np.float32)
+    axis = (0, 2)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 11: 3D array with complex numbers, leading and trailing axes
+    a = (np.arange(8) + 1j * np.arange(8)).reshape((2, 2, 2)).astype(np.complex128)
+    axis = (0, 4)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.expand_dims_2"] = expand_dims_inputs()
 

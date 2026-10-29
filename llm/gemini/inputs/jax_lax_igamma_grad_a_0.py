@@ -4,63 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def igamma_grad_a_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, float32, typical values
-    a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    x = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 1: 0D scalar float32
+    a = np.array(1.5, dtype=np.float32)
+    x = np.array(2.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 2: 2D arrays, float32
-    a = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float32)
-    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 2: 1D array float32
+    a = np.array([0.5, 1.0, 2.5, 5.0], dtype=np.float32)
+    x = np.array([0.1, 1.0, 2.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 3: Scalar equivalent (0D arrays), float32
-    a = np.array(2.0, dtype=np.float32)
-    x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 3: 1D array float64
+    a = np.array([1.2, 3.4, 5.6], dtype=np.float64)
+    x = np.array([0.5, 2.5, 6.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 4: 1D arrays, float64
-    a = np.array([0.5, 1.5, 5.0], dtype=np.float64)
-    x = np.array([0.1, 2.0, 10.0], dtype=np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 4: 2D array float32
+    a = np.random.uniform(0.5, 5.0, size=(3, 3)).astype(np.float32)
+    x = np.random.uniform(0.1, 5.0, size=(3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 5: 3D arrays, float32
-    a = np.ones((2, 2, 2), dtype=np.float32) * 3.0
-    x = np.ones((2, 2, 2), dtype=np.float32) * 2.0
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 5: 2D array float64
+    a = np.random.uniform(1.0, 10.0, size=(2, 4)).astype(np.float64)
+    x = np.random.uniform(1.0, 10.0, size=(2, 4)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 6: 2D arrays, float64, with larger values
-    a = np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float64)
-    x = np.array([[8.0, 18.0], [28.0, 38.0]], dtype=np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 6: 3D array float32
+    a = np.random.uniform(0.1, 3.0, size=(2, 3, 4)).astype(np.float32)
+    x = np.random.uniform(0.1, 3.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 7: 1D arrays with small fractional values
-    a = np.array([0.1, 0.2, 0.3], dtype=np.float32)
-    x = np.array([0.05, 0.15, 0.25], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 7: 2D same shape float32 with singleton dimension
+    a = np.array([[0.5], [1.5], [2.5]], dtype=np.float32)
+    x = np.array([[0.2], [1.0], [2.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 8: 4D arrays, float32
-    a = np.random.uniform(1.0, 5.0, size=(2, 2, 2, 2)).astype(np.float32)
-    x = np.random.uniform(1.0, 5.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 8: 2D float64 with matching shapes
+    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    x = np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 9: 1D arrays where x is 0 (edge case, but mathematically valid for x >= 0)
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    x = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 9: 4D array float32
+    a = np.random.uniform(0.5, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
+    x = np.random.uniform(0.5, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
-    # Input 10: 2D arrays, float64, mixed range
-    a = np.array([[0.5, 5.5], [10.5, 100.5]], dtype=np.float64)
-    x = np.array([[0.2, 5.2], [10.2, 100.2]], dtype=np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
+    # Input 10: 1D array with edge-boundary values
+    a = np.array([0.1, 1.0, 10.0, 50.0], dtype=np.float32)
+    x = np.array([0.0, 0.001, 15.0, 60.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.igamma_grad_a"] = igamma_grad_a_inputs()
 

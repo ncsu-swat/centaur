@@ -4,53 +4,21 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def atleast_1d_inputs():
     list_of_inputs = []
 
-    # Input 1: int32 zero
-    input_dict = {"arys": np.int32(0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    integers = [0, 1, -1, 42, -100, 255, 1024, -9999, 7, -42, 100000]
 
-    # Input 2: int32 positive
-    input_dict = {"arys": np.int32(1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: int32 negative
-    input_dict = {"arys": np.int32(-1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: int32 small positive
-    input_dict = {"arys": np.int32(100)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: int32 small negative
-    input_dict = {"arys": np.int32(-100)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: int64 zero
-    input_dict = {"arys": np.int64(0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: int64 large positive
-    input_dict = {"arys": np.int64(999999)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: int64 large negative
-    input_dict = {"arys": np.int64(-999999)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: int32 medium positive
-    input_dict = {"arys": np.int32(123456)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: int64 medium negative
-    input_dict = {"arys": np.int64(-123456)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    for val in integers:
+        input_dict = {"arys": int(val)}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.atleast_1d_4"] = atleast_1d_inputs()
 

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor values should be within the range [-1, 1] to avoid nan values (Rule 1)
+# tensor elements should be within the valid arccos real domain [-1, 1] to avoid NaN (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(And(Select(v["arg1_range"], 0) >= -1, Select(v["arg1_range"], 1) <= 1)) if n else

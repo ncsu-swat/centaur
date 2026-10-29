@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def divmod_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D int32 arrays
+    # Input 1: Basic 1D positive integers
     x1 = np.array([10, 20, 30], dtype=np.int32)
     x2 = np.array([3, 4, 7], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 1D int32 with negative dividend values
-    x1 = np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5], dtype=np.int32)
-    x2 = np.array([3] * 11, dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D with negative numbers
+    x1 = np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5], dtype=np.int64)
+    x2 = np.array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: Float32 arrays
-    x1 = np.array([6.0, 6.0, 6.0], dtype=np.float32)
-    x2 = np.array([1.9, 2.5, 3.1], dtype=np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Floating point numbers
+    x1 = np.array([6.5, 7.2, 8.9], dtype=np.float32)
+    x2 = np.array([1.5, 2.0, 3.1], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: 2D arrays, int64
-    x1 = np.array([[12, 15], [18, 21]], dtype=np.int64)
-    x2 = np.array([[5, 4], [3, 2]], dtype=np.int64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D arrays
+    x1 = np.array([[12, 15], [22, 35]], dtype=np.int32)
+    x2 = np.array([[5, 4], [7, 8]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: Broadcasting, 2D array and 1D array
+    # Input 5: Broadcasting 2D and 1D
     x1 = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int32)
-    x2 = np.array([3, 4, 5], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    x2 = np.array([3, 7, 9], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: 3D float64 arrays with random positive values
-    x1 = np.random.uniform(10.0, 100.0, (2, 3, 4)).astype(np.float64)
-    x2 = np.random.uniform(1.0, 10.0, (2, 3, 4)).astype(np.float64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D float arrays
+    x1 = np.arange(1, 25, dtype=np.float64).reshape((2, 3, 4))
+    x2 = np.full((2, 3, 4), 2.5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: 0D arrays (scalars represented as tensors)
-    x1 = np.array(45, dtype=np.int32)
-    x2 = np.array(7, dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Mixed signs in floats
+    x1 = np.array([-10.5, 10.5, -20.0, 20.0], dtype=np.float32)
+    x2 = np.array([3.0, -3.0, -4.5, 4.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: 1D arrays with negative divisor values
-    x1 = np.array([10, -10, 10, -10], dtype=np.int32)
-    x2 = np.array([3, 3, -3, -3], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Scalar-like 0D arrays
+    x1 = np.array(42, dtype=np.int32)
+    x2 = np.array(5, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Large integer values (int64)
-    x1 = np.array([10**12, 10**15], dtype=np.int64)
-    x2 = np.array([3 * 10**10, 7 * 10**12], dtype=np.int64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Unsigned integer types
+    x1 = np.array([100, 200, 250], dtype=np.uint8)
+    x2 = np.array([30, 40, 60], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: 4D tensors of float32
-    x1 = np.random.uniform(5.0, 15.0, (2, 2, 2, 2)).astype(np.float32)
-    x2 = np.random.uniform(1.0, 3.0, (2, 2, 2, 2)).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Broadcasting with leading singleton dimension
+    x1 = np.array([[50], [100]], dtype=np.int64)
+    x2 = np.array([[3, 7, 11]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: 4D arrays
+    x1 = np.ones((2, 2, 2, 2), dtype=np.float32) * 17.0
+    x2 = np.ones((2, 2, 2, 2), dtype=np.float32) * 5.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.divmod_1"] = divmod_inputs()
 

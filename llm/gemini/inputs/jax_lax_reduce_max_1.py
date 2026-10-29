@@ -4,73 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def reduce_max_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, reduction over axis [0]
-    operand = np.array([-1.0, 2.5, 0.0, 4.2, -3.1], dtype=np.float32)
+    # Input 1: 1D float32 array, reduce over axis 0
+    operand = np.array([-3.5, 0.0, 4.2, -1.1, 7.8], dtype=np.float32)
     axes = [0]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 2: 2D array, float64, reduction over axis [0]
-    operand = np.random.randn(3, 4).astype(np.float64)
-    axes = [0]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 2D array, int32, reduction over axis [1]
-    operand = np.random.randint(-10, 10, size=(5, 5)).astype(np.int32)
+    # Input 2: 2D float64 array, reduce over axis 1
+    operand = np.random.randn(4, 5).astype(np.float64)
     axes = [1]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 4: 2D array, int64, reduction over multiple axes [0, 1]
-    operand = np.random.randint(-100, 100, size=(10, 20)).astype(np.int64)
+    # Input 3: 2D int32 array, reduce over both axes [0, 1]
+    operand = np.random.randint(-100, 100, size=(6, 3), dtype=np.int32)
     axes = [0, 1]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 5: 3D array, float32, reduction over axis [2]
-    operand = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    # Input 4: 3D float32 array, reduce over axis 0
+    operand = np.random.randn(2, 3, 4).astype(np.float32)
+    axes = [0]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
+
+    # Input 5: 3D int64 array, reduce over axes [1, 2]
+    operand = np.random.randint(-50, 50, size=(5, 4, 3), dtype=np.int64)
+    axes = [1, 2]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
+
+    # Input 6: 4D float32 array, reduce over axis 2
+    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
     axes = [2]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 6: 3D array, float64, reduction over axes [0, 2]
-    operand = np.random.randn(4, 3, 2).astype(np.float64)
-    axes = [0, 2]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D float64 array, reduce over axes [0, 2, 3]
+    operand = np.random.randn(3, 2, 4, 2).astype(np.float64)
+    axes = [0, 2, 3]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 7: 4D array, int32, reduction over axis [3]
-    operand = np.random.randint(0, 50, size=(2, 2, 3, 3)).astype(np.int32)
-    axes = [3]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 1D array, float32, empty reduction list (returns copy of operand)
-    operand = np.array([1.5, -2.3, 0.1], dtype=np.float32)
+    # Input 8: 2D array, reduce over empty axes list []
+    operand = np.array([[1.0, -2.0], [3.0, 4.0]], dtype=np.float32)
     axes = []
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 9: 3D array, int64, reduction over all axes [0, 1, 2]
-    operand = np.random.randint(-5, 5, size=(3, 3, 3)).astype(np.int64)
-    axes = [0, 1, 2]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D float32 array, reduce over axes [0, 4]
+    operand = np.random.randn(2, 2, 3, 2, 2).astype(np.float32)
+    axes = [0, 4]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 10: 5D array, float32, reduction over non-consecutive axes [1, 3]
-    operand = np.random.randn(2, 3, 2, 4, 2).astype(np.float32)
-    axes = [1, 3]
-    input_dict = {"operand": operand, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D int32 array, reduce over axis 0
+    operand = np.random.randint(-1000, 1000, size=(7, 8), dtype=np.int32)
+    axes = [0]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
+
+    # Input 11: 3D float64 array, reduce over axis 1
+    operand = np.random.randn(3, 4, 2).astype(np.float64)
+    axes = [1]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
+
+    # Input 12: 1D int64 array, reduce over axis 0
+    operand = np.array([-128, -50, 0, 50, 127], dtype=np.int64)
+    axes = [0]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.reduce_max_1"] = reduce_max_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if operand has dimensions, permutation tuple length must match operand's rank and elements must be valid dimension indices (Rule 47)
+# non-empty permutation tensor values must fall within range zero to length minus 1 (Rule 47)
 
 rule_47 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, And(v["arg2_length"] == v["arg1_ndim"], (And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)]))), v["arg2_length"] == 0)) if n else
-          If(v["arg1_ndim"] > 0, And(v["arg2_length"] == v["arg1_ndim"], (And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)]))), v["arg2_length"] == 0))
+    s.add(Not(And(And(v["arg2_ndim"] == 1, Select(v["arg2_shape"], 0) == v["arg1_ndim"]), (If(Select(v["arg2_shape"], 0) > 0, And(Select(v["arg2_range"], 0) >= 0, Select(v["arg2_range"], 1) <= Select(v["arg2_shape"], 0) - 1), True)))) if n else
+          And(And(v["arg2_ndim"] == 1, Select(v["arg2_shape"], 0) == v["arg1_ndim"]), (If(Select(v["arg2_shape"], 0) > 0, And(Select(v["arg2_range"], 0) >= 0, Select(v["arg2_range"], 1) <= Select(v["arg2_shape"], 0) - 1), True))))
 )
 
 def rule_47_func(arg1, arg2, solver=None, neg=False):
@@ -22,25 +22,28 @@ def rule_47_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 47
-        rule_47(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_47(solver, {'arg1_ndim': arg1_ndim, 'arg2_range': arg2_range, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_47(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_47(solver, {'arg1_ndim': arg1['ndim'], 'arg2_range': arg2['range'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

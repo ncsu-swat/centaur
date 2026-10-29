@@ -4,134 +4,145 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isclose_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 arrays, identical
+    # Input 1: 1D float32 arrays with default tolerances and equal_nan=False
     a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    b = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-05,
-        "atol": 1e-08,
-        "equal_nan": False
-    })
+    b = np.array([1.000001, 2.0, 3.00001], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-05,
+            "atol": 1e-08,
+            "equal_nan": False,
+        }
+    )
 
-    # Input 2: 2D float64 arrays, small difference within atol
-    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    b = np.array([[1.000000001, 2.0], [3.0, 3.999999999]], dtype=np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-05,
-        "atol": 1e-08,
-        "equal_nan": False
-    })
+    # Input 2: 2D float64 arrays with negative values and custom tolerances
+    a = np.array([[-1.0, 2.5], [-3.14, 0.0]], dtype=np.float64)
+    b = np.array([[-1.0001, 2.5], [-3.1402, 1e-9]], dtype=np.float64)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-03,
+            "atol": 1e-06,
+            "equal_nan": False,
+        }
+    )
 
-    # Input 3: Negative values, 3D float32
-    a = np.array([[[-1.0, -2.0], [-3.0, -4.0]]], dtype=np.float32)
-    b = np.array([[[-1.00001, -2.0], [-3.0, -4.00001]]], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-04,
-        "atol": 1e-05,
-        "equal_nan": False
-    })
+    # Input 3: Arrays with NaNs and equal_nan=True
+    a = np.array([np.nan, 1.0, np.nan, 4.0], dtype=np.float32)
+    b = np.array([np.nan, 1.0, 2.0, np.nan], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-05,
+            "atol": 1e-08,
+            "equal_nan": True,
+        }
+    )
 
-    # Input 4: float16 arrays, 1D
-    a = np.array([0.5, 1.5, 2.5], dtype=np.float16)
-    b = np.array([0.501, 1.499, 2.5], dtype=np.float16)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-02,
-        "atol": 1e-02,
-        "equal_nan": True
-    })
+    # Input 4: Arrays with Infs and NaNs, equal_nan=False
+    a = np.array([np.inf, -np.inf, 1.0, np.nan], dtype=np.float64)
+    b = np.array([np.inf, -np.inf, 1.0, np.nan], dtype=np.float64)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-04,
+            "atol": 1e-05,
+            "equal_nan": False,
+        }
+    )
 
-    # Input 5: NaNs, equal_nan=True
-    a = np.array([1.0, np.nan, 3.0], dtype=np.float32)
-    b = np.array([1.0, np.nan, 3.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-05,
-        "atol": 1e-08,
-        "equal_nan": True
-    })
+    # Input 5: 3D float32 arrays
+    a = np.ones((2, 3, 4), dtype=np.float32)
+    b = np.ones((2, 3, 4), dtype=np.float32) + 1e-6
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-05,
+            "atol": 1e-05,
+            "equal_nan": True,
+        }
+    )
 
-    # Input 6: NaNs, equal_nan=False
-    a = np.array([1.0, np.nan, 3.0], dtype=np.float32)
-    b = np.array([1.0, np.nan, 3.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-05,
-        "atol": 1e-08,
-        "equal_nan": False
-    })
+    # Input 6: Broadcasting between shapes (3, 1) and (1, 4)
+    a = np.array([[1.0], [2.0], [3.0]], dtype=np.float32)
+    b = np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-02,
+            "atol": 0.1,
+            "equal_nan": False,
+        }
+    )
 
-    # Input 7: Infinities
-    a = np.array([np.inf, -np.inf, 1.0], dtype=np.float32)
-    b = np.array([np.inf, -np.inf, 1.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-05,
-        "atol": 1e-08,
-        "equal_nan": False
-    })
+    # Input 7: 0D scalar arrays
+    a = np.array(42.0, dtype=np.float64)
+    b = np.array(42.0000001, dtype=np.float64)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-06,
+            "atol": 1e-06,
+            "equal_nan": True,
+        }
+    )
 
-    # Input 8: High dimensional 4D arrays, small random differences
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    b = a + np.random.normal(0, 1e-6, a.shape).astype(np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-04,
-        "atol": 1e-05,
-        "equal_nan": False
-    })
+    # Input 8: Integer arrays
+    a = np.array([-10, 0, 10, 20], dtype=np.int32)
+    b = np.array([-10, 1, 10, 21], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 0.1,
+            "atol": 1.0,
+            "equal_nan": False,
+        }
+    )
 
-    # Input 9: Large absolute difference requiring custom atol
-    a = np.array([100.0, 200.0], dtype=np.float32)
-    b = np.array([105.0, 195.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-09,
-        "atol": 10.0,
-        "equal_nan": False
-    })
+    # Input 9: Complex numbers
+    a = np.array([1.0 + 2.0j, -3.0 + 4.0j, 0.0 - 1.0j], dtype=np.complex64)
+    b = np.array([1.00001 + 2.0j, -3.0 + 4.00001j, 0.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 1e-04,
+            "atol": 1e-04,
+            "equal_nan": False,
+        }
+    )
 
-    # Input 10: Large values requiring custom rtol
-    a = np.array([1e6, 2e6], dtype=np.float32)
-    b = np.array([1.01e6, 1.99e6], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 0.02,
-        "atol": 1e-08,
-        "equal_nan": False
-    })
-
-    # Input 11: Scalar-like 0D arrays
-    a = np.array(1.0001, dtype=np.float32)
-    b = np.array(1.0, dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "b": b,
-        "rtol": 1e-03,
-        "atol": 1e-03,
-        "equal_nan": False
-    })
+    # Input 10: 4D float32 arrays with zero tolerance
+    a = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    b = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "a": copy.deepcopy(a),
+            "b": copy.deepcopy(b),
+            "rtol": 0.0,
+            "atol": 0.0,
+            "equal_nan": True,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isclose"] = isclose_inputs()
 

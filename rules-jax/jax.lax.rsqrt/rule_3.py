@@ -7,35 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If accuracy is specified as a tuple of floats, its length must be positive and all elements must be greater than zero (Rule 3)
+# accuracy mode string must be valid and x must have floating-point or complex data type (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] > 0, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) > 0) for i in range(6)]))) if n else
-          And(v["arg1_length"] > 0, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) > 0) for i in range(6)])))
+    s.add(Not(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10), (Or(v["arg2_value"] == 37, v["arg2_value"] == 5)))) if n else
+          And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10), (Or(v["arg2_value"] == 37, v["arg2_value"] == 5))))
 )
 
-def rule_3_func(arg1, solver=None, neg=False):
+def rule_3_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_dtype = Int('arg1_dtype')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 3
-        rule_3(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_3(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_3(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_3(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)

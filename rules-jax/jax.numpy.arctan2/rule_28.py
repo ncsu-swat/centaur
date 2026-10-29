@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# difference in number of dimensions must not exceed 3 (Rule 28)
+# denominator is a scalar broadcasting over an arbitrary rank numerator (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > v["arg2_ndim"], v["arg1_ndim"] - v["arg2_ndim"] <= 3, v["arg2_ndim"] - v["arg1_ndim"] <= 3)) if n else
-          If(v["arg1_ndim"] > v["arg2_ndim"], v["arg1_ndim"] - v["arg2_ndim"] <= 3, v["arg2_ndim"] - v["arg1_ndim"] <= 3))
+    s.add(Not(And(v["arg2_ndim"] == 0, v["arg1_ndim"] >= 1)) if n else
+          And(v["arg2_ndim"] == 0, v["arg1_ndim"] >= 1))
 )
 
 def rule_28_func(arg1, arg2, solver=None, neg=False):

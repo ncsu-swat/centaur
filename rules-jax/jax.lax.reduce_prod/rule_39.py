@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axes as a list must contain valid indices within operand dimensions (Rule 39)
+# when exactly two axes are specified in a list, both must be strictly less than operand rank (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)]))
+    s.add(Not(If(v["arg2_length"] == 2, And(Select(v["arg2_values"], 0) < v["arg1_ndim"], Select(v["arg2_values"], 1) < v["arg1_ndim"]), True)) if n else
+          If(v["arg2_length"] == 2, And(Select(v["arg2_values"], 0) < v["arg1_ndim"], Select(v["arg2_values"], 1) < v["arg1_ndim"]), True))
 )
 
 def rule_39_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_39_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_39(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

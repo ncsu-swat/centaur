@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def greater_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32 array
-    x = 0.0
-    y = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
-
-    # Input 2: 2D float64 array
-    x = 1.5
-    y = np.array([[1.0, 2.0], [0.5, 3.0]], dtype=np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
-
-    # Input 3: Negative float x, 3D float32 array
-    x = -3.14
-    y = np.random.uniform(-5.0, 5.0, size=(2, 2, 3)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
-
-    # Input 4: Large positive float x, 1D int32 array
-    x = 10.0
-    y = np.array([5, 10, 15, 20], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
-
-    # Input 5: Float x, 4D float32 array
+    # Input 1: 1D float array with positive float scalar
     x = 0.5
-    y = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array([0.1, 0.5, 0.9], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: Zero float x, 2D int64 array
+    # Input 2: 2D integer array with negative float scalar
+    x = -2.5
+    y = np.array([[-3, -2], [-1, 0]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 3: 0D scalar array with float
+    x = 10.0
+    y = np.array(5.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 3D float array with zero
     x = 0.0
-    y = np.array([[-1, 2], [3, -4]], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: Float x, 5D float64 array
-    x = -1.23
-    y = np.random.uniform(-2.0, 2.0, size=(1, 2, 1, 3, 2)).astype(np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 5: 1D array with special values (inf, -inf, nan)
+    x = 1.0
+    y = np.array([np.inf, -np.inf, np.nan, 1.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: Float x close to values, 1D float32 array
-    x = 2.718
-    y = np.array([2.7, 2.71, 2.718, 2.72, 2.8], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 6: Large 4D tensor with float64
+    x = 3.14159
+    y = np.zeros((2, 2, 3, 3), dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Large float x, 3D int16 array
-    x = 100.0
-    y = np.random.randint(0, 150, size=(2, 3, 4)).astype(np.int16)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 7: Empty 1D tensor
+    x = 42.0
+    y = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: Float x, single element 1D array
-    x = -50.5
-    y = np.array([-50.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 8: 2D boolean array (can be compared with float)
+    x = 0.5
+    y = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: Large positive float scalar with int64 tensor
+    x = 1e9
+    y = np.array([[1000, 2000], [3000, 4000]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: Negative float scalar with uint8 tensor
+    x = -0.01
+    y = np.array([0, 1, 2, 255], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: Float with 5D tensor
+    x = -100.5
+    y = np.ones((1, 2, 1, 3, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.greater_4"] = greater_inputs()
 

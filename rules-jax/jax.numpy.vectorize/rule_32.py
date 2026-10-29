@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Fourier transform signatures require floating-point or complex dtype (Rule 32)
+# core input tensor must have at least 3 dimensions when signature indicates batched matrix multiplication (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(If(Or(Or(Or(v["arg2_value"] == 29, v["arg2_value"] == 30), v["arg2_value"] == 31), v["arg2_value"] == 32), And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), True)) if n else
-          If(Or(Or(Or(v["arg2_value"] == 29, v["arg2_value"] == 30), v["arg2_value"] == 31), v["arg2_value"] == 32), And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), True))
+    s.add(Not(If(v["arg1_value"] == 3, v["arg2_ndim"] >= 3, True)) if n else
+          If(v["arg1_value"] == 3, v["arg2_ndim"] >= 3, True))
 )
 
 def rule_32_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_32_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, str):
             return False
-        if not isinstance(arg2, str):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg2_ndim = Int('arg2_ndim')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg2_ndim == arg2.ndim)
 
         # Constraints for rule 32
-        rule_32(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_32(solver, {'arg1_value': arg1_value, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_32(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_32(solver, {'arg1_value': arg1['value'], 'arg2_ndim': arg2['ndim']}, neg)

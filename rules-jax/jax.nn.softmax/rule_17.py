@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis as tuple of integers must have elements in valid range (Rule 17)
+# boolean mask tensor where must broadcast compatibly with x along leading dimension (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), (And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) <= v["arg1_ndim"] - 1))) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), (And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) <= v["arg1_ndim"] - 1))) for i in range(6)]))
+    s.add(Not(And(And(v["arg1_ndim"] >= 1, v["arg2_dtype"] == 0), (Or(Or(v["arg2_ndim"] == 0, Select(v["arg2_shape"], 0) == Select(v["arg1_shape"], 0)), Select(v["arg2_shape"], 0) == 1)))) if n else
+          And(And(v["arg1_ndim"] >= 1, v["arg2_dtype"] == 0), (Or(Or(v["arg2_ndim"] == 0, Select(v["arg2_shape"], 0) == Select(v["arg1_shape"], 0)), Select(v["arg2_shape"], 0) == 1))))
 )
 
 def rule_17_func(arg1, arg2, solver=None, neg=False):
@@ -22,25 +22,30 @@ def rule_17_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_dtype': arg2_dtype, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_dtype': arg2['dtype'], 'arg2_shape': arg2['shape']}, neg)

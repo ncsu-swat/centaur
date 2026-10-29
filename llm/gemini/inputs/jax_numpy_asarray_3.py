@@ -4,103 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asarray_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D tuple of ints, float32, 'K', True
+    # Input 1: 1D tuple of ints
     input_dict = {
-        "a": (1, 2, 3),
-        "dtype": np.float32,
+        "a": (1, 2, 3, 4, 5),
+        "dtype": np.dtype(np.int32),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D tuple of floats, float64, 'K', False
+    # Input 2: 1D tuple of floats with negative values
     input_dict = {
-        "a": (1.5, -2.5, 3.14),
-        "dtype": np.float64,
+        "a": (-1.5, 0.0, 2.5, -3.75),
+        "dtype": np.dtype(np.float32),
         "order": "K",
-        "copy": False
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D tuple of ints, int32, 'K', True
+    # Input 3: 2D nested tuple of ints
     input_dict = {
-        "a": ((1, 2), (3, 4)),
-        "dtype": np.int32,
+        "a": ((1, 2, 3), (4, 5, 6)),
+        "dtype": np.dtype(np.int64),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D tuple of floats, int64, 'K', False
+    # Input 4: 2D nested tuple of floats with negative values
     input_dict = {
-        "a": ((1.1, 2.2), (3.3, 4.4)),
-        "dtype": np.int64,
+        "a": ((-10.0, 20.5), (30.25, -40.75), (50.0, -60.125)),
+        "dtype": np.dtype(np.float64),
         "order": "K",
-        "copy": False
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D tuple of ints, float32, 'K', False
+    # Input 5: 3D nested tuple of ints
     input_dict = {
-        "a": (((1, 2), (3, 4)), ((5, 6), (7, 8))),
-        "dtype": np.float32,
+        "a": (((1, -2), (3, -4)), ((5, -6), (7, -8))),
+        "dtype": np.dtype(np.int16),
         "order": "K",
-        "copy": False
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D tuple of booleans, bool, 'K', True
+    # Input 6: 1D tuple of booleans
     input_dict = {
-        "a": (True, False, True),
-        "dtype": np.bool_,
+        "a": (True, False, True, True, False),
+        "dtype": np.dtype(np.bool_),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D tuple of complex numbers, complex64, 'K', False
+    # Input 7: 1D single-element tuple
     input_dict = {
-        "a": (1+2j, 3-4j),
-        "dtype": np.complex64,
+        "a": (-42,),
+        "dtype": np.dtype(np.int8),
         "order": "K",
-        "copy": False
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Empty tuple, float32, 'K', True
+    # Input 8: Empty tuple
     input_dict = {
         "a": (),
-        "dtype": np.float32,
+        "dtype": np.dtype(np.float32),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D tuple of large ints, int16, 'K', True
+    # Input 9: 1D tuple of complex numbers
     input_dict = {
-        "a": (127, -128, 0),
-        "dtype": np.int16,
+        "a": (1.0 + 2.0j, -3.0 + 4.0j, 5.0 - 6.0j),
+        "dtype": np.dtype(np.complex64),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D tuple with single elements, int8, 'K', False
+    # Input 10: 2D nested tuple with uint8 dtype
     input_dict = {
-        "a": (((1,),), ((2,),)),
-        "dtype": np.int8,
+        "a": ((0, 127), (255, 64)),
+        "dtype": np.dtype(np.uint8),
         "order": "K",
-        "copy": False
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D nested tuple with float16 dtype
+    input_dict = {
+        "a": (((1.0,), (2.0,)), ((3.0,), (4.0,))),
+        "dtype": np.dtype(np.float16),
+        "order": "K",
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asarray_3"] = asarray_inputs()
 

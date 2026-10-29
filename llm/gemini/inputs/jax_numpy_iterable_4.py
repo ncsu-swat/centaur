@@ -4,49 +4,46 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def iterable_inputs():
     list_of_inputs = []
 
-    # Input 1: positive integer
-    list_of_inputs.append({"y": 5})
-
-    # Input 2: negative integer
-    list_of_inputs.append({"y": -10})
-
-    # Input 3: zero
+    # Input 1: Zero
     list_of_inputs.append({"y": 0})
 
-    # Input 4: large positive integer
-    list_of_inputs.append({"y": 123456789})
-
-    # Input 5: small positive integer
+    # Input 2: Positive small integer
     list_of_inputs.append({"y": 1})
 
-    # Input 6: small negative integer
+    # Input 3: Negative small integer
     list_of_inputs.append({"y": -1})
 
-    # Input 7: another positive integer
-    list_of_inputs.append({"y": 100})
+    # Input 4: Moderate positive integer
+    list_of_inputs.append({"y": 42})
 
-    # Input 8: another negative integer
+    # Input 5: Moderate negative integer
     list_of_inputs.append({"y": -100})
 
-    # Input 9: larger positive integer
-    list_of_inputs.append({"y": 999999})
+    # Input 6: Large positive integer
+    list_of_inputs.append({"y": 1000000})
 
-    # Input 10: larger negative integer
+    # Input 7: Large negative integer
     list_of_inputs.append({"y": -999999})
 
-    # Input 11: positive integer
-    list_of_inputs.append({"y": 2})
+    # Input 8: 32-bit signed int max
+    list_of_inputs.append({"y": 2147483647})
 
-    # Input 12: negative integer
-    list_of_inputs.append({"y": -2})
+    # Input 9: 32-bit signed int min
+    list_of_inputs.append({"y": -2147483648})
 
-    return list_of_inputs
+    # Input 10: 64-bit boundary integer
+    list_of_inputs.append({"y": 9223372036854775807})
+
+    # Input 11: Negative 64-bit boundary integer
+    list_of_inputs.append({"y": -9223372036854775808})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
 generated_inputs["jax.numpy.iterable_4"] = iterable_inputs()
 

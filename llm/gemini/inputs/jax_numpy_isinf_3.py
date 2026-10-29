@@ -4,50 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def isinf_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple python integer
+    # Input 1: Zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive python integer
+    # Input 2: Positive small integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Negative small integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Moderate positive integer
     input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative python integer
+    # Input 5: Moderate negative integer
     input_dict = {"x": -100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: NumPy int32 scalar
-    input_dict = {"x": np.int32(10)}
+    # Input 6: Large positive integer
+    input_dict = {"x": 1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: NumPy int64 scalar
-    input_dict = {"x": np.int64(-999999)}
+    # Input 7: Large negative integer
+    input_dict = {"x": -1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D NumPy array of int32
-    input_dict = {"x": np.array([1, -2, 3, 0], dtype=np.int32)}
+    # Input 8: Max 32-bit signed integer
+    input_dict = {"x": 2147483647}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D NumPy array of int64
-    input_dict = {"x": np.array([[10, -20], [30, 40]], dtype=np.int64)}
+    # Input 9: Min 32-bit signed integer
+    input_dict = {"x": -2147483648}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D NumPy array of int16
-    input_dict = {"x": np.array([[[1, 2], [3, 4]], [[-5, -6], [7, 8]]], dtype=np.int16)}
+    # Input 10: Max 64-bit signed integer
+    input_dict = {"x": 9223372036854775807}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: NumPy array of uint8
-    input_dict = {"x": np.array([0, 128, 255], dtype=np.uint8)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: NumPy array of uint32 with larger dimension
-    input_dict = {"x": np.ones((2, 3, 4), dtype=np.uint32) * 5}
+    # Input 11: Min 64-bit signed integer
+    input_dict = {"x": -9223372036854775808}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

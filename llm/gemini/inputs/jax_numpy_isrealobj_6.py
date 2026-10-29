@@ -4,61 +4,73 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isrealobj_inputs():
     list_of_inputs = []
 
     # Input 1: Tuple of integers
-    input_dict = {"x": (1, 2, 3)}
+    input_dict = {"x": (1, 2, 3, -4, 5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Tuple of floats
-    input_dict = {"x": (1.0, -2.5, 3.14)}
+    # Input 2: Tuple of floats with positive and negative values
+    input_dict = {"x": (-2.5, 0.0, 1.25, 3.14159)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Tuple containing complex number
-    input_dict = {"x": (1, 2, 3+4j)}
+    # Input 3: Tuple of complex numbers
+    input_dict = {"x": (1.0 + 2.0j, -3.0 - 4.0j)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Tuple of real numpy arrays
-    input_dict = {"x": (np.array([1, 2]), np.array([3, 4]))}
+    # Input 4: Tuple of booleans
+    input_dict = {"x": (True, False, True, True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Tuple of complex numpy arrays
-    input_dict = {"x": (np.array([1, 2j]), np.array([3, 4]))}
+    # Input 5: Nested 2D tuple of integers
+    input_dict = {"x": ((-1, 2), (3, -4), (0, 5))}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Tuple of mixed numeric types (int and float)
-    input_dict = {"x": (1, 2.5, 3)}
+    # Input 6: Nested 3D tuple of floats
+    input_dict = {
+        "x": (
+            ((-1.0, 2.0), (3.5, -4.2)),
+            ((5.1, -6.0), (7.8, 8.9)),
+        )
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Empty tuple
+    # Input 7: Single-element tuple with zero complex value (imaginary part 0)
+    input_dict = {"x": (0.0 + 0.0j,)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Empty tuple
     input_dict = {"x": ()}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Tuple of booleans
-    input_dict = {"x": (True, False)}
+    # Input 9: Mixed numerical tuple promoted to complex
+    input_dict = {"x": (1, -2.5, 3.0 + 4.0j)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Nested tuple
-    input_dict = {"x": ((1, 2), (3, 4))}
+    # Input 10: Tuple of numpy fixed-width integer scalars
+    input_dict = {"x": (np.int32(-10), np.int32(20), np.int32(0))}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Tuple of single element (float)
-    input_dict = {"x": (1.5,)}
+    # Input 11: Tuple of numpy float64 scalars
+    input_dict = {"x": (np.float64(-3.14), np.float64(2.718), np.float64(1.414))}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Tuple of float64 numpy array
-    input_dict = {"x": (np.array([1.0, 2.0], dtype=np.float64),)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 12: Tuple of complex128 numpy array
-    input_dict = {"x": (np.array([1.0, 2.0j], dtype=np.complex128),)}
+    # Input 12: Tuple of numpy complex128 scalars
+    input_dict = {
+        "x": (
+            np.complex128(-1.5 + 2.5j),
+            np.complex128(3.0 - 0.5j),
+        )
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isrealobj_6"] = isrealobj_inputs()
 

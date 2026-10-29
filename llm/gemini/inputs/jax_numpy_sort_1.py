@@ -4,115 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_sort_inputs():
+
+def sort_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of floats, sort along last axis, stable=True, descending=False
-    a = np.array([3.14, -1.5, 0.0, 2.5, -9.8], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "stable": True,
-        "descending": False
-    }
+    # 1. 1D float32 array, default-like settings
+    a = np.array([3.0, -1.0, 2.5, 0.0, -4.2], dtype=np.float32)
+    input_dict = {"a": a, "axis": -1, "stable": True, "descending": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array of integers, sort along axis 0, stable=True, descending=True
-    a = np.array([[5, 2, 9], [1, 8, 3]], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "stable": True,
-        "descending": True
-    }
+    # 2. 1D int32 array, descending
+    a = np.array([10, -5, 20, 0, 7, -12], dtype=np.int32)
+    input_dict = {"a": a, "axis": 0, "stable": True, "descending": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array of floats, sort along axis 1, stable=False, descending=False
-    a = np.random.randn(5, 5).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "stable": False,
-        "descending": False
-    }
+    # 3. 2D float64 array, sort along axis 0
+    a = np.array(
+        [[1.5, -2.0, 3.3], [-0.5, 4.2, 0.0], [2.1, 1.1, -3.4]],
+        dtype=np.float64,
+    )
+    input_dict = {"a": a, "axis": 0, "stable": False, "descending": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array of integers, sort along axis 2, stable=True, descending=False
-    a = np.random.randint(-100, 100, size=(2, 3, 4)).astype(np.int64)
-    input_dict = {
-        "a": a,
-        "axis": 2,
-        "stable": True,
-        "descending": False
-    }
+    # 4. 2D float32 array, sort along axis 1, descending
+    a = np.array([[5.0, 2.0, 9.0], [-1.0, 3.0, 0.0]], dtype=np.float32)
+    input_dict = {"a": a, "axis": 1, "stable": True, "descending": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D array of integers (with duplicates), sort along axis 0, stable=False, descending=True
-    a = np.array([10, 20, 10, 30, 20, 40], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "stable": False,
-        "descending": True
-    }
+    # 5. 2D int64 array, negative axis index
+    a = np.array([[12, -3, 8], [4, 15, -9]], dtype=np.int64)
+    input_dict = {"a": a, "axis": -2, "stable": False, "descending": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D array of floats, sort along axis -1, stable=True, descending=True
-    a = np.random.randn(3, 3, 3).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "stable": True,
-        "descending": True
-    }
+    # 6. 3D float32 array, sort along axis 2
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"a": a, "axis": 2, "stable": True, "descending": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array of floats, sort along negative axis -2, stable=False, descending=False
-    a = np.random.uniform(-5.0, 5.0, (4, 6)).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": -2,
-        "stable": False,
-        "descending": False
-    }
+    # 7. 3D int16 array, sort along axis 1, descending
+    a = np.random.randint(-100, 100, size=(3, 4, 2)).astype(np.int16)
+    input_dict = {"a": a, "axis": 1, "stable": False, "descending": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D array of integers, sort along axis 1, stable=True, descending=True
-    a = np.random.randint(0, 10, size=(2, 2, 2, 2)).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "stable": True,
-        "descending": True
-    }
+    # 8. 4D float32 array, sort along axis 0
+    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    input_dict = {"a": a, "axis": 0, "stable": True, "descending": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D array of all negative float values, sort along axis 0, stable=True, descending=False
-    a = np.array([-10.5, -20.3, -5.5, -100.1], dtype=np.float64)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "stable": True,
-        "descending": False
-    }
+    # 9. Boolean array, sort along axis -1
+    a = np.array([[True, False, True], [False, False, True]], dtype=bool)
+    input_dict = {"a": a, "axis": -1, "stable": True, "descending": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array of large random integers, sort along axis 1, stable=False, descending=True
-    a = np.random.randint(-1000, 1000, size=(10, 10)).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "stable": False,
-        "descending": True
-    }
+    # 10. uint8 array with duplicates, stable sort
+    a = np.array([255, 0, 128, 0, 64, 255, 128], dtype=np.uint8)
+    input_dict = {"a": a, "axis": 0, "stable": True, "descending": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # 11. 3D float64 array, sort along axis -1, descending
+    a = np.random.randn(4, 1, 5).astype(np.float64)
+    input_dict = {"a": a, "axis": -1, "stable": False, "descending": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sort_1"] = jax_numpy_sort_inputs()
+
+generated_inputs["jax.numpy.sort_1"] = sort_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

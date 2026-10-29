@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def maximum_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float arrays with positive/negative values
-    x = np.array([1.5, -2.0, 3.5, -4.0], dtype=np.float32)
-    y = np.array([-1.0, 2.0, 3.0, -5.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 1: 1D int32 arrays of same shape with positive and negative integers
+    x = np.array([1, -5, 3, 2], dtype=np.int32)
+    y = np.array([-2, 4, 7, -6], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 2: 2D Integer arrays
-    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    y = np.array([[4, 3], [2, 1]], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 2: 2D float32 arrays with broadcasting (2, 3) and (1, 3)
+    x = np.array([[-2.5, 5.0, 7.2], [1.1, -6.3, 3.0]], dtype=np.float32)
+    y = np.array([[-5.0, 3.0, 9.5]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 3: Broadcasting 2D and 1D arrays
-    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    y = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 3: 3D float64 arrays of same shape
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    y = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 4: Broadcasting with singular dimensions
-    x = np.array([[1], [2], [3]], dtype=np.float32)
-    y = np.array([[4, 5, 6]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 4: 0D scalar arrays
+    x = np.array(3.14, dtype=np.float32)
+    y = np.array(-2.71, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 5: Float64 arrays containing NaN values
-    x = np.array([np.nan, 2.0, 3.0], dtype=np.float64)
-    y = np.array([1.0, np.nan, 3.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: Arrays with NaN and Inf values
+    x = np.array([np.nan, -np.inf, np.inf, 2.0], dtype=np.float32)
+    y = np.array([1.0, 0.0, -np.inf, np.nan], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 6: 3D random arrays of float32
-    x = np.random.randn(2, 3, 4).astype(np.float32)
-    y = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 6: int64 arrays
+    x = np.array([[-100, 200], [300, -400]], dtype=np.int64)
+    y = np.array([[50, -250], [-350, 450]], dtype=np.int64)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 7: 4D arrays with broadcasting compatibility
-    x = np.random.randn(1, 5, 1, 5).astype(np.float32)
-    y = np.random.randn(2, 1, 2, 1).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: uint8 arrays
+    x = np.array([0, 128, 255], dtype=np.uint8)
+    y = np.array([10, 100, 200], dtype=np.uint8)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 8: Boolean arrays
-    x = np.array([True, False, True], dtype=bool)
-    y = np.array([False, False, True], dtype=bool)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: boolean arrays
+    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    y = np.array([[False, False], [True, True]], dtype=np.bool_)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 9: 0-dimensional arrays (scalars as tensors)
-    x = np.array(5.0, dtype=np.float32)
-    y = np.array(10.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 9: 4D arrays with multi-axis broadcasting
+    x = np.random.randn(2, 1, 4, 1).astype(np.float32)
+    y = np.random.randn(1, 3, 1, 5).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 10: Int64 arrays
-    x = np.array([-10, 20, -30], dtype=np.int64)
-    y = np.array([0, 0, 0], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 10: 1D and 2D broadcasting
+    x = np.array([1.0, -2.0, 3.0, -4.0], dtype=np.float32)
+    y = np.array([[0.0], [2.0], [-1.0]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+
+    # Input 11: Empty array with zero dimension
+    x = np.empty((0, 4), dtype=np.float32)
+    y = np.empty((0, 4), dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.maximum"] = maximum_inputs()
 

@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def celu_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array with mixed positive and negative values, float32, standard alpha
+    # Input 1: 1D array float32, standard alpha
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
     alpha = 1.0
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 2: 2D array, float32, alpha > 1
+    # Input 2: 2D array float32, alpha=0.5
     x = np.random.randn(3, 4).astype(np.float32)
-    alpha = 1.5
-    list_of_inputs.append({"x": x, "alpha": alpha})
-
-    # Input 3: 3D array, float64, alpha < 1
-    x = np.random.randn(2, 2, 3).astype(np.float64)
     alpha = 0.5
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 4: 1D array, float16, large alpha
-    x = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float16)
+    # Input 3: 3D array float64, alpha=2.0
+    x = np.random.randn(2, 3, 5).astype(np.float64)
     alpha = 2.0
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 5: 0D array (scalar array), float32, small alpha
-    x = np.array(-1.5, dtype=np.float32)
+    # Input 4: 0D array (scalar tensor), alpha=1.5
+    x = np.array(-0.75, dtype=np.float32)
+    alpha = 1.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
+
+    # Input 5: 4D array float32, alpha=0.1
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
     alpha = 0.1
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 6: 4D array, float32, default-like alpha
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    # Input 6: 1D array all non-positive, float32, alpha=1.0
+    x = np.array([-10.0, -5.0, -1.0, 0.0], dtype=np.float32)
     alpha = 1.0
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 7: 2D array with only negative values, float64
-    x = -np.abs(np.random.randn(4, 4)).astype(np.float64)
-    alpha = 1.2
-    list_of_inputs.append({"x": x, "alpha": alpha})
-
-    # Input 8: 2D array with only positive values, float32
-    x = np.abs(np.random.randn(3, 3)).astype(np.float32)
-    alpha = 0.8
-    list_of_inputs.append({"x": x, "alpha": alpha})
-
-    # Input 9: Large 1D array, float32, alpha = 3.0
-    x = np.linspace(-5.0, 5.0, 100).astype(np.float32)
+    # Input 7: 1D array all positive, float32, alpha=3.0
+    x = np.array([0.1, 1.0, 5.0, 10.0], dtype=np.float32)
     alpha = 3.0
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 10: 3D array with zeros, float32, alpha = 0.01
-    x = np.zeros((3, 3, 3), dtype=np.float32)
-    alpha = 0.01
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    # Input 8: 2D array with zeros, float32, alpha=0.8
+    x = np.zeros((4, 4), dtype=np.float32)
+    alpha = 0.8
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 11: 2D array with large values, float64, alpha = 10.0
-    x = (np.random.randn(5, 5) * 100).astype(np.float64)
+    # Input 9: 5D array, float32, alpha=1.2
+    x = np.random.randn(1, 2, 1, 3, 4).astype(np.float32)
+    alpha = 1.2
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
+
+    # Input 10: 2D array float16, alpha=0.25
+    x = np.random.randn(5, 5).astype(np.float16)
+    alpha = 0.25
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
+
+    # Input 11: 1D array float64 with large values, alpha=10.0
+    x = np.array([-100.0, -10.0, 0.0, 10.0, 100.0], dtype=np.float64)
     alpha = 10.0
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.celu_2"] = celu_inputs()
 

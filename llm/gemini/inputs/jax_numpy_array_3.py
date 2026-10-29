@@ -4,115 +4,117 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def array_inputs():
+
+def jax_numpy_array_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D integer tuple, ndmin=0
+    # Input 1: 1D integer tuple, float32 dtype
     input_dict = {
         "object": (1, 2, 3),
-        "dtype": np.dtype("int32"),
+        "dtype": np.dtype(np.float32),
         "copy": True,
         "order": "K",
-        "ndmin": 0
+        "ndmin": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D float tuple, ndmin=1
+    # Input 2: 2D float tuple with negative numbers, int32 dtype
     input_dict = {
-        "object": (1.0, -2.5, 3.7),
-        "dtype": np.dtype("float32"),
+        "object": ((-1.5, 2.0), (3.7, -4.2)),
+        "dtype": np.dtype(np.int32),
         "copy": False,
         "order": "K",
-        "ndmin": 1
+        "ndmin": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D integer tuple, ndmin=2
-    input_dict = {
-        "object": ((1, 2), (3, 4)),
-        "dtype": np.dtype("int64"),
-        "copy": True,
-        "order": "K",
-        "ndmin": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 3D boolean tuple, ndmin=3
-    input_dict = {
-        "object": (((True, False), (False, True)),),
-        "dtype": np.dtype("bool"),
-        "copy": True,
-        "order": "K",
-        "ndmin": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 1D complex tuple, ndmin=1
-    input_dict = {
-        "object": (1 + 2j, 3 - 4j),
-        "dtype": np.dtype("complex64"),
-        "copy": False,
-        "order": "K",
-        "ndmin": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 1D negative integer tuple, ndmin=2
-    input_dict = {
-        "object": (-10, -20, -30),
-        "dtype": np.dtype("int8"),
-        "copy": True,
-        "order": "K",
-        "ndmin": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 2D float64 tuple, ndmin=0
-    input_dict = {
-        "object": ((1.5,), (2.5,), (3.5,)),
-        "dtype": np.dtype("float64"),
-        "copy": True,
-        "order": "K",
-        "ndmin": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Empty tuple, ndmin=1
+    # Input 3: Empty tuple with higher ndmin
     input_dict = {
         "object": (),
-        "dtype": np.dtype("float32"),
-        "copy": False,
-        "order": "K",
-        "ndmin": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 1D unsigned integer tuple, ndmin=4
-    input_dict = {
-        "object": (255, 128, 0),
-        "dtype": np.dtype("uint8"),
+        "dtype": np.dtype(np.float64),
         "copy": True,
         "order": "K",
-        "ndmin": 4
+        "ndmin": 3,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D nested integer tuple, ndmin=2
+    # Input 4: Boolean tuple
     input_dict = {
-        "object": (((1, 2), (3, 4)), ((5, 6), (7, 8))),
-        "dtype": np.dtype("int16"),
+        "object": (True, False, True),
+        "dtype": np.dtype(np.bool_),
         "copy": False,
         "order": "K",
-        "ndmin": 2
+        "ndmin": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D nested tuple with complex numbers
+    input_dict = {
+        "object": (((1 + 2j, -3j), (4.0, 0j)), ((5 - 1j, 2), (-3, 4j))),
+        "dtype": np.dtype(np.complex64),
+        "copy": True,
+        "order": "K",
+        "ndmin": 3,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 1D tuple expanding dimensions via ndmin
+    input_dict = {
+        "object": (10, -20, 30),
+        "dtype": np.dtype(np.int64),
+        "copy": True,
+        "order": "K",
+        "ndmin": 4,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Nested tuple of mixed numeric types to uint8
+    input_dict = {
+        "object": ((0, 255), (128, 64)),
+        "dtype": np.dtype(np.uint8),
+        "copy": False,
+        "order": "K",
+        "ndmin": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Single element tuple to float16
+    input_dict = {
+        "object": (3.14159,),
+        "dtype": np.dtype(np.float16),
+        "copy": True,
+        "order": "K",
+        "ndmin": 2,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 2D tuple with zeros and negative values
+    input_dict = {
+        "object": ((-10, 0), (0, -20), (5, -5)),
+        "dtype": np.dtype(np.int16),
+        "copy": False,
+        "order": "K",
+        "ndmin": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D nested tuple
+    input_dict = {
+        "object": ((((1.0,),),),),
+        "dtype": np.dtype(np.float32),
+        "copy": True,
+        "order": "K",
+        "ndmin": 5,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.array_3"] = array_inputs()
+
+generated_inputs["jax.numpy.array_3"] = jax_numpy_array_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

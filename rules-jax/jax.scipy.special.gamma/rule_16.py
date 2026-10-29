@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor must have a real or complex floating-point data type (Rule 16)
+# input tensor x may be complex-valued for evaluation via the Lanczos approximation (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
-          And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
+    s.add(Not(Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10)) if n else
+          Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10))
 )
 
 def rule_16_func(arg1, solver=None, neg=False):

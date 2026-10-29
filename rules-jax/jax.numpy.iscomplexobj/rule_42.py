@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input x as a tuple of integers must have a positive length and non-negative elements (Rule 42)
+# tuple of two booleans must have identical values (Rule 42)
 
 rule_42 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)]))) if n else
-          And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])))
+    s.add(Not(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == Select(v["arg1_values"], 1))) if n else
+          And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == Select(v["arg1_values"], 1)))
 )
 
 def rule_42_func(arg1, solver=None, neg=False):
@@ -19,13 +19,13 @@ def rule_42_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, bool) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_values = Array('arg1_values', IntSort(), BoolSort())
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
@@ -33,9 +33,9 @@ def rule_42_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 42
-        rule_42(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_42(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_42(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_42(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

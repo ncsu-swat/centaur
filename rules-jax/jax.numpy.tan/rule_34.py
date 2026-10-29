@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the angle is a float or integer scalar, it should be within safe operational limits (Rule 34)
+# scalar float angle must be within one full cycle (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -10000.0, v["arg1_value"] < 10000.0)) if n else
-          And(v["arg1_value"] > -10000.0, v["arg1_value"] < 10000.0))
+    s.add(Not(And(-3.14159 <= v["arg1_value"], v["arg1_value"] <= 3.14159)) if n else
+          And(-3.14159 <= v["arg1_value"], v["arg1_value"] <= 3.14159))
 )
 
 def rule_34_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_34_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (float, np.floating)) or (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool))):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Real('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 34
         rule_34(solver, {'arg1_value': arg1_value})

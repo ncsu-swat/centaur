@@ -7,30 +7,35 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when arg2 is a union of dtype and string, it must be a valid dtype index or a valid dtype-like string (Rule 36)
+# floating target string restriction with union dtype-like target (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(Or((And(0 <= v["arg1_value"], v["arg1_value"] <= 12)), (Or(v["arg1_value"] == 38, v["arg1_value"] == 39)))) if n else
-          Or((And(0 <= v["arg1_value"], v["arg1_value"] <= 12)), (Or(v["arg1_value"] == 38, v["arg1_value"] == 39))))
+    s.add(Not(If(Or(v["arg2_value"] == 38, v["arg2_value"] == 39), Or((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), v["arg1_value"] == 12), And(0 <= v["arg1_value"], v["arg1_value"] <= 12))) if n else
+          If(Or(v["arg2_value"] == 38, v["arg2_value"] == 39), Or((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), v["arg1_value"] == 12), And(0 <= v["arg1_value"], v["arg1_value"] <= 12)))
 )
 
-def rule_36_func(arg1, solver=None, neg=False):
+def rule_36_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)) or isinstance(arg1, str)):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+            return False
+        if not ((isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)) or isinstance(arg2, str)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Int('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 36
-        rule_36(solver, {'arg1_value': arg1_value})
+        rule_36(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_36(solver, {'arg1_value': arg1['value']}, neg)
+        rule_36(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

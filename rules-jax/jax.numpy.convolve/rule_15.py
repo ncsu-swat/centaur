@@ -7,44 +7,32 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for valid mode, the first input tensor size must be strictly greater than the second to produce a valid output (Rule 15)
+# string parameters must match valid convolution mode or precision options (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == 19, Select(v["arg1_shape"], 0) > Select(v["arg2_shape"], 0), Select(v["arg1_shape"], 0) >= 1)) if n else
-          If(v["arg3_value"] == 19, Select(v["arg1_shape"], 0) > Select(v["arg2_shape"], 0), Select(v["arg1_shape"], 0) >= 1))
+    s.add(Not(Or(Or(Or(v["arg1_value"] == 19, v["arg1_value"] == 20), v["arg1_value"] == 37), v["arg1_value"] == 5)) if n else
+          Or(Or(Or(v["arg1_value"] == 19, v["arg1_value"] == 20), v["arg1_value"] == 37), v["arg1_value"] == 5))
 )
 
-def rule_15_func(arg1, arg2, arg3, solver=None, neg=False):
+def rule_15_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
-    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
-            return False
-        if not isinstance(arg2, np.ndarray):
-            return False
-        if not isinstance(arg3, str):
+        if not isinstance(arg1, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
-        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
-        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
-        for i in range(arg1.ndim):
-            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
-        for i in range(arg2.ndim):
-            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
-        solver.add(arg3_value == list_of_string_values_jax.index(arg3))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_shape': arg1_shape, 'arg2_shape': arg2_shape, 'arg3_value': arg3_value})
+        rule_15(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_shape': arg1['shape'], 'arg2_shape': arg2['shape'], 'arg3_value': arg3['value']}, neg)
+        rule_15(solver, {'arg1_value': arg1['value']}, neg)

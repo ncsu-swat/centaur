@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if allow_negative_indices is a tuple, its length must equal the length of slice_sizes tuple (Rule 40)
+# start_indices and slice_sizes lists must be equal in length with non-negative slice sizes (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] == v["arg2_length"]) if n else
-          v["arg1_length"] == v["arg2_length"])
+    s.add(Not(And(v["arg1_length"] == v["arg2_length"], (And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 0) for i in range(6)])))) if n else
+          And(v["arg1_length"] == v["arg2_length"], (And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 0) for i in range(6)]))))
 )
 
 def rule_40_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,27 @@ def rule_40_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, tuple) and all(isinstance(e, bool) for e in arg2)):
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
         arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
         solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 40
-        rule_40(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length})
+        rule_40(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_40(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length']}, neg)
+        rule_40(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

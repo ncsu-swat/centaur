@@ -4,117 +4,117 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax._src.numpy.util as jax_util
+import numpy as np
 
-# Monkeypatch JAX's ensure_arraylike to seamlessly support python tuples
-original_ensure_arraylike = jax_util.ensure_arraylike
-
-def custom_ensure_arraylike(fun_name, *args):
-    new_args = tuple(
-        jax.numpy.asarray(arg) if isinstance(arg, tuple) else arg
-        for arg in args
-    )
-    return original_ensure_arraylike(fun_name, *new_args)
-
-jax_util.ensure_arraylike = custom_ensure_arraylike
 
 def sort_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D tuple of integers
+    # Input 1: 1D int32 array, sort ascending
     input_dict = {
-        "a": (1, 3, 5, 4, 2, 1),
-        "axis": -1,
-        "stable": True,
-        "descending": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 1D tuple, descending sort
-    input_dict = {
-        "a": (10, -5, 0, 20, 3),
+        "a": np.array([5, 2, 9, 1, 5, 6], dtype=np.int32),
         "axis": 0,
         "stable": True,
-        "descending": True
+        "descending": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D nested tuple, sort along axis 1
+    # Input 2: 1D float32 array, sort descending
     input_dict = {
-        "a": ((2, 1, 3), (4, 3, 6)),
-        "axis": 1,
+        "a": np.array([3.14, -1.5, 2.71, 0.0, -0.5], dtype=np.float32),
+        "axis": -1,
         "stable": False,
-        "descending": False
+        "descending": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D nested tuple, sort along axis 0, descending
+    # Input 3: 1D int64 array with negative numbers
     input_dict = {
-        "a": ((2, 1, 3), (4, 3, 6)),
+        "a": np.array([-10, -3, -50, -1, -20], dtype=np.int64),
         "axis": 0,
         "stable": True,
-        "descending": True
+        "descending": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Tuple of floats
+    # Input 4: 2D int32 array, sort along axis 0
     input_dict = {
-        "a": (1.5, -2.3, 0.0, 4.1, -0.5),
+        "a": np.array([[3, 2, 1], [6, 5, 4]], dtype=np.int32),
+        "axis": 0,
+        "stable": False,
+        "descending": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D int32 array, sort along axis 1
+    input_dict = {
+        "a": np.array([[9, 4, 7], [1, 8, 3]], dtype=np.int32),
+        "axis": 1,
+        "stable": True,
+        "descending": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D float64 array, sort along last axis descending
+    input_dict = {
+        "a": np.array([[-1.2, 3.4, 0.5], [2.1, -4.3, 1.1]], dtype=np.float64),
         "axis": -1,
         "stable": True,
-        "descending": False
+        "descending": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Tuple of booleans, descending
+    # Input 7: 2D float32 array, sort along axis -2
     input_dict = {
-        "a": (True, False, True, False),
+        "a": np.array([[10.0, 20.0], [5.0, 25.0], [1.0, 15.0]], dtype=np.float32),
+        "axis": -2,
+        "stable": False,
+        "descending": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D int32 array, sort along axis 0
+    input_dict = {
+        "a": np.array([[[3, 2], [1, 4]], [[0, 5], [6, -1]]], dtype=np.int32),
         "axis": 0,
         "stable": True,
-        "descending": True
+        "descending": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D nested tuple
+    # Input 9: 3D float32 array, sort along axis 2 descending
     input_dict = {
-        "a": (((1, 2), (3, 4)), ((5, 6), (7, 8))),
+        "a": np.array(
+            [[[1.5, -2.5], [3.0, 0.0]], [[-1.0, 4.2], [2.3, -3.1]]],
+            dtype=np.float32,
+        ),
         "axis": 2,
         "stable": False,
-        "descending": False
+        "descending": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D tuple with negative values, non-stable, descending
+    # Input 10: 1D boolean array
     input_dict = {
-        "a": (-10, -20, -30, -5, -15),
+        "a": np.array([True, False, True, False, True], dtype=bool),
         "axis": 0,
-        "stable": False,
-        "descending": True
+        "stable": True,
+        "descending": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Nested tuple with floats, stable sorting
+    # Input 11: 1D single-element array
     input_dict = {
-        "a": ((1.1, 2.2), (0.5, -1.5)),
+        "a": np.array([42], dtype=np.int32),
         "axis": -1,
         "stable": True,
-        "descending": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D tuple of a single element
-    input_dict = {
-        "a": (42,),
-        "axis": 0,
-        "stable": True,
-        "descending": False
+        "descending": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sort_3"] = sort_inputs()
 

@@ -4,103 +4,117 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def argmin_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32, axis 0, index_dtype int32
-    operand = np.array([4.5, 1.2, 3.3, 0.5, 2.1], dtype=np.float32)
-    input_dict = {
-        "operand": operand,
-        "axis": 0,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array, axis 0, int32 index_dtype
+    operand = np.array([3.5, 1.2, -4.8, 0.0, 7.3], dtype=np.float32)
+    axis = 0
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 2: 2D float32, axis 0, index_dtype int32
-    operand = np.random.randn(3, 5).astype(np.float32)
-    input_dict = {
-        "operand": operand,
-        "axis": 0,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float32 array, axis 0, int32 index_dtype
+    operand = np.random.randn(5, 4).astype(np.float32)
+    axis = 0
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 3: 2D float32, axis 1, index_dtype int32
-    operand = np.random.randn(4, 6).astype(np.float32)
-    input_dict = {
-        "operand": operand,
-        "axis": 1,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D int32 array with negative values, axis 1, int32 index_dtype
+    operand = np.array([[-10, 20, 5], [3, -15, 0]], dtype=np.int32)
+    axis = 1
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 4: 3D int32, negative values, axis 2, index_dtype int32
-    operand = np.random.randint(-100, 100, size=(2, 3, 4)).astype(np.int32)
-    input_dict = {
-        "operand": operand,
-        "axis": 2,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float32 array, axis 2, int32 index_dtype
+    operand = np.random.randn(2, 3, 4).astype(np.float32)
+    axis = 2
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 5: 4D float32, axis 1, index_dtype int32
-    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    input_dict = {
-        "operand": operand,
-        "axis": 1,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D int32 array, axis 1, int32 index_dtype
+    operand = np.random.randint(-100, 100, size=(4, 6, 2), dtype=np.int32)
+    axis = 1
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 6: 1D int32, negative values, axis 0, index_dtype int32
-    operand = np.array([-10, 20, -30, 40], dtype=np.int32)
-    input_dict = {
-        "operand": operand,
-        "axis": 0,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D float32 array, axis 2, int32 index_dtype
+    operand = np.random.randn(2, 2, 3, 2).astype(np.float32)
+    axis = 2
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 7: 2D float32, axis 1, index_dtype int32
-    operand = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {
-        "operand": operand,
-        "axis": 1,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D int32 array, axis 0, int32 index_dtype
+    operand = np.array([100, 42, 5, 999], dtype=np.int32)
+    axis = 0
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 8: 3D float32, axis 2, index_dtype int32
-    operand = np.random.randn(2, 4, 3).astype(np.float32)
-    input_dict = {
-        "operand": operand,
-        "axis": 2,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D float32 array, axis 0, int32 index_dtype
+    operand = np.array(
+        [[1.0, 2.0], [0.5, -0.5], [-2.0, 3.0]], dtype=np.float32
+    )
+    axis = 0
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 9: 5D int32, negative values, axis 3, index_dtype int32
-    operand = np.random.randint(-50, 50, size=(2, 2, 3, 4, 2)).astype(np.int32)
-    input_dict = {
-        "operand": operand,
-        "axis": 3,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D int32 array, axis 3, int32 index_dtype
+    operand = np.random.randint(-50, 50, size=(2, 1, 3, 4, 2), dtype=np.int32)
+    axis = 3
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
-    # Input 10: 2D float32 with duplicate minimums, axis 1, index_dtype int32
-    operand = np.array([[1.0, 1.0, 2.0], [3.0, 0.5, 0.5]], dtype=np.float32)
-    input_dict = {
-        "operand": operand,
-        "axis": 1,
-        "index_dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float32 array with a single row, axis 1, int32 index_dtype
+    operand = np.array([[10.0, -1.0, 3.0, 0.0]], dtype=np.float32)
+    axis = 1
+    index_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "axis": axis, "index_dtype": index_dtype}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.argmin"] = argmin_inputs()
 

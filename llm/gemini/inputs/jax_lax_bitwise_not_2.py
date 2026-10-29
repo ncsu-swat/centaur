@@ -4,51 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def bitwise_not_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D scalar int32
-    x = np.array(42, dtype=np.int32)
-    list_of_inputs.append({"x": x})
+    # Input 1: Zero
+    input_dict = {"x": int(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array int64 with negative values
-    x = np.array([-1, 0, 1, -100, 100], dtype=np.int64)
-    list_of_inputs.append({"x": x})
+    # Input 2: Positive small integer
+    input_dict = {"x": int(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array int16
-    x = np.array([[10, -20], [30, -40]], dtype=np.int16)
-    list_of_inputs.append({"x": x})
+    # Input 3: Negative small integer
+    input_dict = {"x": int(-1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array int8 with negative values
-    x = np.random.randint(-128, 128, size=(2, 3, 4), dtype=np.int8)
-    list_of_inputs.append({"x": x})
+    # Input 4: Positive integer (power of 2 minus 1)
+    input_dict = {"x": int(7)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D array uint32
-    x = np.random.randint(0, 1000, size=(2, 2, 2, 2), dtype=np.uint32)
-    list_of_inputs.append({"x": x})
+    # Input 5: Negative integer
+    input_dict = {"x": int(-8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array uint16
-    x = np.array([0, 65535, 1024, 2048], dtype=np.uint16)
-    list_of_inputs.append({"x": x})
+    # Input 6: 8-bit boundary positive value
+    input_dict = {"x": int(127)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array uint8
-    x = np.array([[0, 255], [128, 64]], dtype=np.uint8)
-    list_of_inputs.append({"x": x})
+    # Input 7: 8-bit boundary negative value
+    input_dict = {"x": int(-128)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large 1D array int64
-    x = np.arange(-50, 50, dtype=np.int64)
-    list_of_inputs.append({"x": x})
+    # Input 8: 8-bit unsigned boundary value
+    input_dict = {"x": int(255)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 0D scalar uint64
-    x = np.array(18446744073709551615, dtype=np.uint64)
-    list_of_inputs.append({"x": x})
+    # Input 9: Moderate positive integer
+    input_dict = {"x": int(1024)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D array int32
-    x = np.random.randint(-1000, 1000, size=(1, 2, 3, 2, 1), dtype=np.int32)
-    list_of_inputs.append({"x": x})
+    # Input 10: 16-bit boundary negative value
+    input_dict = {"x": int(-32768)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 16-bit boundary positive value
+    input_dict = {"x": int(65535)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Large positive integer
+    input_dict = {"x": int(1000000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

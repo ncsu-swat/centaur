@@ -4,113 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def array_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D integer list, basic case
+    # Input 1: 1D list of ints, int32 dtype
     input_dict = {
-        "object": [1, 2, 3, 4, 5],
-        "dtype": np.dtype("int32"),
+        "object": [1, 2, 3, 4],
+        "dtype": np.dtype(np.int32),
         "copy": True,
         "order": "K",
-        "ndmin": 0
+        "ndmin": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D float list with negative values, copy=False, ndmin=1
+    # Input 2: 2D list of floats with negative values, float32 dtype
     input_dict = {
-        "object": [-1.5, -2.0, 3.5, 4.0],
-        "dtype": np.dtype("float32"),
+        "object": [[-1.5, 2.0], [3.2, -4.8]],
+        "dtype": np.dtype(np.float32),
         "copy": False,
         "order": "K",
-        "ndmin": 1
+        "ndmin": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float list, ndmin=2
-    input_dict = {
-        "object": [[1.0, 2.0], [3.0, 4.0]],
-        "dtype": np.dtype("float64"),
-        "copy": True,
-        "order": "K",
-        "ndmin": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Boolean list, converting to int dtype
-    input_dict = {
-        "object": [True, False, True],
-        "dtype": np.dtype("int8"),
-        "copy": True,
-        "order": "K",
-        "ndmin": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Float list converting to boolean dtype, ndmin=3
-    input_dict = {
-        "object": [[[0.0, 1.0], [1.0, 0.0]]],
-        "dtype": np.dtype("bool"),
-        "copy": False,
-        "order": "K",
-        "ndmin": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Complex values in nested list
-    input_dict = {
-        "object": [[1 + 2j, 3 - 4j]],
-        "dtype": np.dtype("complex64"),
-        "copy": True,
-        "order": "K",
-        "ndmin": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Empty list, high ndmin
+    # Input 3: Empty list, float64 dtype, higher ndmin
     input_dict = {
         "object": [],
-        "dtype": np.dtype("float32"),
+        "dtype": np.dtype(np.float64),
         "copy": True,
         "order": "K",
-        "ndmin": 4
+        "ndmin": 3,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Deeply nested float16 list
+    # Input 4: 1D list of booleans, bool dtype
     input_dict = {
-        "object": [[[[1.0], [2.0]], [[3.0], [4.0]]]],
-        "dtype": np.dtype("float16"),
+        "object": [True, False, True, True],
+        "dtype": np.dtype(np.bool_),
         "copy": False,
         "order": "K",
-        "ndmin": 2
+        "ndmin": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large positive and negative integers, int64 dtype
+    # Input 5: 3D nested list of ints, int64 dtype
     input_dict = {
-        "object": [100000, -200000, 300000],
-        "dtype": np.dtype("int64"),
+        "object": [[[1, -2], [3, 4]], [[-5, 6], [7, -8]]],
+        "dtype": np.dtype(np.int64),
         "copy": True,
         "order": "K",
-        "ndmin": 1
+        "ndmin": 3,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Unsigned integer list, uint32 dtype
+    # Input 6: 1D list with ndmin expanding dimensions to 2D
     input_dict = {
-        "object": [10, 20, 30, 40],
-        "dtype": np.dtype("uint32"),
+        "object": [10, 20, 30],
+        "dtype": np.dtype(np.uint32),
+        "copy": False,
+        "order": "K",
+        "ndmin": 2,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D list of complex numbers, complex64 dtype
+    input_dict = {
+        "object": [[1.0 + 2.0j, -3.0j], [4.5 - 1.2j, 0.0 + 0.0j]],
+        "dtype": np.dtype(np.complex64),
         "copy": True,
         "order": "K",
-        "ndmin": 3
+        "ndmin": 2,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D list of integers with int16 dtype
+    input_dict = {
+        "object": [-32768, 0, 32767],
+        "dtype": np.dtype(np.int16),
+        "copy": True,
+        "order": "K",
+        "ndmin": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 4D nested list of floats, float16 dtype
+    input_dict = {
+        "object": [[[[1.0], [2.0]], [[3.0], [4.0]]]],
+        "dtype": np.dtype(np.float16),
+        "copy": False,
+        "order": "K",
+        "ndmin": 4,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D list of unsigned 8-bit integers
+    input_dict = {
+        "object": [0, 128, 255],
+        "dtype": np.dtype(np.uint8),
+        "copy": True,
+        "order": "K",
+        "ndmin": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.array_2"] = array_inputs()
 

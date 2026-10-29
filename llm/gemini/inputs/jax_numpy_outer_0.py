@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def outer_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D float32 arrays
+    # Input 1: 1D float32 arrays
     a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     b = np.array([4.0, 5.0, 6.0], dtype=np.float32)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    list_of_inputs.append({"a": a, "b": b})
 
     # Input 2: 1D int32 arrays with negative values
-    a = np.array([-1, 0, 1, 2], dtype=np.int32)
-    b = np.array([3, -4, 5], dtype=np.int32)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    a = np.array([-1, 0, 1], dtype=np.int32)
+    b = np.array([2, -3, 4, -5], dtype=np.int32)
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 3: 2D arrays (will be flattened)
-    a = np.random.randn(2, 3).astype(np.float32)
-    b = np.random.randn(3, 2).astype(np.float32)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    # Input 3: Different lengths float64
+    a = np.array([0.5, -1.5], dtype=np.float64)
+    b = np.array([2.0, 3.0, -4.0, 5.0, 6.0], dtype=np.float64)
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 4: 3D arrays
-    a = np.random.randn(2, 2, 2).astype(np.float64)
-    b = np.random.randn(1, 3, 2).astype(np.float64)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    # Input 4: 2D arrays (flattened by outer)
+    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    b = np.array([[5.0, 6.0], [7.0, 8.0]], dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 5: Boolean arrays
+    # Input 5: 3D array and 1D array
+    a = np.ones((2, 3, 4), dtype=np.float32)
+    b = np.array([1.0, -1.0], dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 6: Complex numbers
+    a = np.array([1.0 + 2.0j, -3.0 + 4.0j], dtype=np.complex64)
+    b = np.array([2.0 - 1.0j, 0.0 + 3.0j, 5.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append({"a": a, "b": b})
+
+    # Input 7: Boolean arrays
     a = np.array([True, False, True], dtype=bool)
     b = np.array([False, True], dtype=bool)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 6: Complex arrays
-    a = np.array([1 + 2j, 3 - 4j], dtype=np.complex64)
-    b = np.array([2 - 1j, 5], dtype=np.complex64)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    # Input 8: Mixed 0D (scalar-like) arrays
+    a = np.array(3.5, dtype=np.float32)
+    b = np.array([-2.0, 4.0], dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 7: One-element arrays
-    a = np.array([5.0], dtype=np.float32)
-    b = np.array([10.0, 20.0], dtype=np.float32)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    # Input 9: Large 1D int64 arrays
+    a = np.arange(10, dtype=np.int64)
+    b = np.arange(-5, 5, dtype=np.int64)
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 8: Large 1D arrays
-    a = np.random.randn(100).astype(np.float32)
-    b = np.random.randn(200).astype(np.float32)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    # Input 10: Empty 1D arrays
+    a = np.array([], dtype=np.float32)
+    b = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 9: Mixed shape dimensions
-    a = np.random.randn(2, 2, 1, 3).astype(np.float32)
-    b = np.random.randn(5).astype(np.float32)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    # Input 11: Multi-dimensional mixed shapes
+    a = np.random.randn(3, 2).astype(np.float64)
+    b = np.random.randn(2, 4, 1).astype(np.float64)
+    list_of_inputs.append({"a": a, "b": b})
 
-    # Input 10: Large integers
-    a = np.array([1000, 2000, 3000], dtype=np.int64)
-    b = np.array([-100, 200], dtype=np.int64)
-    list_of_inputs.append(copy.deepcopy({"a": a, "b": b}))
+    return [copy.deepcopy(x) for x in list_of_inputs]
 
-    return list_of_inputs
 
 generated_inputs["jax.numpy.outer"] = outer_inputs()
 

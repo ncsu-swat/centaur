@@ -4,43 +4,22 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax
+import numpy as np
+
 
 def erf_inv_inputs():
     list_of_inputs = []
 
-    # Input 1: float32 scalar 0.0
-    list_of_inputs.append({"x": np.float32(0.0)})
+    values = [0.0, 0.1, -0.1, 0.25, -0.25, 0.5, -0.5, 0.75, -0.75, 0.9, -0.9]
 
-    # Input 2: float64 scalar 0.5
-    list_of_inputs.append({"x": np.float64(0.5)})
-
-    # Input 3: float32 scalar -0.5
-    list_of_inputs.append({"x": np.float32(-0.5)})
-
-    # Input 4: 1D array of float32
-    list_of_inputs.append({"x": np.array([0.0, 0.1, -0.1], dtype=np.float32)})
-
-    # Input 5: 1D array of float64
-    list_of_inputs.append({"x": np.array([-0.9, 0.9, 0.0], dtype=np.float64)})
-
-    # Input 6: 2D array of float32
-    list_of_inputs.append({"x": np.array([[0.1, 0.2], [-0.3, -0.4]], dtype=np.float32)})
-
-    # Input 7: 2D array of float64
-    list_of_inputs.append({"x": np.array([[-0.5, 0.5], [0.0, -0.1]], dtype=np.float64)})
-
-    # Input 8: 3D array of float32
-    list_of_inputs.append({"x": np.array([[[0.1, -0.1], [0.2, -0.2]]], dtype=np.float32)})
-
-    # Input 9: float32 scalar near 1
-    list_of_inputs.append({"x": np.float32(0.99)})
-
-    # Input 10: float32 scalar near -1
-    list_of_inputs.append({"x": np.float32(-0.99)})
+    for val in values:
+        input_dict = {"x": val}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.erf_inv_3"] = erf_inv_inputs()
 

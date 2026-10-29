@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensors must have matching integer or boolean dtypes (Rule 13)
+# tensor inputs have matching integer dtypes (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] < 6, v["arg1_dtype"] == v["arg2_dtype"])) if n else
-          And(v["arg1_dtype"] < 6, v["arg1_dtype"] == v["arg2_dtype"]))
+    s.add(Not(And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 5)) if n else
+          And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 5))
 )
 
 def rule_13_func(arg1, arg2, solver=None, neg=False):

@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def circulant_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array (small length, standard)
+    # Input 1: 1D int32 array
     c = np.array([1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
-    # Input 2: 1D float32 array with negative and zero values
+    # Input 2: 1D float32 array with negative values
     c = np.array([-1.5, 0.0, 2.5, -3.0], dtype=np.float32)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
-    # Input 3: 1D float64 array of size 5
-    c = np.array([0.1, -0.2, 0.3, -0.4, 0.5], dtype=np.float64)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    # Input 3: 1D float64 array
+    c = np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
-    # Input 4: 2D int32 array (batch of vectors)
+    # Input 4: 1D complex64 array
+    c = np.array([1.0 + 2.0j, -3.0 + 0.5j, 4.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
+
+    # Input 5: 1D complex128 array
+    c = np.array([2.5 - 1.5j, -0.5 + 3.2j, 0.0 + 0.0j, 1.1 + 1.1j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
+
+    # Input 6: 1D single element array
+    c = np.array([42], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
+
+    # Input 7: 2D array (batch of 1D vectors)
     c = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
-    # Input 5: 2D float32 array (batch of size 3, vector size 4)
-    c = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    # Input 8: 2D float32 array with negative values
+    c = np.random.randn(4, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
-    # Input 6: 3D float32 array (multi-dimensional batch)
-    c = np.random.randn(2, 2, 5).astype(np.float32)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    # Input 9: 3D array (higher-order batching)
+    c = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
-    # Input 7: 1D complex64 array
-    c = (np.random.randn(4) + 1j * np.random.randn(4)).astype(np.complex64)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    # Input 10: 4D array with boolean/uint8 values
+    c = np.random.randint(0, 10, size=(2, 2, 3, 6)).astype(np.uint8)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
-    # Input 8: 1D int16 array
-    c = np.array([10, -20, 30], dtype=np.int16)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
-
-    # Input 9: 1D float32 array with single element (edge case N=1)
-    c = np.array([42.0], dtype=np.float32)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
-
-    # Input 10: 1D float32 array with sequential values
-    c = np.arange(10, dtype=np.float32)
-    list_of_inputs.append({"c": copy.deepcopy(c)})
+    # Input 11: 1D boolean array
+    c = np.array([True, False, True, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"c": c}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.circulant"] = circulant_inputs()
 

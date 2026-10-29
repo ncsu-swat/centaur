@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# out_sharding length must not exceed array dimension for tuple shape (Rule 5)
+# sharding tuple rank cannot exceed the rank of the array defined by tuple shape (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_length"] <= v["arg1_length"]) if n else
-          v["arg2_length"] <= v["arg1_length"])
+    s.add(Not(And((And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])), v["arg2_length"] <= v["arg1_length"])) if n else
+          And((And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])), v["arg2_length"] <= v["arg1_length"]))
 )
 
 def rule_5_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,25 @@ def rule_5_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, tuple) and all(isinstance(e, str) for e in arg2)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
         arg2_length = Int('arg2_length')
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
         solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 5
-        rule_5(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length})
+        rule_5(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_5(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length']}, neg)
+        rule_5(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_length': arg2['length']}, neg)

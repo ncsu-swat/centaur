@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For string input, it should be selected from a subset of valid JAX string arguments (Rule 37)
+# reduction operator string input (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), v["arg1_value"] == 5)) if n else
-          Or(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), v["arg1_value"] == 5))
+    s.add(Not(Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 9), v["arg1_value"] == 7), v["arg1_value"] == 8)) if n else
+          Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 9), v["arg1_value"] == 7), v["arg1_value"] == 8))
 )
 
 def rule_37_func(arg1, solver=None, neg=False):

@@ -4,87 +4,57 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def hypot_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar python integers
-    input_dict = {
-        "x1": 3,
-        "x2": 4
-    }
+    # Input 1: Classic Pythagorean triple (3, 4)
+    input_dict = {"x1": 3, "x2": 4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D numpy arrays of int32
-    input_dict = {
-        "x1": np.array([3, 5, 8], dtype=np.int32),
-        "x2": np.array([4, 12, 15], dtype=np.int32)
-    }
+    # Input 2: Zero values
+    input_dict = {"x1": 0, "x2": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D numpy arrays of int32, same shape
-    input_dict = {
-        "x1": np.array([[3, 4], [5, 12]], dtype=np.int32),
-        "x2": np.array([[4, 3], [12, 5]], dtype=np.int32)
-    }
+    # Input 3: Negative integers
+    input_dict = {"x1": -3, "x2": -4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative integer arrays, int32
-    input_dict = {
-        "x1": np.array([-3, -5, -8], dtype=np.int32),
-        "x2": np.array([-4, -12, -15], dtype=np.int32)
-    }
+    # Input 4: Pythagorean triple (5, 12)
+    input_dict = {"x1": 5, "x2": 12}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Scalar np.int64 and 1D np.int64 array
-    input_dict = {
-        "x1": np.int64(10),
-        "x2": np.array([20, 30, 40], dtype=np.int64)
-    }
+    # Input 5: Mixed signs with Pythagorean triple (-8, 15)
+    input_dict = {"x1": -8, "x2": 15}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Broadcasting 2D arrays (1, 3) and (3, 1), int32
-    input_dict = {
-        "x1": np.array([[1, 2, 3]], dtype=np.int32),
-        "x2": np.array([[4], [5], [6]], dtype=np.int32)
-    }
+    # Input 6: One zero and one positive integer
+    input_dict = {"x1": 0, "x2": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D numpy arrays, int16
-    input_dict = {
-        "x1": np.array([[[1, 2], [3, 4]]], dtype=np.int16),
-        "x2": np.array([[[5, 6], [7, 8]]], dtype=np.int16)
-    }
+    # Input 7: One positive integer and one zero
+    input_dict = {"x1": 7, "x2": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 0D numpy arrays (scalars as arrays), int32
-    input_dict = {
-        "x1": np.array(7, dtype=np.int32),
-        "x2": np.array(24, dtype=np.int32)
-    }
+    # Input 8: Mixed signs with larger values (20, -21)
+    input_dict = {"x1": 20, "x2": -21}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large integers, int64
-    input_dict = {
-        "x1": np.array([100000, 200000], dtype=np.int64),
-        "x2": np.array([300000, 400000], dtype=np.int64)
-    }
+    # Input 9: Large positive integers
+    input_dict = {"x1": 1000, "x2": 2000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Broadcasting 1D and 2D, int32
-    input_dict = {
-        "x1": np.array([1, 2, 3], dtype=np.int32),
-        "x2": np.array([[4, 5, 6], [7, 8, 9]], dtype=np.int32)
-    }
+    # Input 10: Negative and positive large integers
+    input_dict = {"x1": -9999, "x2": 1234}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 4D numpy arrays, int32
-    input_dict = {
-        "x1": np.zeros((2, 2, 2, 2), dtype=np.int32) + 3,
-        "x2": np.zeros((2, 2, 2, 2), dtype=np.int32) + 4
-    }
+    # Input 11: Unit values
+    input_dict = {"x1": 1, "x2": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative integer and zero
+    input_dict = {"x1": -100, "x2": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

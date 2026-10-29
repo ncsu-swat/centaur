@@ -4,134 +4,205 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def nanmean_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 2D array with some NaNs, float32
-    a = np.array([[1.0, np.nan, 3.0], [4.0, 5.0, np.nan]], dtype=np.float32)
-    where = np.array([[True, True, False], [True, False, True]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "dtype": np.float32,
-        "keepdims": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array with NaNs
+    a = np.array([1.0, np.nan, 3.0, 4.0, np.nan, 6.0], dtype=np.float32)
+    axis = 0
+    dtype = np.float32
+    keepdims = False
+    where = np.array([True, True, True, False, True, True], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 2: 3D array, float64, negative values, keepdims=True
-    a = np.array([[[np.nan, -2.0], [3.0, 4.0]], [[-5.0, 6.0], [np.nan, np.nan]]], dtype=np.float64)
-    where = np.ones_like(a, dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "dtype": np.float64,
-        "keepdims": True,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D array with negative values along axis 1
+    a = np.array(
+        [[-2.5, np.nan, 1.5], [np.nan, -0.5, -4.0]], dtype=np.float64
+    )
+    axis = 1
+    dtype = np.float64
+    keepdims = True
+    where = np.array([[True, True, False], [True, True, True]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 3: 1D array, all NaNs
-    a = np.array([np.nan, np.nan, np.nan], dtype=np.float32)
-    where = np.array([True, True, True], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "dtype": np.float32,
-        "keepdims": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, reduction along axis 0
+    a = np.array([[np.nan, 2.0], [3.0, np.nan], [5.0, 6.0]], dtype=np.float32)
+    axis = 0
+    dtype = np.float32
+    keepdims = False
+    where = np.ones((3, 2), dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 4: 2D array, large float64 values, negative axis
-    a = np.array([[1e10, np.nan], [np.nan, -1e10]], dtype=np.float64)
-    where = np.array([[True, False], [False, True]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "dtype": np.float64,
-        "keepdims": True,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 3D array with no NaNs, checking standard mean behaviour
+    # Input 4: 3D array with negative axis
     a = np.arange(24, dtype=np.float32).reshape(2, 3, 4)
-    where = a % 2 == 0  # Filter to only keep even numbers
-    input_dict = {
-        "a": a,
-        "axis": 2,
-        "dtype": np.float32,
-        "keepdims": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    a[0, 1, 2] = np.nan
+    a[1, 2, 0] = np.nan
+    axis = -1
+    dtype = np.float32
+    keepdims = True
+    where = np.ones((2, 3, 4), dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 6: 4D array, float32, reducing along axis 3
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    # Input 5: Broadcastable `where` mask with 3D array
+    a = np.random.randn(3, 4, 5).astype(np.float64)
+    a[a < 0] = np.nan
+    axis = 1
+    dtype = np.float64
+    keepdims = False
+    where = np.array([[[True]], [[False]], [[True]]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
+
+    # Input 6: 4D array with negative axis -2
+    a = np.random.randn(2, 2, 3, 2).astype(np.float32)
     a[0, 0, 0, 0] = np.nan
-    where = np.ones_like(a, dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 3,
-        "dtype": np.float32,
-        "keepdims": True,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis = -2
+    dtype = np.float32
+    keepdims = False
+    where = a > 0.0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 7: 2D array, where clause masks all elements
-    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    where = np.array([[False, False], [False, False]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "dtype": np.float32,
-        "keepdims": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: All elements NaN along a slice
+    a = np.array([[np.nan, np.nan], [1.0, 2.0]], dtype=np.float32)
+    axis = 1
+    dtype = np.float32
+    keepdims = True
+    where = np.ones((2, 2), dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 8: 2D array with float64, single element dimensions
-    a = np.array([[np.nan]], dtype=np.float64)
-    where = np.array([[True]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "dtype": np.float64,
-        "keepdims": True,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Integer input array converted via dtype=np.float32
+    a = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int32)
+    axis = 0
+    dtype = np.float32
+    keepdims = True
+    where = np.array([[True, False, True], [False, True, False]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 9: 3D array, axis=-2, float32, mixed NaNs
-    a = np.array([[[1.0, np.nan], [2.0, 3.0]], [[np.nan, np.nan], [4.0, 5.0]]], dtype=np.float32)
-    where = np.array([[[True, False], [True, True]], [[False, False], [True, True]]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": -2,
-        "dtype": np.float32,
-        "keepdims": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D array with where mask all False
+    a = np.array([10.5, 20.2, np.nan, -5.0], dtype=np.float64)
+    axis = 0
+    dtype = np.float64
+    keepdims = False
+    where = np.zeros(4, dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
-    # Input 10: 2D array, dtype cast to float64, keepdims=False
-    a = np.array([[10.5, np.nan, -5.5], [np.nan, 20.0, 30.0]], dtype=np.float32)
-    where = np.array([[True, True, True], [True, True, True]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "dtype": np.float64,
-        "keepdims": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D array with broadcastable 2D where mask
+    a = np.ones((2, 3, 4), dtype=np.float32)
+    a[0, :, :] = np.nan
+    axis = 2
+    dtype = np.float64
+    keepdims = False
+    where = np.array(
+        [[True, False, True, True], [False, True, True, False], [True, True, False, True]],
+        dtype=bool,
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "where": where,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.nanmean_1"] = nanmean_inputs()
 

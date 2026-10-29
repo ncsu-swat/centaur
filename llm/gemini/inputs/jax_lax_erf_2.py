@@ -4,48 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_erf_inputs():
+
+def erf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 2: Positive standard value
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Negative standard value
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large positive float
-    list_of_inputs.append({"x": 5.0})
+    # Input 4: Small positive value
+    input_dict = {"x": 0.1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large negative float
-    list_of_inputs.append({"x": -5.0})
+    # Input 5: Small negative value
+    input_dict = {"x": -0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Very small positive float
-    list_of_inputs.append({"x": 1e-6})
+    # Input 6: Large positive value
+    input_dict = {"x": 5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Numpy float32 scalar
-    list_of_inputs.append({"x": np.float32(0.5)})
+    # Input 7: Large negative value
+    input_dict = {"x": -5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Numpy float64 scalar
-    list_of_inputs.append({"x": np.float64(-2.5)})
+    # Input 8: Very small positive value close to zero
+    input_dict = {"x": 1e-7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Numpy float16 scalar
-    list_of_inputs.append({"x": np.float16(1.5)})
+    # Input 9: Positive fraction / pi
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Large numpy float
-    list_of_inputs.append({"x": np.float32(10.0)})
+    # Input 10: Negative float
+    input_dict = {"x": -2.718281828459045}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Very small negative numpy float
-    list_of_inputs.append({"x": np.float64(-1e-8)})
+    # Input 11: Very large magnitude positive float
+    input_dict = {"x": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.erf_2"] = jax_lax_erf_inputs()
+
+generated_inputs["jax.lax.erf_2"] = erf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

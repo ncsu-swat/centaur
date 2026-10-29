@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# a string input is equal to itself (Rule 66)
+# string input specifies a convolutional weight kernel layout (Rule 66)
 
 rule_66 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == v["arg1_value"]) if n else
-          v["arg1_value"] == v["arg1_value"])
+    s.add(Not(Or(Or(Or(Or(v["arg1_value"] == 17, v["arg1_value"] == 18), v["arg1_value"] == 23), v["arg1_value"] == 24), v["arg1_value"] == 25)) if n else
+          Or(Or(Or(Or(v["arg1_value"] == 17, v["arg1_value"] == 18), v["arg1_value"] == 23), v["arg1_value"] == 24), v["arg1_value"] == 25))
 )
 
 def rule_66_func(arg1, solver=None, neg=False):

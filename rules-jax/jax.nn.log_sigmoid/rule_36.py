@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The minimum value of the tensor elements should be greater than -10000.0, and the maximum value should be less than 10000.0 (Rule 36)
+# input tensor data type is explicitly float16, float32, or float64 (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(And(Select(v["arg1_range"], 0) > -10000, Select(v["arg1_range"], 1) < 10000)) if n else
-          And(Select(v["arg1_range"], 0) > -10000, Select(v["arg1_range"], 1) < 10000))
+    s.add(Not(Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8)) if n else
+          Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8))
 )
 
 def rule_36_func(arg1, solver=None, neg=False):
@@ -24,16 +24,15 @@ def rule_36_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 36
-        rule_36(solver, {'arg1_range': arg1_range})
+        rule_36(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_36(solver, {'arg1_range': arg1['range']}, neg)
+        rule_36(solver, {'arg1_dtype': arg1['dtype']}, neg)

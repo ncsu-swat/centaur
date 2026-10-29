@@ -4,55 +4,60 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def neg_inputs():
+
+def lax_neg_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with mixed positive and negative values
-    x = np.array([-2.5, 0.0, 3.14, -100.0, 42.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array
+    x = np.array([-2.5, 0.0, 3.5, -1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array
-    x = np.random.randn(3, 4).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D float64 array with positive and negative values
+    x = np.array([[-1.0, 2.0], [3.0, -4.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D int32 array
-    x = np.random.randint(-100, 100, size=(2, 3, 2)).astype(np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Scalar (0D array) int32
+    x = np.array(-42, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D int64 array
-    x = np.array([-922337203685477580, 0, 922337203685477580], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D int64 array
+    x = np.arange(-12, 12, dtype=np.int64).reshape((2, 3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: Scalar (0D array) float32
-    x = np.array(-5.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 2D int32 array
+    x = np.array([[10, -20], [-30, 40]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D float32 array
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Complex64 1D array
+    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, 0.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D int32 array
-    x = np.random.randint(-50, 50, size=(3, 3)).astype(np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Complex128 2D array
+    x = np.array(
+        [[2.5 - 1.5j, -4.0 + 0.0j], [0.0 + 0.0j, -1.2 - 3.4j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float64 array
-    x = np.array([-1e10, 0.0, 1e10], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D float16 array
+    x = np.random.randn(2, 2, 3, 3).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 5D int64 array
-    x = np.random.randint(-500, 500, size=(1, 2, 2, 1, 3)).astype(np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 1D float32 array with inf and nan
+    x = np.array([np.inf, -np.inf, np.nan, 0.0, -0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Large 1D float32 array
-    x = np.random.randn(1000).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array (0 elements) float32
+    x = np.empty((0, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.neg"] = neg_inputs()
+
+generated_inputs["jax.lax.neg"] = lax_neg_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

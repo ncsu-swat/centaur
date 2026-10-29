@@ -4,30 +4,36 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.lax
+import numpy as np
 
-class SafeTuple(tuple):
-    def __array__(self, *args, **kwargs):
-        return np.array(list(self), dtype=object)
 
-def generate_correlate2d_inputs():
+class PrecisionTuple(tuple):
+
+    def __array__(self, dtype=None, copy=None):
+        return np.array([0, 0], dtype=np.int32)
+
+
+def correlate2d_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 correlation with "full" mode
-    in1 = np.random.randn(3, 3).astype(np.float32)
-    in2 = np.random.randn(2, 2).astype(np.float32)
+    # Input 1: mode='full', float32, small square matrices
+    in1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    in2 = np.array([[0.5, -1.0], [2.0, 1.5]], dtype=np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "full",
         "boundary": "fill",
         "fillvalue": 0.0,
-        "precision": SafeTuple(('default', 'default'))
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: "same" mode with negative and positive values
+    # Input 2: mode='same', float32, square arrays
     in1 = np.random.randn(5, 5).astype(np.float32)
     in2 = np.random.randn(3, 3).astype(np.float32)
     input_dict = {
@@ -36,51 +42,14 @@ def generate_correlate2d_inputs():
         "mode": "same",
         "boundary": "fill",
         "fillvalue": 0.0,
-        "precision": SafeTuple(('high', 'high'))
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: "valid" mode using float64 data type
-    in1 = np.random.randn(4, 4).astype(np.float64)
-    in2 = np.random.randn(2, 2).astype(np.float64)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "valid",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": SafeTuple(('highest', 'highest'))
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Large dimensions with "full" mode
-    in1 = np.random.randn(6, 6).astype(np.float32)
-    in2 = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": SafeTuple(('default', 'default'))
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Rectangular filters on "same" mode
-    in1 = np.random.randn(10, 10).astype(np.float32)
-    in2 = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": SafeTuple(('high', 'high'))
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Same size arrays with "valid" mode
-    in1 = np.random.randn(2, 2).astype(np.float32)
+    # Input 3: mode='valid', float32, asymmetric dimensions
+    in1 = np.random.randn(6, 4).astype(np.float32)
     in2 = np.random.randn(2, 2).astype(np.float32)
     input_dict = {
         "in1": in1,
@@ -88,65 +57,121 @@ def generate_correlate2d_inputs():
         "mode": "valid",
         "boundary": "fill",
         "fillvalue": 0.0,
-        "precision": SafeTuple(('highest', 'highest'))
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST)
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Highly rectangular input dimensions
-    in1 = np.random.randn(7, 3).astype(np.float32)
-    in2 = np.random.randn(3, 2).astype(np.float32)
+    # Input 4: mode='full', float64, rectangular inputs
+    in1 = np.random.randn(4, 7).astype(np.float64)
+    in2 = np.random.randn(3, 2).astype(np.float64)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "full",
         "boundary": "fill",
         "fillvalue": 0.0,
-        "precision": SafeTuple(('default', 'default'))
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1x1 filter size with "same" mode
-    in1 = np.random.randn(8, 8).astype(np.float32)
-    in2 = np.random.randn(1, 1).astype(np.float32)
+    # Input 5: mode='same', float64, mixed precision values
+    in1 = np.random.randn(7, 3).astype(np.float64)
+    in2 = np.random.randn(3, 3).astype(np.float64)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "same",
         "boundary": "fill",
         "fillvalue": 0.0,
-        "precision": SafeTuple(('high', 'high'))
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.HIGH)
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Single-element arrays with "valid" mode
-    in1 = np.random.randn(1, 1).astype(np.float32)
-    in2 = np.random.randn(1, 1).astype(np.float32)
+    # Input 6: mode='valid', float32, same size inputs resulting in 1x1 output
+    in1 = np.random.randn(4, 4).astype(np.float32)
+    in2 = np.random.randn(4, 4).astype(np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "valid",
         "boundary": "fill",
         "fillvalue": 0.0,
-        "precision": SafeTuple(('highest', 'highest'))
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: High-precision float64 arrays with "same" mode
-    in1 = np.random.randn(12, 12).astype(np.float64)
-    in2 = np.random.randn(6, 6).astype(np.float64)
+    # Input 7: mode='full', 1-row arrays (horizontal strip)
+    in1 = np.random.randn(1, 6).astype(np.float32)
+    in2 = np.random.randn(1, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGHEST, jax.lax.Precision.DEFAULT)
+        ),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: mode='same', 1-column filter (vertical strip)
+    in1 = np.random.randn(8, 5).astype(np.float32)
+    in2 = np.random.randn(3, 1).astype(np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "same",
         "boundary": "fill",
         "fillvalue": 0.0,
-        "precision": SafeTuple(('default', 'default'))
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGH, jax.lax.Precision.DEFAULT)
+        ),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: mode='valid', float64, larger matrices with negative values
+    in1 = np.random.uniform(-5.0, 5.0, size=(10, 8)).astype(np.float64)
+    in2 = np.random.uniform(-2.0, 2.0, size=(4, 3)).astype(np.float64)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.HIGHEST)
+        ),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: mode='full', 1x1 filter
+    in1 = np.random.randn(3, 3).astype(np.float32)
+    in2 = np.array([[-2.5]], dtype=np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "full",
+        "boundary": "fill",
+        "fillvalue": 0.0,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.signal.correlate2d_2"] = generate_correlate2d_inputs()
+
+generated_inputs["jax.scipy.signal.correlate2d_2"] = correlate2d_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

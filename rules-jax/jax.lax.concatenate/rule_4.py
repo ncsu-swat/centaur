@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension must be non-negative and less than the tensor rank (Rule 4)
+# dimension must be a valid non-negative axis within the tensor's rank (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
     s.add(Not(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else

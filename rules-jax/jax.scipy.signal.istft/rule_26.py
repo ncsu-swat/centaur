@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# sampling frequency and segment length must both be positive (Rule 26)
+# sampling frequency float must be positive along with valid multi-dimensional Zxx (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > 0, v["arg2_value"] > 0)) if n else
-          And(v["arg1_value"] > 0, v["arg2_value"] > 0))
+    s.add(Not(And(v["arg1_ndim"] >= 2, v["arg2_value"] > 0)) if n else
+          And(v["arg1_ndim"] >= 2, v["arg2_value"] > 0))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_26_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not isinstance(arg2, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
-        arg2_value = Int('arg2_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_value = Real('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_value == arg2)
 
         # Constraints for rule 26
-        rule_26(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_26(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_26(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_26(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

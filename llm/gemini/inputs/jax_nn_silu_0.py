@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def silu_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with positive and negative values
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 2: 2D float32 array (matrix)
-    x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 3: 3D float32 array
-    x = np.random.randn(2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: 4D float32 array (often used in conv nets)
-    x = np.random.randn(2, 3, 8, 8).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: 1D float64 array for higher precision
-    x = np.random.randn(10).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 6: 1D float16 array for lower precision/mixed precision
-    x = np.random.randn(5).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 7: 0D array (scalar)
+    # Input 1: 0D scalar float32
     x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Large 1D array
-    x = np.linspace(-10.0, 10.0, 1000, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with mixed negative and positive values
+    x = np.array([-3.0, -1.0, 0.0, 1.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D array with large extreme values
-    x = np.array([[-100.0, -50.0], [50.0, 100.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array float64
+    x = np.random.randn(4, 5).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 3D array of all zeros
-    x = np.zeros((2, 2, 2), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 2D array float16
+    x = np.random.uniform(-5.0, 5.0, size=(8, 8)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: 2D array with very small values
-    x = np.random.uniform(-0.01, 0.01, size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D array (batch-like dimension)
+    x = np.random.randn(2, 4, 8).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 6: 4D array (image-like dimension NCHW)
+    x = np.random.randn(2, 3, 16, 16).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 7: All zeros array
+    x = np.zeros((3, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: Extreme positive and negative values
+    x = np.array([-100.0, -50.0, 0.0, 50.0, 100.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: Empty array
+    x = np.empty((0, 4), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 5D tensor
+    x = np.random.randn(1, 2, 3, 4, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array complex64
+    x = np.array([1.0 + 2.0j, -1.0 - 0.5j, 0.0 + 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.silu"] = silu_inputs()
 

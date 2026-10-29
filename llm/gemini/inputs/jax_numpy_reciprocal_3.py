@@ -4,44 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def reciprocal_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple scalar integer
-    list_of_inputs.append({"x": int(5)})
+    # Input 1: positive integer
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative scalar integer
-    list_of_inputs.append({"x": int(-10)})
+    # Input 2: positive unit integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D numpy array of int32
-    list_of_inputs.append({"x": np.array([1, 2, 3, 4], dtype=np.int32)})
+    # Input 3: negative unit integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D numpy array of int64
-    list_of_inputs.append({"x": np.array([[1, -2], [3, -4]], dtype=np.int64)})
+    # Input 4: negative integer
+    input_dict = {"x": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D numpy array of int16
-    list_of_inputs.append({"x": np.array([[[1], [2]], [[3], [4]]], dtype=np.int16)})
+    # Input 5: zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D numpy array of uint32
-    list_of_inputs.append({"x": np.array([10, 20, 30], dtype=np.uint32)})
+    # Input 6: larger positive integer
+    input_dict = {"x": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Scalar 0 as integer
-    list_of_inputs.append({"x": int(0)})
+    # Input 7: larger negative integer
+    input_dict = {"x": -5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D numpy array of int8 with negative and positive values
-    list_of_inputs.append({"x": np.array([-128, -1, 1, 127], dtype=np.int8)})
+    # Input 8: power of two
+    input_dict = {"x": 16}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D numpy array of int32
-    list_of_inputs.append({"x": np.ones((2, 2, 2, 2), dtype=np.int32) * 5})
+    # Input 9: negative power of two
+    input_dict = {"x": -8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Scalar np.int64
-    list_of_inputs.append({"x": np.int64(42)})
+    # Input 10: large integer
+    input_dict = {"x": 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 2D numpy array of uint8
-    list_of_inputs.append({"x": np.array([[1, 2], [3, 4]], dtype=np.uint8)})
+    # Input 11: non-power of two integer
+    input_dict = {"x": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: numpy integer scalar
+    input_dict = {"x": int(np.int32(42))}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

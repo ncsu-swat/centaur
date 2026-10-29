@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the requested output dtype cannot be string (Rule 53)
+# sequence of scalar floats as list or tuple must contain at least one element (Rule 53)
 
 rule_53 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] != 11) if n else
-          v["arg1_value"] != 11)
+    s.add(Not(v["arg1_length"] > 0) if n else
+          v["arg1_length"] > 0)
 )
 
 def rule_53_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_53_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not ((isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)) or (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_length = Int('arg1_length')
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 53
-        rule_53(solver, {'arg1_value': arg1_value})
+        rule_53(solver, {'arg1_length': arg1_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_53(solver, {'arg1_value': arg1['value']}, neg)
+        rule_53(solver, {'arg1_length': arg1['length']}, neg)

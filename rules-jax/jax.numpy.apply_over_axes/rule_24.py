@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# negative axes list elements must be within the valid negative indexing range of the tensor (Rule 24)
+# valid reduction operation on tensor requires tensor dimensionality of at least 1 (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0, True)) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0, True)) for i in range(6)]))
+    s.add(Not(And((Or(v["arg1_value"] == 6, v["arg1_value"] == 9)), v["arg2_ndim"] >= 1)) if n else
+          And((Or(v["arg1_value"] == 6, v["arg1_value"] == 9)), v["arg2_ndim"] >= 1))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -20,27 +20,24 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, str):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg2_ndim = Int('arg2_ndim')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg2_ndim == arg2.ndim)
 
         # Constraints for rule 24
-        rule_24(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_24(solver, {'arg1_value': arg1_value, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_24(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_24(solver, {'arg1_value': arg1['value'], 'arg2_ndim': arg2['ndim']}, neg)

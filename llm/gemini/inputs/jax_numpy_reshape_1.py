@@ -4,63 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def reshape_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D to 1D, shape 6, C order
-    a = np.arange(6, dtype=np.int32)
-    input_dict = {"a": a, "shape": 6, "order": "C", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array reshaped to same length, order 'C', copy False
+    a = np.arange(6, dtype=np.float32)
+    shape = 6
+    order = "C"
+    copy_val = False
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 2: 2D to 1D, shape -1 (inferred as 6), C order
-    a = np.arange(6, dtype=np.float32).reshape(2, 3)
-    input_dict = {"a": a, "shape": -1, "order": "C", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float32 array flattened with -1, order 'F', copy True
+    a = np.random.randn(2, 3).astype(np.float32)
+    shape = -1
+    order = "F"
+    copy_val = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 3: 3D to 1D, shape 8, F order
-    a = np.arange(8, dtype=np.float64).reshape(2, 2, 2)
-    input_dict = {"a": a, "shape": 8, "order": "F", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 3D int32 array reshaped to 1D total size, order 'C', copy True
+    a = np.arange(8, dtype=np.int32).reshape(2, 2, 2)
+    shape = 8
+    order = "C"
+    copy_val = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 4: 1D to 1D, shape -1 (inferred as 12), F order
-    a = np.arange(12, dtype=np.int64)
-    input_dict = {"a": a, "shape": -1, "order": "F", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 4D float64 array reshaped to size 12, order 'F', copy False
+    a = np.random.randn(1, 3, 2, 2).astype(np.float64)
+    shape = 12
+    order = "F"
+    copy_val = False
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 5: 2D to 1D, shape 10, C order, boolean dtype
-    a = np.array([True, False] * 5, dtype=np.bool_)
-    input_dict = {"a": a, "shape": 10, "order": "C", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 0D scalar array reshaped to 1D of size 1, order 'C', copy False
+    a = np.array(42, dtype=np.int64)
+    shape = 1
+    order = "C"
+    copy_val = False
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 6: 4D to 1D, shape -1, F order
-    a = np.ones((2, 2, 2, 2), dtype=np.float32)
-    input_dict = {"a": a, "shape": -1, "order": "F", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D empty array of size 0, reshaped to 0, order 'C', copy True
+    a = np.empty((0,), dtype=np.float32)
+    shape = 0
+    order = "C"
+    copy_val = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 7: 1D to 1D, shape 1, C order
-    a = np.array([42.0], dtype=np.float32)
-    input_dict = {"a": a, "shape": 1, "order": "C", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D empty array (0, 5) flattened with -1, order 'F', copy False
+    a = np.empty((0, 5), dtype=np.int16)
+    shape = -1
+    order = "F"
+    copy_val = False
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 8: 3D to 1D, shape 24, F order
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"a": a, "shape": 24, "order": "F", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D single-element array flattened with -1, order 'C', copy True
+    a = np.array([3.14], dtype=np.float32)
+    shape = -1
+    order = "C"
+    copy_val = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 9: 2D to 1D, shape -1, C order
-    a = np.random.randint(0, 10, size=(5, 5)).astype(np.int32)
-    input_dict = {"a": a, "shape": -1, "order": "C", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D bool array reshaped to 4, order 'C', copy False
+    a = np.array([[True, False], [False, True]], dtype=bool)
+    shape = 4
+    order = "C"
+    copy_val = False
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
 
-    # Input 10: 1D to 1D, shape 100, F order
-    a = np.arange(100, dtype=np.float32)
-    input_dict = {"a": a, "shape": 100, "order": "F", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D complex64 array reshaped to size 6, order 'F', copy True
+    a = (np.arange(6) + 1j * np.arange(6)).reshape(3, 2).astype(np.complex64)
+    shape = 6
+    order = "F"
+    copy_val = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
+
+    # Input 11: 3D uint8 array flattened with -1, order 'F', copy False
+    a = np.arange(24, dtype=np.uint8).reshape(2, 3, 4)
+    shape = -1
+    order = "F"
+    copy_val = False
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    )
+
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.reshape_1"] = reshape_inputs()
 

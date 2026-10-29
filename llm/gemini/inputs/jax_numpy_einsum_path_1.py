@@ -4,95 +4,85 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_einsum_path_inputs():
+
+def einsum_path_inputs():
     list_of_inputs = []
 
-    # Input 1: Transpose operation (2D) with float32
-    input_dict = {
-        "subscripts": "ij->ji",
-        "operands": np.random.randn(3, 4).astype(np.float32),
-        "optimize": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D transpose (float32)
+    operands = np.random.randn(5, 7).astype(np.float32)
+    list_of_inputs.append(
+        {"subscripts": "ij->ji", "operands": operands, "optimize": True}
+    )
 
-    # Input 2: Diagonal extraction with float32
-    input_dict = {
-        "subscripts": "ii->i",
-        "operands": np.random.randn(5, 5).astype(np.float32),
-        "optimize": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D trace (int32, negative values)
+    operands = np.random.randint(-10, 10, size=(4, 4), dtype=np.int32)
+    list_of_inputs.append(
+        {"subscripts": "ii", "operands": operands, "optimize": False}
+    )
 
-    # Input 3: Permutation of 3D tensor with float64
-    input_dict = {
-        "subscripts": "ijk->kij",
-        "operands": np.random.randn(2, 3, 4).astype(np.float64),
-        "optimize": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D sum reduction (float64)
+    operands = np.random.randn(100).astype(np.float64)
+    list_of_inputs.append(
+        {"subscripts": "i->", "operands": operands, "optimize": True}
+    )
 
-    # Input 4: Trace with int32
-    input_dict = {
-        "subscripts": "ii",
-        "operands": np.random.randint(-10, 10, size=(10, 10)).astype(np.int32),
-        "optimize": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D row sum reduction (float32)
+    operands = np.random.randn(8, 12).astype(np.float32)
+    list_of_inputs.append(
+        {"subscripts": "ij->i", "operands": operands, "optimize": False}
+    )
 
-    # Input 5: Sum reduction of 1D vector with float32
-    input_dict = {
-        "subscripts": "i->",
-        "operands": np.random.randn(100).astype(np.float32),
-        "optimize": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D tensor partial trace (complex64)
+    operands = (
+        np.random.randn(6, 4, 6) + 1j * np.random.randn(6, 4, 6)
+    ).astype(np.complex64)
+    list_of_inputs.append(
+        {"subscripts": "iji->j", "operands": operands, "optimize": True}
+    )
 
-    # Input 6: Sum reduction along columns with float32
-    input_dict = {
-        "subscripts": "ij->i",
-        "operands": np.random.randn(10, 20).astype(np.float32),
-        "optimize": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D tensor axis permutation (int64)
+    operands = np.random.randint(-5, 5, size=(2, 3, 4, 5), dtype=np.int64)
+    list_of_inputs.append(
+        {"subscripts": "ijkl->lkji", "operands": operands, "optimize": True}
+    )
 
-    # Input 7: Sum reduction of 3D tensor with float64
-    input_dict = {
-        "subscripts": "ijk->",
-        "operands": np.random.randn(2, 2, 2).astype(np.float64),
-        "optimize": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D diagonal extraction (float32)
+    operands = np.random.randn(6, 6).astype(np.float32)
+    list_of_inputs.append(
+        {"subscripts": "ii->i", "operands": operands, "optimize": False}
+    )
 
-    # Input 8: No-op on a 1D vector with int32
-    input_dict = {
-        "subscripts": "i",
-        "operands": np.random.randint(-5, 5, size=(5,)).astype(np.int32),
-        "optimize": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D tensor total reduction (float64)
+    operands = np.random.randn(3, 4, 5).astype(np.float64)
+    list_of_inputs.append(
+        {"subscripts": "ijk->", "operands": operands, "optimize": True}
+    )
 
-    # Input 9: Ellipsis transpose with float32
-    input_dict = {
-        "subscripts": "ij...->ji...",
-        "operands": np.random.randn(2, 3, 4, 5).astype(np.float32),
-        "optimize": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D tensor permutation (float16)
+    operands = np.random.randn(2, 2, 3, 2, 4).astype(np.float16)
+    list_of_inputs.append(
+        {"subscripts": "abcde->edcba", "operands": operands, "optimize": True}
+    )
 
-    # Input 10: Ellipsis diagonal with float32
-    input_dict = {
-        "subscripts": "ii...->...",
-        "operands": np.random.randn(3, 3, 4).astype(np.float32),
-        "optimize": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D identity copy (int8)
+    operands = np.random.randint(-128, 127, size=(16,), dtype=np.int8)
+    list_of_inputs.append(
+        {"subscripts": "i->i", "operands": operands, "optimize": False}
+    )
+
+    # Input 11: 3D slice reduction to matrix (float32)
+    operands = np.random.randn(4, 5, 6).astype(np.float32)
+    list_of_inputs.append(
+        {"subscripts": "ijk->ik", "operands": operands, "optimize": True}
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.einsum_path_1"] = jax_numpy_einsum_path_inputs()
+
+generated_inputs["jax.numpy.einsum_path_1"] = einsum_path_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

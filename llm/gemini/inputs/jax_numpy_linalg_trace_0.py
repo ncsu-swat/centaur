@@ -4,63 +4,118 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def trace_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32, offset 0, dtype float32
+    # Input 1: 2D square float32 matrix, default offset
     x = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {"x": x, "offset": 0, "dtype": np.float32}
+    input_dict = {
+        "x": x,
+        "offset": 0,
+        "dtype": np.dtype(np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32, offset 1, dtype float64
-    x = np.random.randint(-10, 10, size=(5, 5)).astype(np.int32)
-    input_dict = {"x": x, "offset": 1, "dtype": np.float64}
+    # Input 2: 2D rectangular int32 matrix with positive offset
+    x = np.random.randint(-10, 10, size=(3, 5)).astype(np.int32)
+    input_dict = {
+        "x": x,
+        "offset": 1,
+        "dtype": np.dtype(np.int32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float64, offset -1, dtype float32
-    x = np.random.randn(3, 5).astype(np.float64)
-    input_dict = {"x": x, "offset": -1, "dtype": np.float32}
+    # Input 3: 2D rectangular float64 matrix with negative offset
+    x = np.random.randn(5, 3).astype(np.float64)
+    input_dict = {
+        "x": x,
+        "offset": -1,
+        "dtype": np.dtype(np.float64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float32 (batched), offset 0, dtype float32
-    x = np.random.randn(2, 4, 4).astype(np.float32)
-    input_dict = {"x": x, "offset": 0, "dtype": np.float32}
+    # Input 4: 3D batched square matrices, offset 0, type promotion to float64
+    x = np.random.randn(2, 3, 3).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "offset": 0,
+        "dtype": np.dtype(np.float64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D float64, offset 2, dtype float64
-    x = np.random.randn(3, 6, 6).astype(np.float64)
-    input_dict = {"x": x, "offset": 2, "dtype": np.float64}
+    # Input 5: 3D batched rectangular int64 matrices, negative offset
+    x = np.random.randint(-100, 100, size=(4, 6, 4)).astype(np.int64)
+    input_dict = {
+        "x": x,
+        "offset": -2,
+        "dtype": np.dtype(np.int64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float32, offset -2, dtype float32
-    x = np.random.randn(2, 3, 5, 5).astype(np.float32)
-    input_dict = {"x": x, "offset": -2, "dtype": np.float32}
+    # Input 6: 4D batched complex64 matrices with positive offset
+    x = (np.random.randn(2, 2, 4, 4) + 1j * np.random.randn(2, 2, 4, 4)).astype(
+        np.complex64
+    )
+    input_dict = {
+        "x": x,
+        "offset": 2,
+        "dtype": np.dtype(np.complex64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D complex64, offset 0, dtype complex128
-    x = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    input_dict = {"x": x, "offset": 0, "dtype": np.complex128}
+    # Input 7: 4D batched complex128 matrices with negative offset
+    x = (np.random.randn(3, 1, 5, 5) + 1j * np.random.randn(3, 1, 5, 5)).astype(
+        np.complex128
+    )
+    input_dict = {
+        "x": x,
+        "offset": -1,
+        "dtype": np.dtype(np.complex128),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D float32, offset -3, dtype float64
-    x = np.random.randn(6, 4).astype(np.float32)
-    input_dict = {"x": x, "offset": -3, "dtype": np.float64}
+    # Input 8: 5D batched float32 matrices with offset 0
+    x = np.random.randn(2, 1, 3, 3, 3).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "offset": 0,
+        "dtype": np.dtype(np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D int32, offset 1, dtype int64
-    x = np.random.randint(-5, 5, size=(2, 3, 3)).astype(np.int32)
-    input_dict = {"x": x, "offset": 1, "dtype": np.int64}
+    # Input 9: 2D boolean matrix cast to int32 dtype
+    x = np.random.choice([True, False], size=(6, 6))
+    input_dict = {
+        "x": x,
+        "offset": 0,
+        "dtype": np.dtype(np.int32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D float64, offset 3, dtype float64
-    x = np.random.randn(2, 2, 7, 7).astype(np.float64)
-    input_dict = {"x": x, "offset": 3, "dtype": np.float64}
+    # Input 10: 2D matrix with large positive offset
+    x = np.random.randn(8, 8).astype(np.float64)
+    input_dict = {
+        "x": x,
+        "offset": 5,
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D batched rectangular matrices with large negative offset
+    x = np.random.randn(3, 7, 5).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "offset": -4,
+        "dtype": np.dtype(np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.trace"] = trace_inputs()
 

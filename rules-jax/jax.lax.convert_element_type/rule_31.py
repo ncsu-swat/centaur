@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# prevent casting negative integer values to unsigned or boolean types (Rule 31)
+# when casting scalar numeric operand to 32-bit signed integer, value must be within int32 range (Rule 31)
 
 rule_31 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] < 0, And(And(And(v["arg2_value"] != 0, v["arg2_value"] != 5), 1 <= v["arg2_value"]), v["arg2_value"] <= 10), And(0 <= v["arg2_value"], v["arg2_value"] <= 10))) if n else
-          If(v["arg1_value"] < 0, And(And(And(v["arg2_value"] != 0, v["arg2_value"] != 5), 1 <= v["arg2_value"]), v["arg2_value"] <= 10), And(0 <= v["arg2_value"], v["arg2_value"] <= 10)))
+    s.add(Not(If(v["arg2_value"] == 3, And(v["arg1_value"] >= -2147483648, v["arg1_value"] <= 2147483647), True)) if n else
+          If(v["arg2_value"] == 3, And(v["arg1_value"] >= -2147483648, v["arg1_value"] <= 2147483647), True))
 )
 
 def rule_31_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,16 @@ def rule_31_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 31

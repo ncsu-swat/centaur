@@ -4,53 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def hard_silu_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with boundary values around hard sigmoid thresholds (-3.0 and 3.0)
+    # Input 1: 1D float32 array with positive, negative, and zero values
     x = np.array([-4.0, -3.0, -1.5, 0.0, 1.5, 3.0, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float32 array with random values
-    x = np.random.uniform(-5.0, 5.0, size=(3, 5)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D float32 array
+    x = np.random.randn(4, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 3: 3D float64 array
-    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: Scalar (0D array) float32
-    x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar array (float32)
+    x = np.array(-2.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 4D float32 array with saturated values
-    x = np.array([[[[-100.0]], [[0.0]], [[100.0]]]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 4D float16 array
+    x = np.random.randn(2, 2, 3, 3).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D float16 array
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Large 1D array with values well outside [-3, 3] range
+    x = np.linspace(-10.0, 10.0, 100, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D float32 array containing special values (infinity, NaN)
-    x = np.array([[np.nan, np.inf], [-np.inf, 0.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: High-dimensional (5D) float32 array
-    x = np.random.normal(0, 1, size=(2, 2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Integer array (int32)
+    x = np.array([-5, -3, -1, 0, 1, 3, 5], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D float32 array of all zeros
-    x = np.zeros((10,), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 5D float32 array
+    x = np.random.uniform(-5.0, 5.0, size=(1, 2, 2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float32 array of large positive values
-    x = np.ones((5,), dtype=np.float32) * 10.0
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 2D array with specific edge boundaries (-3, +3, 0)
+    x = np.array([[-3.0, 0.0, 3.0], [-6.0, 1.0, 6.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.hard_silu"] = hard_silu_inputs()
 

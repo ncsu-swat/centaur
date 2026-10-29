@@ -10,95 +10,65 @@ import copy
 def roll_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, 1D shift and axis
-    a = np.arange(10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "shift": (2,),
-        "axis": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, float32, positive shift
+    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    shift = (2,)
+    axis = (0,)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 2: 2D float32 array, shift and axis of length 2
-    a = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "shift": (1, 2),
-        "axis": (0, 1)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array, int32, negative shift
+    a = np.arange(10, dtype=np.int32)
+    shift = (-3,)
+    axis = (0,)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 3: 2D int32 array, negative shifts
-    a = np.arange(12).reshape(3, 4).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "shift": (-1, -2),
-        "axis": (0, 1)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, float64, shift along both axes
+    a = np.arange(12, dtype=np.float64).reshape((3, 4))
+    shift = (1, -2)
+    axis = (0, 1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 4: 3D float64 array, 3D shift and axis
-    a = np.random.randn(3, 4, 5).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "shift": (2, -1, 3),
-        "axis": (0, 1, 2)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array, bool, shift along one axis
+    a = np.array([[True, False], [False, True]], dtype=np.bool_)
+    shift = (1,)
+    axis = (1,)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 5: 3D float32 array, rolling only 2 axes
-    a = np.random.randn(2, 5, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "shift": (2, -2),
-        "axis": (1, 2)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array, complex64, shift along axis 0 and 2
+    a = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
+    shift = (-1, 2)
+    axis = (0, 2)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 6: 4D float32 array, rolling 3 axes with negative axes indices
-    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "shift": (1, 2, -1),
-        "axis": (0, -2, -1)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array, int64, roll along negative axes
+    a = np.arange(24, dtype=np.int64).reshape((2, 3, 4))
+    shift = (2, -1)
+    axis = (-3, -1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 7: 2D boolean array
-    a = (np.random.randn(5, 5) > 0).astype(bool)
-    input_dict = {
-        "a": a,
-        "shift": (2, 2),
-        "axis": (0, 1)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D array, uint8, shift along all axes
+    a = np.arange(16, dtype=np.uint8).reshape((2, 2, 2, 2))
+    shift = (1, 0, -1, 2)
+    axis = (0, 1, 2, 3)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 8: 1D float32 array, negative axis index
-    a = np.arange(5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "shift": (-2,),
-        "axis": (-1,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D array, float32, zero shifts
+    a = np.ones((5, 5), dtype=np.float32)
+    shift = (0, 0)
+    axis = (0, 1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 9: 5D float32 array, rolling 2 non-contiguous axes
-    a = np.random.randn(2, 2, 3, 3, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "shift": (1, -1),
-        "axis": (0, 4)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D array, float16, large shift values exceeding dimension sizes
+    a = np.random.randn(3, 4, 5).astype(np.float16)
+    shift = (10, -15, 23)
+    axis = (0, 1, 2)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
-    # Input 10: 2D complex64 array
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "shift": (1, 1),
-        "axis": (0, 1)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D array, int16, negative axis index
+    a = np.array([10, 20, 30, 40], dtype=np.int16)
+    shift = (-1,)
+    axis = (-1,)
+    list_of_inputs.append(copy.deepcopy({"a": a, "shift": shift, "axis": axis}))
 
     return list_of_inputs
 

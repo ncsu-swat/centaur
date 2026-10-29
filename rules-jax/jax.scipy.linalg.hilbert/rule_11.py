@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# matrix size multiplied by two must be non-negative (Rule 11)
+# order of the Hilbert matrix must be strictly positive (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] * 2 >= 0) if n else
-          v["arg1_value"] * 2 >= 0)
+    s.add(Not(0 < v["arg1_value"]) if n else
+          0 < v["arg1_value"])
 )
 
 def rule_11_func(arg1, solver=None, neg=False):

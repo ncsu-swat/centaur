@@ -4,83 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fmax_inputs():
     list_of_inputs = []
 
-    # Input 1
+    # Input 1: 1D float array with positive float scalar
     input_dict = {
         "x1": 5.0,
-        "x2": np.array([1.0, 7.0, 9.0, 4.0], dtype=np.float32)
+        "x2": np.array([1.0, 7.0, 9.0, 4.0], dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
+    # Input 2: 2D float array with negative float scalar
     input_dict = {
         "x1": -2.5,
-        "x2": np.array([-5.0, 0.0, 2.5], dtype=np.float32)
+        "x2": np.array([[-3.0, 0.0], [4.5, -5.2]], dtype=np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
+    # Input 3: Array with NaN values to test NaN handling
+    input_dict = {
+        "x1": 3.14,
+        "x2": np.array([np.nan, 1.0, np.nan, 5.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Scalar float with Inf / -Inf in the tensor
     input_dict = {
         "x1": 0.0,
-        "x2": np.random.randn(3, 3).astype(np.float32)
+        "x2": np.array([-np.inf, np.inf, 0.0, -1.0], dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    input_dict = {
-        "x1": float('nan'),
-        "x2": np.array([[1.0, np.nan], [3.0, 4.0]], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5
-    input_dict = {
-        "x1": float('inf'),
-        "x2": np.random.randn(2, 2, 2).astype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6
-    input_dict = {
-        "x1": -100.0,
-        "x2": np.linspace(-200.0, 200.0, 10).astype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7
-    input_dict = {
-        "x1": 1.5,
-        "x2": np.array([[[1.0, 2.0], [3.0, 4.0]], [[0.0, -1.0], [5.0, 1.5]]], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8
-    input_dict = {
-        "x1": float('-inf'),
-        "x2": np.array([1.0, float('nan'), float('inf'), float('-inf')], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9
+    # Input 5: 3D tensor with positive scalar
     input_dict = {
         "x1": 10.0,
-        "x2": np.zeros((1, 5), dtype=np.float32)
+        "x2": np.random.randn(2, 3, 4).astype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
+    # Input 6: 0D tensor (scalar array)
     input_dict = {
-        "x1": -0.5,
-        "x2": np.ones((4, 4, 1), dtype=np.float32) * -1.0
+        "x1": -1.0,
+        "x2": np.array(-0.5, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Float scalar with integer tensor
+    input_dict = {
+        "x1": 4.5,
+        "x2": np.array([[1, 5, 3], [7, 2, 4]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Scalar float with 4D tensor
+    input_dict = {
+        "x1": 1.25,
+        "x2": np.ones((2, 2, 2, 2), dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large/extreme float values
+    input_dict = {
+        "x1": float(np.finfo(np.float32).max),
+        "x2": np.array([1e30, 1e38, -1e38], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Scalar float NaN
+    input_dict = {
+        "x1": float("nan"),
+        "x2": np.array([1.0, -2.0, np.nan, np.inf], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Float infinity scalar
+    input_dict = {
+        "x1": float("inf"),
+        "x2": np.array([[-100.0, 50.0], [np.nan, 200.0]], dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fmax_3"] = fmax_inputs()
 

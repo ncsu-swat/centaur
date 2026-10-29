@@ -7,40 +7,47 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The dimension of a along axisa must be either 2 or 3 (Rule 21)
+# axisa and axisb must be valid axis indices for their respective tensors (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(Or(Select(v["arg1_shape"], If(v["arg2_value"] >= 0, v["arg2_value"], v["arg1_ndim"] + v["arg2_value"])) == 2, Select(v["arg1_shape"], If(v["arg2_value"] >= 0, v["arg2_value"], v["arg1_ndim"] + v["arg2_value"])) == 3)) if n else
-          Or(Select(v["arg1_shape"], If(v["arg2_value"] >= 0, v["arg2_value"], v["arg1_ndim"] + v["arg2_value"])) == 2, Select(v["arg1_shape"], If(v["arg2_value"] >= 0, v["arg2_value"], v["arg1_ndim"] + v["arg2_value"])) == 3))
+    s.add(Not(And(And(And(0 - v["arg1_ndim"] <= v["arg3_value"], v["arg3_value"] < v["arg1_ndim"]), 0 - v["arg2_ndim"] <= v["arg4_value"]), v["arg4_value"] < v["arg2_ndim"])) if n else
+          And(And(And(0 - v["arg1_ndim"] <= v["arg3_value"], v["arg3_value"] < v["arg1_ndim"]), 0 - v["arg2_ndim"] <= v["arg4_value"]), v["arg4_value"] < v["arg2_ndim"]))
 )
 
-def rule_21_func(arg1, arg2, solver=None, neg=False):
+def rule_21_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not isinstance(arg2, np.ndarray):
+            return False
+        if not (isinstance(arg3, (int, np.integer)) and not isinstance(arg3, bool)):
+            return False
+        if not (isinstance(arg4, (int, np.integer)) and not isinstance(arg4, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
-        arg2_value = Int('arg2_value')
+        arg2_ndim = Int('arg2_ndim')
+        arg3_value = Int('arg3_value')
+        arg4_value = Int('arg4_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        for i in range(arg1.ndim):
-            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg3_value == int(arg3))
+        solver.add(arg4_value == int(arg4))
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_21(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg3_value': arg3_value, 'arg4_value': arg4_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_21(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg3_value': arg3['value'], 'arg4_value': arg4['value']}, neg)

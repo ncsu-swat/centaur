@@ -4,65 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
-import jax.scipy.special as jsp
-import scipy.special
+import numpy as np
 
-# Monkeypatch jax.scipy.special.dawsn since it may not be present in the JAX version
-def dawsn_jax(x):
-    if isinstance(x, jax.core.Tracer):
-        return jnp.zeros_like(x)
-    return jnp.array(scipy.special.dawsn(np.array(x)))
-
-jsp.dawsn = dawsn_jax
 
 def dawsn_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array
-    x = np.array([0.0, 1.0, -1.0, 2.0, -2.0], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 1: 0D array (scalar)
+    x = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: Another 1D float32 array with different values
-    x = np.array([0.5, 1.5, -0.5, -1.5], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 2: 1D array of positive values
+    x = np.array([0.1, 0.5, 1.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D float32 array
-    x = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 3: 1D array of negative values
+    x = np.array([-0.1, -0.5, -1.0, -2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: Scalar-like 1D array
-    x = np.array([0.0], dtype=np.float32)
-    list_of_inputs.append({"x": x})
-
-    # Input 5: 1D float64 array
-    x = np.array([0.0, 1.0, -1.0, 2.0, -2.0], dtype=np.float64)
-    list_of_inputs.append({"x": x})
-
-    # Input 6: 2D float64 array
-    x = np.array([[0.5, -0.5], [1.5, -1.5]], dtype=np.float64)
-    list_of_inputs.append({"x": x})
-
-    # Input 7: Larger 1D float32 array
+    # Input 4: 1D array spanning negative to positive
     x = np.linspace(-3.0, 3.0, 10, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Larger 1D float64 array
-    x = np.linspace(-5.0, 5.0, 10, dtype=np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 5: 2D array float32
+    x = np.array([[-1.0, 0.0, 1.0], [2.0, -2.0, 0.5]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 3D float32 array
-    x = np.ones((2, 2, 2), dtype=np.float32) * 0.5
-    list_of_inputs.append({"x": x})
+    # Input 6: 2D array float64
+    x = np.array([[0.1, -0.2], [-0.3, 0.4]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 3D float64 array
-    x = np.ones((2, 2, 2), dtype=np.float64) * -0.5
-    list_of_inputs.append({"x": x})
+    # Input 7: 3D array float32
+    x = np.ones((2, 3, 4), dtype=np.float32) * 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: 3D array with varying signs
+    x = np.array([[[-1.0, 1.0], [2.0, -2.0]]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 4D array float32
+    x = np.zeros((1, 2, 2, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 1D array of float64 values
+    x = np.array([5.0, 10.0, 20.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.dawsn"] = dawsn_inputs()
 

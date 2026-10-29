@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# All elements in the input tuple of integers must be well-defined (Rule 16)
+# Input tuple of integers must contain valid 32-bit integer values (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) - Select(v["arg1_values"], i) == 0) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) - Select(v["arg1_values"], i) == 0) for i in range(6)]))
+    s.add(Not(And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -2147483648, Select(v["arg1_values"], i) <= 2147483647)) for i in range(6)]))) if n else
+          And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -2147483648, Select(v["arg1_values"], i) <= 2147483647)) for i in range(6)])))
 )
 
 def rule_16_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_16_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 16
-        rule_16(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_16(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_16(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_16(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

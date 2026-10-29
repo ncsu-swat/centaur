@@ -4,44 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def asinh_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 2: Positive float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Negative float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large float
-    list_of_inputs.append({"x": 1e6})
+    # Input 4: Small positive float
+    input_dict = {"x": 1e-7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Very small float
-    list_of_inputs.append({"x": 1e-6})
+    # Input 5: Small negative float
+    input_dict = {"x": -1e-7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy float32 positive scalar
-    list_of_inputs.append({"x": np.float32(2.5)})
+    # Input 6: Large positive float
+    input_dict = {"x": 1e10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy float32 negative scalar
-    list_of_inputs.append({"x": np.float32(-3.5)})
+    # Input 7: Large negative float
+    input_dict = {"x": -1e10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy float64 positive scalar
-    list_of_inputs.append({"x": np.float64(10.2)})
+    # Input 8: Fractional float
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy float16 positive scalar
-    list_of_inputs.append({"x": np.float16(0.5)})
+    # Input 9: Negative fractional float
+    input_dict = {"x": -2.718281828459045}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Positive infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 10: Value using np.pi
+    input_dict = {"x": float(np.pi)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 11: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

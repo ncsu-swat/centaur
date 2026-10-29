@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input tensor must have a floating-point or complex data type, excluding boolean, integer, string, and dtype types (Rule 12)
+# input tensor must be of floating-point or complex type (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(And(And(And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 1), v["arg1_dtype"] != 2), v["arg1_dtype"] != 3), v["arg1_dtype"] != 4), v["arg1_dtype"] != 5), v["arg1_dtype"] != 11), v["arg1_dtype"] != 12)) if n else
-          And(And(And(And(And(And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 1), v["arg1_dtype"] != 2), v["arg1_dtype"] != 3), v["arg1_dtype"] != 4), v["arg1_dtype"] != 5), v["arg1_dtype"] != 11), v["arg1_dtype"] != 12))
+    s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
+          And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
 )
 
 def rule_12_func(arg1, solver=None, neg=False):

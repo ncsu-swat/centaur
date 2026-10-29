@@ -4,79 +4,109 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
-import jax
 import copy
+import numpy as np
 
-jax.lax.Precision.__lt__ = lambda self, other: False
-jax.lax.Precision.__le__ = lambda self, other: True
-jax.lax.Precision.__gt__ = lambda self, other: False
-jax.lax.Precision.__ge__ = lambda self, other: True
+
+class PrecisionTuple(tuple):
+
+    def __array__(self, dtype=None, copy=None):
+        return np.array([0, 0], dtype=dtype)
+
 
 def batch_matmul_inputs():
     list_of_inputs = []
 
-    # Input 1
+    # Input 1: Basic 3D batch matmul with float32 and default precision
     lhs = np.random.randn(2, 3, 4).astype(np.float32)
     rhs = np.random.randn(2, 4, 5).astype(np.float32)
-    precision = (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    precision = PrecisionTuple(("default", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 2
-    lhs = np.random.randn(1, 5, 8).astype(np.float32)
-    rhs = np.random.randn(1, 8, 3).astype(np.float32)
-    precision = (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 2: Higher precision (float64) with highest precision
+    lhs = np.random.randn(4, 8, 16).astype(np.float64)
+    rhs = np.random.randn(4, 16, 8).astype(np.float64)
+    precision = PrecisionTuple(("highest", "highest"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 3
-    lhs = np.random.randn(4, 10, 2).astype(np.float64)
-    rhs = np.random.randn(4, 2, 6).astype(np.float64)
-    precision = (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 3: Float16 with high precision
+    lhs = np.random.randn(1, 10, 10).astype(np.float16)
+    rhs = np.random.randn(1, 10, 10).astype(np.float16)
+    precision = PrecisionTuple(("high", "high"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 4
-    lhs = np.random.randn(2, 2, 4, 3).astype(np.float32)
-    rhs = np.random.randn(2, 2, 3, 5).astype(np.float32)
-    precision = (jax.lax.Precision.DEFAULT, jax.lax.Precision.HIGH)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 4: Negative and zero values
+    lhs = np.array([[[-1.0, 0.0], [2.0, -3.0]]], dtype=np.float32)
+    rhs = np.array([[[0.0, -5.0], [1.0, 4.0]]], dtype=np.float32)
+    precision = PrecisionTuple(("default", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 5
-    lhs = (np.random.randn(8, 16, 16) + 1j * np.random.randn(8, 16, 16)).astype(np.complex64)
-    rhs = (np.random.randn(8, 16, 16) + 1j * np.random.randn(8, 16, 16)).astype(np.complex64)
-    precision = (jax.lax.Precision.HIGH, jax.lax.Precision.HIGHEST)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 5: Single-element inner dimensions (vector outer product style in batch)
+    lhs = np.random.randn(5, 7, 1).astype(np.float32)
+    rhs = np.random.randn(5, 1, 6).astype(np.float32)
+    precision = PrecisionTuple(("default", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 6
-    lhs = np.random.randn(3, 7, 5).astype(np.float32)
-    rhs = np.random.randn(3, 5, 2).astype(np.float32)
-    precision = (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 6: Single-element outer dimensions (inner product style in batch)
+    lhs = np.random.randn(3, 1, 12).astype(np.float32)
+    rhs = np.random.randn(3, 12, 1).astype(np.float32)
+    precision = PrecisionTuple(("high", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 7
-    lhs = np.random.randn(5, 1, 3).astype(np.float32)
-    rhs = np.random.randn(5, 3, 10).astype(np.float32)
-    precision = (jax.lax.Precision.HIGHEST, jax.lax.Precision.DEFAULT)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 7: Complex64 numbers
+    lhs = (np.random.randn(2, 4, 3) + 1j * np.random.randn(2, 4, 3)).astype(
+        np.complex64
+    )
+    rhs = (np.random.randn(2, 3, 5) + 1j * np.random.randn(2, 3, 5)).astype(
+        np.complex64
+    )
+    precision = PrecisionTuple(("default", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 8
-    lhs = np.random.randn(2, 3, 12, 8).astype(np.float64)
-    rhs = np.random.randn(2, 3, 8, 15).astype(np.float64)
-    precision = (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 8: Complex128 numbers with asymmetric precision
+    lhs = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(
+        np.complex128
+    )
+    rhs = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(
+        np.complex128
+    )
+    precision = PrecisionTuple(("highest", "high"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 9
-    lhs = np.random.uniform(-10.0, 10.0, (10, 4, 4)).astype(np.float32)
-    rhs = np.random.uniform(-10.0, 10.0, (10, 4, 4)).astype(np.float32)
-    precision = (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 9: Large batch size
+    lhs = np.random.randn(64, 4, 8).astype(np.float32)
+    rhs = np.random.randn(64, 8, 4).astype(np.float32)
+    precision = PrecisionTuple(("default", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
-    # Input 10
-    lhs = np.random.randn(1, 1, 1, 2, 2).astype(np.float32)
-    rhs = np.random.randn(1, 1, 1, 2, 2).astype(np.float32)
-    precision = (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST)
-    list_of_inputs.append({"lhs": lhs, "rhs": rhs, "precision": precision})
+    # Input 10: Square matrices of odd dimensions
+    lhs = np.random.randn(3, 7, 7).astype(np.float32)
+    rhs = np.random.randn(3, 7, 7).astype(np.float32)
+    precision = PrecisionTuple(("default", "highest"))
+    list_of_inputs.append(
+        copy.deepcopy({"lhs": lhs, "rhs": rhs, "precision": precision})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.batch_matmul_2"] = batch_matmul_inputs()
 

@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rad2deg_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    input_dict = {"x": 0.0}
+    input_dict = {"x": float(0.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 2: Pi (180 degrees)
     input_dict = {"x": float(np.pi)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Pi / 2 (90 degrees)
-    input_dict = {"x": float(np.pi / 2.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Negative Pi (-180 degrees)
+    # Input 3: Negative Pi (-180 degrees)
     input_dict = {"x": float(-np.pi)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1 Radian
-    input_dict = {"x": 1.0}
+    # Input 4: Pi / 2 (90 degrees)
+    input_dict = {"x": float(np.pi / 2.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative 1 Radian
-    input_dict = {"x": -1.0}
+    # Input 5: -Pi / 4 (-45 degrees)
+    input_dict = {"x": float(-np.pi / 4.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2 * Pi (360 degrees)
+    # Input 6: 2 * Pi (360 degrees)
     input_dict = {"x": float(2.0 * np.pi)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small positive angle
-    input_dict = {"x": 0.001}
+    # Input 7: 1 radian (~57.2958 degrees)
+    input_dict = {"x": float(1.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large positive angle
-    input_dict = {"x": 1000.0}
+    # Input 8: Negative arbitrary float
+    input_dict = {"x": float(-3.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Large negative angle
-    input_dict = {"x": -1000.0}
+    # Input 9: Small positive float
+    input_dict = {"x": float(1e-4)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Large positive float
+    input_dict = {"x": float(100.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3 * Pi / 2 (270 degrees)
+    input_dict = {"x": float(3.0 * np.pi / 2.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.rad2deg_2"] = rad2deg_inputs()
 

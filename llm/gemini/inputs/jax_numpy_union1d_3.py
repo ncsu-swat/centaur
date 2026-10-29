@@ -4,125 +4,107 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_union1d_inputs():
+
+def union1d_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive integers, padded
-    ar1 = np.array([1, 2, 3], dtype=np.int32)
-    ar2 = np.array([3, 4, 5], dtype=np.int32)
+    # Input 1: Basic 1D float arrays, size smaller than union
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
-        "size": 6,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative values, truncated size
-    ar1 = np.array([-3, -2, -1], dtype=np.float32)
-    ar2 = np.array([-5, -4, -3], dtype=np.float32)
-    input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([1.0, 2.0, 3.0], dtype=np.float32),
+        "ar2": np.array([2.0, 3.0, 4.0], dtype=np.float32),
         "size": 3,
-        "fill_value": -1.0
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Float values, size matches the exact union size
-    ar1 = np.array([0.5, 1.5, 2.5], dtype=np.float32)
-    ar2 = np.array([1.5, 2.5, 3.5], dtype=np.float32)
+    # Input 2: 1D float arrays with negative numbers, size larger than union (padding)
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
-        "size": 4,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Large padded size
-    ar1 = np.array([10, 20], dtype=np.int32)
-    ar2 = np.array([20, 30], dtype=np.int32)
-    input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([-5.0, -2.0, 0.0], dtype=np.float64),
+        "ar2": np.array([-3.0, 0.0, 4.0], dtype=np.float64),
         "size": 8,
-        "fill_value": -999.0
+        "fill_value": -999.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Empty first array
-    ar1 = np.array([], dtype=np.int32)
-    ar2 = np.array([1, 2, 3], dtype=np.int32)
+    # Input 3: Multi-dimensional arrays (flattened implicitly by union1d)
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
-        "size": 5,
-        "fill_value": -1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Float64 inputs with distinct values
-    ar1 = np.array([1.1, 2.2, 3.3], dtype=np.float64)
-    ar2 = np.array([4.4, 5.5], dtype=np.float64)
-    input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
-        "size": 5,
-        "fill_value": 9.9
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Duplicate values within input arrays
-    ar1 = np.array([1, 1, 1], dtype=np.int32)
-    ar2 = np.array([2, 2, 2], dtype=np.int32)
-    input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
-        "size": 4,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Int64 inputs, negative and positive
-    ar1 = np.array([-10, 10], dtype=np.int64)
-    ar2 = np.array([-20, 20], dtype=np.int64)
-    input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
+        "ar2": np.array([[3.0, 4.0], [5.0, 6.0]], dtype=np.float32),
         "size": 6,
-        "fill_value": -99.0
+        "fill_value": 1.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Completely overlapping arrays
-    ar1 = np.array([1, 2, 3], dtype=np.float32)
-    ar2 = np.array([1, 2, 3], dtype=np.float32)
+    # Input 4: Empty first array
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([], dtype=np.float32),
+        "ar2": np.array([1.5, 2.5, 3.5], dtype=np.float32),
         "size": 5,
-        "fill_value": -1.0
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Disjoint arrays, high padding
-    ar1 = np.array([5, 6, 7], dtype=np.float32)
-    ar2 = np.array([1, 2, 3], dtype=np.float32)
+    # Input 5: Both arrays empty, size zero
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([], dtype=np.float64),
+        "ar2": np.array([], dtype=np.float64),
+        "size": 0,
+        "fill_value": 0.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Disjoint arrays with float64
+    input_dict = {
+        "ar1": np.array([10.0, 20.0, 30.0], dtype=np.float64),
+        "ar2": np.array([40.0, 50.0, 60.0], dtype=np.float64),
+        "size": 6,
+        "fill_value": -1.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Identical arrays with size larger than unique elements
+    input_dict = {
+        "ar1": np.array([1.0, 2.0, 3.0], dtype=np.float32),
+        "ar2": np.array([1.0, 2.0, 3.0], dtype=np.float32),
+        "size": 5,
+        "fill_value": float("inf"),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D arrays
+    input_dict = {
+        "ar1": np.ones((2, 2, 2), dtype=np.float32),
+        "ar2": np.zeros((1, 2, 3), dtype=np.float32),
+        "size": 4,
+        "fill_value": -0.5,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Non-trivial duplicate elements within inputs
+    input_dict = {
+        "ar1": np.array([7.0, 7.0, 7.0, 8.0, 9.0], dtype=np.float32),
+        "ar2": np.array([8.0, 8.0, 10.0, 11.0], dtype=np.float32),
         "size": 10,
-        "fill_value": 0.0
+        "fill_value": 42.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Size equals 1 (truncation to single element)
+    input_dict = {
+        "ar1": np.array([-10.0, 0.0, 10.0], dtype=np.float64),
+        "ar2": np.array([-5.0, 5.0, 15.0], dtype=np.float64),
+        "size": 1,
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.union1d_3"] = jax_numpy_union1d_inputs()
+
+generated_inputs["jax.numpy.union1d_3"] = union1d_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

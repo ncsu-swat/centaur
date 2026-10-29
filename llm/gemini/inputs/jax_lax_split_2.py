@@ -4,83 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def split_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, split into 2 equal parts, float32
-    operand = np.random.randn(10).astype(np.float32)
-    sizes = (5, 5)
-    axis = 0
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 2D array, split along axis 0, unequal parts, float32
-    operand = np.random.randn(6, 4).astype(np.float32)
-    sizes = (1, 2, 3)
-    axis = 0
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 2D array, split along axis 1, unequal parts, float64
-    operand = np.random.randn(4, 10).astype(np.float64)
-    sizes = (2, 3, 5)
-    axis = 1
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 3D array, split along axis 0 with negative axis, float32
-    operand = np.random.randn(3, 4, 5).astype(np.float32)
-    sizes = (1, 2)
-    axis = -3
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 3D array, split along axis 2, float32
-    operand = np.random.randn(2, 2, 8).astype(np.float32)
-    sizes = (4, 4)
-    axis = 2
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 4D array, split along axis 2, int32
-    operand = np.random.randint(-10, 10, size=(2, 3, 4, 5)).astype(np.int32)
-    sizes = (1, 2, 1)
-    axis = 2
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 1D array, split into 3 equal parts, int64
-    operand = np.random.randint(-100, 100, size=(15,)).astype(np.int64)
-    sizes = (5, 5, 5)
-    axis = 0
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D array, split along axis 1, complex64
-    operand = (np.random.randn(4, 6) + 1j * np.random.randn(4, 6)).astype(np.complex64)
+    # Input 1: 1D float32 array, split into 2 chunks along axis 0
+    operand = np.random.randn(6).astype(np.float32)
     sizes = (2, 4)
-    axis = 1
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
 
-    # Input 9: 5D array, split along axis 4, float32
-    operand = np.random.randn(1, 1, 1, 1, 9).astype(np.float32)
+    # Input 2: 2D float64 array, split along axis 0
+    operand = np.random.randn(8, 4).astype(np.float64)
+    sizes = (3, 5)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 3: 2D int32 array, split along axis 1
+    operand = np.random.randint(-10, 10, size=(5, 9)).astype(np.int32)
     sizes = (3, 3, 3)
-    axis = 4
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis = 1
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
 
-    # Input 10: 3D array, split along negative axis -2, float32
-    operand = np.random.randn(2, 6, 2).astype(np.float32)
+    # Input 4: 2D array, negative axis
+    operand = np.random.randn(4, 7).astype(np.float32)
+    sizes = (2, 5)
+    axis = -1
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 5: 3D float32 array, split along axis 1
+    operand = np.random.randn(2, 6, 3).astype(np.float32)
     sizes = (1, 2, 3)
-    axis = -2
-    input_dict = {"operand": operand, "sizes": sizes, "axis": axis}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis = 1
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 6: 3D int64 array, negative axis
+    operand = np.random.randint(0, 100, size=(3, 4, 8)).astype(np.int64)
+    sizes = (4, 4)
+    axis = -1
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 7: 4D float32 array, split along axis 2
+    operand = np.random.randn(2, 3, 5, 4).astype(np.float32)
+    sizes = (1, 4)
+    axis = 2
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 8: 1D bool array, single split (keeps full size)
+    operand = np.array([True, False, True, True, False], dtype=np.bool_)
+    sizes = (5,)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 9: 2D complex64 array, split with empty chunk (size 0)
+    operand = (
+        np.random.randn(4, 6) + 1j * np.random.randn(4, 6)
+    ).astype(np.complex64)
+    sizes = (0, 4)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 10: 5D uint8 array, split along the first axis using negative index
+    operand = np.random.randint(0, 255, size=(3, 2, 2, 2, 2)).astype(np.uint8)
+    sizes = (1, 2)
+    axis = -5
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
+
+    # Input 11: 3D float32 array, split into 4 chunks along axis 2
+    operand = np.random.randn(2, 2, 10).astype(np.float32)
+    sizes = (1, 2, 3, 4)
+    axis = 2
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "sizes": sizes, "axis": axis})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.split_2"] = split_inputs()
 

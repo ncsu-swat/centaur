@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# first dimension compatibility for matching dimensions under tuple shape (Rule 27)
+# single-dimension target tuple compatibility with a 1D tensor (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == v["arg2_length"], v["arg2_length"] > 0), Or(Select(v["arg1_shape"], 0) == Select(v["arg2_values"], 0), Select(v["arg1_shape"], 0) == 1), True)) if n else
-          If(And(v["arg1_ndim"] == v["arg2_length"], v["arg2_length"] > 0), Or(Select(v["arg1_shape"], 0) == Select(v["arg2_values"], 0), Select(v["arg1_shape"], 0) == 1), True))
+    s.add(Not(If(And(v["arg2_length"] == 1, v["arg1_ndim"] == 1), Or(Select(v["arg1_shape"], 0) == 1, Select(v["arg1_shape"], 0) == Select(v["arg2_values"], 0)), True)) if n else
+          If(And(v["arg2_length"] == 1, v["arg1_ndim"] == 1), Or(Select(v["arg1_shape"], 0) == 1, Select(v["arg1_shape"], 0) == Select(v["arg2_values"], 0)), True))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_27_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

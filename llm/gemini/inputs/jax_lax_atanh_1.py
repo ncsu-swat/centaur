@@ -4,53 +4,64 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def atanh_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D float32 scalar
+    # Input 1: 0D scalar array (float32)
     x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D float32 array with negative and positive values
-    x = np.array([-0.8, -0.3, 0.0, 0.3, 0.8], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 2: 1D array with positive and negative values (float32)
+    x = np.array([-0.8, -0.5, -0.2, 0.0, 0.2, 0.5, 0.8], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D float64 array
-    x = np.random.uniform(-0.95, 0.95, (3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 3: 2D array (float64)
+    x = np.array([[-0.75, -0.25], [0.25, 0.75]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float32 array
-    x = np.random.uniform(-0.99, 0.99, (2, 3, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 4: 3D array with small random values in (-1, 1) (float32)
+    x = np.random.uniform(-0.9, 0.9, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 4D float64 array
-    x = np.random.uniform(-0.5, 0.5, (2, 2, 2, 2)).astype(np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 5: 4D array (float16)
+    x = np.random.uniform(-0.5, 0.5, size=(2, 2, 2, 2)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D complex64 array (complex values are valid for atanh)
-    x = (np.random.uniform(-0.8, 0.8, (5,)) + 1j * np.random.uniform(-0.8, 0.8, (5,))).astype(np.complex64)
-    list_of_inputs.append({"x": x})
+    # Input 6: 1D array of complex numbers (complex64)
+    x = np.array(
+        [0.5 + 0.5j, -0.5 + 0.2j, 0.0 - 0.7j, 1.2 + 0.3j], dtype=np.complex64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D complex128 array
-    x = (np.random.uniform(-2.0, 2.0, (2, 3)) + 1j * np.random.uniform(-2.0, 2.0, (2, 3))).astype(np.complex128)
-    list_of_inputs.append({"x": x})
+    # Input 7: 2D array of complex numbers (complex128)
+    x = np.array(
+        [[0.2 - 0.1j, -0.4 + 0.6j], [0.8 + 0.0j, -0.1 - 0.9j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float32 array, all negative
-    x = np.array([-0.9, -0.7, -0.5, -0.3, -0.1], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 8: 1D empty array (float32)
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D float32 array, all positive
-    x = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 9: 2D array with single row (float64)
+    x = np.array([[-0.99, -0.5, 0.0, 0.5, 0.99]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float64 array, close to limits
-    x = np.array([-0.999, -0.99, 0.0, 0.99, 0.999], dtype=np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 10: 3D array with zeros (float32)
+    x = np.zeros((3, 1, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array with values near zero (float64)
+    x = np.array([-1e-7, -1e-15, 0.0, 1e-15, 1e-7], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.atanh_1"] = atanh_inputs()
 

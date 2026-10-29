@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isreal_inputs():
     list_of_inputs = []
 
-    # Input 1: positive standard python integer
-    input_dict = {"x": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: negative standard python integer
-    input_dict = {"x": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero
+    # Input 1: Zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: large python integer
-    input_dict = {"x": 123456789}
+    # Input 2: Positive integer 1
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy int32
-    input_dict = {"x": np.int32(42)}
+    # Input 3: Negative integer -1
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int64 negative
-    input_dict = {"x": np.int64(-999)}
+    # Input 4: Moderate positive integer
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy int16 positive
-    input_dict = {"x": np.int16(15)}
+    # Input 5: Moderate negative integer
+    input_dict = {"x": -100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy uint8 positive
-    input_dict = {"x": np.uint8(255)}
+    # Input 6: Large positive integer
+    input_dict = {"x": 1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy int8 negative
-    input_dict = {"x": np.int8(-128)}
+    # Input 7: Large negative integer
+    input_dict = {"x": -999999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy intc
-    input_dict = {"x": np.intc(0)}
+    # Input 8: Power of two
+    input_dict = {"x": 1024}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Negative 16-bit boundary value
+    input_dict = {"x": -32768}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 16-bit max unsigned boundary value
+    input_dict = {"x": 65535}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Prime integer
+    input_dict = {"x": 7919}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isreal_2"] = isreal_inputs()
 

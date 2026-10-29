@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# kappa parameter must have non-negative elements for tensor inputs (Rule 2)
+# shape parameter kappa as a tensor must have non-negative values (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(Select(v["arg1_range"], 0) >= 0) if n else

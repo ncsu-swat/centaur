@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# matrix order must be strictly positive (Rule 9)
+# order n must not be negative (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(0 < v["arg1_value"]) if n else
-          0 < v["arg1_value"])
+    s.add(Not(If(v["arg1_value"] < 0, False, True)) if n else
+          If(v["arg1_value"] < 0, False, True))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):

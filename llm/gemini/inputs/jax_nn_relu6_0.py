@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def relu6_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array spanning negative, within-range, and above-6 values
-    x = np.array([-2.0, -0.5, 0.0, 3.0, 5.9, 6.0, 7.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D array with negative, within range [0, 6], and above 6 values
+    x = np.array([-3.0, -0.5, 0.0, 2.5, 6.0, 7.5, 10.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float32 array
-    x = np.random.uniform(-10.0, 10.0, size=(4, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D array (matrix) of float32
+    x = np.random.uniform(-10.0, 10.0, size=(4, 5)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D float32 array
-    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar tensor
+    x = np.array(4.2, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 4D float32 array
-    x = np.random.uniform(-10.0, 10.0, size=(2, 2, 3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar tensor (negative)
+    x = np.array(-5.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: float64 1D array
-    x = np.array([-1.5, 0.0, 2.5, 6.5], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D array of float64
+    x = np.random.randn(2, 3, 4).astype(np.float64) * 5.0
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: float16 2D array
-    x = np.random.uniform(-5.0, 8.0, size=(3, 5)).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D array of float16 (typical image tensor shape NCHW)
+    x = np.random.uniform(-2.0, 8.0, size=(2, 3, 8, 8)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: int32 1D array
-    x = np.array([-5, -1, 0, 3, 6, 10], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D array of integers
+    x = np.array([-10, -1, 0, 1, 5, 6, 7, 20], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: int64 2D array
-    x = np.random.randint(-10, 10, size=(2, 4)).astype(np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 2D array of int64
+    x = np.random.randint(-10, 15, size=(3, 3), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 0D array (scalar tensor)
-    x = np.array(4.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 5D array of float32
+    x = np.random.randn(2, 2, 2, 2, 2).astype(np.float32) * 4.0
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D float32 array
-    x = np.random.uniform(-2.0, 8.0, size=(1, 2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array
+    x = np.empty((0, 4), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: Array containing only values below the threshold (all negative)
-    x = np.random.uniform(-20.0, -1.0, size=(3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: Array with special values (zeros, boundaries, large values)
+    x = np.array([0.0, 6.0, -np.inf, np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.relu6"] = relu6_inputs()
 

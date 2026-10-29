@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if input tensor x is boolean, the float fill_value must be 0.0 or 1.0 (Rule 15)
+# size must be strictly positive when specified for an input tensor with at least one dimension (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_dtype"] == 0, (Or(v["arg2_value"] == 0.0, v["arg2_value"] == 1.0)), v["arg2_value"] == v["arg2_value"])) if n else
-          If(v["arg1_dtype"] == 0, (Or(v["arg2_value"] == 0.0, v["arg2_value"] == 1.0)), v["arg2_value"] == v["arg2_value"]))
+    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg2_value"] > 0)) if n else
+          And(v["arg1_ndim"] >= 1, v["arg2_value"] > 0))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_value = Real('arg2_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == arg2)
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

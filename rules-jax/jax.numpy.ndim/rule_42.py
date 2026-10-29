@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# any integer input must be either even or odd (Rule 42)
+# Square of a scalar integer input is non-negative (Rule 42)
 
 rule_42 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] % 2 == 0, v["arg1_value"] % 2 != 0)) if n else
-          Or(v["arg1_value"] % 2 == 0, v["arg1_value"] % 2 != 0))
+    s.add(Not(v["arg1_value"] * v["arg1_value"] >= 0) if n else
+          v["arg1_value"] * v["arg1_value"] >= 0)
 )
 
 def rule_42_func(arg1, solver=None, neg=False):

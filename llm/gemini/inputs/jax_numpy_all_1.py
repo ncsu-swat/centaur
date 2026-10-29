@@ -4,93 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def all_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D boolean array, axis 0, keepdims False
-    list_of_inputs.append({
-        "a": np.array([True, False, True, True, False], dtype=bool),
-        "axis": 0,
-        "keepdims": False,
-        "where": np.array([True, True, False, True, False], dtype=bool)
-    })
+    # Input 1: 1D boolean array, axis=0, keepdims=False
+    a = np.array([True, True, False, True], dtype=bool)
+    axis = 0
+    keepdims = False
+    where = np.array([True, True, True, False], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 2: 2D integer array, axis 1, keepdims True
-    list_of_inputs.append({
-        "a": np.array([[1, 2], [0, 4]], dtype=np.int32),
-        "axis": 1,
-        "keepdims": True,
-        "where": np.array([[True, True], [True, False]], dtype=bool)
-    })
+    # Input 2: 2D boolean array, axis=0, keepdims=True
+    a = np.array([[True, False], [True, True]], dtype=bool)
+    axis = 0
+    keepdims = True
+    where = np.ones((2, 2), dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 3: 3D boolean array, axis 2, keepdims False, randomized values
-    list_of_inputs.append({
-        "a": (np.random.rand(3, 4, 5) > 0.5),
-        "axis": 2,
-        "keepdims": False,
-        "where": (np.random.rand(3, 4, 5) > 0.2)
-    })
+    # Input 3: 2D float array with negative and positive values, axis=1, keepdims=False
+    a = np.array([[-1.5, 0.0, 2.3], [1.0, -2.0, 3.5]], dtype=np.float32)
+    axis = 1
+    keepdims = False
+    where = np.array([[True, False, True], [True, True, True]], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 4: 1D float32 array with negative and zero values, negative axis
-    list_of_inputs.append({
-        "a": np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float32),
-        "axis": -1,
-        "keepdims": True,
-        "where": np.array([True, True, False, True], dtype=bool)
-    })
+    # Input 4: 3D integer array, axis=2, keepdims=True
+    a = np.arange(-6, 6, dtype=np.int32).reshape(2, 3, 2)
+    axis = 2
+    keepdims = True
+    where = np.ones((2, 3, 2), dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 5: 3D all-True boolean array, axis 1, keepdims False
-    list_of_inputs.append({
-        "a": np.ones((2, 2, 2), dtype=bool),
-        "axis": 1,
-        "keepdims": False,
-        "where": np.ones((2, 2, 2), dtype=bool)
-    })
+    # Input 5: 3D boolean array, negative axis=-1, broadcasted where
+    a = np.zeros((2, 4, 3), dtype=bool)
+    axis = -1
+    keepdims = False
+    where = np.array([[[True], [False], [True], [True]]], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 6: 2D boolean array, axis -2, keepdims True
-    list_of_inputs.append({
-        "a": np.array([[False, True], [True, False]], dtype=bool),
-        "axis": -2,
-        "keepdims": True,
-        "where": np.array([[True, True], [False, False]], dtype=bool)
-    })
+    # Input 6: 1D int64 array with zero, axis=-1, keepdims=True
+    a = np.array([1, 2, 0, -4, 5], dtype=np.int64)
+    axis = -1
+    keepdims = True
+    where = np.array([True, True, False, True, True], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 7: 2D int64 array of zeros, axis 0, keepdims False
-    list_of_inputs.append({
-        "a": np.zeros((5, 1), dtype=np.int64),
-        "axis": 0,
-        "keepdims": False,
-        "where": np.ones((5, 1), dtype=bool)
-    })
+    # Input 7: 4D float64 array, axis=1, keepdims=False
+    a = np.ones((2, 2, 2, 2), dtype=np.float64)
+    axis = 1
+    keepdims = False
+    where = np.zeros((2, 2, 2, 2), dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 8: 3D randomized boolean array, axis 2, keepdims True
-    list_of_inputs.append({
-        "a": (np.random.randint(0, 2, size=(3, 3, 3)) == 1),
-        "axis": 2,
-        "keepdims": True,
-        "where": (np.random.randint(0, 2, size=(3, 3, 3)) == 1)
-    })
+    # Input 8: 2D complex array, negative axis=-2, keepdims=True
+    a = np.array([[1.0 + 2.0j, 0.0 + 0.0j], [-1.0 - 1.0j, 3.0 + 0.0j]], dtype=np.complex64)
+    axis = -2
+    keepdims = True
+    where = np.array([[True, False]], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 9: 1D float64 array, axis 0, keepdims False
-    list_of_inputs.append({
-        "a": np.array([1.5, -2.3, 0.0], dtype=np.float64),
-        "axis": 0,
-        "keepdims": False,
-        "where": np.array([True, True, True], dtype=bool)
-    })
+    # Input 9: 3D boolean array, axis=0, keepdims=False
+    a = np.ones((3, 2, 4), dtype=bool)
+    axis = 0
+    keepdims = False
+    where = np.array([[[True], [False]]], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    # Input 10: 2D boolean array, broadcastable 'where' mask, axis 0, keepdims True
-    list_of_inputs.append({
-        "a": np.array([[True, True], [True, True]], dtype=bool),
-        "axis": 0,
-        "keepdims": True,
-        "where": np.array([[True, False]], dtype=bool)
-    })
+    # Input 10: 2D int8 array with negative numbers, axis=1, keepdims=True
+    a = np.array([[-128, 127], [0, -1]], dtype=np.int8)
+    axis = 1
+    keepdims = True
+    where = np.array([[True, True], [False, True]], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "axis": axis, "keepdims": keepdims, "where": where}
+    )
 
-    return [copy.deepcopy(x) for x in list_of_inputs]
+    return list_of_inputs
+
 
 generated_inputs["jax.numpy.all_1"] = all_inputs()
 

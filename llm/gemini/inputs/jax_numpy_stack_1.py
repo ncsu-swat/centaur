@@ -4,83 +4,89 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def stack_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, stack along axis 0, float32
-    list_of_inputs.append({
-        "arrays": np.random.randn(2, 3).astype(np.float32),
-        "axis": 0,
-        "dtype": np.dtype('float32')
-    })
+    # Case 1: 1D array, axis=0, float32
+    arr = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": 0, "dtype": np.dtype(np.float32)})
+    )
 
-    # Input 2: 2D array, stack along axis -1, int32
-    list_of_inputs.append({
-        "arrays": np.random.randint(-10, 10, size=(3, 4)).astype(np.int32),
-        "axis": -1,
-        "dtype": np.dtype('int32')
-    })
+    # Case 2: 1D array, axis=-1, int32
+    arr = np.array([10, 20, 30], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": -1, "dtype": np.dtype(np.int32)})
+    )
 
-    # Input 3: 3D array, stack along axis 1, float64
-    list_of_inputs.append({
-        "arrays": np.random.randn(2, 2, 3).astype(np.float64),
-        "axis": 1,
-        "dtype": np.dtype('float64')
-    })
+    # Case 3: 2D array, axis=0, float32
+    arr = np.random.randn(3, 4).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": 0, "dtype": np.dtype(np.float32)})
+    )
 
-    # Input 4: 2D array, stack along axis 0, float32
-    list_of_inputs.append({
-        "arrays": np.random.randn(4, 5).astype(np.float32),
-        "axis": 0,
-        "dtype": np.dtype('float32')
-    })
+    # Case 4: 2D array, axis=1, int64
+    arr = np.arange(10, dtype=np.int64).reshape((2, 5))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": 1, "dtype": np.dtype(np.int64)})
+    )
 
-    # Input 5: 3D array, stack along axis 2, int64
-    list_of_inputs.append({
-        "arrays": np.random.randint(-100, 100, size=(3, 2, 2)).astype(np.int64),
-        "axis": 2,
-        "dtype": np.dtype('int64')
-    })
+    # Case 5: 2D array, negative axis=-2, float64
+    arr = np.random.randn(4, 3).astype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arrays": arr, "axis": -2, "dtype": np.dtype(np.float64)}
+        )
+    )
 
-    # Input 6: 3D array, stack along axis -2, float32
-    list_of_inputs.append({
-        "arrays": np.random.randn(2, 3, 4).astype(np.float32),
-        "axis": -2,
-        "dtype": np.dtype('float32')
-    })
+    # Case 6: 2D array, axis=-1, bool_
+    arr = np.array([[True, False, True], [False, True, False]], dtype=np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": -1, "dtype": np.dtype(np.bool_)})
+    )
 
-    # Input 7: 2D array, stack along axis 1, float16
-    list_of_inputs.append({
-        "arrays": np.random.randn(5, 10).astype(np.float16),
-        "axis": 1,
-        "dtype": np.dtype('float16')
-    })
+    # Case 7: 3D array, axis=0, complex64
+    arr = (
+        np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)
+    ).astype(np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arrays": arr, "axis": 0, "dtype": np.dtype(np.complex64)}
+        )
+    )
 
-    # Input 8: 4D array, stack along axis 3, float32
-    list_of_inputs.append({
-        "arrays": np.random.randn(2, 2, 2, 2).astype(np.float32),
-        "axis": 3,
-        "dtype": np.dtype('float32')
-    })
+    # Case 8: 3D array, axis=2, uint8
+    arr = np.random.randint(0, 256, size=(3, 2, 2), dtype=np.uint8)
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": 2, "dtype": np.dtype(np.uint8)})
+    )
 
-    # Input 9: 2D array, stack along axis 0, int8
-    list_of_inputs.append({
-        "arrays": np.random.randint(-128, 127, size=(10, 2)).astype(np.int8),
-        "axis": 0,
-        "dtype": np.dtype('int8')
-    })
+    # Case 9: 3D array, negative axis=-3, int32
+    arr = np.random.randint(-10, 10, size=(4, 2, 3), dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": -3, "dtype": np.dtype(np.int32)})
+    )
 
-    # Input 10: 3D array, stack along axis -1, complex64
-    list_of_inputs.append({
-        "arrays": (np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)).astype(np.complex64),
-        "axis": -1,
-        "dtype": np.dtype('complex64')
-    })
+    # Case 10: 4D array, axis=3, float32
+    arr = np.random.randn(2, 3, 2, 2).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arr, "axis": 3, "dtype": np.dtype(np.float32)})
+    )
+
+    # Case 11: 4D array, axis=-4, float64
+    arr = np.random.randn(3, 2, 4, 2).astype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arrays": arr, "axis": -4, "dtype": np.dtype(np.float64)}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.stack_1"] = stack_inputs()
 

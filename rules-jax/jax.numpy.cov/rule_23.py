@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# frequency weights tensor fweights must be 1-dimensional (Rule 23)
+# aweights must be 1D, non-negative, and contain at least one positive weight (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == 1) if n else
-          v["arg1_ndim"] == 1)
+    s.add(Not(And(And(v["arg1_ndim"] == 1, Select(v["arg1_range"], 0) >= 0), Select(v["arg1_range"], 1) > 0)) if n else
+          And(And(v["arg1_ndim"] == 1, Select(v["arg1_range"], 0) >= 0), Select(v["arg1_range"], 1) > 0))
 )
 
 def rule_23_func(arg1, solver=None, neg=False):
@@ -25,14 +25,17 @@ def rule_23_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 23
-        rule_23(solver, {'arg1_ndim': arg1_ndim})
+        rule_23(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_23(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_23(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim']}, neg)

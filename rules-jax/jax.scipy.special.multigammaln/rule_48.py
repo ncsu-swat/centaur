@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when d is a tensor, elements of a must satisfy the domain constraint a > (d - 1 (Rule 48)
+# dimension tensor d is either a positive scalar or has rank not exceeding tensor a (Rule 48)
 
 rule_48 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) > (Select(v["arg2_range"], 0) - 1) / 2) if n else
-          Select(v["arg1_range"], 0) > (Select(v["arg2_range"], 0) - 1) / 2)
+    s.add(Not(If(v["arg2_ndim"] == 0, Select(v["arg2_range"], 0) >= 1, v["arg1_ndim"] >= v["arg2_ndim"])) if n else
+          If(v["arg2_ndim"] == 0, Select(v["arg2_range"], 0) >= 1, v["arg1_ndim"] >= v["arg2_ndim"]))
 )
 
 def rule_48_func(arg1, arg2, solver=None, neg=False):
@@ -27,19 +27,20 @@ def rule_48_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
         arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
         arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
         arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 48
-        rule_48(solver, {'arg1_range': arg1_range, 'arg2_range': arg2_range})
+        rule_48(solver, {'arg1_ndim': arg1_ndim, 'arg2_range': arg2_range, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_48(solver, {'arg1_range': arg1['range'], 'arg2_range': arg2['range']}, neg)
+        rule_48(solver, {'arg1_ndim': arg1['ndim'], 'arg2_range': arg2['range'], 'arg2_ndim': arg2['ndim']}, neg)

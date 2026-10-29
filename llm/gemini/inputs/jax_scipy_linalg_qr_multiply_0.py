@@ -4,15 +4,19 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def qr_multiply_inputs():
     list_of_inputs = []
 
-    # Case 1
-    a = np.random.randn(4, 3).astype(np.float32)
-    c = np.random.randn(4).astype(np.float32)
+    # Input 1: 1D c, mode='right', M > N, float32
+    # a: (M, N) = (4, 2), K = min(4, 2) = 2. mode='right' requires c to have trailing dimension M=4 or 1D shape (4,)
+    a = np.array(
+        [[1.0, -1.0], [2.0, 3.0], [-1.0, 0.5], [0.0, 2.0]], dtype=np.float32
+    )
+    c = np.array([1.0, -2.0, 3.0, 0.5], dtype=np.float32)
     input_dict = {
         "a": a,
         "c": c,
@@ -24,9 +28,10 @@ def qr_multiply_inputs():
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 2
-    a = np.random.randn(4, 3).astype(np.float32)
-    c = np.random.randn(3).astype(np.float32)
+    # Input 2: 1D c, mode='left', M > N, float32
+    # a: (M, N) = (4, 2), K = 2. mode='left' requires c to have leading dimension K=2 or 1D shape (2,)
+    a = np.random.randn(4, 2).astype(np.float32)
+    c = np.array([-1.5, 2.5], dtype=np.float32)
     input_dict = {
         "a": a,
         "c": c,
@@ -38,97 +43,127 @@ def qr_multiply_inputs():
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 3
-    a = np.random.randn(5, 5).astype(np.float64)
+    # Input 3: 2D c, mode='right', float64
+    # a: (5, 3), M=5. c: shape (P, M) = (2, 5)
+    a = np.random.randn(5, 3).astype(np.float64)
     c = np.random.randn(2, 5).astype(np.float64)
     input_dict = {
         "a": a,
         "c": c,
         "mode": "right",
-        "pivoting": True,
+        "pivoting": False,
         "conjugate": False,
         "overwrite_a": False,
         "overwrite_c": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 4
-    a = np.random.randn(5, 5).astype(np.float64)
-    c = np.random.randn(5, 2).astype(np.float64)
+    # Input 4: 2D c, mode='left', float64
+    # a: (5, 3), K = min(5, 3) = 3. c: shape (K, P) = (3, 4)
+    a = np.random.randn(5, 3).astype(np.float64)
+    c = np.random.randn(3, 4).astype(np.float64)
     input_dict = {
         "a": a,
         "c": c,
         "mode": "left",
-        "pivoting": True,
+        "pivoting": False,
         "conjugate": False,
         "overwrite_a": False,
         "overwrite_c": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 5
+    # Input 5: Square matrix M == N, mode='right', float32
+    # a: (3, 3), M=3, K=3. c: (3, 3)
+    a = np.random.randn(3, 3).astype(np.float32)
+    c = np.random.randn(3, 3).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "c": c,
+        "mode": "right",
+        "pivoting": False,
+        "conjugate": False,
+        "overwrite_a": True,
+        "overwrite_c": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Fat matrix M < N, mode='left', float32
+    # a: (2, 5), K = min(2, 5) = 2. c: shape (K, P) = (2, 3)
+    a = np.random.randn(2, 5).astype(np.float32)
+    c = np.random.randn(2, 3).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "c": c,
+        "mode": "left",
+        "pivoting": False,
+        "conjugate": False,
+        "overwrite_a": False,
+        "overwrite_c": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Fat matrix M < N, mode='right', float64
+    # a: (2, 5), M = 2. c: shape (P, M) = (4, 2)
+    a = np.random.randn(2, 5).astype(np.float64)
+    c = np.random.randn(4, 2).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "c": c,
+        "mode": "right",
+        "pivoting": False,
+        "conjugate": False,
+        "overwrite_a": False,
+        "overwrite_c": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Complex64 matrix with conjugate=True, mode='right'
+    # a: (4, 3), M=4. c: shape (2, 4)
+    a = (np.random.randn(4, 3) + 1j * np.random.randn(4, 3)).astype(
+        np.complex64
+    )
+    c = (np.random.randn(2, 4) + 1j * np.random.randn(2, 4)).astype(
+        np.complex64
+    )
+    input_dict = {
+        "a": a,
+        "c": c,
+        "mode": "right",
+        "pivoting": False,
+        "conjugate": True,
+        "overwrite_a": False,
+        "overwrite_c": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Complex128 matrix with conjugate=True, mode='left'
+    # a: (4, 3), K=3. c: shape (3, 2)
+    a = (np.random.randn(4, 3) + 1j * np.random.randn(4, 3)).astype(
+        np.complex128
+    )
+    c = (np.random.randn(3, 2) + 1j * np.random.randn(3, 2)).astype(
+        np.complex128
+    )
+    input_dict = {
+        "a": a,
+        "c": c,
+        "mode": "left",
+        "pivoting": False,
+        "conjugate": True,
+        "overwrite_a": True,
+        "overwrite_c": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Batched input, mode='right', float32
+    # a: (2, 4, 3), M=4, N=3. c: shape (2, 5, 4)
     a = np.random.randn(2, 4, 3).astype(np.float32)
-    c = np.random.randn(2, 2, 4).astype(np.float32)
+    c = np.random.randn(2, 5, 4).astype(np.float32)
     input_dict = {
         "a": a,
         "c": c,
         "mode": "right",
-        "pivoting": False,
-        "conjugate": False,
-        "overwrite_a": True,
-        "overwrite_c": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 6
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    c = np.random.randn(2, 3, 2).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "c": c,
-        "mode": "left",
-        "pivoting": False,
-        "conjugate": False,
-        "overwrite_a": False,
-        "overwrite_c": True,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 7
-    a = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
-    c = (np.random.randn(4, 2) + 1j * np.random.randn(4, 2)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "c": c,
-        "mode": "left",
-        "pivoting": False,
-        "conjugate": True,
-        "overwrite_a": False,
-        "overwrite_c": False,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 8
-    a = np.random.randn(6, 2).astype(np.float64)
-    c = np.random.randn(6).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "c": c,
-        "mode": "right",
-        "pivoting": True,
-        "conjugate": False,
-        "overwrite_a": True,
-        "overwrite_c": True,
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 9
-    a = np.random.randn(3, 6).astype(np.float32)
-    c = np.random.randn(3, 1).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "c": c,
-        "mode": "left",
         "pivoting": False,
         "conjugate": False,
         "overwrite_a": False,
@@ -136,21 +171,23 @@ def qr_multiply_inputs():
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 10
-    a = (np.random.randn(5, 3) + 1j * np.random.randn(5, 3)).astype(np.complex128)
-    c = (np.random.randn(2, 5) + 1j * np.random.randn(2, 5)).astype(np.complex128)
+    # Input 11: Batched input, mode='left', float64
+    # a: (3, 5, 2), K=2. c: shape (3, 2, 4)
+    a = np.random.randn(3, 5, 2).astype(np.float64)
+    c = np.random.randn(3, 2, 4).astype(np.float64)
     input_dict = {
         "a": a,
         "c": c,
-        "mode": "right",
-        "pivoting": True,
-        "conjugate": True,
+        "mode": "left",
+        "pivoting": False,
+        "conjugate": False,
         "overwrite_a": False,
         "overwrite_c": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.qr_multiply"] = qr_multiply_inputs()
 

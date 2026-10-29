@@ -5,66 +5,54 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import copy
-import numpy as np
 
 
 def bitwise_xor_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D int32 arrays, matching shapes
-    x = np.array([1, 2, 3, 4], dtype=np.int32)
-    y = np.array([4, 3, 2, 1], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 1: Zeros
+    input_dict = {"x": 0, "y": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D int32 arrays with negative values
-    x = np.array([-1, -2, 3, -4], dtype=np.int32)
-    y = np.array([4, -3, 2, -1], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 2: Small positive integers
+    input_dict = {"x": 5, "y": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D int16 arrays
-    x = np.array([[12, 15], [24, 30]], dtype=np.int16)
-    y = np.array([[15, 12], [30, 24]], dtype=np.int16)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 3: Negative and positive integer
+    input_dict = {"x": -10, "y": 7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D int64 arrays
-    x = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
-    y = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 4: Both negative integers
+    input_dict = {"x": -15, "y": -30}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Scalar integers
-    x = np.array(42, dtype=np.int32)
-    y = np.array(13, dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: Identical integers
+    input_dict = {"x": 42, "y": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Broadcasting with same number of dimensions (2D and 2D)
-    x = np.random.randint(0, 50, size=(3, 4), dtype=np.int32)
-    y = np.random.randint(0, 50, size=(1, 4), dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 6: Powers of two
+    input_dict = {"x": 1024, "y": 512}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Broadcasting 3D array with a 3D single-element array
-    x = np.random.randint(-10, 10, size=(2, 2, 2), dtype=np.int32)
-    y = np.array([[[5]]], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: All bits set (-1) with positive integer
+    input_dict = {"x": -1, "y": 255}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Unsigned 32-bit integers
-    x = np.array([100, 200, 300], dtype=np.uint32)
-    y = np.array([300, 200, 100], dtype=np.uint32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: Zero and negative integer
+    input_dict = {"x": 0, "y": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large 64-bit integers
-    x = np.array([2**40, 2**45], dtype=np.int64)
-    y = np.array([2**40 - 1, 2**45 - 1], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 9: Byte bitmasks
+    input_dict = {"x": 255, "y": 128}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D int8 arrays
-    x = np.random.randint(-128, 127, size=(2, 2, 2, 2), dtype=np.int8)
-    y = np.random.randint(-128, 127, size=(2, 2, 2, 2), dtype=np.int8)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 10: Larger integers
+    input_dict = {"x": 123456, "y": 654321}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Broadcasting matching dimensions (1, 5) and (5, 1)
-    x = np.random.randint(0, 10, size=(1, 5), dtype=np.int32)
-    y = np.random.randint(0, 10, size=(5, 1), dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 11: Large negative integers
+    input_dict = {"x": -1000000, "y": -2000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

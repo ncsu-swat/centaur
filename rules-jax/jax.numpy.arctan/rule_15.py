@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the tensor is not a scalar, its maximum element must be greater than or equal to its minimum element (Rule 15)
+# Tensor data type must not be string or metadata dtype (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0), True)) if n else
-          If(v["arg1_ndim"] > 0, Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0), True))
+    s.add(Not(And(v["arg1_dtype"] != 11, v["arg1_dtype"] != 12)) if n else
+          And(v["arg1_dtype"] != 11, v["arg1_dtype"] != 12))
 )
 
 def rule_15_func(arg1, solver=None, neg=False):
@@ -24,18 +24,15 @@ def rule_15_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim})
+        rule_15(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_15(solver, {'arg1_dtype': arg1['dtype']}, neg)

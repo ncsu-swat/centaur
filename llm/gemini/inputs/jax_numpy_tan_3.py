@@ -4,7 +4,6 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def tan_inputs():
@@ -14,44 +13,44 @@ def tan_inputs():
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Small positive integer
+    # Input 2: Positive small integer
     input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Small negative integer
+    # Input 3: Negative small integer
     input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Standard angle equivalent in degrees as integer
-    input_dict = {"x": 45}
+    # Input 4: Positive integer 2
+    input_dict = {"x": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative angle in degrees as integer
-    input_dict = {"x": -45}
+    # Input 5: Negative integer -2
+    input_dict = {"x": -2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger integer
+    # Input 6: Moderate positive integer
+    input_dict = {"x": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Moderate negative integer
+    input_dict = {"x": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Larger positive integer
+    input_dict = {"x": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Larger negative integer
+    input_dict = {"x": -42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Century positive integer
     input_dict = {"x": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large negative integer
+    # Input 11: Century negative integer
     input_dict = {"x": -100}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: numpy int32 type
-    input_dict = {"x": np.int32(10)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: numpy int64 type
-    input_dict = {"x": np.int64(-50)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: numpy int16 type
-    input_dict = {"x": np.int16(360)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11: numpy int8 type
-    input_dict = {"x": np.int8(-5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

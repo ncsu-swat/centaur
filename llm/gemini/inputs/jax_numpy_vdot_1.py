@@ -4,123 +4,125 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def vdot_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D real float arrays
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    b = np.array([4.0, 5.0, 6.0], dtype=np.float32)
+    # Input 1: 1D real float32 arrays
+    a = np.array([1.0, -2.0, 3.5, -4.2, 5.0], dtype=np.float32)
+    b = np.array([0.5, 2.0, -1.0, 3.0, -0.5], dtype=np.float32)
     input_dict = {
         "a": a,
         "b": b,
         "precision": "default",
-        "preferred_element_type": np.float32
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Complex arrays to demonstrate conjugate multiplication
-    a = np.array([1j, 2j, 3j], dtype=np.complex64)
-    b = np.array([1.0, 2.0, 3.0], dtype=np.complex64)
+    # Input 2: 1D complex64 arrays
+    a = np.array([1.0 + 2.0j, -3.0 + 0.5j, 4.0 - 1.0j], dtype=np.complex64)
+    b = np.array([2.0 - 1.0j, 1.0 + 1.0j, -2.0 - 3.0j], dtype=np.complex64)
     input_dict = {
         "a": a,
         "b": b,
         "precision": "high",
-        "preferred_element_type": np.complex64
+        "preferred_element_type": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float values
-    a = np.array([-1.5, -2.5, -3.5], dtype=np.float32)
-    b = np.array([2.0, -3.0, 4.0], dtype=np.float32)
+    # Input 3: 2D arrays with same shape
+    a = np.arange(-3.0, 3.0, dtype=np.float32).reshape(2, 3)
+    b = np.ones((2, 3), dtype=np.float32) * 2.5
     input_dict = {
         "a": a,
         "b": b,
         "precision": "highest",
-        "preferred_element_type": np.float32
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D arrays that will be flattened (same shape)
-    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    b = np.array([[5.0, 6.0], [7.0, 8.0]], dtype=np.float64)
+    # Input 4: 2D complex128 arrays
+    a = (np.arange(4, dtype=np.float64) + 1j * np.arange(4, dtype=np.float64)).reshape(2, 2)
+    b = (np.ones((2, 2), dtype=np.float64) * 2.0 - 1j * np.ones((2, 2), dtype=np.float64)).astype(np.complex128)
     input_dict = {
         "a": a,
         "b": b,
         "precision": "default",
-        "preferred_element_type": np.float64
+        "preferred_element_type": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D arrays with different shapes but same size (will be flattened)
-    a = np.array([[1.0, 2.0, 3.0]], dtype=np.float32) 
-    b = np.array([[4.0], [5.0], [6.0]], dtype=np.float32) 
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": "high",
-        "preferred_element_type": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 3D arrays
-    a = np.ones((2, 2, 2), dtype=np.float32)
-    b = np.ones((2, 2, 2), dtype=np.float32) * 2.0
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": "highest",
-        "preferred_element_type": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Boolean arrays
-    a = np.array([True, False, True], dtype=bool)
-    b = np.array([True, True, False], dtype=bool)
+    # Input 5: 3D int32 arrays with accumulation into int64
+    a = np.array([[[1, -2], [3, 4]], [[-5, 6], [7, -8]]], dtype=np.int32)
+    b = np.array([[[2, 1], [-1, 3]], [[4, -2], [0, 5]]], dtype=np.int32)
     input_dict = {
         "a": a,
         "b": b,
         "precision": "default",
-        "preferred_element_type": np.int32
+        "preferred_element_type": np.dtype(np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Double precision complex numbers
-    a = np.array([1.0 + 1j, 2.0 + 2j], dtype=np.complex128)
-    b = np.array([3.0 - 3j, 4.0 - 4j], dtype=np.complex128)
+    # Input 6: Different shapes but same total element count (2D and 1D)
+    a = np.linspace(-1.0, 1.0, 8, dtype=np.float32).reshape(2, 4)
+    b = np.linspace(0.0, 2.0, 8, dtype=np.float32)
     input_dict = {
         "a": a,
         "b": b,
         "precision": "high",
-        "preferred_element_type": np.complex128
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large 1D array with mixed integers/floats
-    a = np.arange(100, dtype=np.float32)
-    b = np.arange(100, dtype=np.float32) * -0.5
+    # Input 7: 3D and 2D arrays with same total element count
+    a = np.ones((2, 3, 2), dtype=np.float64)
+    b = np.full((4, 3), -1.5, dtype=np.float64)
     input_dict = {
         "a": a,
         "b": b,
         "precision": "highest",
-        "preferred_element_type": np.float64
+        "preferred_element_type": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Single-element tensors
-    a = np.array([5.5], dtype=np.float32)
+    # Input 8: Single element 1D arrays
+    a = np.array([-4.5], dtype=np.float32)
     b = np.array([2.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "b": b,
         "precision": "default",
-        "preferred_element_type": np.float32
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Float32 promoted to complex64 via preferred_element_type
+    a = np.array([1.0, -1.0, 2.0, -2.0], dtype=np.float32)
+    b = np.array([0.5, 1.5, -0.5, -1.5], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.complex64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D tensors flattened with same total size
+    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    b = np.random.randn(4, 4).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.vdot_1"] = vdot_inputs()
 

@@ -4,65 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_special_polygamma_inputs():
+
+def polygamma_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar int and float
-    n = np.array(1, dtype=np.int32)
-    x = np.array(2.5, dtype=np.float32)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 1: Digamma (n = 0) at x = 1.0
+    list_of_inputs.append({"n": int(0), "x": float(1.0)})
 
-    # Input 2: 1D arrays
-    n = np.array([0, 1, 2], dtype=np.int32)
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 2: Trigamma (n = 1) at x = 2.5
+    list_of_inputs.append({"n": int(1), "x": float(2.5)})
 
-    # Input 3: 2D arrays, int64 and float64
-    n = np.array([[1, 2], [3, 4]], dtype=np.int64)
-    x = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float64)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 3: Digamma (n = 0) at fractional positive value
+    list_of_inputs.append({"n": int(0), "x": float(0.5)})
 
-    # Input 4: Scalar n, 1D x
-    n = np.array(0, dtype=np.int32)
-    x = np.array([0.5, 1.5, 2.5], dtype=np.float32)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 4: Tetragamma (n = 2) at x = 3.7
+    list_of_inputs.append({"n": int(2), "x": float(3.7)})
 
-    # Input 5: 1D n, scalar x
-    n = np.array([1, 2], dtype=np.int32)
-    x = np.array(5.0, dtype=np.float64)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 5: Trigamma (n = 1) at negative non-integer value
+    list_of_inputs.append({"n": int(1), "x": float(-0.5)})
 
-    # Input 6: 3D arrays
-    n = np.array([[[1]]], dtype=np.int32)
-    x = np.array([[[10.0]]], dtype=np.float32)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 6: Pentagamma (n = 3) at x = 1.2
+    list_of_inputs.append({"n": int(3), "x": float(1.2)})
 
-    # Input 7: Small positive x values
-    n = np.array([0, 0, 1, 1], dtype=np.int32)
-    x = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 7: Digamma (n = 0) at negative non-integer value
+    list_of_inputs.append({"n": int(0), "x": float(-1.5)})
 
-    # Input 8: Large x values, float64
-    n = np.array(3, dtype=np.int32)
-    x = np.array([100.0, 200.0], dtype=np.float64)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 8: Higher-order derivative (n = 4) at large positive x
+    list_of_inputs.append({"n": int(4), "x": float(10.0)})
 
-    # Input 9: High-dimensional arrays
-    n = np.ones((2, 3, 2), dtype=np.int32)
-    x = np.random.uniform(0.5, 5.0, size=(2, 3, 2)).astype(np.float32)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 9: Tetragamma (n = 2) at small positive x
+    list_of_inputs.append({"n": int(2), "x": float(0.01)})
 
-    # Input 10: 1-element 1D arrays
-    n = np.array([2], dtype=np.int64)
-    x = np.array([1.1], dtype=np.float64)
-    list_of_inputs.append({"n": copy.deepcopy(n), "x": copy.deepcopy(x)})
+    # Input 10: Higher-order derivative (n = 5) at x = 2.0
+    list_of_inputs.append({"n": int(5), "x": float(2.0)})
+
+    # Input 11: Trigamma (n = 1) at large positive x
+    list_of_inputs.append({"n": int(1), "x": float(100.0)})
+
+    # Input 12: Digamma (n = 0) at x = 5.5
+    list_of_inputs.append({"n": int(0), "x": float(5.5)})
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.special.polygamma_3"] = jax_scipy_special_polygamma_inputs()
+
+generated_inputs["jax.scipy.special.polygamma_3"] = polygamma_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

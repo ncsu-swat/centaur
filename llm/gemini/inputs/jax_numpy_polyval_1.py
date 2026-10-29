@@ -4,83 +4,85 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def polyval_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 1D arrays
-    p = np.array([2.0, 5.0, 1.0], dtype=np.float32)
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    unroll = 16
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic float32 1D p and 0D scalar x
+    p = np.array([2.0, -1.0, 3.0], dtype=np.float32)
+    x = np.array(5.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 16})
+    )
 
-    # Input 2: Int32 arrays, 2D x
-    p = np.array([1, -2, 3], dtype=np.int32)
-    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    unroll = 8
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Integer polynomial and 1D integer x
+    p = np.array([1, 2, 3, 4], dtype=np.int32)
+    x = np.array([-2, -1, 0, 1, 2], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 1})
+    )
 
-    # Input 3: Float64 0D x (scalar-like array)
-    p = np.array([1.5, -2.5, 0.5, 4.0], dtype=np.float64)
-    x = np.array(2.0, dtype=np.float64)
-    unroll = 32
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Float64 1D p and 2D float64 x
+    p = np.array([0.5, -2.5, 1.0], dtype=np.float64)
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 4})
+    )
 
-    # Input 4: 3D x, negative values
-    p = np.array([-1.0, 0.0, 2.0, -3.0], dtype=np.float32)
-    x = np.random.uniform(-5, 5, size=(2, 3, 4)).astype(np.float32)
-    unroll = 64
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Complex numbers
+    p = np.array([1.0 + 2.0j, -0.5 + 1.0j, 3.0 - 1.0j], dtype=np.complex64)
+    x = np.array([0.5 - 0.5j, 1.0 + 0.0j, -1.0 + 1.0j], dtype=np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 8})
+    )
 
-    # Input 5: Single coefficient (constant polynomial), float32
-    p = np.array([5.0], dtype=np.float32)
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    unroll = 4
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Single coefficient (constant polynomial)
+    p = np.array([42.0], dtype=np.float32)
+    x = np.array([-5.0, 0.0, 5.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 2})
+    )
 
-    # Input 6: Complex values
-    p = np.array([1.0 + 1.0j, -2.0 + 0.0j], dtype=np.complex64)
-    x = np.array([0.5 + 0.5j, -0.5 - 0.5j], dtype=np.complex64)
-    unroll = 16
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D input x with negative and positive values
+    p = np.array([-1.0, 0.0, 2.0, -5.0], dtype=np.float32)
+    x = np.ones((2, 3, 4), dtype=np.float32) * -0.5
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 16})
+    )
 
-    # Input 7: Int64 arrays, 2D x, unroll=128
-    p = np.array([3, 2, 1, 0], dtype=np.int64)
-    x = np.array([[1, -1, 0], [2, -2, 5]], dtype=np.int64)
-    unroll = 128
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: High degree polynomial
+    p = np.linspace(-1.0, 1.0, 32, dtype=np.float64)
+    x = np.array([0.1, 0.5, 0.9], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 32})
+    )
 
-    # Input 8: High degree polynomial, float32, unroll=256
-    p = np.random.randn(100).astype(np.float32)
-    x = np.random.randn(10).astype(np.float32)
-    unroll = 256
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D input x with int64
+    p = np.array([3, -2, 1], dtype=np.int64)
+    x = np.zeros((2, 2, 2, 2), dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 2})
+    )
 
-    # Input 9: Float16 arrays
-    p = np.array([1.0, -1.0, 2.0], dtype=np.float16)
-    x = np.array([-2.0, 0.0, 2.0], dtype=np.float16)
-    unroll = 16
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Complex128 polynomial and 2D complex128 x
+    p = np.array([2.0 - 3.0j, 1.5 + 0.5j], dtype=np.complex128)
+    x = np.array([[1.0j, -2.0], [3.0 - 1.0j, 0.0]], dtype=np.complex128)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 16})
+    )
 
-    # Input 10: 4D x array, float64
-    p = np.array([0.1, -0.2, 0.3, -0.4, 0.5], dtype=np.float64)
-    x = np.random.randn(2, 2, 2, 2).astype(np.float64)
-    unroll = 16
-    input_dict = {"p": p, "x": x, "unroll": unroll}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Linear polynomial with large unroll value
+    p = np.array([2.5, -4.0], dtype=np.float32)
+    x = np.linspace(-10.0, 10.0, 50, dtype=np.float32).reshape(5, 10)
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "x": x, "unroll": 64})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.polyval_1"] = polyval_inputs()
 

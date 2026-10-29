@@ -4,68 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def unstack_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, axis 0, int32
-    x = np.array([10, 20, 30], dtype=np.int32)
-    axis = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 1: 1D array along axis 0
+    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    input_dict = {"x": x, "axis": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, axis 0, float32
-    x = np.random.randn(3, 4).astype(np.float32)
-    axis = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 2: 2D array along axis 0
+    x = np.arange(10, dtype=np.int32).reshape(2, 5)
+    input_dict = {"x": x, "axis": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, axis 1, float64
-    x = np.random.randn(2, 5).astype(np.float64)
-    axis = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 3: 2D array along axis 1
+    x = np.random.randn(4, 3).astype(np.float64)
+    input_dict = {"x": x, "axis": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, axis 0, int16
-    x = np.random.randint(-10, 10, size=(2, 3, 2)).astype(np.int16)
-    axis = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 4: 2D array with negative axis
+    x = np.array([[10, 20], [30, 40], [50, 60]], dtype=np.int64)
+    input_dict = {"x": x, "axis": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array, axis 2, float32
-    x = np.random.randn(2, 2, 4).astype(np.float32)
-    axis = 2
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 5: 3D boolean array along axis 0
+    x = np.array(
+        [[[True, False], [False, True]], [[True, True], [False, False]]],
+        dtype=np.bool_,
+    )
+    input_dict = {"x": x, "axis": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D array, negative axis -1, int8
-    x = np.random.randint(0, 5, size=(2, 2, 3, 3)).astype(np.int8)
-    axis = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 6: 3D complex array along axis 1
+    x = (np.random.randn(2, 4, 3) + 1j * np.random.randn(2, 4, 3)).astype(
+        np.complex64
+    )
+    input_dict = {"x": x, "axis": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D array, negative axis -2, uint8
-    x = np.random.randint(0, 10, size=(1, 3, 2, 2)).astype(np.uint8)
-    axis = -2
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 7: 3D float array along negative axis -2
+    x = np.random.uniform(-5.0, 5.0, size=(3, 2, 4)).astype(np.float32)
+    input_dict = {"x": x, "axis": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array, axis -1, complex64
-    x = (np.random.randn(2, 3) + 1j * np.random.randn(2, 3)).astype(np.complex64)
-    axis = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 8: 4D uint8 array along axis 2
+    x = np.random.randint(0, 256, size=(2, 2, 3, 2), dtype=np.uint8)
+    input_dict = {"x": x, "axis": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D array, axis 3, float32
-    x = np.random.randn(2, 1, 2, 3, 2).astype(np.float32)
-    axis = 3
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 9: 4D float array along axis 3
+    x = np.random.randn(1, 2, 1, 4).astype(np.float32)
+    input_dict = {"x": x, "axis": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array of size 1, axis 0, bool
-    x = np.array([True, False, True], dtype=np.bool_)
-    axis = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 10: 1D single-element array along axis 0
+    x = np.array([42], dtype=np.int16)
+    input_dict = {"x": x, "axis": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 3D array, axis 1, float32
-    x = np.random.randn(4, 3, 2).astype(np.float32)
-    axis = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "axis": axis})
+    # Input 11: 5D array along negative axis -1
+    x = np.ones((2, 1, 2, 1, 3), dtype=np.float32)
+    input_dict = {"x": x, "axis": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.unstack"] = unstack_inputs()
 

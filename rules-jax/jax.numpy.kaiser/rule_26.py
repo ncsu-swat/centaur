@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# beta as a tensor must be 0-dimensional and of a boolean, integer, or float type (Rule 26)
+# beta parameter as a tensor must be 0-dimensional or 1-dimensional with a single element (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] + v["arg1_dtype"] <= 8, v["arg1_ndim"] == 0)) if n else
-          And(v["arg1_ndim"] + v["arg1_dtype"] <= 8, v["arg1_ndim"] == 0))
+    s.add(Not(Or(v["arg1_ndim"] == 0, (And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) == 1)))) if n else
+          Or(v["arg1_ndim"] == 0, (And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) == 1))))
 )
 
 def rule_26_func(arg1, solver=None, neg=False):
@@ -25,16 +25,17 @@ def rule_26_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg1_dtype = Int('arg1_dtype')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 26
-        rule_26(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim})
+        rule_26(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_26(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_26(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

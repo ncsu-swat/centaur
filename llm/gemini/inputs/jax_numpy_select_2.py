@@ -4,175 +4,176 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def select_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays
-    condlist = np.stack([
-        np.array([True, False, True, False], dtype=bool),
-        np.array([False, True, False, False], dtype=bool)
-    ])
-    choicelist = np.stack([
-        np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
-        np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 3 conditions and choices, 1D sub-arrays
+    condlist = np.array(
+        [
+            [True, False, False, True],
+            [False, True, False, False],
+            [False, False, True, False],
+        ],
+        dtype=bool,
+    )
+    choicelist = np.array(
+        [
+            [10.0, 20.0, 30.0, 40.0],
+            [100.0, 200.0, 300.0, 400.0],
+            [-1.0, -2.0, -3.0, -4.0],
+        ],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": 0.0}
+        )
+    )
 
-    # Input 2: 2D arrays
-    condlist = np.stack([
-        np.random.choice([True, False], size=(3, 3)),
-        np.random.choice([True, False], size=(3, 3)),
-        np.random.choice([True, False], size=(3, 3))
-    ])
-    choicelist = np.stack([
-        np.random.randn(3, 3).astype(np.float32),
-        np.random.randn(3, 3).astype(np.float32),
-        np.random.randn(3, 3).astype(np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": -999.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2 conditions and choices, 2D sub-arrays
+    condlist = np.array(
+        [
+            [[True, False, True], [False, True, False]],
+            [[False, True, False], [True, False, True]],
+        ],
+        dtype=bool,
+    )
+    choicelist = np.array(
+        [
+            [[1.5, -2.5, 3.5], [-4.5, 5.5, -6.5]],
+            [[-10.0, 20.0, -30.0], [40.0, -50.0, 60.0]],
+        ],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": -1.0}
+        )
+    )
 
-    # Input 3: 3D arrays
-    condlist = np.stack([
-        np.random.choice([True, False], size=(2, 2, 2)),
-        np.random.choice([True, False], size=(2, 2, 2))
-    ])
-    choicelist = np.stack([
-        np.random.randn(2, 2, 2).astype(np.float32),
-        np.random.randn(2, 2, 2).astype(np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": 1.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Single condition and choice
+    condlist = np.array([[True, False, True, False, False]], dtype=bool)
+    choicelist = np.array([[5.0, -5.0, 15.0, -15.0, 25.0]], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": 99.9}
+        )
+    )
 
-    # Input 4: 0D arrays (scalars)
-    condlist = np.stack([
-        np.array(True, dtype=bool),
-        np.array(False, dtype=bool)
-    ])
-    choicelist = np.stack([
-        np.array(5.5, dtype=np.float32),
-        np.array(-5.5, dtype=np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 4 conditions on 1D sub-arrays
+    condlist = np.array(
+        [
+            [True, False, False, False, False, False],
+            [False, True, False, False, False, False],
+            [False, False, True, False, False, False],
+            [False, False, False, True, False, False],
+        ],
+        dtype=bool,
+    )
+    choicelist = np.array(
+        [
+            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
+            [10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
+            [100.0, 200.0, 300.0, 400.0, 500.0, 600.0],
+            [-1.0, -2.0, -3.0, -4.0, -5.0, -6.0],
+        ],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": 0.5}
+        )
+    )
 
-    # Input 5: Broadcast shapes
-    condlist = np.stack([
-        np.array([[True], [False], [True]], dtype=bool),
-        np.array([[False], [True], [False]], dtype=bool)
-    ])
-    choicelist = np.stack([
-        np.array([[1.0, 2.0]], dtype=np.float32),
-        np.array([[10.0, 20.0]], dtype=np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": 42.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2 conditions on 2D square matrices
+    condlist = np.array(
+        [
+            [[True, False, False], [False, True, False], [False, False, True]],
+            [[False, False, True], [False, True, False], [True, False, False]],
+        ],
+        dtype=bool,
+    )
+    choicelist = np.array(
+        [
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]],
+            [[-1.0, -2.0, -3.0], [-4.0, -5.0, -6.0], [-7.0, -8.0, -9.0]],
+        ],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": -999.0}
+        )
+    )
 
-    # Input 6: Float64 types
-    condlist = np.stack([
-        np.random.choice([True, False], size=(4,)),
-        np.random.choice([True, False], size=(4,))
-    ])
-    choicelist = np.stack([
-        np.random.randn(4).astype(np.float64),
-        np.random.randn(4).astype(np.float64)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": -1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Single-element sub-arrays
+    condlist = np.array([[False], [True], [False]], dtype=bool)
+    choicelist = np.array([[12.34], [56.78], [90.12]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": 42.0}
+        )
+    )
 
-    # Input 7: Only 1 item in lists
-    condlist = np.stack([
-        np.array([True, False, True], dtype=bool)
-    ])
-    choicelist = np.stack([
-        np.array([3.14, 2.71, 1.41], dtype=np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D array (2 conditions of 3D sub-arrays)
+    condlist = np.zeros((2, 2, 2, 2), dtype=bool)
+    condlist[0, 0, 0, 0] = True
+    condlist[1, 1, 1, 1] = True
+    choicelist = np.ones((2, 2, 2, 2), dtype=np.float32) * 3.14
+    choicelist[1] = -choicelist[1]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": -0.5}
+        )
+    )
 
-    # Input 8: Larger 2D arrays
-    condlist = np.stack([
-        np.random.choice([True, False], size=(10, 10)),
-        np.random.choice([True, False], size=(10, 10)),
-        np.random.choice([True, False], size=(10, 10))
-    ])
-    choicelist = np.stack([
-        np.random.randn(10, 10).astype(np.float32),
-        np.random.randn(10, 10).astype(np.float32),
-        np.random.randn(10, 10).astype(np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": 9.99
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: All conditions False to evaluate default value
+    condlist = np.zeros((2, 5), dtype=bool)
+    choicelist = np.array(
+        [[10.0, 20.0, 30.0, 40.0, 50.0], [60.0, 70.0, 80.0, 90.0, 100.0]],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": 123.456}
+        )
+    )
 
-    # Input 9: 4D arrays
-    condlist = np.stack([
-        np.random.choice([True, False], size=(2, 2, 2, 2)),
-        np.random.choice([True, False], size=(2, 2, 2, 2))
-    ])
-    choicelist = np.stack([
-        np.random.randn(2, 2, 2, 2).astype(np.float32),
-        np.random.randn(2, 2, 2, 2).astype(np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": -0.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5 conditions with float64 precision
+    condlist = np.eye(5, 2, dtype=bool)
+    choicelist = np.arange(10, dtype=np.float64).reshape(5, 2)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": 0.0}
+        )
+    )
 
-    # Input 10: Mixed broadcast dimensions
-    condlist = np.stack([
-        np.random.choice([True, False], size=(5, 1)),
-        np.random.choice([True, False], size=(5, 1))
-    ])
-    choicelist = np.stack([
-        np.random.randn(5, 5).astype(np.float32),
-        np.random.randn(5, 5).astype(np.float32)
-    ])
-    input_dict = {
-        "condlist": condlist,
-        "choicelist": choicelist,
-        "default": -100.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2 conditions with larger 1D arrays
+    condlist = np.array(
+        [
+            [True, False] * 5,
+            [False, True] * 5,
+        ],
+        dtype=bool,
+    )
+    choicelist = np.array(
+        [
+            np.linspace(0.0, 1.0, 10, dtype=np.float32),
+            np.linspace(-1.0, 0.0, 10, dtype=np.float32),
+        ]
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"condlist": condlist, "choicelist": choicelist, "default": -3.14159}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.select_2"] = select_inputs()
 

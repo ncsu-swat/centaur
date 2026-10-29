@@ -4,63 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def nanargmin_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array with NaNs, float32, keepdims=False
-    a = np.array([np.nan, -3.0, 5.0, 4.0, 2.0], dtype=np.float32)
+    # Input 1: 1D array with NaNs, axis=0, keepdims=False
+    a = np.array([np.nan, 3.0, 5.0, 1.0, 2.0], dtype=np.float32)
     input_dict = {"a": a, "axis": 0, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array with NaNs, float64, keepdims=True
-    a = np.array([[1.0, 3.0, np.nan], [5.0, 4.0, np.nan]], dtype=np.float64)
+    # Input 2: 1D array with NaNs, axis=-1, keepdims=True
+    a = np.array([-2.5, np.nan, -10.0, 4.0, np.nan], dtype=np.float64)
+    input_dict = {"a": a, "axis": -1, "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D array, axis=0, keepdims=False
+    a = np.array(
+        [[1.0, np.nan, 3.0], [4.0, 0.5, np.nan], [np.nan, -1.0, 2.0]],
+        dtype=np.float32,
+    )
+    input_dict = {"a": a, "axis": 0, "keepdims": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D array, axis=1, keepdims=True
+    a = np.array(
+        [[np.nan, 5.0, -3.0], [2.0, np.nan, np.nan], [7.0, 1.0, 0.0]],
+        dtype=np.float32,
+    )
     input_dict = {"a": a, "axis": 1, "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, float32, no NaNs, axis=0, keepdims=False
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {"a": a, "axis": 0, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 3D array, float64, all NaNs, axis=2, keepdims=True
-    a = np.full((2, 3, 4), np.nan, dtype=np.float64)
-    input_dict = {"a": a, "axis": 2, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 3D array, float32, negative axis, keepdims=False
-    a = np.random.randn(2, 2, 2).astype(np.float32)
+    # Input 5: 2D array, axis=-1, keepdims=False, float64
+    a = np.array([[-1.5, -3.2], [np.nan, -0.1], [4.4, 2.1]], dtype=np.float64)
     input_dict = {"a": a, "axis": -1, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D array, float64, keepdims=True
-    a = np.random.randn(2, 3, 4, 5).astype(np.float64)
-    input_dict = {"a": a, "axis": 2, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 1D array with positive values and NaNs, keepdims=True
-    a = np.array([10.0, np.nan, 2.0, np.nan, 8.0], dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D array, a column of NaNs, axis=0, keepdims=False
-    a = np.array([[np.nan, 2.0], [np.nan, 1.0]], dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Large 2D array, axis=1, keepdims=True
-    a = np.random.uniform(-100, 100, (10, 20)).astype(np.float32)
-    input_dict = {"a": a, "axis": 1, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 3D array, axis=1, keepdims=False
-    a = np.random.randn(3, 4, 5).astype(np.float32)
+    # Input 6: 2D array with all-NaN row, axis=1, keepdims=False
+    a = np.array([[np.nan, np.nan], [1.0, 2.0]], dtype=np.float32)
     input_dict = {"a": a, "axis": 1, "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
+    # Input 7: 3D array, axis=0, keepdims=True
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    a[0, 1, 2] = np.nan
+    a[1, 0, 1] = np.nan
+    input_dict = {"a": a, "axis": 0, "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D array, axis=1, keepdims=False
+    a = np.random.randn(4, 3, 2).astype(np.float64)
+    a[a < 0] = np.nan
+    input_dict = {"a": a, "axis": 1, "keepdims": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D array, axis=2, keepdims=True
+    a = np.arange(24, dtype=np.float32).reshape(2, 3, 4) - 10.0
+    a[0, 0, 0] = np.nan
+    input_dict = {"a": a, "axis": 2, "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D array, axis=-2, keepdims=False
+    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    a[0, 1, :, 1] = np.nan
+    input_dict = {"a": a, "axis": -2, "keepdims": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D array, axis=3, keepdims=True, float16
+    a = np.array([[[[np.nan, 2.0], [3.0, 1.0]]]], dtype=np.float16)
+    input_dict = {"a": a, "axis": 3, "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.nanargmin"] = nanargmin_inputs()
 

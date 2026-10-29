@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input scalar x must lie within the range of -500 to 500 to prevent extreme numerical saturation (Rule 20)
+# scalar numeric input within valid computational range (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -500, v["arg1_value"] <= 500)) if n else
-          And(v["arg1_value"] >= -500, v["arg1_value"] <= 500))
+    s.add(Not(And(v["arg1_value"] >= -100, v["arg1_value"] <= 100)) if n else
+          And(v["arg1_value"] >= -100, v["arg1_value"] <= 100))
 )
 
 def rule_20_func(arg1, solver=None, neg=False):

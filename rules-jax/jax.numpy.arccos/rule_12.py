@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# float inputs must satisfy the domain constraint of inverse cosine to produce real-valued outputs (Rule 12)
+# integer input restricted to integers yielding non-NaN real results (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] * v["arg1_value"] <= 1) if n else
-          v["arg1_value"] * v["arg1_value"] <= 1)
+    s.add(Not(Or(Or(v["arg1_value"] == -1, v["arg1_value"] == 0), v["arg1_value"] == 1)) if n else
+          Or(Or(v["arg1_value"] == -1, v["arg1_value"] == 0), v["arg1_value"] == 1))
 )
 
 def rule_12_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_12_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 12
         rule_12(solver, {'arg1_value': arg1_value})

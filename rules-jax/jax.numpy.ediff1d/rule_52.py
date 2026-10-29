@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when prepending and appending using float values, they should be within a stable numerical limit to prevent precision errors (Rule 52)
+# non-zero integer to_end scalar when 1D ary tensor has single element (Rule 52)
 
 rule_52 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(-100000.0 <= v["arg1_value"], v["arg1_value"] <= 100000.0), -100000.0 <= v["arg2_value"]), v["arg2_value"] <= 100000.0)) if n else
-          And(And(And(-100000.0 <= v["arg1_value"], v["arg1_value"] <= 100000.0), -100000.0 <= v["arg2_value"]), v["arg2_value"] <= 100000.0))
+    s.add(Not(If(And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) == 1), v["arg2_value"] != 0, True)) if n else
+          If(And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) == 1), v["arg2_value"] != 0, True))
 )
 
 def rule_52_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,27 @@ def rule_52_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
-        arg2_value = Real('arg2_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
-        solver.add(arg2_value == arg2)
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 52
-        rule_52(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_52(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_52(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_52(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

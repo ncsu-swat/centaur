@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# mode parameter must be "valid" or "same" (Rule 3)
+# precision string must specify a valid precision level (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 19, v["arg1_value"] == 20)) if n else
-          Or(v["arg1_value"] == 19, v["arg1_value"] == 20))
+    s.add(Not(Or(v["arg1_value"] == 37, v["arg1_value"] == 5)) if n else
+          Or(v["arg1_value"] == 37, v["arg1_value"] == 5))
 )
 
 def rule_3_func(arg1, solver=None, neg=False):

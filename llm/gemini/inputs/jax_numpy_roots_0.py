@@ -4,68 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def roots_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 array, strip_zeros=True
-    p = np.array([1.0, -2.0, 1.0], dtype=np.float32)
+    # Input 1: Quadratic polynomial, float32, strip_zeros=True
+    p = np.array([1.0, -3.0, 2.0], dtype=np.float32)
     strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
-    # Input 2: Float32 array with leading zeros, strip_zeros=True
-    p = np.array([0.0, 0.0, 1.0, -5.0, 6.0], dtype=np.float32)
-    strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
-
-    # Input 3: Float32 array with leading zeros, strip_zeros=False
-    p = np.array([0.0, 0.0, 1.0, -5.0, 6.0], dtype=np.float32)
+    # Input 2: Linear polynomial, float64, strip_zeros=False
+    p = np.array([2.0, 4.0], dtype=np.float64)
     strip_zeros = False
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
-    # Input 4: Float64 array with negative and positive values
-    p = np.array([-3.5, 2.0, -1.5, 10.0], dtype=np.float64)
+    # Input 3: Cubic polynomial with negative values, float32, strip_zeros=True
+    p = np.array([-1.0, 0.0, 4.0, -5.0], dtype=np.float32)
     strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
-    # Input 5: Integer array
-    p = np.array([1, -3, 2], dtype=np.int32)
+    # Input 4: Polynomial with leading zeros, float32, strip_zeros=True
+    p = np.array([0.0, 0.0, 1.0, -2.0, 1.0], dtype=np.float32)
     strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
-    # Input 6: Complex64 array
-    p = np.array([1.0 + 1.0j, 2.0 - 3.0j, -5.0j], dtype=np.complex64)
-    strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
-
-    # Input 7: Complex128 array, strip_zeros=False
-    p = np.array([0.0 + 0.0j, 1.0 + 2.0j, -3.0j], dtype=np.complex128)
+    # Input 5: Polynomial with leading zeros, float64, strip_zeros=False
+    p = np.array([0.0, 1.0, 2.0], dtype=np.float64)
     strip_zeros = False
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
-    # Input 8: High degree polynomial, float32
-    p = np.array([1.0, 0.0, 0.0, 0.0, -1.0], dtype=np.float32)
+    # Input 6: Complex coefficients, complex64, strip_zeros=True
+    p = np.array([1.0 + 2.0j, -3.0 + 0.0j, 1.0 - 1.0j], dtype=np.complex64)
     strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
-    # Input 9: Single element array (constant polynomial)
-    p = np.array([5.0], dtype=np.float32)
-    strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
-
-    # Input 10: Array with only zeros, strip_zeros=False
-    p = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+    # Input 7: Complex coefficients, complex128, strip_zeros=False
+    p = np.array([0.0 + 0.0j, 2.0 - 1.0j, 4.0 + 3.0j], dtype=np.complex128)
     strip_zeros = False
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
-    # Input 11: All elements negative, float64
-    p = np.array([-1.0, -2.0, -3.0, -4.0], dtype=np.float64)
+    # Input 8: Integer coefficients, int32, strip_zeros=True
+    p = np.array([1, -5, 6], dtype=np.int32)
     strip_zeros = True
-    list_of_inputs.append({"p": p, "strip_zeros": strip_zeros})
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
+
+    # Input 9: Integer coefficients, int64, strip_zeros=False
+    p = np.array([3, -2, -1], dtype=np.int64)
+    strip_zeros = False
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
+
+    # Input 10: Higher degree polynomial (quartic), float64, strip_zeros=True
+    p = np.array([1.0, 0.0, -10.0, 0.0, 9.0], dtype=np.float64)
+    strip_zeros = True
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
+
+    # Input 11: Higher degree polynomial (degree 6), float32, strip_zeros=False
+    p = np.array([2.5, -1.2, 0.4, -3.1, 1.0, -0.5, 2.0], dtype=np.float32)
+    strip_zeros = False
+    list_of_inputs.append(
+        copy.deepcopy({"p": p, "strip_zeros": strip_zeros})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.roots"] = roots_inputs()
 

@@ -4,87 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.numpy as jnp
-import jax._src.numpy.ufuncs as ufuncs
+import numpy as np
 
-# Patch jax.numpy.isposinf to ignore the unsupported 'out' parameter during execution
-_orig_isposinf = jnp.isposinf
-def patched_isposinf(x, out=None):
-    return _orig_isposinf(x)
-
-jnp.isposinf = patched_isposinf
-ufuncs.isposinf = patched_isposinf
 
 def isposinf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, mix of inf, -inf, nan, finite
-    x = np.array([-np.inf, 0.0, np.inf, np.nan, 1.5], dtype=np.float32)
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array with inf, -inf, nan, and finite values
+    x = np.array([-np.inf, -1.0, 0.0, 1.0, np.inf, np.nan], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 2: 2D float64 array with inf and nan
-    x = np.array([[np.inf, -np.inf], [1.0, np.nan]], dtype=np.float64)
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D scalar float64 array with positive infinity
+    x = np.array(np.inf, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 3: 0D (scalar) float32 array
-    x = np.array(np.inf, dtype=np.float32)
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D scalar float32 array with finite value
+    x = np.array(42.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 4: 3D float16 array with random values and infs
-    x = np.random.randn(2, 3, 4).astype(np.float16)
+    # Input 4: 2D float64 array with mixed infinite and finite values
+    x = np.array(
+        [[np.inf, -np.inf, 3.14], [0.0, np.nan, np.inf]], dtype=np.float64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 5: 1D float16 array
+    x = np.array([-np.inf, 0.0, np.inf, -5.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 6: 2D int32 array
+    x = np.array([[-10, 0, 5], [100, -200, 300]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 7: 3D float32 array of shape (2, 3, 4)
+    x = np.random.randn(2, 3, 4).astype(np.float32)
     x[0, 1, 2] = np.inf
-    x[1, 2, 3] = -np.inf
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    x[1, 2, 0] = -np.inf
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 5: 1D float32 array, all finite elements
-    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D float64 array
+    x = np.full((2, 2, 2, 2), np.inf, dtype=np.float64)
+    x[0, 0, 0, 0] = -np.inf
+    x[1, 1, 1, 1] = 0.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 6: 2D float64 array, all elements are positive infinity
-    x = np.full((3, 3), np.inf, dtype=np.float64)
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 7: 4D float32 array
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    x[0, 0, 0, 0] = np.inf
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D int64 array
+    x = np.array([0, -1, 1, 9223372036854775807], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 8: 1D int32 array (valid non-complex type)
-    x = np.array([-10, 0, 10, 20], dtype=np.int32)
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 2D float64 array with NaNs
+    x = np.full((3, 3), np.nan, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 9: 2D float16 array containing only nans and infs
-    x = np.array([[np.nan, np.inf], [-np.inf, np.nan]], dtype=np.float16)
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 5D float32 array
-    x = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
-    x[0, 1, 0, 2, 1] = np.inf
-    out = np.empty_like(x, dtype=bool)
-    input_dict = {"x": x, "out": out}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 12: 5D float32 array
+    x = np.ones((1, 2, 1, 3, 2), dtype=np.float32)
+    x[0, 0, 0, 1, 0] = np.inf
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isposinf_1"] = isposinf_inputs()
 

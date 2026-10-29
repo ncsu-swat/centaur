@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# a single input tensor to stack must not be 0-dimensional (Rule 27)
+# for single tensor, 1D and 2D arrays must have positive dimension sizes (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] != 0) if n else
-          v["arg1_ndim"] != 0)
+    s.add(Not(If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0, If(v["arg1_ndim"] == 2, And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], 1) > 0), v["arg1_ndim"] >= 3))) if n else
+          If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0, If(v["arg1_ndim"] == 2, And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], 1) > 0), v["arg1_ndim"] >= 3)))
 )
 
 def rule_27_func(arg1, solver=None, neg=False):
@@ -25,14 +25,17 @@ def rule_27_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_ndim': arg1_ndim})
+        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

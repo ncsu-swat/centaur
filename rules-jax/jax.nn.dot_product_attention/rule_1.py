@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Query and key tensors must have matching dimensions, which must be either 3D or 4D (Rule 1)
+# query and key arrays must have the same number of dimensions, which is 3 or 4 (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] == v["arg2_ndim"], (Or(v["arg1_ndim"] == 3, v["arg1_ndim"] == 4)))) if n else
-          And(v["arg1_ndim"] == v["arg2_ndim"], (Or(v["arg1_ndim"] == 3, v["arg1_ndim"] == 4))))
+    s.add(Not(And((Or(v["arg1_ndim"] == 3, v["arg1_ndim"] == 4)), v["arg1_ndim"] == v["arg2_ndim"])) if n else
+          And((Or(v["arg1_ndim"] == 3, v["arg1_ndim"] == 4)), v["arg1_ndim"] == v["arg2_ndim"]))
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):

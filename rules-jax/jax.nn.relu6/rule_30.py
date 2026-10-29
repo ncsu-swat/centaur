@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor must have a numeric data type, excluding bool, str, and dtype (Rule 30)
+# tensor dtype must not be string or np.dtype (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
-          And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
+    s.add(Not(And(v["arg1_dtype"] != 11, v["arg1_dtype"] != 12)) if n else
+          And(v["arg1_dtype"] != 11, v["arg1_dtype"] != 12))
 )
 
 def rule_30_func(arg1, solver=None, neg=False):

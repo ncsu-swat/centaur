@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# two input tensors must either have the same number of dimensions, or at least one must be a scalar (Rule 29)
+# rank compatibility allowing scalar broadcasting (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(v["arg1_ndim"] == v["arg2_ndim"], v["arg1_ndim"] == 0), v["arg2_ndim"] == 0)) if n else
-          Or(Or(v["arg1_ndim"] == v["arg2_ndim"], v["arg1_ndim"] == 0), v["arg2_ndim"] == 0))
+    s.add(Not(Or(Or(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0), v["arg1_ndim"] == v["arg2_ndim"])) if n else
+          Or(Or(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0), v["arg1_ndim"] == v["arg2_ndim"]))
 )
 
 def rule_29_func(arg1, arg2, solver=None, neg=False):

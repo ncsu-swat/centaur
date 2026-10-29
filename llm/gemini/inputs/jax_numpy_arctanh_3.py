@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arctanh_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar int32 (value: 0)
-    input_dict = {"x": np.int32(0)}
+    # Input 1: Zero
+    input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar int64 (value: 1)
-    input_dict = {"x": np.int64(1)}
+    # Input 2: One
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Scalar int16 (value: -1)
-    input_dict = {"x": np.int16(-1)}
+    # Input 3: Negative one
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array of int32 containing values inside [-1, 1]
-    input_dict = {"x": np.array([-1, 0, 1], dtype=np.int32)}
+    # Input 4: Positive integer 2
+    input_dict = {"x": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D array of int64 containing values inside and outside [-1, 1]
-    input_dict = {"x": np.array([-2, -1, 0, 1, 2], dtype=np.int64)}
+    # Input 5: Negative integer -2
+    input_dict = {"x": -2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array of int16
-    input_dict = {"x": np.array([[0, 1], [-1, 0]], dtype=np.int16)}
+    # Input 6: Positive integer 5
+    input_dict = {"x": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array of int8 with larger integers
-    input_dict = {"x": np.array([[5, -3], [12, -1]], dtype=np.int8)}
+    # Input 7: Negative integer -5
+    input_dict = {"x": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D array of uint32
-    input_dict = {"x": np.array([[[0, 1], [1, 0]], [[0, 0], [1, 1]]], dtype=np.uint32)}
+    # Input 8: Positive integer 10
+    input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D array of int64
-    input_dict = {"x": np.arange(-4, 4, dtype=np.int64).reshape(2, 2, 2)}
+    # Input 9: Negative integer -10
+    input_dict = {"x": -10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D array of int32
-    input_dict = {"x": np.random.randint(-10, 10, size=(2, 2, 2, 2), dtype=np.int32)}
+    # Input 10: Large positive integer
+    input_dict = {"x": 1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Large negative integer
+    input_dict = {"x": -1000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arctanh_3"] = arctanh_inputs()
 

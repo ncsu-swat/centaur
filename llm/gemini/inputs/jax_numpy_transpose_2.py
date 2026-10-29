@@ -4,73 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def transpose_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array float32, standard swap
-    a = np.random.randn(3, 4).astype(np.float32)
-    axes = [1, 0]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 3D array float64, permutation
-    a = np.random.randn(2, 3, 4).astype(np.float64)
-    axes = [2, 0, 1]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 1D array int32, identity transpose
-    a = np.arange(10).astype(np.int32)
+    # Input 1: 1D float32 array
+    a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     axes = [0]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"a": a, "axes": axes})
 
-    # Input 4: 4D array int64, permutation
-    a = np.random.randint(0, 10, size=(2, 2, 3, 3)).astype(np.int64)
-    axes = [0, 2, 1, 3]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 3D array uint8, shift axes
-    a = np.random.randint(0, 256, size=(5, 5, 3)).astype(np.uint8)
-    axes = [2, 0, 1]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 5D array float32, complete reversal
-    a = np.random.randn(2, 3, 4, 5, 6).astype(np.float32)
-    axes = [4, 3, 2, 1, 0]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 2D array boolean, keep same order
-    a = (np.random.randn(5, 5) > 0).astype(bool)
-    axes = [0, 1]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 3D array complex64, permutation
-    a = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
-    axes = [1, 2, 0]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 4D array float16, permutation
-    a = np.random.randn(2, 4, 2, 4).astype(np.float16)
-    axes = [1, 3, 0, 2]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D array int16, standard swap
-    a = np.random.randint(-100, 100, size=(10, 5)).astype(np.int16)
+    # Input 2: 2D int32 matrix transpose
+    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
     axes = [1, 0]
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 3: 2D float64 identity transpose
+    a = np.random.randn(4, 5).astype(np.float64)
+    axes = [0, 1]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 4: 3D float32 swapping last two dimensions
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    axes = [0, 2, 1]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 5: 3D int64 cyclic permutation
+    a = np.arange(24, dtype=np.int64).reshape((2, 3, 4))
+    axes = [2, 0, 1]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 6: 4D float32 array
+    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    axes = [3, 2, 1, 0]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 7: 4D array with custom axes order
+    a = np.random.randn(3, 4, 2, 5).astype(np.float32)
+    axes = [0, 3, 1, 2]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 8: 5D float16 array
+    a = np.random.randn(2, 2, 3, 2, 4).astype(np.float16)
+    axes = [4, 1, 3, 0, 2]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 9: 2D boolean array
+    a = np.array([[True, False], [False, True]], dtype=np.bool_)
+    axes = [1, 0]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 10: 3D complex64 array
+    a = (np.random.randn(3, 4, 5) + 1j * np.random.randn(3, 4, 5)).astype(
+        np.complex64
+    )
+    axes = [1, 2, 0]
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 11: 0D scalar array
+    a = np.array(42.0, dtype=np.float32)
+    axes = []
+    list_of_inputs.append({"a": a, "axes": axes})
+
+    # Input 12: 6D int16 array reversed axes
+    a = np.ones((2, 1, 3, 1, 4, 2), dtype=np.int16)
+    axes = [5, 4, 3, 2, 1, 0]
+    list_of_inputs.append({"a": a, "axes": axes})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.transpose_2"] = transpose_inputs()
 

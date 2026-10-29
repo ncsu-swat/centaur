@@ -6,85 +6,86 @@ generated_inputs = dict()
 
 import numpy as np
 import copy
-import jax
-
-try:
-    import jax._src.numpy.ufuncs as ufuncs
-    _orig_isposneginf = ufuncs._isposneginf
-    def my_isposneginf(infval, x, out):
-        res = _orig_isposneginf(infval, x, None)
-        if out is not None:
-            try:
-                out[...] = np.array(res)
-            except Exception:
-                pass
-        return res
-    ufuncs._isposneginf = my_isposneginf
-except Exception:
-    pass
 
 def isneginf_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({
+    # Input 1: zero
+    input_dict = {
         "x": 0,
-        "out": np.empty((), dtype=bool)
-    })
-    
-    # Input 2
-    list_of_inputs.append({
-        "x": 1,
-        "out": np.empty((), dtype=bool)
-    })
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    list_of_inputs.append({
+    # Input 2: small negative integer
+    input_dict = {
         "x": -1,
-        "out": np.empty((), dtype=bool)
-    })
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    list_of_inputs.append({
-        "x": 100,
-        "out": np.empty((), dtype=bool)
-    })
+    # Input 3: small positive integer
+    input_dict = {
+        "x": 1,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    list_of_inputs.append({
-        "x": -500,
-        "out": np.empty((), dtype=bool)
-    })
+    # Input 4: positive integer
+    input_dict = {
+        "x": 42,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    list_of_inputs.append({
-        "x": 99999,
-        "out": np.empty((), dtype=bool)
-    })
+    # Input 5: negative integer
+    input_dict = {
+        "x": -100,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    list_of_inputs.append({
-        "x": -123456,
-        "out": np.empty((), dtype=bool)
-    })
+    # Input 6: single digit positive integer
+    input_dict = {
+        "x": 7,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    list_of_inputs.append({
-        "x": 2,
-        "out": np.empty((), dtype=bool)
-    })
+    # Input 7: large negative integer
+    input_dict = {
+        "x": -999999,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    list_of_inputs.append({
-        "x": -2,
-        "out": np.empty((), dtype=bool)
-    })
+    # Input 8: int32 max
+    input_dict = {
+        "x": 2147483647,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    list_of_inputs.append({
-        "x": 10,
-        "out": np.empty((), dtype=bool)
-    })
+    # Input 9: int32 min
+    input_dict = {
+        "x": -2147483648,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: large positive integer
+    input_dict = {
+        "x": 1000000,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: moderate negative integer
+    input_dict = {
+        "x": -42,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def lcm_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays with int32
+    # Input 1: 1D int32 arrays of same shape
     x1 = np.array([12, 18, 24], dtype=np.int32)
     x2 = np.array([5, 10, 15], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D arrays with negative values, int32
-    x1 = np.array([[-12, 15], [8, -6]], dtype=np.int32)
-    x2 = np.array([[18, -10], [-4, 9]], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D scalar arrays
+    x1 = np.array(12, dtype=np.int32)
+    x2 = np.array(18, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: 1D arrays with int64
-    x1 = np.array([100000000, 200000000], dtype=np.int64)
-    x2 = np.array([300000000, 400000000], dtype=np.int64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D arrays with negative values
+    x1 = np.array([[-12, 15], [20, -30]], dtype=np.int32)
+    x2 = np.array([[18, -25], [-16, 45]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: Broadcasting case: 2D array (1, 3) and 2D array (3, 1) with int32
-    x1 = np.array([[12, 18, 24]], dtype=np.int32)
-    x2 = np.array([[5], [10], [15]], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Broadcasting (3, 1) with (1, 4)
+    x1 = np.array([[6], [8], [10]], dtype=np.int32)
+    x2 = np.array([[2, 3, 4, 5]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: 3D arrays with int32
-    x1 = np.arange(1, 9, dtype=np.int32).reshape(2, 2, 2)
-    x2 = np.arange(9, 17, dtype=np.int32).reshape(2, 2, 2)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D array broadcast with 0D array
+    x1 = np.array([6, 9, 12, 15], dtype=np.int64)
+    x2 = np.array(12, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: 4D arrays with int64
-    x1 = np.ones((2, 2, 2, 2), dtype=np.int64) * 6
-    x2 = np.ones((2, 2, 2, 2), dtype=np.int64) * 8
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D arrays with zeros
+    x1 = np.array([[[0, 4], [6, 8]], [[10, 0], [14, 16]]], dtype=np.int32)
+    x2 = np.array([[[5, 0], [9, 12]], [[0, 15], [21, 24]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: Inputs containing zeros (int32)
-    x1 = np.array([0, 5, 0], dtype=np.int32)
-    x2 = np.array([3, 0, 0], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D int64 arrays
+    x1 = np.array([14, 21, 35], dtype=np.int64)
+    x2 = np.array([21, 28, 42], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Broadcasting 1D array of size 1 and 2D array (int32)
-    x1 = np.array([15], dtype=np.int32)
-    x2 = np.array([[5, 10, 25], [30, 45, 60]], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: int32 arrays with negative and positive values
+    x1 = np.array([-3, -7, 11, -13], dtype=np.int32)
+    x2 = np.array([4, 6, -8, 10], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: int64 array with negative values
-    x1 = np.array([-2, -3, -4, -5], dtype=np.int64)
-    x2 = np.array([3, 4, 5, 6], dtype=np.int64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large int64 values
+    x1 = np.array([1000003, 1000033], dtype=np.int64)
+    x2 = np.array([1000037, 1000039], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: 1D array with mixed positive and negative values, int32
-    x1 = np.array([12, -15, 20, -35], dtype=np.int32)
-    x2 = np.array([-18, 25, -30, 42], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D arrays with broadcasting
+    x1 = np.random.randint(1, 20, size=(2, 1, 3, 1), dtype=np.int32)
+    x2 = np.random.randint(1, 20, size=(1, 2, 1, 4), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: 2D int64 broadcasting
+    x1 = np.array([[12, 24, 36]], dtype=np.int64)
+    x2 = np.array([[2], [3], [4]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.lcm"] = lcm_inputs()
 

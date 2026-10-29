@@ -4,58 +4,73 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
-import jax._src.numpy.util as jax_util
-import jax._src.numpy.ufuncs as jax_ufuncs
+import numpy as np
 
-# Monkey-patch JAX to convert tuple arguments to JAX arrays before processing
-_original_promote_args_inexact = jax_util.promote_args_inexact
-
-def _patched_promote_args_inexact(fun_name, *args):
-    new_args = [jnp.asarray(arg) if isinstance(arg, tuple) else arg for arg in args]
-    return _original_promote_args_inexact(fun_name, *new_args)
-
-jax_util.promote_args_inexact = _patched_promote_args_inexact
-if hasattr(jax_ufuncs, "promote_args_inexact"):
-    jax_ufuncs.promote_args_inexact = _patched_promote_args_inexact
 
 def arccosh_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple float tuple
-    list_of_inputs.append({"x": (1.0, 2.0, 5.0, 10.0)})
+    # Input 1: 1D array of float32 values >= 1
+    x = np.array([1.0, 1.5, 2.0, 3.0, 10.0], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Single-element float tuple
-    list_of_inputs.append({"x": (1.5,)})
+    # Input 2: 2D array of float32 values >= 1
+    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Tuple of integers
-    list_of_inputs.append({"x": (2, 5, 10, 50, 100)})
+    # Input 3: 1D array of int32 values >= 1
+    x = np.array([1, 2, 5, 10, 50], dtype=np.int32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Tuple of complex numbers
-    list_of_inputs.append({"x": (1.0 + 2.0j, 2.0 + 3.0j, 5.0 + 0j)})
+    # Input 4: 1D array including values < 1 and negative values (produces NaN)
+    x = np.array([-5.0, -1.0, 0.0, 0.5, 1.0, 2.5], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Nested 2D tuple
-    list_of_inputs.append({"x": ((2.0, 3.0), (4.0, 5.0))})
+    # Input 5: 3D array of float64 values
+    x = np.arange(1.0, 9.0, dtype=np.float64).reshape((2, 2, 2))
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Values close to 1
-    list_of_inputs.append({"x": (1.001, 1.01, 1.1, 1.5)})
+    # Input 6: 1D array of complex64 values
+    x = np.array([1.0 + 2.0j, -5.0 + 0.0j, 0.0 + 1.0j, 2.0 - 1.0j], dtype=np.complex64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: High dimensional nested tuple (3D)
-    list_of_inputs.append({"x": (((2.0, 3.0), (4.0, 5.0)), ((6.0, 7.0), (8.0, 9.0)))})
+    # Input 7: 2D array of complex128 values
+    x = np.array(
+        [[1.0 + 1.0j, 2.0 - 3.0j], [-1.0 + 0.0j, 0.5 + 0.5j]],
+        dtype=np.complex128,
+    )
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Tuple of numpy float32 scalars
-    list_of_inputs.append({"x": (np.float32(2.0), np.float32(3.0))})
+    # Input 8: 1D array with single element
+    x = np.array([2.5], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large scale values
-    list_of_inputs.append({"x": (1e5, 1e10, 1e15)})
+    # Input 9: 1D array with special values (inf and nan)
+    x = np.array([1.0, np.inf, -np.inf, np.nan], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Mixed integer-like float values
-    list_of_inputs.append({"x": (2.0, 3.0, 4.0)})
+    # Input 10: 4D array of float32 values
+    x = np.linspace(1.0, 10.0, 16, dtype=np.float32).reshape((2, 2, 2, 2))
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D int64 array
+    x = np.array([1, 3, 7, 15, 31], dtype=np.int64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arccosh_5"] = arccosh_inputs()
 

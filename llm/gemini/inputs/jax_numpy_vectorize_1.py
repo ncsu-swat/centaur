@@ -4,141 +4,121 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.numpy as jnp
+import numpy as np
 
-class CallableTuple(tuple):
-    def __new__(cls, func):
-        return super().__new__(cls, (func,))
-    def __call__(self, *args, **kwargs):
-        return self[0](*args, **kwargs)
 
-def jax_numpy_vectorize_inputs():
+def vectorize_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D to 1D mapping (doubling)
-    pyfunc = CallableTuple(lambda x: x * 2)
-    excluded = ()
-    signature = "(n)->(n)"
-    args = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 1: Scalar to scalar with 1D float array
+    input_dict = {
+        "pyfunc": (lambda x: x + 1.0,),
+        "excluded": (),
+        "signature": "()->()",
+        "args": np.array([1.0, 2.0, 3.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Reduction (summing elements of core dimension)
-    pyfunc = CallableTuple(lambda x: x.sum())
-    excluded = ()
-    signature = "(n)->()"
-    args = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 2: Scalar to scalar with 2D int array
+    input_dict = {
+        "pyfunc": (lambda x: x * 2,),
+        "excluded": (),
+        "signature": "()->()",
+        "args": np.array([[-1, 2], [3, -4]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Scalar element-wise mapping
-    pyfunc = CallableTuple(lambda x: x + 1.0)
-    excluded = ()
-    signature = "()->()"
-    args = np.random.randn(5).astype(np.float32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 3: 1D reduction to scalar
+    input_dict = {
+        "pyfunc": (lambda x: jnp.sum(x),),
+        "excluded": (),
+        "signature": "(n)->()",
+        "args": np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Reversing core dimension
-    pyfunc = CallableTuple(lambda x: x[::-1])
-    excluded = ()
-    signature = "(n)->(n)"
-    args = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 4: 1D vector to 1D vector (mean centering), float64
+    input_dict = {
+        "pyfunc": (lambda x: x - jnp.mean(x),),
+        "excluded": (),
+        "signature": "(n)->(n)",
+        "args": np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Trigonometric float64 mapping
-    pyfunc = CallableTuple(lambda x: np.sin(x))
-    excluded = ()
-    signature = "()->()"
-    args = np.random.randn(2, 2).astype(np.float64)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 5: 2D matrix reduction to scalar across 3D batch
+    input_dict = {
+        "pyfunc": (lambda x: jnp.max(x),),
+        "excluded": (),
+        "signature": "(m,n)->()",
+        "args": np.arange(24, dtype=np.float32).reshape(2, 3, 4),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Reduction (mean of core dimension)
-    pyfunc = CallableTuple(lambda x: x.mean())
-    excluded = ()
-    signature = "(n)->()"
-    args = np.random.randn(10).astype(np.float32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 6: 1D prefix sum (cumulative sum) with int32
+    input_dict = {
+        "pyfunc": (lambda x: jnp.cumsum(x),),
+        "excluded": (),
+        "signature": "(n)->(n)",
+        "args": np.array([1, 2, 3, 4, 5], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Scalar mapping with excluded first argument
-    pyfunc = CallableTuple(lambda x: x * 0.5)
-    excluded = (0,)
-    signature = "()->()"
-    args = np.array([10.0, 20.0], dtype=np.float32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 7: Scalar absolute value with negative integers
+    input_dict = {
+        "pyfunc": (lambda x: jnp.abs(x),),
+        "excluded": (),
+        "signature": "()->()",
+        "args": np.array([-5, -3, 0, 3, 5], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Integer cubic mapping
-    pyfunc = CallableTuple(lambda x: x**3)
-    excluded = ()
-    signature = "()->()"
-    args = np.array([-1, 0, 1, 2], dtype=np.int32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 8: Matrix transpose across batch
+    input_dict = {
+        "pyfunc": (lambda x: jnp.transpose(x),),
+        "excluded": (),
+        "signature": "(m,n)->(n,m)",
+        "args": np.random.randn(2, 3, 4).astype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Core dimension max reduction with higher dimensional input
-    pyfunc = CallableTuple(lambda x: x.max())
-    excluded = ()
-    signature = "(n)->()"
-    args = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 9: 1D product reduction
+    input_dict = {
+        "pyfunc": (lambda x: jnp.prod(x),),
+        "excluded": (),
+        "signature": "(n)->()",
+        "args": np.array(
+            [[1.0, 2.0], [-3.0, 4.0], [0.5, 2.0]], dtype=np.float32
+        ),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Int64 shift mapping
-    pyfunc = CallableTuple(lambda x: x + 5)
-    excluded = ()
-    signature = "()->()"
-    args = np.array([[1, 2, 3]], dtype=np.int64)
-    list_of_inputs.append({
-        "pyfunc": pyfunc,
-        "excluded": excluded,
-        "signature": signature,
-        "args": args
-    })
+    # Input 10: 1D vector to fixed-size output (min, max)
+    input_dict = {
+        "pyfunc": (lambda x: jnp.array([jnp.min(x), jnp.max(x)]),),
+        "excluded": (),
+        "signature": "(n)->(2)",
+        "args": np.array(
+            [[1.0, 5.0, 2.0], [-2.0, 3.0, 0.0]], dtype=np.float32
+        ),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D matrix column sum reduction
+    input_dict = {
+        "pyfunc": (lambda x: jnp.sum(x, axis=0),),
+        "excluded": (),
+        "signature": "(n,m)->(m)",
+        "args": np.ones((2, 3, 4), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.vectorize_1"] = jax_numpy_vectorize_inputs()
+
+generated_inputs["jax.numpy.vectorize_1"] = vectorize_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

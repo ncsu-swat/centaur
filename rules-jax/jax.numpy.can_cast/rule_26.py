@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# casting from tensor to string requires valid source tensor dtype and target string specifier (Rule 26)
+# casting from tensor to bfloat16 string specifier requires tensor dtype to be boolean or float16 (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10), (Or(v["arg2_value"] == 38, v["arg2_value"] == 39)))) if n else
-          And(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10), (Or(v["arg2_value"] == 38, v["arg2_value"] == 39))))
+    s.add(Not(If(v["arg2_value"] == 39, Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 6), v["arg2_value"] == 38)) if n else
+          If(v["arg2_value"] == 39, Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 6), v["arg2_value"] == 38))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):

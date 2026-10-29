@@ -4,195 +4,237 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_signal_stft_inputs():
+
+def stft_inputs():
     list_of_inputs = []
 
-    # Input 1
-    x = np.random.randn(1000).astype(np.float32)
-    window = np.hanning(256).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 16000.0,
-        'window': window,
-        'nperseg': 256,
-        'noverlap': 128,
-        'nfft': 256,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, default-like settings
+    nperseg = 64
+    x = np.random.randn(256).astype(np.float32)
+    window = np.hanning(nperseg).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 1.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 32,
+            "nfft": 64,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "zeros",
+            "padded": True,
+            "axis": -1,
+        }
+    )
 
-    # Input 2
-    x = np.random.randn(500).astype(np.float32)
-    window = np.ones(128).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 1.0,
-        'window': window,
-        'nperseg': 128,
-        'noverlap': 64,
-        'nfft': 256,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'even',
-        'padded': False,
-        'axis': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array with zero-padded FFT (nfft > nperseg) and 'even' boundary
+    nperseg = 128
+    x = np.random.randn(512).astype(np.float64)
+    window = np.hamming(nperseg).astype(np.float64)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 100.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 64,
+            "nfft": 256,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "even",
+            "padded": True,
+            "axis": -1,
+        }
+    )
 
-    # Input 3
-    x = np.random.randn(10, 1000).astype(np.float32)
-    window = np.hamming(512).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 8000.0,
-        'window': window,
-        'nperseg': 512,
-        'noverlap': 256,
-        'nfft': 512,
-        'detrend': False,
-        'return_onesided': False,
-        'boundary': 'odd',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, computing along axis -1 with 'odd' boundary
+    nperseg = 64
+    x = np.random.randn(4, 300).astype(np.float32)
+    window = np.blackman(nperseg).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 16000.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 16,
+            "nfft": 128,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "odd",
+            "padded": True,
+            "axis": -1,
+        }
+    )
 
-    # Input 4
-    x = np.random.randn(1000, 5).astype(np.float32)
-    window = np.blackman(200).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 44100.0,
-        'window': window,
-        'nperseg': 200,
-        'noverlap': 100,
-        'nfft': 256,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'constant',
-        'padded': True,
-        'axis': 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array, computing along axis 0 with 'constant' boundary
+    nperseg = 32
+    x = np.random.randn(200, 8).astype(np.float32)
+    window = np.ones(nperseg, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 8000.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 16,
+            "nfft": 32,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "constant",
+            "padded": True,
+            "axis": 0,
+        }
+    )
 
-    # Input 5
-    x = np.random.randn(100).astype(np.float64)
-    window = np.hamming(16).astype(np.float64)
-    input_dict = {
-        'x': x,
-        'fs': 100.0,
-        'window': window,
-        'nperseg': 16,
-        'noverlap': 8,
-        'nfft': 32,
-        'detrend': False,
-        'return_onesided': False,
-        'boundary': 'zeros',
-        'padded': False,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array with padded=False
+    nperseg = 128
+    x = np.random.randn(2, 3, 512).astype(np.float32)
+    window = np.hanning(nperseg).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 44100.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 64,
+            "nfft": 128,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "zeros",
+            "padded": False,
+            "axis": -1,
+        }
+    )
 
-    # Input 6
-    x = np.random.randn(2, 3, 400).astype(np.float32)
-    window = np.hanning(64).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 2.5,
-        'window': window,
-        'nperseg': 64,
-        'noverlap': 32,
-        'nfft': 64,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Complex 1D array with two-sided spectrum (return_onesided=False)
+    nperseg = 64
+    x = (np.random.randn(256) + 1j * np.random.randn(256)).astype(np.complex64)
+    window = np.bartlett(nperseg).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 2.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 0,
+            "nfft": 64,
+            "detrend": False,
+            "return_onesided": False,
+            "boundary": "zeros",
+            "padded": True,
+            "axis": 0,
+        }
+    )
 
-    # Input 7
-    x = np.random.randn(2, 400, 3).astype(np.float32)
-    window = np.ones(100).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 1000.0,
-        'window': window,
-        'nperseg': 100,
-        'noverlap': 50,
-        'nfft': 128,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'even',
-        'padded': True,
-        'axis': 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D array, return_onesided=False on real input
+    nperseg = 50
+    x = np.random.randn(5, 200).astype(np.float64)
+    window = np.hanning(nperseg).astype(np.float64)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 10.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 25,
+            "nfft": 64,
+            "detrend": False,
+            "return_onesided": False,
+            "boundary": "even",
+            "padded": False,
+            "axis": 1,
+        }
+    )
 
-    # Input 8
-    x = (np.random.randn(1000) + 1j * np.random.randn(1000)).astype(np.complex64)
-    window = np.hanning(128).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 120.0,
-        'window': window,
-        'nperseg': 128,
-        'noverlap': 0,
-        'nfft': 128,
-        'detrend': False,
-        'return_onesided': False,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array, minimal overlap (noverlap=1)
+    nperseg = 32
+    x = np.random.randn(150).astype(np.float32)
+    window = np.hamming(nperseg).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 50.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 1,
+            "nfft": 64,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "constant",
+            "padded": True,
+            "axis": -1,
+        }
+    )
 
-    # Input 9
-    x = np.random.randn(2000).astype(np.float32)
-    window = np.hamming(500).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 50.0,
-        'window': window,
-        'nperseg': 500,
-        'noverlap': 400,
-        'nfft': 512,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D array computing along intermediate axis (axis=1)
+    nperseg = 64
+    x = np.random.randn(4, 256, 6).astype(np.float32)
+    window = np.hanning(nperseg).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 200.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 32,
+            "nfft": 64,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "odd",
+            "padded": True,
+            "axis": 1,
+        }
+    )
 
-    # Input 10
-    x = np.random.randn(300).astype(np.float32)
-    window = np.hanning(30).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 8.0,
-        'window': window,
-        'nperseg': 30,
-        'noverlap': 15,
-        'nfft': 64,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'odd',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Large segment size with float64 precision
+    nperseg = 256
+    x = np.random.randn(1024).astype(np.float64)
+    window = np.blackman(nperseg).astype(np.float64)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 1000.0,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 128,
+            "nfft": 512,
+            "detrend": False,
+            "return_onesided": True,
+            "boundary": "zeros",
+            "padded": False,
+            "axis": -1,
+        }
+    )
 
-    return list_of_inputs
+    # Input 11: 2D array, negative axis indexing (axis=-2)
+    nperseg = 16
+    x = np.random.randn(64, 10).astype(np.float32)
+    window = np.hanning(nperseg).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "fs": 0.5,
+            "window": window,
+            "nperseg": nperseg,
+            "noverlap": 8,
+            "nfft": 32,
+            "detrend": False,
+            "return_onesided": False,
+            "boundary": "even",
+            "padded": True,
+            "axis": -2,
+        }
+    )
 
-generated_inputs["jax.scipy.signal.stft_2"] = jax_scipy_signal_stft_inputs()
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
+
+generated_inputs["jax.scipy.signal.stft_2"] = stft_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

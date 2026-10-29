@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The number of dimensions of the input tensor should be non-negative and less than 10 (Rule 39)
+# double-precision floating-point dtype for high-precision computation (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 0, v["arg1_ndim"] < 10)) if n else
-          And(v["arg1_ndim"] >= 0, v["arg1_ndim"] < 10))
+    s.add(Not(v["arg1_dtype"] == 8) if n else
+          v["arg1_dtype"] == 8)
 )
 
 def rule_39_func(arg1, solver=None, neg=False):
@@ -24,15 +24,15 @@ def rule_39_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_ndim': arg1_ndim})
+        rule_39(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_39(solver, {'arg1_dtype': arg1['dtype']}, neg)

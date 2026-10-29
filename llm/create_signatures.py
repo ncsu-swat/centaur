@@ -156,7 +156,7 @@ def generate_signatures(api, lib="torch", llm="gemini"):
     time.sleep(6)
     
     if llm == "gemini":
-        model = "gemini-3.5-flash"
+        model = "gemini-3.8-flash"
         gemini_key = os.getenv("gemini_key")
         client = genai.Client(api_key=gemini_key)
         chat = client.chats.create(model=model)

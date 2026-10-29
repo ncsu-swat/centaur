@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fmod_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, positive integer divisor
-    x1 = np.array([1.5, 2.7, 3.9, 5.1], dtype=np.float32)
+    # Input 1: 1D float array with positive integer divisor
+    x1 = np.array([3.5, 4.2, 5.0, 6.7], dtype=np.float32)
+    x2 = 3
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 2: 1D int array with negative integer divisor
+    x1 = np.array([-7, -4, 0, 5, 9], dtype=np.int32)
+    x2 = -4
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 3: 2D float64 array with positive integer divisor
+    x1 = np.array([[10.5, -2.3], [-5.1, 7.8]], dtype=np.float64)
     x2 = 2
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D float32 array with negative values, negative integer divisor
-    x1 = np.array([[-3.5, 4.5], [5.5, -6.5]], dtype=np.float32)
-    x2 = -3
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 3D float64 array, positive integer divisor
-    x1 = np.random.uniform(-10.0, 10.0, size=(2, 2, 2)).astype(np.float64)
+    # Input 4: 2D int64 array with positive integer divisor
+    x1 = np.array([[12, 15, 18], [22, 25, 28]], dtype=np.int64)
     x2 = 5
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: 1D int32 array, positive integer divisor
-    x1 = np.array([10, 11, 12, 13, 14], dtype=np.int32)
-    x2 = 4
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float32 array with negative integer divisor
+    x1 = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    x2 = -3
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: 2D int64 array, negative integer divisor
-    x1 = np.array([[-10, 20], [-30, 40]], dtype=np.int64)
-    x2 = -7
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 4D float32 array, positive integer divisor
-    x1 = np.random.uniform(-100.0, 100.0, size=(2, 2, 2, 2)).astype(np.float32)
-    x2 = 10
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 1D float16 array, positive integer divisor
-    x1 = np.array([-1.2, 2.3, -3.4, 4.5], dtype=np.float16)
-    x2 = 3
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 0D float32 array, positive integer divisor
+    # Input 6: 0D scalar array with positive integer divisor
     x1 = np.array(7.5, dtype=np.float32)
-    x2 = 2
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    x2 = 4
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: 2D float32 array with large values, large integer divisor
-    x1 = np.array([[1005.0, 2005.0], [3005.0, 4005.0]], dtype=np.float32)
+    # Input 7: 4D float32 array
+    x1 = np.ones((2, 2, 2, 2), dtype=np.float32) * 9.5
+    x2 = 6
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 8: 1D float array containing zeros and negatives
+    x1 = np.array([0.0, -0.0, -15.5, 15.5], dtype=np.float32)
+    x2 = 7
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 9: Large integer values
+    x1 = np.array([100000, -250000, 345678], dtype=np.int64)
     x2 = 1000
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: 3D int32 array with negative values, positive divisor
-    x1 = np.array([[[-5, -6], [-7, -8]], [[-9, -10], [-11, -12]]], dtype=np.int32)
-    x2 = 3
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float16 array
+    x1 = np.array([[-3.5, 2.5], [1.5, -4.5]], dtype=np.float16)
+    x2 = 2
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: Divisor is 1
+    x1 = np.array([1.25, 2.5, 3.75, 5.0], dtype=np.float32)
+    x2 = 1
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fmod_3"] = fmod_inputs()
 

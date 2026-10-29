@@ -4,113 +4,74 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def norm_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, Frobenius norm, axis (0, 1), keepdims=False
-    x = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "ord": "fro",
-        "axis": (0, 1),
-        "keepdims": False
-    }
+    # Input 1: 2D array, Frobenius norm, keepdims False
+    x = np.array([[-1.5, 2.0, -3.5], [4.0, -5.5, 6.0]], dtype=np.float32)
+    input_dict = {"x": x, "ord": "fro", "axis": (0, 1), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, Nuclear norm, axis (0, 1), keepdims=True
-    x = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "ord": "nuc",
-        "axis": (0, 1),
-        "keepdims": True
-    }
+    # Input 2: 2D array, Nuclear norm, keepdims True
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    input_dict = {"x": x, "ord": "nuc", "axis": (0, 1), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D array, Frobenius norm along axis (1, 2)
-    x = np.random.randn(2, 3, 3).astype(np.float64)
-    input_dict = {
-        "x": x,
-        "ord": "fro",
-        "axis": (1, 2),
-        "keepdims": False
-    }
+    # Input 3: 3D array (batched matrices), Frobenius norm over axes (1, 2)
+    x = np.random.randn(4, 3, 3).astype(np.float32)
+    input_dict = {"x": x, "ord": "fro", "axis": (1, 2), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, Nuclear norm along axis (1, 2)
-    x = np.random.randn(3, 5, 4).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "ord": "nuc",
-        "axis": (1, 2),
-        "keepdims": True
-    }
+    # Input 4: 3D array (batched matrices), Nuclear norm over axes (1, 2), keepdims True
+    x = np.random.randn(2, 4, 5).astype(np.float64)
+    input_dict = {"x": x, "ord": "nuc", "axis": (1, 2), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D array, Frobenius norm along axis (2, 3)
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "ord": "fro",
-        "axis": (2, 3),
-        "keepdims": False
-    }
+    # Input 5: 3D array with negative axis indices, Frobenius norm
+    x = np.random.randn(3, 5, 2).astype(np.float32)
+    input_dict = {"x": x, "ord": "fro", "axis": (-2, -1), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D array, Nuclear norm along axis (0, 1)
-    x = np.random.randn(4, 3, 2).astype(np.float64)
-    input_dict = {
-        "x": x,
-        "ord": "nuc",
-        "axis": (0, 1),
-        "keepdims": False
-    }
+    # Input 6: 4D array, batched Nuclear norm over axes (-2, -1), keepdims True
+    x = np.random.randn(2, 3, 4, 4).astype(np.float32)
+    input_dict = {"x": x, "ord": "nuc", "axis": (-2, -1), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array with negative values, Frobenius norm, axis (-2, -1)
-    x = np.random.uniform(-5, 5, (5, 5)).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "ord": "fro",
-        "axis": (-2, -1),
-        "keepdims": True
-    }
+    # Input 7: 2D complex array, Frobenius norm
+    x = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex64
+    )
+    input_dict = {"x": x, "ord": "fro", "axis": (0, 1), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D array, Nuclear norm, axis (0, 2)
-    x = np.random.randn(2, 4, 3).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "ord": "nuc",
-        "axis": (0, 2),
-        "keepdims": False
-    }
+    # Input 8: 2D complex array, Nuclear norm, keepdims True
+    x = (np.random.randn(4, 2) + 1j * np.random.randn(4, 2)).astype(
+        np.complex128
+    )
+    input_dict = {"x": x, "ord": "nuc", "axis": (0, 1), "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D array, Frobenius norm, axis (0, 3)
-    x = np.random.randn(3, 3, 3, 3).astype(np.float64)
-    input_dict = {
-        "x": x,
-        "ord": "fro",
-        "axis": (0, 3),
-        "keepdims": True
-    }
+    # Input 9: 3D array, Frobenius norm across non-consecutive axes (0, 2)
+    x = np.random.randn(3, 4, 5).astype(np.float32)
+    input_dict = {"x": x, "ord": "fro", "axis": (0, 2), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array, Nuclear norm, axis (0, 1), float64
-    x = np.random.randn(6, 6).astype(np.float64)
-    input_dict = {
-        "x": x,
-        "ord": "nuc",
-        "axis": (0, 1),
-        "keepdims": False
-    }
+    # Input 10: 4D array, Frobenius norm across reversed axes (-1, -2)
+    x = np.random.randn(2, 2, 3, 3).astype(np.float64)
+    input_dict = {"x": x, "ord": "fro", "axis": (-1, -2), "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D array, Nuclear norm across axes (0, 1)
+    x = np.random.randn(3, 3, 2).astype(np.float32)
+    input_dict = {"x": x, "ord": "nuc", "axis": (0, 1), "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.norm_4"] = norm_inputs()
 

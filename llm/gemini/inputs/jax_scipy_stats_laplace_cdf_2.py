@@ -4,92 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_scipy_stats_laplace_cdf_inputs():
+def laplace_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard Laplace, zero mean, scale 1
-    list_of_inputs.append({
-        'x': float(0.0),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 1: Standard Laplace CDF at median
+    input_dict = {"x": 0.0, "loc": 0.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive values, larger scale
-    list_of_inputs.append({
-        'x': float(1.5),
-        'loc': float(0.0),
-        'scale': float(2.0)
-    })
+    # Input 2: Right tail value
+    input_dict = {"x": 2.5, "loc": 0.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative x, positive loc, small scale
-    list_of_inputs.append({
-        'x': float(-1.0),
-        'loc': float(1.0),
-        'scale': float(0.5)
-    })
+    # Input 3: Left tail value
+    input_dict = {"x": -3.0, "loc": 0.0, "scale": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large positive values
-    list_of_inputs.append({
-        'x': float(10.0),
-        'loc': float(-5.0),
-        'scale': float(3.5)
-    })
+    # Input 4: Positive location, larger scale
+    input_dict = {"x": 10.0, "loc": 5.0, "scale": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative x, negative loc, very small scale
-    list_of_inputs.append({
-        'x': float(-2.5),
-        'loc': float(-1.0),
-        'scale': float(0.1)
-    })
+    # Input 5: Negative location and x
+    input_dict = {"x": -5.0, "loc": -2.0, "scale": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Zero x and loc, large scale
-    list_of_inputs.append({
-        'x': float(0.0),
-        'loc': float(0.0),
-        'scale': float(10.0)
-    })
+    # Input 6: Small scale (peaked distribution)
+    input_dict = {"x": 1.05, "loc": 1.0, "scale": 0.05}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Using numpy float64 types, large values
-    list_of_inputs.append({
-        'x': np.float64(100.0),
-        'loc': np.float64(50.0),
-        'scale': np.float64(20.0)
-    })
+    # Input 7: Far in the right tail
+    input_dict = {"x": 100.0, "loc": 10.0, "scale": 15.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Using numpy float32 types
-    list_of_inputs.append({
-        'x': np.float32(-0.5),
-        'loc': np.float32(0.5),
-        'scale': np.float32(1.5)
-    })
+    # Input 8: Far in the left tail
+    input_dict = {"x": -100.0, "loc": 0.0, "scale": 20.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Arbitrary fractional values
-    list_of_inputs.append({
-        'x': float(1.23),
-        'loc': float(4.56),
-        'scale': float(7.89)
-    })
+    # Input 9: x strictly equals loc
+    input_dict = {"x": -4.2, "loc": -4.2, "scale": 0.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Far left tail
-    list_of_inputs.append({
-        'x': float(-10.0),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 10: Fractional values
+    input_dict = {"x": 0.123, "loc": -0.456, "scale": 1.789}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Median point (x == loc)
-    list_of_inputs.append({
-        'x': float(5.0),
-        'loc': float(5.0),
-        'scale': float(1.0)
-    })
+    # Input 11: Large scale (flat distribution)
+    input_dict = {"x": 15.0, "loc": 0.0, "scale": 500.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.laplace.cdf_2"] = jax_scipy_stats_laplace_cdf_inputs()
+generated_inputs["jax.scipy.stats.laplace.cdf_2"] = laplace_cdf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

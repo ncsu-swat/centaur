@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the initial value tensor's dimension must be at most the input tensor's dimension (Rule 48)
+# for a 4-dimensional tensor, reduction integer axis must fall between -4 and 3 (Rule 48)
 
 rule_48 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_ndim"] <= v["arg1_ndim"]) if n else
-          v["arg2_ndim"] <= v["arg1_ndim"])
+    s.add(Not(If(v["arg1_ndim"] == 4, And(-4 <= v["arg2_value"], v["arg2_value"] <= 3), True)) if n else
+          If(v["arg1_ndim"] == 4, And(-4 <= v["arg2_value"], v["arg2_value"] <= 3), True))
 )
 
 def rule_48_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_48_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 48
-        rule_48(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_48(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_48(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_48(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

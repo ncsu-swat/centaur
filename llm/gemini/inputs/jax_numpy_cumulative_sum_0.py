@@ -4,113 +4,128 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cumulative_sum_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D array of integers
-    x = np.array([1, -2, 3, -4, 5], dtype=np.int32)
+    # Input 1: 1D float32 array, axis 0, include_initial=False
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     input_dict = {
         "x": x,
         "axis": 0,
-        "dtype": np.int32,
-        "include_initial": False
+        "dtype": np.dtype(np.float32),
+        "include_initial": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array, accumulation along axis 1 with initial value included
-    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    # Input 2: 1D int32 array, axis 0, include_initial=True, dtype cast to int64
+    x = np.array([-5, 10, -15, 20], dtype=np.int32)
+    input_dict = {
+        "x": x,
+        "axis": 0,
+        "dtype": np.dtype(np.int64),
+        "include_initial": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D float64 array, axis 1, include_initial=False
+    x = np.array(
+        [[1.5, -2.5, 3.5], [-0.5, 0.0, 4.5]],
+        dtype=np.float64,
+    )
     input_dict = {
         "x": x,
         "axis": 1,
-        "dtype": np.float32,
-        "include_initial": True
+        "dtype": np.dtype(np.float64),
+        "include_initial": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 array, negative values, along axis 2
-    x = np.random.randn(3, 4, 5).astype(np.float64)
+    # Input 4: 2D int16 array, axis 0, include_initial=True
+    x = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.int16)
+    input_dict = {
+        "x": x,
+        "axis": 0,
+        "dtype": np.dtype(np.int32),
+        "include_initial": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D float32 array, negative axis -1, include_initial=False
+    x = np.ones((2, 3, 4), dtype=np.float32)
+    input_dict = {
+        "x": x,
+        "axis": -1,
+        "dtype": np.dtype(np.float32),
+        "include_initial": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D float32 array, middle axis 1, include_initial=True
+    x = np.random.randn(3, 4, 5).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "axis": 1,
+        "dtype": np.dtype(np.float32),
+        "include_initial": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Boolean array accumulated to int32, axis 0, include_initial=False
+    x = np.array([True, False, True, True, False], dtype=bool)
+    input_dict = {
+        "x": x,
+        "axis": 0,
+        "dtype": np.dtype(np.int32),
+        "include_initial": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4D float64 array, axis 2, include_initial=True
+    x = np.random.randn(2, 2, 3, 2).astype(np.float64)
     input_dict = {
         "x": x,
         "axis": 2,
-        "dtype": np.float64,
-        "include_initial": False
+        "dtype": np.dtype(np.float64),
+        "include_initial": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D int64 array, negative and positive values, along axis 0 with initial
-    x = np.random.randint(-10, 10, size=(5, 5)).astype(np.int64)
+    # Input 9: Complex array, axis 0, include_initial=False
+    x = np.array([1 + 2j, -2 + 3j, 0 - 1j], dtype=np.complex64)
     input_dict = {
         "x": x,
         "axis": 0,
-        "dtype": np.int64,
-        "include_initial": True
+        "dtype": np.dtype(np.complex64),
+        "include_initial": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D float32 array, along negative axis -1
-    x = np.random.randn(2, 2, 3, 4).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "axis": -1,
-        "dtype": np.float32,
-        "include_initial": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Boolean array, accumulated with integer dtype conversion
-    x = np.array([True, False, True, True], dtype=bool)
-    input_dict = {
-        "x": x,
-        "axis": 0,
-        "dtype": np.int32,
-        "include_initial": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 1D float32 array, using negative axis
-    x = np.random.randn(10).astype(np.float32)
-    input_dict = {
-        "x": x,
-        "axis": -1,
-        "dtype": np.float32,
-        "include_initial": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D float32 array accumulated as float64, along axis -2
-    x = np.random.randn(6, 6).astype(np.float32)
+    # Input 10: 2D uint8 array with negative axis -2, include_initial=True, dtype uint32
+    x = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.uint8)
     input_dict = {
         "x": x,
         "axis": -2,
-        "dtype": np.float64,
-        "include_initial": False
+        "dtype": np.dtype(np.uint32),
+        "include_initial": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D int32 array, accumulated as int64, along axis 1
-    x = np.random.randint(-5, 5, size=(4, 3, 2)).astype(np.int32)
+    # Input 11: 1D array with single element, axis 0, include_initial=True
+    x = np.array([42.0], dtype=np.float32)
     input_dict = {
         "x": x,
-        "axis": 1,
-        "dtype": np.int64,
-        "include_initial": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 4D float32 array, along axis 3
-    x = np.ones((2, 3, 4, 5), dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "axis": 3,
-        "dtype": np.float32,
-        "include_initial": False
+        "axis": 0,
+        "dtype": np.dtype(np.float32),
+        "include_initial": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cumulative_sum"] = cumulative_sum_inputs()
 

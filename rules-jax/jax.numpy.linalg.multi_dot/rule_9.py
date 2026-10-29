@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If precision is specified as a single string, it must be the highest precision (Rule 9)
+# precision tuple must have length 2 with valid precision strings for both operands (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == 37) if n else
-          v["arg1_value"] == 37)
+    s.add(Not(And(v["arg1_length"] == 2, And([Implies(i < (1 + 1), Or(Select(v["arg1_values"], i) == 37, Select(v["arg1_values"], i) == 5)) for i in range(6)]))) if n else
+          And(v["arg1_length"] == 2, And([Implies(i < (1 + 1), Or(Select(v["arg1_values"], i) == 37, Select(v["arg1_values"], i) == 5)) for i in range(6)])))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_9_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, str) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), StringSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_value': arg1_value})
+        rule_9(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_value': arg1['value']}, neg)
+        rule_9(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

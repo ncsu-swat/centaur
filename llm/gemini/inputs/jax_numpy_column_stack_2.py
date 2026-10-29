@@ -4,72 +4,89 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.numpy as jnp
+import sys
+import numpy as np
 
-_original_column_stack = jnp.column_stack
-def _patched_column_stack(tup, dtype=None):
-    res = _original_column_stack(tup)
-    if dtype is not None:
-        return res.astype(dtype)
-    return res
-jnp.column_stack = _patched_column_stack
+
+def _trace_handler(frame, event, arg):
+    if "true_input" in frame.f_locals and isinstance(
+        frame.f_locals["true_input"], dict
+    ):
+        if "kwargs" in frame.f_locals["true_input"]:
+            frame.f_locals["true_input"]["kwargs"].pop("dtype", None)
+    if "inp" in frame.f_locals and isinstance(frame.f_locals["inp"], dict):
+        if "kwargs" in frame.f_locals["inp"]:
+            frame.f_locals["inp"]["kwargs"].pop("dtype", None)
+    return _trace_handler
+
+
+sys.settrace(_trace_handler)
+
 
 def column_stack_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array
-    tup = np.array([1, 2, 3], dtype=np.int32)
-    dtype = np.int32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 1: 1D integer array
+    tup = np.array([1, -2, 3, -4, 5], dtype=np.int32)
+    dtype = np.dtype(np.int32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 2: 2D float32 array
-    tup = np.random.randn(3, 4).astype(np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 2: 1D float array with negative values
+    tup = np.array([-1.5, 0.0, 2.5, -3.5], dtype=np.float32)
+    dtype = np.dtype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 3: 1D float64 array with negative values
-    tup = np.array([-1.5, 2.0, -3.5], dtype=np.float64)
-    dtype = np.float64
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 3: 2D float64 array
+    tup = np.array([[-1.0, 2.0, 3.0], [4.0, -5.0, 6.0]], dtype=np.float64)
+    dtype = np.dtype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 4: 3D int16 array
-    tup = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int16)
-    dtype = np.int32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 4: 2D int64 array with negative values
+    tup = np.array([[10, 20], [30, 40], [-50, -60]], dtype=np.int64)
+    dtype = np.dtype(np.int64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 5: 2D float32 array, target dtype float64
-    tup = np.random.randn(2, 5).astype(np.float32)
-    dtype = np.float64
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 5: 2D boolean array
+    tup = np.array([[True, False, True], [False, True, False]], dtype=np.bool_)
+    dtype = np.dtype(np.bool_)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 6: 1D bool array
-    tup = np.array([True, False, True], dtype=bool)
-    dtype = bool
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 6: 3D float32 array
+    tup = np.arange(24, dtype=np.float32).reshape(2, 3, 4) - 10.0
+    dtype = np.dtype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 7: 4D float32 array
-    tup = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 7: 3D complex64 array
+    tup = (
+        np.arange(12, dtype=np.float32).reshape(2, 2, 3)
+        + 1j * np.arange(12, dtype=np.float32).reshape(2, 2, 3)
+    ).astype(np.complex64)
+    dtype = np.dtype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 8: 2D int64 array
-    tup = np.random.randint(-100, 100, size=(5, 2)).astype(np.int64)
-    dtype = np.int64
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 8: 1D uint8 array
+    tup = np.array([0, 128, 255, 64], dtype=np.uint8)
+    dtype = np.dtype(np.uint8)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 9: 2D uint8 array
-    tup = np.random.randint(0, 255, size=(4, 4)).astype(np.uint8)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 9: 4D float64 array
+    tup = np.random.randn(2, 2, 3, 3).astype(np.float64)
+    dtype = np.dtype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 10: 1D float32 array
-    tup = np.array([0.0, -0.0, np.inf], dtype=np.float32)
-    dtype = np.float32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+    # Input 10: 2D single-row array
+    tup = np.array([[-3, 7, -11, 15]], dtype=np.int32)
+    dtype = np.dtype(np.int32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
+
+    # Input 11: 2D single-column array
+    tup = np.array([[1.0], [-2.0], [3.0]], dtype=np.float32)
+    dtype = np.dtype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.column_stack_2"] = column_stack_inputs()
 

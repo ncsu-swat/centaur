@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension tensor d must have positive values (Rule 32)
+# dimension tensor d elements are within the range 1 to 64 (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) > 0) if n else
-          Select(v["arg1_range"], 0) > 0)
+    s.add(Not(And(1 <= Select(v["arg1_range"], 0), Select(v["arg1_range"], 1) <= 64)) if n else
+          And(1 <= Select(v["arg1_range"], 0), Select(v["arg1_range"], 1) <= 64))
 )
 
 def rule_32_func(arg1, solver=None, neg=False):

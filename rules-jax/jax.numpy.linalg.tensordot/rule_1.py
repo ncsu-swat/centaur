@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The number of axes to sum over must be non-negative and not exceed the number of dimensions of either input tensor (Rule 1)
+# contraction axes count should not exceed tensor dimensions (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(And(And(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"]), v["arg3_value"] <= v["arg2_ndim"])) if n else

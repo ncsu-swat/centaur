@@ -4,63 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def modf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 positive and negative values
+    # Input 1: 1D float32 array with positive and negative floats
     x = np.array([-3.4, -5.7, 0.6, 1.5, 2.3], dtype=np.float32)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 2: 2D float64
-    x = np.array([[1.2, -2.3], [3.4, -4.5]], dtype=np.float64)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float64 array
+    x = np.array([[1.25, -2.5], [3.75, -4.125]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 3: 3D float16
-    x = np.array([[[1.1, -1.2], [2.3, -2.4]], [[3.5, -3.6], [4.7, -4.8]]], dtype=np.float16)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D int32
-    x = np.array([1, -2, 3, -4, 5], dtype=np.int32)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 4D float32
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32) * 10.0
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 0D float32 (scalar-like)
+    # Input 3: 0D scalar float32 array
     x = np.array(4.8, dtype=np.float32)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 7: 2D float32 with extreme values
-    x = np.array([[1e5, -1e-5], [0.0, -0.0]], dtype=np.float32)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float32 array with uniform distribution
+    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 8: 1D float64 with NaNs and Infs
-    x = np.array([np.nan, np.inf, -np.inf, 123.456], dtype=np.float64)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D float16 array
+    x = np.array([0.1, -0.9, 1.5, -2.3], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 9: 5D float32
-    x = np.random.randn(2, 1, 2, 1, 2).astype(np.float32)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D float32 array
+    x = np.random.uniform(-5.0, 5.0, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 10: 3D float64
-    x = (np.random.randn(2, 3, 4) * 1000.0).astype(np.float64)
-    input_dict = {"x": x, "out": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D float64 array with whole numbers and zeros
+    x = np.array([[0.0, -0.0], [5.0, -5.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 8: 1D float32 array with small fractional parts
+    x = np.array([1.0001, -2.0005, 3.00001], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 9: 2D float32 array with large values
+    x = np.array(
+        [[1000.5, -2000.25], [3000.75, -4000.125]], dtype=np.float32
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 10: 1D float64 array generated via linspace
+    x = np.linspace(-10.5, 10.5, 9, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 11: 3D float64 array with standard normal distribution
+    x = np.random.randn(3, 2, 2).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.modf_1"] = modf_inputs()
 

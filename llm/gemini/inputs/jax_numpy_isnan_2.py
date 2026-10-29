@@ -4,43 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isnan_inputs():
     list_of_inputs = []
 
-    # Input 1: numpy float64 positive
-    list_of_inputs.append({"x": np.float64(3.14)})
+    # Input 1: NaN float
+    list_of_inputs.append({"x": float("nan")})
 
-    # Input 2: numpy float32 negative
-    list_of_inputs.append({"x": np.float32(-2.718)})
+    # Input 2: Zero
+    list_of_inputs.append({"x": 0.0})
 
-    # Input 3: numpy float64 zero
-    list_of_inputs.append({"x": np.float64(0.0)})
+    # Input 3: Negative zero
+    list_of_inputs.append({"x": -0.0})
 
-    # Input 4: numpy float32 negative zero
-    list_of_inputs.append({"x": np.float32(-0.0)})
+    # Input 4: Positive infinity
+    list_of_inputs.append({"x": float("inf")})
 
-    # Input 5: numpy float64 NaN
-    list_of_inputs.append({"x": np.float64(np.nan)})
+    # Input 5: Negative infinity
+    list_of_inputs.append({"x": float("-inf")})
 
-    # Input 6: numpy float32 NaN
-    list_of_inputs.append({"x": np.float32(np.nan)})
+    # Input 6: Standard positive float
+    list_of_inputs.append({"x": 1.0})
 
-    # Input 7: numpy float64 infinity
-    list_of_inputs.append({"x": np.float64(np.inf)})
+    # Input 7: Standard negative float
+    list_of_inputs.append({"x": -42.5})
 
-    # Input 8: numpy float32 negative infinity
-    list_of_inputs.append({"x": np.float32(-np.inf)})
+    # Input 8: Very small positive float
+    list_of_inputs.append({"x": 1e-30})
 
-    # Input 9: Python native float positive
-    list_of_inputs.append({"x": 1.23e5})
+    # Input 9: Very large positive float
+    list_of_inputs.append({"x": 1e30})
 
-    # Input 10: Python native float negative
-    list_of_inputs.append({"x": -4.56e-6})
+    # Input 10: Mathematical constant pi approximation
+    list_of_inputs.append({"x": 3.141592653589793})
+
+    # Input 11: Negative fraction
+    list_of_inputs.append({"x": -0.125})
+
+    # Input 12: Subnormal-like small float
+    list_of_inputs.append({"x": 5e-324})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isnan_2"] = isnan_inputs()
 

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# rank equality constraint for non-scalar inputs (Rule 2)
+# if neither input is a scalar, both must have the same rank (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(If(And(v["arg1_ndim"] > 0, v["arg2_ndim"] > 0), v["arg1_ndim"] == v["arg2_ndim"], True)) if n else

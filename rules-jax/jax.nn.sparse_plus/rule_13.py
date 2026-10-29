@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension count of the input tensor must be less than 6 (Rule 13)
+# tensor dimensionality is bounded within standard range (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 5) if n else
-          v["arg1_ndim"] <= 5)
+    s.add(Not(And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 6)) if n else
+          And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 6))
 )
 
 def rule_13_func(arg1, solver=None, neg=False):

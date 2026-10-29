@@ -4,105 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_unique_counts_inputs():
+
+def unique_counts_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of integers
-    x = np.array([1, 2, 2, 3, 3, 3], dtype=np.int32)
-    input_dict = {
-        "x": x,
-        "size": 3,
-        "fill_value": True
-    }
+    # Input 1: 1D boolean array
+    x = np.array([True, False, True, True, False], dtype=np.bool_)
+    input_dict = {"x": x, "size": 4, "fill_value": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of floats with negative values
-    x = np.array([-1.5, 2.3, -1.5, 0.0, 4.2], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "size": 2,
-        "fill_value": False
-    }
+    # Input 2: 2D boolean array
+    x = np.array([[True, True], [False, True]], dtype=np.bool_)
+    input_dict = {"x": x, "size": 5, "fill_value": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array of int64 with size larger than unique count (padding expected)
-    x = np.array([[1, 2], [2, 3]], dtype=np.int64)
-    input_dict = {
-        "x": x,
-        "size": 5,
-        "fill_value": True
-    }
+    # Input 3: 1D int32 array with positive and negative values
+    x = np.array([-5, 3, -5, 0, 10, 3], dtype=np.int32)
+    input_dict = {"x": x, "size": 6, "fill_value": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float64 array
-    x = np.random.randn(2, 3, 2).astype(np.float64)
-    input_dict = {
-        "x": x,
-        "size": 10,
-        "fill_value": False
-    }
+    # Input 4: 2D int32 array
+    x = np.array([[1, 2, 3], [3, 2, 1], [4, 5, 6]], dtype=np.int32)
+    input_dict = {"x": x, "size": 10, "fill_value": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D boolean array
-    x = np.array([True, False, True, False, False], dtype=np.bool_)
-    input_dict = {
-        "x": x,
-        "size": 2,
-        "fill_value": True
-    }
+    # Input 5: 3D int64 array
+    x = np.arange(-12, 12, dtype=np.int64).reshape((2, 3, 4))
+    input_dict = {"x": x, "size": 30, "fill_value": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array of uniform values
-    x = np.ones(10, dtype=np.int32)
-    input_dict = {
-        "x": x,
-        "size": 1,
-        "fill_value": False
-    }
+    # Input 6: 1D float32 array
+    x = np.array([-1.5, 0.0, 2.5, -1.5, 3.0], dtype=np.float32)
+    input_dict = {"x": x, "size": 8, "fill_value": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large 1D array with random integers
-    x = np.random.randint(-10, 10, size=(50,)).astype(np.int32)
-    input_dict = {
-        "x": x,
-        "size": 15,
-        "fill_value": True
-    }
+    # Input 7: 2D float64 array
+    x = np.array(
+        [[-2.0, -1.0, 0.0], [0.0, 1.0, 2.0], [2.0, 3.0, 4.0]],
+        dtype=np.float64,
+    )
+    input_dict = {"x": x, "size": 12, "fill_value": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D int32 array
-    x = np.random.randint(0, 5, size=(2, 2, 2, 2)).astype(np.int32)
-    input_dict = {
-        "x": x,
-        "size": 4,
-        "fill_value": False
-    }
+    # Input 8: 1D uint8 array
+    x = np.array([255, 0, 128, 255, 0], dtype=np.uint8)
+    input_dict = {"x": x, "size": 5, "fill_value": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Single-element 1D array with padding size
-    x = np.array([42], dtype=np.int64)
-    input_dict = {
-        "x": x,
-        "size": 2,
-        "fill_value": True
-    }
+    # Input 9: 4D int16 array
+    x = np.zeros((2, 2, 2, 2), dtype=np.int16)
+    x[0, 1, 0, 1] = 5
+    x[1, 0, 1, 0] = -3
+    input_dict = {"x": x, "size": 6, "fill_value": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D float32 array with duplicate patterns
-    x = np.array([[0.5, -0.5], [-0.5, 0.5]], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "size": 2,
-        "fill_value": False
-    }
+    # Input 10: 1D float32 array with size exactly matching number of unique elements
+    x = np.array([10.0, 20.0, 30.0], dtype=np.float32)
+    input_dict = {"x": x, "size": 3, "fill_value": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D float32 array
+    x = np.ones((2, 3, 2), dtype=np.float32)
+    input_dict = {"x": x, "size": 4, "fill_value": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.unique_counts_4"] = jax_numpy_unique_counts_inputs()
+
+generated_inputs["jax.numpy.unique_counts_4"] = unique_counts_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

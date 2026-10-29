@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fliplr_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 2D integer array (2x2)
-    m = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 1: 2D float32 array
+    m = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 2: 2D float array (3x4) with negative and positive values
-    m = np.array([[-1.5, 2.0, -3.5, 4.0],
-                  [5.5, -6.0, 7.5, -8.0],
-                  [-9.5, 10.0, -11.5, 12.0]], dtype=np.float32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 2: 2D int32 array with negative values
+    m = np.array([[-1, -2], [3, -4], [5, 6]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 3: 3D float array (2x3x4)
-    m = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 3: 3D float64 array
+    m = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 4: 4D integer array (2x2x3x3)
-    m = np.random.randint(-10, 10, size=(2, 2, 3, 3)).astype(np.int64)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 4: 4D uint8 array
+    m = np.arange(24, dtype=np.uint8).reshape(2, 3, 2, 2)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 5: 2D float64 array with larger dimensions (10x10)
-    m = np.random.randn(10, 10).astype(np.float64)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 5: 2D boolean array
+    m = np.array([[True, False, True], [False, False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 6: 2D array with 1 row (1x5)
-    m = np.array([[1, 2, 3, 4, 5]], dtype=np.int32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 6: 2D complex numbers
+    m = np.array([[1 + 2j, 3 - 4j], [-5j, 6 + 0j]], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 7: 2D array with 1 col (5x1)
-    m = np.array([[1], [2], [3], [4], [5]], dtype=np.int32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 7: 5D int64 array
+    m = np.ones((1, 4, 1, 2, 3), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 8: 2D boolean array (3x3)
-    m = np.array([[True, False, True],
-                  [False, True, False],
-                  [True, True, False]], dtype=bool)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 8: 2D array with single column (axis 1 has size 1)
+    m = np.array([[10], [20], [30]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 9: 3D complex array (2x4x3)
-    m = (np.random.randn(2, 4, 3) + 1j * np.random.randn(2, 4, 3)).astype(np.complex64)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 9: 2D empty array (shape with zero dimension)
+    m = np.empty((3, 0), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 10: 2D array with single element (2x2) of uint8
-    m = np.arange(4, dtype=np.uint8).reshape(2, 2)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 10: 3D empty array along axis 0
+    m = np.empty((0, 4, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
+
+    # Input 11: 2D large random array
+    m = np.random.uniform(-100.0, 100.0, size=(50, 50)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fliplr"] = fliplr_inputs()
 

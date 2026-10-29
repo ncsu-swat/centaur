@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if axes is an integer, it must be within the valid range of the input tensor's dimensions (Rule 16)
+# 1-dimensional tensor shifted along the first or last axis (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And(-1 * v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(-1 * v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(And(v["arg1_ndim"] == 1, (Or(v["arg2_value"] == 0, v["arg2_value"] == -1)))) if n else
+          And(v["arg1_ndim"] == 1, (Or(v["arg2_value"] == 0, v["arg2_value"] == -1))))
 )
 
 def rule_16_func(arg1, arg2, solver=None, neg=False):

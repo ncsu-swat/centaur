@@ -4,123 +4,147 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logspace_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic logspace with default base 10
-    list_of_inputs.append({
+    # Input 1: 0D scalars as arrays, default base (10)
+    input_dict = {
         "start": np.array(0.0, dtype=np.float32),
-        "stop": np.array(2.0, dtype=np.float32),
-        "num": 5,
-        "endpoint": True,
-        "base": np.array(10.0, dtype=np.float32),
-        "dtype": np.float32,
-        "axis": 0
-    })
-
-    # Input 2: Excluding endpoint
-    list_of_inputs.append({
-        "start": np.array(0.0, dtype=np.float32),
-        "stop": np.array(2.0, dtype=np.float32),
-        "num": 5,
-        "endpoint": False,
-        "base": np.array(10.0, dtype=np.float32),
-        "dtype": np.float32,
-        "axis": 0
-    })
-
-    # Input 3: Negative bounds and float64 dtype
-    list_of_inputs.append({
-        "start": np.array(-2.0, dtype=np.float64),
-        "stop": np.array(-1.0, dtype=np.float64),
+        "stop": np.array(3.0, dtype=np.float32),
         "num": 10,
         "endpoint": True,
-        "base": np.array(10.0, dtype=np.float64),
-        "dtype": np.float64,
-        "axis": 0
-    })
-
-    # Input 4: Different base (base 2)
-    list_of_inputs.append({
-        "start": np.array(0.0, dtype=np.float32),
-        "stop": np.array(4.0, dtype=np.float32),
-        "num": 5,
-        "endpoint": True,
-        "base": np.array(2.0, dtype=np.float32),
-        "dtype": np.float32,
-        "axis": 0
-    })
-
-    # Input 5: 1D array boundaries for multidimensional logspace
-    list_of_inputs.append({
-        "start": np.array([0.0, 1.0], dtype=np.float32),
-        "stop": np.array([2.0, 3.0], dtype=np.float32),
-        "num": 5,
-        "endpoint": True,
         "base": np.array(10.0, dtype=np.float32),
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array boundaries with 1D array base
-    list_of_inputs.append({
+    # Input 2: Negative range, endpoint False
+    input_dict = {
+        "start": np.array(-3.0, dtype=np.float64),
+        "stop": np.array(-1.0, dtype=np.float64),
+        "num": 5,
+        "endpoint": False,
+        "base": np.array(10.0, dtype=np.float64),
+        "dtype": np.dtype(np.float64),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Base 2 with integer inputs
+    input_dict = {
+        "start": np.array(1, dtype=np.int32),
+        "stop": np.array(8, dtype=np.int32),
+        "num": 8,
+        "endpoint": True,
+        "base": np.array(2, dtype=np.int32),
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 1D array inputs, axis=0
+    input_dict = {
         "start": np.array([0.0, 1.0], dtype=np.float32),
         "stop": np.array([2.0, 3.0], dtype=np.float32),
-        "num": 5,
+        "num": 4,
         "endpoint": True,
         "base": np.array([10.0, 2.0], dtype=np.float32),
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Multi-dimensional boundaries with axis=-1
-    list_of_inputs.append({
-        "start": np.array([0.0, 1.0], dtype=np.float32),
-        "stop": np.array([2.0, 3.0], dtype=np.float32),
+    # Input 5: 1D array inputs, axis=1
+    input_dict = {
+        "start": np.array([0.0, 2.0, 4.0], dtype=np.float32),
+        "stop": np.array([1.0, 3.0, 5.0], dtype=np.float32),
+        "num": 6,
+        "endpoint": False,
+        "base": np.array(2.0, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 1D array inputs, axis=-1
+    input_dict = {
+        "start": np.array([-1.0, 0.0], dtype=np.float64),
+        "stop": np.array([1.0, 2.0], dtype=np.float64),
+        "num": 7,
+        "endpoint": True,
+        "base": np.array(np.e, dtype=np.float64),
+        "dtype": np.dtype(np.float64),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D array inputs, axis=0
+    input_dict = {
+        "start": np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float32),
+        "stop": np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float32),
         "num": 5,
         "endpoint": True,
-        "base": np.array(10.0, dtype=np.float32),
-        "dtype": np.float32,
-        "axis": -1
-    })
+        "base": np.array([[10.0, 10.0], [2.0, 2.0]], dtype=np.float32),
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D boundaries
-    list_of_inputs.append({
-        "start": np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float32),
-        "stop": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
+    # Input 8: 2D array inputs, axis=2
+    input_dict = {
+        "start": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
+        "stop": np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float32),
+        "num": 3,
+        "endpoint": False,
+        "base": np.array(10.0, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
+        "axis": 2,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Complex dtype
+    input_dict = {
+        "start": np.array(0.0, dtype=np.float32),
+        "stop": np.array(2.0, dtype=np.float32),
         "num": 4,
         "endpoint": True,
         "base": np.array(10.0, dtype=np.float32),
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype(np.complex64),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Complex output dtype
-    list_of_inputs.append({
-        "start": np.array(0.0, dtype=np.float32),
-        "stop": np.array(2.0, dtype=np.float32),
-        "num": 5,
+    # Input 10: 3D array inputs, axis=1
+    input_dict = {
+        "start": np.zeros((2, 1, 3), dtype=np.float64),
+        "stop": np.ones((2, 1, 3), dtype=np.float64),
+        "num": 4,
         "endpoint": True,
-        "base": np.array(10.0, dtype=np.float32),
-        "dtype": np.complex64,
-        "axis": 0
-    })
+        "base": np.array(10.0, dtype=np.float64),
+        "dtype": np.dtype(np.float64),
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Integer inputs producing float32 output
-    list_of_inputs.append({
-        "start": np.array(1, dtype=np.int32),
-        "stop": np.array(3, dtype=np.int32),
-        "num": 3,
+    # Input 11: Single element output (num=1)
+    input_dict = {
+        "start": np.array(2.0, dtype=np.float32),
+        "stop": np.array(5.0, dtype=np.float32),
+        "num": 1,
         "endpoint": True,
-        "base": np.array(10, dtype=np.int32),
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "base": np.array(2.0, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    return [copy.deepcopy(inp) for inp in list_of_inputs]
+    return list_of_inputs
+
 
 generated_inputs["jax.numpy.logspace_1"] = logspace_inputs()
 

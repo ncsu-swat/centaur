@@ -4,102 +4,191 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax._src.numpy.util as jax_util
+import numpy as np
 
-# Bypassing JAX's strict list rejection to satisfy strict signature requirements
-jax_util.check_arraylike = lambda *args, **kwargs: None
-
-# Patch _arraylike_asarray to handle list of JitTracers during JAX tracing / transformations
-orig_arraylike_asarray = jax_util._arraylike_asarray
-
-def patched_arraylike_asarray(x):
-    if isinstance(x, (list, tuple)):
-        import jax.numpy as jnp
-        try:
-            return jnp.stack([jnp.asarray(item) for item in x])
-        except Exception:
-            pass
-    return orig_arraylike_asarray(x)
-
-jax_util._arraylike_asarray = patched_arraylike_asarray
 
 def repeat_inputs():
     list_of_inputs = []
 
-    # Case 1: 1D array, axis=0, exact total_repeat_length
-    a = np.array([10, 20, 30], dtype=np.int32)
-    repeats = [2, 1, 3]
+    # Input 1: 1D float32 array, axis 0, exact match total_repeat_length
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    repeats = np.array([2, 1, 3], dtype=np.int32)
     axis = 0
     total_repeat_length = 6
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
 
-    # Case 2: 2D array, axis=1, exact total_repeat_length
-    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    repeats = [1, 2, 3]
+    # Input 2: 2D int32 array, axis 1, exact match
+    a = np.arange(8, dtype=np.int32).reshape(2, 4)
+    repeats = np.array([1, 2, 1, 2], dtype=np.int32)
     axis = 1
     total_repeat_length = 6
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
 
-    # Case 3: 2D array, axis=0, exact total_repeat_length
-    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    repeats = [2, 2]
+    # Input 3: 2D float64 array, negative axis -1, truncated total_repeat_length
+    a = np.array([[1.5, -2.5, 3.5], [-4.5, 5.5, -6.5]], dtype=np.float64)
+    repeats = np.array([3, 2, 1], dtype=np.int32)
+    axis = -1
+    total_repeat_length = 4
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
+
+    # Input 4: 3D int64 array, axis 0, padded total_repeat_length
+    a = np.arange(12, dtype=np.int64).reshape(2, 2, 3)
+    repeats = np.array([2, 3], dtype=np.int32)
+    axis = 0
+    total_repeat_length = 7
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
+
+    # Input 5: 3D bool array, axis 2
+    a = np.array([[[True, False], [False, True]]], dtype=bool)
+    repeats = np.array([2, 1], dtype=np.int32)
+    axis = 2
+    total_repeat_length = 3
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
+
+    # Input 6: 1D int16 array with zero repeats, negative axis -1
+    a = np.array([-5, 10, -15, 20], dtype=np.int16)
+    repeats = np.array([0, 2, 0, 1], dtype=np.int32)
+    axis = -1
+    total_repeat_length = 3
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
+
+    # Input 7: 4D float32 array, axis 1
+    a = np.ones((2, 3, 2, 2), dtype=np.float32)
+    repeats = np.array([1, 1, 2], dtype=np.int32)
+    axis = 1
+    total_repeat_length = 4
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
+
+    # Input 8: 2D complex64 array, axis 0
+    a = np.array([[1 + 2j, 3 - 4j], [5 + 6j, 7 - 8j]], dtype=np.complex64)
+    repeats = np.array([2, 2], dtype=np.int32)
     axis = 0
     total_repeat_length = 4
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
 
-    # Case 4: 3D array, axis=0, exact total_repeat_length
-    a = np.arange(8).reshape((2, 2, 2)).astype(np.int32)
-    repeats = [3, 1]
+    # Input 9: 1D float32 single-element array, axis 0
+    a = np.array([3.14159], dtype=np.float32)
+    repeats = np.array([5], dtype=np.int32)
     axis = 0
-    total_repeat_length = 4
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
+    total_repeat_length = 5
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
 
-    # Case 5: 2D array, negative axis, exact total_repeat_length
-    a = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.float32)
-    repeats = [1, 2, 1]
+    # Input 10: 3D uint8 array, negative axis -2, padded total_repeat_length
+    a = np.zeros((2, 3, 2), dtype=np.uint8)
+    repeats = np.array([1, 2, 1], dtype=np.int32)
     axis = -2
-    total_repeat_length = 4
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
+    total_repeat_length = 6
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
 
-    # Case 6: 1D array, sum(repeats) > total_repeat_length (truncation)
-    a = np.array([1, 2], dtype=np.int32)
-    repeats = [3, 3]
-    axis = 0
-    total_repeat_length = 4
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
-
-    # Case 7: 1D array, sum(repeats) < total_repeat_length (padding with last value)
-    a = np.array([1, 2], dtype=np.int32)
-    repeats = [1, 2]
-    axis = 0
+    # Input 11: 2D float16 array, negative axis -2, truncated total_repeat_length
+    a = np.array([[0.1, 0.2], [0.3, 0.4], [0.5, 0.6], [0.7, 0.8]], dtype=np.float16)
+    repeats = np.array([2, 1, 3, 1], dtype=np.int32)
+    axis = -2
     total_repeat_length = 5
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
-
-    # Case 8: 4D array, axis=1, exact total_repeat_length
-    a = np.arange(6).reshape((1, 2, 1, 3)).astype(np.float32)
-    repeats = [2, 1]
-    axis = 1
-    total_repeat_length = 3
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
-
-    # Case 9: 2D array of float32, axis=1
-    a = np.random.randn(2, 2).astype(np.float32)
-    repeats = [2, 3]
-    axis = 1
-    total_repeat_length = 5
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
-
-    # Case 10: 1D array of int64, axis=0
-    a = np.array([100, 200, 300], dtype=np.int64)
-    repeats = [1, 1, 1]
-    axis = 0
-    total_repeat_length = 3
-    list_of_inputs.append({"a": a, "repeats": repeats, "axis": axis, "total_repeat_length": total_repeat_length})
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "repeats": repeats,
+                "axis": axis,
+                "total_repeat_length": total_repeat_length,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.repeat_3"] = repeat_inputs()
 

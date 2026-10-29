@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def resize_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, larger new_shape
-    a = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    new_shape = 10
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    # Input 1: 1D float32 array, expanding
+    a = np.array([1.0, 2.5, -3.2, 4.8], dtype=np.float32)
+    new_shape = 8
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 2: 2D array, smaller new_shape
-    a = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    new_shape = 3
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    # Input 2: 2D float32 array, truncating
+    a = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+    new_shape = 4
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 3: Float32 array, 3D
-    a = np.random.randn(2, 3, 2).astype(np.float32)
+    # Input 3: 1D int32 array with negative values
+    a = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
     new_shape = 12
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 4: Float64 array, 1D
-    a = np.linspace(-1.0, 1.0, 5).astype(np.float64)
-    new_shape = 8
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
-
-    # Input 5: Large int32 array, many dimensions
-    a = np.arange(16).reshape(2, 2, 2, 2).astype(np.int32)
+    # Input 4: 3D float64 array
+    a = np.arange(24, dtype=np.float64).reshape((2, 3, 4))
     new_shape = 5
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 6: Boolean array
-    a = np.array([True, False, True], dtype=bool)
+    # Input 5: 2D boolean array
+    a = np.array([[True, False], [False, True]], dtype=np.bool_)
+    new_shape = 9
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
+
+    # Input 6: 1D complex64 array
+    a = np.array([1 + 2j, 3 - 4j, -5 + 6j], dtype=np.complex64)
     new_shape = 6
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 7: Float32 array, 2D
-    a = np.random.randn(3, 3).astype(np.float32)
-    new_shape = 4
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    # Input 7: 0D scalar array (int64)
+    a = np.array(42, dtype=np.int64)
+    new_shape = 7
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 8: Int64 array
-    a = np.array([5, 10, 15], dtype=np.int64)
-    new_shape = 4
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    # Input 8: 4D uint8 array
+    a = np.arange(16, dtype=np.uint8).reshape((2, 2, 2, 2))
+    new_shape = 20
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 9: Int32 array
-    a = np.array([[10, 20], [30, 40]], dtype=np.int32)
-    new_shape = 8
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    # Input 9: 1D float16 array, new_shape = 1
+    a = np.array([0.5, -1.5, 2.5], dtype=np.float16)
+    new_shape = 1
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
-    # Input 10: 1-element float32
-    a = np.array([3.14], dtype=np.float32)
-    new_shape = 5
-    list_of_inputs.append({"a": a, "new_shape": new_shape})
+    # Input 10: 2D int8 array with negative and positive values
+    a = np.array([[-128, -64], [0, 64], [127, -1]], dtype=np.int8)
+    new_shape = 15
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
+
+    # Input 11: 3D float32 array, expanding to larger 1D shape
+    a = np.ones((2, 2, 3), dtype=np.float32)
+    new_shape = 30
+    list_of_inputs.append(copy.deepcopy({"a": a, "new_shape": new_shape}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.resize_1"] = resize_inputs()
 

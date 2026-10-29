@@ -4,58 +4,94 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def nextafter_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {"x": 1.0, "y": 2.0}
+    # Input 1: Basic positive floats, increasing
+    input_dict = {
+        "x": 1.0,
+        "y": 2.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    input_dict = {"x": 2.0, "y": 1.0}
+    # Input 2: Basic positive floats, decreasing
+    input_dict = {
+        "x": 2.0,
+        "y": 1.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    input_dict = {"x": 1.0, "y": -1.0}
+    # Input 3: Zero moving towards positive
+    input_dict = {
+        "x": 0.0,
+        "y": 1.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    input_dict = {"x": -1.0, "y": 1.0}
+    # Input 4: Zero moving towards negative
+    input_dict = {
+        "x": 0.0,
+        "y": -1.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    input_dict = {"x": -1.0, "y": -2.0}
+    # Input 5: Negative float moving towards zero
+    input_dict = {
+        "x": -1.0,
+        "y": 0.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    input_dict = {"x": 0.0, "y": 1.0}
+    # Input 6: Equal values
+    input_dict = {
+        "x": 1.5,
+        "y": 1.5
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    input_dict = {"x": 0.0, "y": -1.0}
+    # Input 7: Small magnitude floats
+    input_dict = {
+        "x": 1e-15,
+        "y": 0.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    input_dict = {"x": 1.123456789, "y": 1.123456790}
+    # Input 8: Very large magnitude floats moving towards infinity
+    input_dict = {
+        "x": 1e30,
+        "y": float("inf")
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    input_dict = {"x": 5.5, "y": 5.5}
+    # Input 9: Infinity moving towards finite
+    input_dict = {
+        "x": float("inf"),
+        "y": 0.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    input_dict = {"x": -0.0, "y": 1.0}
+    # Input 10: Negative infinity moving towards finite
+    input_dict = {
+        "x": float("-inf"),
+        "y": 0.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11
-    input_dict = {"x": 1e-30, "y": 0.0}
+    # Input 11: Non-trivial fractional floats
+    input_dict = {
+        "x": 3.141592653589793,
+        "y": 2.718281828459045
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 12
-    input_dict = {"x": 1e30, "y": float('inf')}
+    # Input 12: Negative zero to positive zero
+    input_dict = {
+        "x": -0.0,
+        "y": 0.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

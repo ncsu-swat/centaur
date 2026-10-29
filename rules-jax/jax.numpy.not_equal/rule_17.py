@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For tensor and float inputs: if the float is negative, the tensor cannot have a boolean dtype (Rule 17)
+# integer scalar value lies within the range of tensor elements (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg1_dtype"] != 0, True)) if n else
-          If(v["arg2_value"] < 0, v["arg1_dtype"] != 0, True))
+    s.add(Not(And(Select(v["arg1_range"], 0) <= v["arg2_value"], v["arg2_value"] <= Select(v["arg1_range"], 1))) if n else
+          And(Select(v["arg1_range"], 0) <= v["arg2_value"], v["arg2_value"] <= Select(v["arg1_range"], 1)))
 )
 
 def rule_17_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,23 @@ def rule_17_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_value = Real('arg2_value')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == arg2)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_17(solver, {'arg1_range': arg1_range, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_17(solver, {'arg1_range': arg1['range'], 'arg2_value': arg2['value']}, neg)

@@ -4,73 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def unravel_index_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar index with 1D shape (using Python int and tuple of ints)
-    indices = 5
-    shape = (10,)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 1: Basic zero index and unit shape (Python int)
+    input_dict = {"indices": int(0), "shape": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of indices with 2D shape (int32)
-    indices = np.array([1, 3, 5], dtype=np.int32)
-    shape = (2, 3)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 2: Within-bounds positive index (Python int)
+    input_dict = {"indices": int(3), "shape": int(5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array of indices with 3D shape (int64)
-    indices = np.array([[0, 10], [5, 20]], dtype=np.int64)
-    shape = (3, 4, 5)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 3: np.int32 types within bounds
+    input_dict = {"indices": np.int32(2), "shape": np.int32(10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative indices (supported in JAX)
-    indices = np.array([-1, -3, -5], dtype=np.int32)
-    shape = (4, 4)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 4: np.int64 types within bounds
+    input_dict = {"indices": np.int64(7), "shape": np.int64(12)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Out of bounds indices (clipped in JAX)
-    indices = np.array([100, -100], dtype=np.int32)
-    shape = (3, 3)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 5: Negative index supported in JAX (Python int)
+    input_dict = {"indices": int(-1), "shape": int(6)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Higher-dimensional shape (4D)
-    indices = np.array([10, 20, 30], dtype=np.int32)
-    shape = (2, 3, 2, 3)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 6: Negative index with np.int32
+    input_dict = {"indices": np.int32(-3), "shape": np.int32(8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Scalar numpy integer with 3D shape
-    indices = np.int64(14)
-    shape = (3, 3, 3)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 7: Out-of-bounds positive index (Python int)
+    input_dict = {"indices": int(15), "shape": int(10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Empty indices array
-    indices = np.array([], dtype=np.int32)
-    shape = (5, 5)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 8: Out-of-bounds index with np.int64
+    input_dict = {"indices": np.int64(100), "shape": np.int64(50)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large integer values
-    indices = np.array([1000000, 2000000], dtype=np.int64)
-    shape = (2000, 2000)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 9: Out-of-bounds negative index with np.int64
+    input_dict = {"indices": np.int64(-50), "shape": np.int64(25)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D array of indices with 2D shape
-    indices = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32)
-    shape = (4, 5)
-    input_dict = {"indices": indices, "shape": shape}
+    # Input 10: np.int16 types with large shape
+    input_dict = {"indices": np.int16(0), "shape": np.int16(100)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Larger shape with intermediate index (Python int)
+    input_dict = {"indices": int(42), "shape": int(1000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Upper bound boundary index (indices == shape - 1)
+    input_dict = {"indices": np.int32(19), "shape": np.int32(20)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.unravel_index_4"] = unravel_index_inputs()
 

@@ -4,63 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def diagonal_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D square matrix, main diagonal
-    a = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {"a": a, "offset": 0, "axis1": 0, "axis2": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic 2D square matrix, main diagonal
+    a = np.arange(9, dtype=np.float32).reshape(3, 3)
+    list_of_inputs.append({"a": a, "offset": 0, "axis1": 0, "axis2": 1})
 
-    # Input 2: 2D square matrix, positive offset
-    a = np.random.randint(-10, 10, size=(4, 4)).astype(np.int32)
-    input_dict = {"a": a, "offset": 1, "axis1": 0, "axis2": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D matrix with positive offset (super-diagonal)
+    a = np.arange(16, dtype=np.int32).reshape(4, 4)
+    list_of_inputs.append({"a": a, "offset": 1, "axis1": 0, "axis2": 1})
 
-    # Input 3: 2D square matrix, negative offset, float64
+    # Input 3: 2D matrix with negative offset (sub-diagonal)
     a = np.random.randn(5, 5).astype(np.float64)
-    input_dict = {"a": a, "offset": -2, "axis1": 0, "axis2": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"a": a, "offset": -2, "axis1": 0, "axis2": 1})
 
-    # Input 4: 3D tensor, axes 0 and 1, offset 0
-    a = np.random.randn(3, 3, 4).astype(np.float32)
-    input_dict = {"a": a, "offset": 0, "axis1": 0, "axis2": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D rectangular matrix with swapped axes
+    a = np.arange(12, dtype=np.int64).reshape(3, 4)
+    list_of_inputs.append({"a": a, "offset": 0, "axis1": 1, "axis2": 0})
 
-    # Input 5: 3D tensor, axes 0 and 2, offset 2
-    a = np.random.randn(3, 5, 4).astype(np.float32)
-    input_dict = {"a": a, "offset": 2, "axis1": 0, "axis2": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D tensor, diagonal along axes 0 and 1
+    a = np.arange(18, dtype=np.float32).reshape(3, 3, 2)
+    list_of_inputs.append({"a": a, "offset": 0, "axis1": 0, "axis2": 1})
 
-    # Input 6: 3D tensor, negative axes, negative offset
-    a = np.random.randn(4, 4, 4).astype(np.float32)
-    input_dict = {"a": a, "offset": -1, "axis1": -2, "axis2": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D tensor, diagonal along axes 1 and 2 with offset
+    a = np.random.randn(2, 4, 5).astype(np.float32)
+    list_of_inputs.append({"a": a, "offset": -1, "axis1": 1, "axis2": 2})
 
-    # Input 7: 4D tensor, offset 1
-    a = np.random.randint(-100, 100, size=(2, 3, 4, 5)).astype(np.int32)
-    input_dict = {"a": a, "offset": 1, "axis1": 1, "axis2": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D tensor using negative axis indices
+    a = np.arange(30, dtype=np.int16).reshape(2, 5, 3)
+    list_of_inputs.append({"a": a, "offset": 1, "axis1": -2, "axis2": -1})
 
-    # Input 8: 2D non-square matrix, offset 0
-    a = np.random.randn(3, 5).astype(np.float32)
-    input_dict = {"a": a, "offset": 0, "axis1": 0, "axis2": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D tensor with float16 dtype
+    a = np.random.randn(2, 3, 4, 5).astype(np.float16)
+    list_of_inputs.append({"a": a, "offset": 0, "axis1": 0, "axis2": 2})
 
-    # Input 9: 2D non-square matrix, negative offset
-    a = np.random.randn(6, 3).astype(np.float64)
-    input_dict = {"a": a, "offset": -3, "axis1": 0, "axis2": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D tensor with complex numbers
+    a = (np.random.randn(2, 4, 3, 4) + 1j * np.random.randn(2, 4, 3, 4)).astype(
+        np.complex64
+    )
+    list_of_inputs.append({"a": a, "offset": -1, "axis1": 1, "axis2": 3})
 
-    # Input 10: 5D tensor, offset 0
-    a = np.random.randn(2, 2, 3, 3, 2).astype(np.float32)
-    input_dict = {"a": a, "offset": 0, "axis1": 2, "axis2": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 5D tensor with boolean dtype
+    a = np.random.rand(2, 2, 3, 3, 2) > 0.5
+    list_of_inputs.append({"a": a, "offset": 0, "axis1": 2, "axis2": 3})
 
-    return list_of_inputs
+    # Input 11: 2D boolean array with large positive offset
+    a = np.ones((6, 6), dtype=bool)
+    list_of_inputs.append({"a": a, "offset": 3, "axis1": 0, "axis2": 1})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
 
 generated_inputs["jax.numpy.diagonal"] = diagonal_inputs()
 

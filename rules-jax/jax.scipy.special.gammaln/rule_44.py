@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The number of dimensions of x must be within the supported range of JAX, up to 32 (Rule 44)
+# input tensor can be a scalar 0-dimensional array (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 32) if n else
-          v["arg1_ndim"] <= 32)
+    s.add(Not(v["arg1_ndim"] == 0) if n else
+          v["arg1_ndim"] == 0)
 )
 
 def rule_44_func(arg1, solver=None, neg=False):

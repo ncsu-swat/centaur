@@ -7,35 +7,42 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The override shape tuple's elements must not exceed 2147483647 (Rule 45)
+# compatibility across prototype tensor, integer shape, and target dtype (Rule 45)
 
 rule_45 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) <= 2147483647) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) <= 2147483647) for i in range(6)]))
+    s.add(Not(And(And(And(v["arg2_value"] >= 0, 0 <= v["arg3_value"]), v["arg3_value"] <= 10), v["arg1_dtype"] >= 0)) if n else
+          And(And(And(v["arg2_value"] >= 0, 0 <= v["arg3_value"]), v["arg3_value"] <= 10), v["arg1_dtype"] >= 0))
 )
 
-def rule_45_func(arg1, solver=None, neg=False):
+def rule_45_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+            return False
+        if not (isinstance(arg3, torch.dtype) or isinstance(arg3, tf.dtypes.DType) or isinstance(arg3, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_dtype = Int('arg1_dtype')
+        arg2_value = Int('arg2_value')
+        arg3_value = Int('arg3_value')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_value == int(arg2))
+        solver.add(arg3_value == list_of_available_dtypes.index(np_dtype(arg3)))
 
         # Constraints for rule 45
-        rule_45(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_45(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_45(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_45(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)

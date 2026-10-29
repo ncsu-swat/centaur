@@ -4,73 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ones_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 input, float64 dtype, 2D shape
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    dtype = np.dtype('float64')
-    shape = (2, 3)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 1: 1D array to 2D float32
+    a = np.array([1, 2, 3, 4], dtype=np.int32)
+    dtype = np.dtype(np.float32)
+    shape = (2, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
 
-    # Input 2: 2D int32 input with negative values, float32 dtype, 1D shape
-    a = np.array([[-1, 2], [3, -4]], dtype=np.int32)
-    dtype = np.dtype('float32')
+    # Input 2: 2D array to 1D int32
+    a = np.array([[-1.5, 2.3], [0.0, -4.7]], dtype=np.float32)
+    dtype = np.dtype(np.int32)
     shape = (4,)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
 
-    # Input 3: 3D float64 input, bool dtype, 3D shape
-    a = np.random.randn(2, 2, 2).astype(np.float64)
-    dtype = np.dtype('bool')
-    shape = (1, 2, 3)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
-
-    # Input 4: 1D bool input, complex64 dtype, 2D shape
-    a = np.array([True, False, True], dtype=np.bool_)
-    dtype = np.dtype('complex64')
-    shape = (3, 3)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
-
-    # Input 5: Scalar-like 0D input, int32 dtype, 4D shape
-    a = np.array(5.0, dtype=np.float32)
-    dtype = np.dtype('int32')
-    shape = (2, 2, 2, 2)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
-
-    # Input 6: 2D complex64 input, int8 dtype, 3D shape
-    a = np.array([[1+2j, 3+4j]], dtype=np.complex64)
-    dtype = np.dtype('int8')
-    shape = (2, 1, 3)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
-
-    # Input 7: 4D int8 input, uint32 dtype, 2D shape
-    a = np.ones((1, 2, 1, 2), dtype=np.int8)
-    dtype = np.dtype('uint32')
-    shape = (5, 5)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
-
-    # Input 8: 3D uint8 input, float16 dtype, 1D shape
-    a = np.zeros((2, 2, 2), dtype=np.uint8)
-    dtype = np.dtype('float16')
-    shape = (8,)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
-
-    # Input 9: 2D float32 input, int64 dtype, 3D shape
-    a = np.random.randn(3, 4).astype(np.float32)
-    dtype = np.dtype('int64')
+    # Input 3: 0D scalar array to 3D bool
+    a = np.array(5, dtype=np.int32)
+    dtype = np.dtype(np.bool_)
     shape = (2, 3, 4)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
 
-    # Input 10: 1D int16 input, complex128 dtype, 4D shape
-    a = np.array([-10, 20, -30], dtype=np.int16)
-    dtype = np.dtype('complex128')
-    shape = (1, 1, 3, 3)
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 4: 3D array, same shape, float32
+    a = np.ones((2, 2, 3), dtype=np.int32)
+    dtype = np.dtype(np.float32)
+    shape = (2, 2, 3)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 5: 4D array to 0D scalar shape, int32
+    a = np.zeros((1, 2, 3, 4), dtype=np.float32)
+    dtype = np.dtype(np.int32)
+    shape = ()
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 6: 1D boolean array to 2D bool
+    a = np.array([True, False, True], dtype=np.bool_)
+    dtype = np.dtype(np.bool_)
+    shape = (3, 1)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 7: 2D array with negative values to 1D float32
+    a = np.array([[-10, -20], [-30, -40]], dtype=np.int32)
+    dtype = np.dtype(np.float32)
+    shape = (4,)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 8: 1D array to 4D int32
+    a = np.array([1, 2, 3, 4], dtype=np.int32)
+    dtype = np.dtype(np.int32)
+    shape = (1, 2, 1, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 9: 2D int array to 2D bool
+    a = np.arange(6, dtype=np.int32).reshape((2, 3))
+    dtype = np.dtype(np.bool_)
+    shape = (5, 5)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
+
+    # Input 10: 3D float array to 1D float32
+    a = np.array([[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]], dtype=np.float32)
+    dtype = np.dtype(np.float32)
+    shape = (8,)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "shape": shape})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ones_like_2"] = ones_like_inputs()
 

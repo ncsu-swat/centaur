@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The rank difference between x and l must not exceed 3 to avoid excessive broadcasting complexity (Rule 30)
+# when l is identically zero, boxcox1p computes log1p which strictly requires x greater than -1 (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(And((If(v["arg1_ndim"] >= v["arg2_ndim"], v["arg1_ndim"] - v["arg2_ndim"] <= 3, True)), (If(v["arg2_ndim"] > v["arg1_ndim"], v["arg2_ndim"] - v["arg1_ndim"] <= 3, True)))) if n else
-          And((If(v["arg1_ndim"] >= v["arg2_ndim"], v["arg1_ndim"] - v["arg2_ndim"] <= 3, True)), (If(v["arg2_ndim"] > v["arg1_ndim"], v["arg2_ndim"] - v["arg1_ndim"] <= 3, True))))
+    s.add(Not(If(And(Select(v["arg2_range"], 1) == 0, Select(v["arg2_range"], 0) == 0), Select(v["arg1_range"], 0) > -1, True)) if n else
+          If(And(Select(v["arg2_range"], 1) == 0, Select(v["arg2_range"], 0) == 0), Select(v["arg1_range"], 0) > -1, True))
 )
 
 def rule_30_func(arg1, arg2, solver=None, neg=False):
@@ -27,17 +27,19 @@ def rule_30_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 30
-        rule_30(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_30(solver, {'arg1_range': arg1_range, 'arg2_range': arg2_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_30(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_30(solver, {'arg1_range': arg1['range'], 'arg2_range': arg2['range']}, neg)

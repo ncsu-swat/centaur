@@ -4,57 +4,68 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def det_inputs():
     list_of_inputs = []
 
-    # Input 1: Small 2D square matrix (2x2), float32
+    # Input 1: Basic 2x2 float32 matrix
     a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 2: 2D square matrix (3x3), float64 with negative values
-    a = np.array([[-1.0, 2.0, 0.5], [3.0, -4.0, 1.5], [0.0, 1.0, -2.0]], dtype=np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 2: 3x3 float64 matrix with negative values
+    a = np.array(
+        [[-2.5, 1.2, 0.0], [3.1, -4.7, 8.2], [0.5, -1.1, -3.3]],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 3: Identity-like matrix (4x4), float32
-    a = np.eye(4, dtype=np.float32) * 2.5
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 4: 3D batched square matrices (2, 3, 3), float32
-    a = np.random.randn(2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 5: 4D batched square matrices (2, 2, 4, 4), float64
-    a = np.random.randn(2, 2, 4, 4).astype(np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 6: 2D complex matrix (2x2), complex64
-    a = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 7: 2D complex matrix (3x3), complex128
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex128)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 8: Larger 2D square matrix (10x10), float32
-    a = np.random.randn(10, 10).astype(np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 9: Singular matrix (determinant is 0) (3x3), float32
-    a = np.array([[1.0, 2.0, 3.0], [2.0, 4.0, 6.0], [1.0, 0.0, 1.0]], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 10: 1x1 matrix, float32
+    # Input 3: 1x1 float32 scalar matrix
     a = np.array([[5.5]], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 11: 5D batched square matrices (1, 2, 3, 2, 2), float32
-    a = np.random.randn(1, 2, 3, 2, 2).astype(np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 4: 4x4 identity-like float32 matrix
+    a = np.eye(4, dtype=np.float32) * -3.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 5: 2x2 complex64 matrix
+    a = np.array([[1.0 + 2.0j, -1.0j], [3.0 - 0.5j, 4.0 + 1.0j]], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 6: 3x3 complex128 matrix
+    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 7: 3D batched matrices (shape: 5, 2, 2)
+    a = np.random.randn(5, 2, 2).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 8: 4D batched matrices (shape: 2, 3, 4, 4)
+    a = np.random.randn(2, 3, 4, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 9: 5D batched matrices (shape: 2, 1, 2, 3, 3)
+    a = np.random.randn(2, 1, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 10: 8x8 random float32 matrix
+    a = np.random.randn(8, 8).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 11: Integer matrix (int32)
+    a = np.array([[1, 2, 3], [0, -4, 5], [1, 0, 6]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 12: Singular/zero matrix (shape: 3, 3)
+    a = np.zeros((3, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.det"] = det_inputs()
 

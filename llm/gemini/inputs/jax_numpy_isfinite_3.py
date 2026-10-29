@@ -4,57 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def isfinite_inputs():
     list_of_inputs = []
 
-    # Input 1: Positive Python integer
-    input_dict = {"x": 42}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative Python integer
-    input_dict = {"x": -100}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero
+    # Input 1: Zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: NumPy int32 scalar
-    input_dict = {"x": np.int32(10)}
+    # Input 2: Positive small integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: NumPy int64 scalar (negative)
-    input_dict = {"x": np.int64(-99999)}
+    # Input 3: Negative small integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: NumPy int32 scalar (zero)
-    input_dict = {"x": np.int32(0)}
+    # Input 4: Standard positive integer
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: NumPy int64 scalar (positive)
-    input_dict = {"x": np.int64(123456789)}
+    # Input 5: Standard negative integer
+    input_dict = {"x": -100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large Python integer
-    input_dict = {"x": 123456789012345678}
+    # Input 6: Large positive integer
+    input_dict = {"x": 1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative large Python integer
-    input_dict = {"x": -1234567890}
+    # Input 7: Large negative integer
+    input_dict = {"x": -1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: NumPy int32 scalar (minimum value)
-    input_dict = {"x": np.int32(-2147483648)}
+    # Input 8: Max 32-bit signed integer
+    input_dict = {"x": 2147483647}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: NumPy int64 scalar (maximum value)
-    input_dict = {"x": np.int64(9223372036854775807)}
+    # Input 9: Min 32-bit signed integer
+    input_dict = {"x": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Odd positive integer
+    input_dict = {"x": 99999}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Odd negative integer
+    input_dict = {"x": -99999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isfinite_3"] = isfinite_inputs()
 

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension equality when both are non-scalars (Rule 11)
+# scalar tensor broadcasting with another tensor (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
     s.add(Not(Or(Or(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0), v["arg1_ndim"] == v["arg2_ndim"])) if n else

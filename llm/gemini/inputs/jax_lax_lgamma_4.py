@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def lgamma_inputs():
     list_of_inputs = []
@@ -18,39 +19,44 @@ def lgamma_inputs():
     input_dict = {"x": np.float64(2.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D float32 array
-    input_dict = {"x": np.array([0.5, 1.5, 2.5], dtype=np.float32)}
+    # Input 3: Python float scalar
+    input_dict = {"x": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D float32 array
+    # Input 4: 1D float32 array
+    input_dict = {"x": np.array([0.5, 1.0, 1.5, 2.0], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 1D float64 array
+    input_dict = {"x": np.array([2.5, 3.5, 4.5], dtype=np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D float32 array
     input_dict = {"x": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D float32 array
-    input_dict = {"x": np.array([[[1.0, 1.5], [2.0, 2.5]], [[3.0, 3.5], [4.0, 4.5]]], dtype=np.float32)}
+    # Input 7: 2D float64 array with positive values
+    input_dict = {
+        "x": np.array([[0.1, 0.5, 0.9], [1.2, 2.3, 3.4]], dtype=np.float64)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float64 array
-    input_dict = {"x": np.ones((1, 2, 1, 3), dtype=np.float64) * 2.0}
+    # Input 8: 3D float32 array
+    input_dict = {
+        "x": np.ones((2, 3, 4), dtype=np.float32) * np.float32(1.5)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 0D float32 array
-    input_dict = {"x": np.array(3.5, dtype=np.float32)}
+    # Input 9: 1D array with larger positive numbers
+    input_dict = {"x": np.array([5.0, 10.0, 20.0, 50.0], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D float32 array with valid negative values
-    input_dict = {"x": np.array([-0.5, -1.5, 0.1], dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Large 2D float32 array
-    input_dict = {"x": np.random.uniform(0.1, 10.0, size=(5, 5)).astype(np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D float64 array
-    input_dict = {"x": np.array([5.0, 10.0, 100.0], dtype=np.float64)}
+    # Input 10: 4D float32 array
+    input_dict = {"x": np.full((2, 2, 2, 2), 2.0, dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.lgamma_4"] = lgamma_inputs()
 

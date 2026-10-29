@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Mathematical domain constraints for float inputs (Rule 3)
+# Float scalar inputs require positive parameter a and non-negative parameter x (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
     s.add(Not(And(v["arg1_value"] > 0, v["arg2_value"] >= 0)) if n else

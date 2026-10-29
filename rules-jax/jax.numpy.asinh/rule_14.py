@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If input is a tuple of floats, its length must be within 1 and 10 inclusive (Rule 14)
+# input list of numbers must contain at least one element (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] >= 1, v["arg1_length"] <= 10)) if n else
-          And(v["arg1_length"] >= 1, v["arg1_length"] <= 10))
+    s.add(Not(v["arg1_length"] >= 1) if n else
+          v["arg1_length"] >= 1)
 )
 
 def rule_14_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_14_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not ((isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1))):
             return False
 
         # Variable declarations

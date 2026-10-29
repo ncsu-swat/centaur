@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# fill_value tensor must be a scalar or have a single element (Rule 28)
+# non-scalar input array must have positive leading dimension (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] <= 1, Or(v["arg1_ndim"] == 0, Select(v["arg1_shape"], 0) == 1))) if n else
-          And(v["arg1_ndim"] <= 1, Or(v["arg1_ndim"] == 0, Select(v["arg1_shape"], 0) == 1)))
+    s.add(Not(And(v["arg1_ndim"] >= 0, (If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) > 0, v["arg1_ndim"] == 0)))) if n else
+          And(v["arg1_ndim"] >= 0, (If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) > 0, v["arg1_ndim"] == 0))))
 )
 
 def rule_28_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_28_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 28
-        rule_28(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_28(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_28(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_28(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

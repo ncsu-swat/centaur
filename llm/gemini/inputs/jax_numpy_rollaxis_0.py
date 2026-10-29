@@ -4,68 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rollaxis_inputs():
     list_of_inputs = []
 
-    # Input 1: 3D array, roll axis 2 to start (0)
-    a = np.ones((2, 3, 4), dtype=np.float32)
-    input_dict = {"a": a, "axis": 2, "start": 0}
+    # Input 1: 1D array, rolling the only axis to 0
+    a = np.arange(5, dtype=np.float32)
+    input_dict = {"a": a, "axis": 0, "start": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 4D array, roll axis 1 to end (4)
-    a = np.zeros((3, 4, 5, 6), dtype=np.int32)
-    input_dict = {"a": a, "axis": 1, "start": 4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 3D array, negative axis, start at 0
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"a": a, "axis": -1, "start": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 4D array, axis 2, negative start (-2)
-    a = np.random.randn(5, 4, 3, 2).astype(np.float64)
-    input_dict = {"a": a, "axis": 2, "start": -2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 3D array, axis -2, negative start -1
-    a = np.arange(27).reshape((3, 3, 3)).astype(np.int64)
-    input_dict = {"a": a, "axis": -2, "start": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D array, roll axis 0 to start 2 (end)
-    a = np.ones((10, 20), dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "start": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 5D array, axis 4, start 1
-    a = np.zeros((2, 2, 2, 2, 2), dtype=np.uint8)
-    input_dict = {"a": a, "axis": 4, "start": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D array, axis 1, start 0
-    a = np.random.randn(3, 5).astype(np.float32)
+    # Input 2: 2D array, rolling axis 1 to start 0
+    a = np.ones((3, 4), dtype=np.int32)
     input_dict = {"a": a, "axis": 1, "start": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D array, axis 3, start 1
-    a = np.random.randn(2, 3, 4, 5).astype(np.float64)
+    # Input 3: 2D array, rolling axis 0 to end (start=2)
+    a = np.zeros((2, 5), dtype=np.float64)
+    input_dict = {"a": a, "axis": 0, "start": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 3D array, rolling axis 2 to start 0
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"a": a, "axis": 2, "start": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D array, rolling axis 1 to end (start=3)
+    a = np.random.randint(0, 2, size=(3, 4, 5)).astype(bool)
+    input_dict = {"a": a, "axis": 1, "start": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D array, negative axis
+    a = (np.random.randn(4, 5, 6) + 1j * np.random.randn(4, 5, 6)).astype(
+        np.complex64
+    )
+    input_dict = {"a": a, "axis": -1, "start": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 4D array, negative start
+    a = np.arange(24, dtype=np.int64).reshape((2, 3, 2, 2))
+    input_dict = {"a": a, "axis": 2, "start": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4D array, both negative axis and start
+    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    input_dict = {"a": a, "axis": -3, "start": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D array, rolling axis 3 to start 1
+    a = np.ones((2, 2, 3, 4, 2), dtype=np.uint8)
     input_dict = {"a": a, "axis": 3, "start": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D array, axis 0, start 3
-    a = np.ones((4, 4, 4), dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "start": 3}
+    # Input 10: 5D array, rolling axis 0 to end (start=5)
+    a = np.random.randn(3, 2, 4, 1, 2).astype(np.float32)
+    input_dict = {"a": a, "axis": 0, "start": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 6D array, axis 5, start 2
-    a = np.zeros((1, 2, 3, 4, 5, 6), dtype=np.float32)
-    input_dict = {"a": a, "axis": 5, "start": 2}
+    # Input 11: 3D array, axis == start (no-op)
+    a = np.random.randn(4, 4, 4).astype(np.float64)
+    input_dict = {"a": a, "axis": 1, "start": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.rollaxis"] = rollaxis_inputs()
 

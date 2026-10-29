@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For 1D operand and 1-element axes tuple, the single axis must be 0 (Rule 51)
+# two reduction axes in tuple for a 2D tensor must be distinct (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == 1, v["arg2_length"] == 1), Select(v["arg2_values"], 0) == 0, True)) if n else
-          If(And(v["arg1_ndim"] == 1, v["arg2_length"] == 1), Select(v["arg2_values"], 0) == 0, True))
+    s.add(Not(If(And(v["arg1_ndim"] == 2, v["arg2_length"] == 2), Select(v["arg2_values"], 0) != Select(v["arg2_values"], 1), True)) if n else
+          If(And(v["arg1_ndim"] == 2, v["arg2_length"] == 2), Select(v["arg2_values"], 0) != Select(v["arg2_values"], 1), True))
 )
 
 def rule_51_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_51_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 51
-        rule_51(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_51(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_51(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_51(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

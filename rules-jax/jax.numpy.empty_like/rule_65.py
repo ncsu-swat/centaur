@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if shape is a tuple, its length must not exceed 8 dimensions (Rule 65)
+# 1D prototype tensor has strictly positive dimension (Rule 65)
 
 rule_65 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] <= 8) if n else
-          v["arg1_length"] <= 8)
+    s.add(Not(And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0)) if n else
+          And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0))
 )
 
 def rule_65_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_65_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 65
-        rule_65(solver, {'arg1_length': arg1_length})
+        rule_65(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_65(solver, {'arg1_length': arg1['length']}, neg)
+        rule_65(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

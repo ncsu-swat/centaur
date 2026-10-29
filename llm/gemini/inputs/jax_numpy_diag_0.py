@@ -4,68 +4,79 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def diag_inputs():
     list_of_inputs = []
 
-    # Input 1: 1-D array, float32, k=0
-    v = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    # Input 1: 1-D int32 array, default diagonal (k=0)
+    v = np.array([1, 2, 3, 4], dtype=np.int32)
     k = 0
-    list_of_inputs.append({"v": v, "k": k})
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
-    # Input 2: 1-D array, int32, k=2
-    v = np.array([10, 20, 30], dtype=np.int32)
-    k = 2
-    list_of_inputs.append({"v": v, "k": k})
-
-    # Input 3: 1-D array, float64, k=-1
-    v = np.array([0.5, 1.5, 2.5], dtype=np.float64)
-    k = -1
-    list_of_inputs.append({"v": v, "k": k})
-
-    # Input 4: 2-D array (square), float32, k=0
-    v = np.random.randn(4, 4).astype(np.float32)
-    k = 0
-    list_of_inputs.append({"v": v, "k": k})
-
-    # Input 5: 2-D array (non-square), int32, k=1
-    v = np.random.randint(0, 10, size=(3, 5)).astype(np.int32)
+    # Input 2: 1-D float32 array, positive offset (k=1)
+    v = np.array([1.5, 2.5, 3.5], dtype=np.float32)
     k = 1
-    list_of_inputs.append({"v": v, "k": k})
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
-    # Input 6: 2-D array (non-square), float64, k=-2
-    v = np.random.randn(5, 3).astype(np.float64)
+    # Input 3: 1-D float64 array, negative offset (k=-2)
+    v = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float64)
     k = -2
-    list_of_inputs.append({"v": v, "k": k})
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
-    # Input 7: 1-D array, complex64, k=0
-    v = np.array([1+2j, 3+4j], dtype=np.complex64)
+    # Input 4: 2-D square float32 matrix, main diagonal (k=0)
+    v = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
     k = 0
-    list_of_inputs.append({"v": v, "k": k})
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
-    # Input 8: 2-D array, bool, k=1
-    v = np.array([[True, False], [False, True]], dtype=np.bool_)
+    # Input 5: 2-D rectangular int64 matrix (more columns), positive offset (k=1)
+    v = np.array(
+        [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]], dtype=np.int64
+    )
     k = 1
-    list_of_inputs.append({"v": v, "k": k})
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
-    # Input 9: 1-D array of size 1, int32, k=-3
+    # Input 6: 2-D rectangular float32 matrix (more rows), negative offset (k=-1)
+    v = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+    k = -1
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
+
+    # Input 7: 1-D boolean array, k=0
+    v = np.array([True, False, True], dtype=np.bool_)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
+
+    # Input 8: 2-D complex64 matrix, positive offset (k=2)
+    v = np.array(
+        [
+            [1 + 2j, 2 + 3j, 3 + 4j, 4 + 5j],
+            [5 + 6j, 6 + 7j, 7 + 8j, 8 + 9j],
+            [9 + 1j, 10 + 2j, 11 + 3j, 12 + 4j],
+        ],
+        dtype=np.complex64,
+    )
+    k = 2
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
+
+    # Input 9: 1-D single-element array, negative offset (k=-3)
     v = np.array([42], dtype=np.int32)
     k = -3
-    list_of_inputs.append({"v": v, "k": k})
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
-    # Input 10: 2-D array (large), float32, k=5
-    v = np.random.randn(10, 10).astype(np.float32)
-    k = 5
-    list_of_inputs.append({"v": v, "k": k})
+    # Input 10: 2-D square matrix, negative offset (k=-2)
+    v = np.arange(16, dtype=np.float32).reshape(4, 4)
+    k = -2
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
-    # Input 11: 2-D array, float32, k=-5
-    v = np.random.randn(8, 8).astype(np.float32)
-    k = -5
-    list_of_inputs.append({"v": v, "k": k})
+    # Input 11: 1-D uint8 array, positive offset (k=3)
+    v = np.array([10, 20, 30], dtype=np.uint8)
+    k = 3
+    list_of_inputs.append(copy.deepcopy({"v": v, "k": k}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.diag"] = diag_inputs()
 

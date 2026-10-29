@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# unique axes in tuple of reduction axes (Rule 37)
+# for 3D input tensor, integer axis must be between -3 and 2 (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And([Implies(j < (v["arg2_length"] - 1 + 1), If(i != j, (If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"], Select(v["arg2_values"], i))) != (If(Select(v["arg2_values"], j) < 0, Select(v["arg2_values"], j) + v["arg1_ndim"], Select(v["arg2_values"], j))), True)) for j in range(6)])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), And([Implies(j < (v["arg2_length"] - 1 + 1), If(i != j, (If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"], Select(v["arg2_values"], i))) != (If(Select(v["arg2_values"], j) < 0, Select(v["arg2_values"], j) + v["arg1_ndim"], Select(v["arg2_values"], j))), True)) for j in range(6)])) for i in range(6)]))
+    s.add(Not(If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True)) if n else
+          If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True))
 )
 
 def rule_37_func(arg1, arg2, solver=None, neg=False):
@@ -22,25 +22,22 @@ def rule_37_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 37
-        rule_37(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_37(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_37(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_37(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

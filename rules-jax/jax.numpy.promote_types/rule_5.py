@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the first dtype is floating-point, the second must be floating-point or complex (Rule 5)
+# dtype arguments are identical (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(If((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), (And(6 <= v["arg2_value"], v["arg2_value"] <= 10)), True)) if n else
-          If((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), (And(6 <= v["arg2_value"], v["arg2_value"] <= 10)), True))
+    s.add(Not(And(And(v["arg1_value"] == v["arg2_value"], v["arg1_value"] >= 0), v["arg1_value"] <= 10)) if n else
+          And(And(v["arg1_value"] == v["arg2_value"], v["arg1_value"] >= 0), v["arg1_value"] <= 10))
 )
 
 def rule_5_func(arg1, arg2, solver=None, neg=False):

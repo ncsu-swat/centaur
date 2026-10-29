@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The offset k magnitude should be less than the array dimension n to avoid completely empty mask results (Rule 22)
+# offset k must be bounded by dimension n so that n + k and n - k are non-negative (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 1, (If(v["arg2_value"] < 0, 0 - v["arg2_value"] < v["arg1_value"], v["arg2_value"] < v["arg1_value"])))) if n else
-          And(v["arg1_value"] >= 1, (If(v["arg2_value"] < 0, 0 - v["arg2_value"] < v["arg1_value"], v["arg2_value"] < v["arg1_value"]))))
+    s.add(Not(And(v["arg1_value"] + v["arg2_value"] >= 0, v["arg1_value"] - v["arg2_value"] >= 0)) if n else
+          And(v["arg1_value"] + v["arg2_value"] >= 0, v["arg1_value"] - v["arg2_value"] >= 0))
 )
 
 def rule_22_func(arg1, arg2, solver=None, neg=False):

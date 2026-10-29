@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# To prevent overflow, the integer input should be within reasonable bounds (Rule 3)
+# scalar numeric input magnitude bounded to avoid floating-point overflow (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(And(-709 <= v["arg1_value"], v["arg1_value"] <= 709)) if n else
-          And(-709 <= v["arg1_value"], v["arg1_value"] <= 709))
+    s.add(Not(And(v["arg1_value"] >= -710, v["arg1_value"] <= 710)) if n else
+          And(v["arg1_value"] >= -710, v["arg1_value"] <= 710))
 )
 
 def rule_3_func(arg1, solver=None, neg=False):
@@ -19,15 +19,13 @@ def rule_3_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 3
         rule_3(solver, {'arg1_value': arg1_value})

@@ -4,75 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def eq_inputs():
+def lax_eq_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar integers (int32)
-    x = np.int32(5)
-    y = np.int32(5)
-    input_dict = {"x": x, "y": y}
+    # Input 1: Zero comparison
+    input_dict = {"x": 0, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D arrays of int32, matching shapes
-    x = np.array([1, 2, 3, 4], dtype=np.int32)
-    y = np.array([1, 0, 3, 5], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
+    # Input 2: Unequal positive integers
+    input_dict = {"x": 1, "y": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D arrays of int64, matching shapes, negative values included
-    x = np.array([[-1, 2], [3, -4]], dtype=np.int64)
-    y = np.array([[1, 2], [-3, -4]], dtype=np.int64)
-    input_dict = {"x": x, "y": y}
+    # Input 3: Identical negative integers
+    input_dict = {"x": -5, "y": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array and a scalar (broadcasting), int32
-    x = np.array([10, 20, 30], dtype=np.int32)
-    y = np.int32(20)
-    input_dict = {"x": x, "y": y}
+    # Input 4: Positive and negative integers
+    input_dict = {"x": 42, "y": -42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D arrays with broadcasting (1, 3) and (4, 1), int32
-    x = np.array([[1, 2, 3]], dtype=np.int32)
-    y = np.array([[1], [2], [3], [4]], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
+    # Input 5: Large equal positive integers
+    input_dict = {"x": 100000, "y": 100000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D arrays of int16, matching shapes
-    x = np.ones((2, 2, 2), dtype=np.int16)
-    y = np.zeros((2, 2, 2), dtype=np.int16)
-    input_dict = {"x": x, "y": y}
+    # Input 6: Zero and negative integer
+    input_dict = {"x": 0, "y": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D arrays of int8, matching shapes, negative values
-    x = np.array([-128, 0, 127], dtype=np.int8)
-    y = np.array([-128, 1, 127], dtype=np.int8)
-    input_dict = {"x": x, "y": y}
+    # Input 7: Large unequal negative integers
+    input_dict = {"x": -999999, "y": -123456}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array and scalar, int64
-    x = np.array([[100, 200], [300, 400]], dtype=np.int64)
-    y = np.int64(200)
-    input_dict = {"x": x, "y": y}
+    # Input 8: Distinct small integers
+    input_dict = {"x": 7, "y": 8}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D arrays with broadcasting (2, 1, 3) and (1, 4, 3), int32
-    x = np.ones((2, 1, 3), dtype=np.int32)
-    y = np.zeros((1, 4, 3), dtype=np.int32)
-    input_dict = {"x": x, "y": y}
+    # Input 9: Large unequal positive integers
+    input_dict = {"x": 12345, "y": 54321}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger 1D arrays of int64
-    x = np.arange(100, dtype=np.int64)
-    y = np.arange(100, dtype=np.int64)
-    input_dict = {"x": x, "y": y}
+    # Input 10: Negative and zero
+    input_dict = {"x": -100, "y": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Identical positive prime integers
+    input_dict = {"x": 17, "y": 17}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.eq_2"] = eq_inputs()
+generated_inputs["jax.lax.eq_2"] = lax_eq_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

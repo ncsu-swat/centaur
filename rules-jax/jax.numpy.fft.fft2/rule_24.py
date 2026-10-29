@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axes elements cannot refer to the same axis for tuple axes (Rule 24)
+# axes list has length matching s tuple and contains distinct axis indices (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not((If(Select(v["arg2_values"], 0) < 0, Select(v["arg2_values"], 0) + v["arg1_ndim"], Select(v["arg2_values"], 0))) != (If(Select(v["arg2_values"], 1) < 0, Select(v["arg2_values"], 1) + v["arg1_ndim"], Select(v["arg2_values"], 1)))) if n else
-          (If(Select(v["arg2_values"], 0) < 0, Select(v["arg2_values"], 0) + v["arg1_ndim"], Select(v["arg2_values"], 0))) != (If(Select(v["arg2_values"], 1) < 0, Select(v["arg2_values"], 1) + v["arg1_ndim"], Select(v["arg2_values"], 1))))
+    s.add(Not(And(And(v["arg1_length"] == 2, v["arg2_length"] == v["arg1_length"]), Select(v["arg2_values"], 0) != Select(v["arg2_values"], 1))) if n else
+          And(And(v["arg1_length"] == 2, v["arg2_length"] == v["arg1_length"]), Select(v["arg2_values"], 0) != Select(v["arg2_values"], 1)))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -20,25 +20,27 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        arg1_length = Int('arg1_length')
+        arg2_length = Int('arg2_length')
         arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_length == len(arg1))
+        solver.add(arg2_length == len(arg2))
         for i in range(len(arg2)):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 24
-        rule_24(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values})
+        rule_24(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_24(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values']}, neg)
+        rule_24(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

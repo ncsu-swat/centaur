@@ -4,63 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def reduce_precision_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32 -> bfloat16 equivalent (8 exponent, 7 mantissa)
-    operand = np.array([-1.5, 0.0, 1.5, 2.3, 3.14], dtype=np.float32)
-    input_dict = {"operand": operand, "exponent_bits": 8, "mantissa_bits": 7}
+    # Input 1: 1D float32 array mimicking bfloat16 (8 exponent bits, 7 mantissa bits)
+    operand = np.array([-1.5, 0.0, 2.75, 42.125], dtype=np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 8,
+        "mantissa_bits": 7,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, float32 -> float16 equivalent (5 exponent, 10 mantissa)
-    operand = np.random.randn(3, 5).astype(np.float32)
-    input_dict = {"operand": operand, "exponent_bits": 5, "mantissa_bits": 10}
+    # Input 2: 2D float32 array mimicking float16 (5 exponent bits, 10 mantissa bits)
+    operand = np.random.randn(3, 4).astype(np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 5,
+        "mantissa_bits": 10,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D array, float32 -> custom low precision (4 exponent, 3 mantissa)
-    operand = np.random.uniform(-10, 10, size=(2, 2, 2)).astype(np.float32)
-    input_dict = {"operand": operand, "exponent_bits": 4, "mantissa_bits": 3}
+    # Input 3: Scalar (0D array) float32
+    operand = np.array(3.1415927, dtype=np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 8,
+        "mantissa_bits": 23,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array, float64 -> float32 equivalent (8 exponent, 23 mantissa)
-    operand = np.array([1e-10, 1e10, -1e10], dtype=np.float64)
-    input_dict = {"operand": operand, "exponent_bits": 8, "mantissa_bits": 23}
+    # Input 4: 3D float32 array with lower precision
+    operand = np.random.uniform(-10.0, 10.0, size=(2, 3, 2)).astype(np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 4,
+        "mantissa_bits": 3,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D array, float32 -> (6 exponent, 12 mantissa)
-    operand = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    input_dict = {"operand": operand, "exponent_bits": 6, "mantissa_bits": 12}
+    # Input 5: 4D float32 array
+    operand = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 6,
+        "mantissa_bits": 8,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 0D array (scalar), float32 -> (5 exponent, 10 mantissa)
-    operand = np.array(3.14159, dtype=np.float32)
-    input_dict = {"operand": operand, "exponent_bits": 5, "mantissa_bits": 10}
+    # Input 6: 1D array with zero mantissa bits
+    operand = np.linspace(-5.0, 5.0, num=10, dtype=np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 8,
+        "mantissa_bits": 0,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array with large values, float64 -> (10 exponent, 20 mantissa)
-    operand = np.array([[1e100, -1e100], [0.0, 1.0]], dtype=np.float64)
-    input_dict = {"operand": operand, "exponent_bits": 10, "mantissa_bits": 20}
+    # Input 7: 2D array with minimal exponent bits
+    operand = np.array([[0.5, -0.5], [1.0, -1.0]], dtype=np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 1,
+        "mantissa_bits": 2,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D array, float32 -> extreme low precision (2 exponent, 2 mantissa)
-    operand = np.array([0.125, 0.25, 0.5, 1.0, 2.0, 4.0], dtype=np.float32)
-    input_dict = {"operand": operand, "exponent_bits": 2, "mantissa_bits": 2}
+    # Input 8: 3D array with small exponent and mantissa
+    operand = np.random.randn(1, 4, 1).astype(np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 3,
+        "mantissa_bits": 4,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D array, float64 -> float16 equivalent (5 exponent, 10 mantissa)
-    operand = np.random.randn(2, 4, 4).astype(np.float64)
-    input_dict = {"operand": operand, "exponent_bits": 5, "mantissa_bits": 10}
+    # Input 9: 1D array with large values and extreme reduction
+    operand = np.array([100.0, -200.0, 300.0, -400.0], dtype=np.float32)
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 7,
+        "mantissa_bits": 14,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array, float32 -> (8 exponent, 0 mantissa)
-    operand = np.array([1.5, 2.75, 3.125, -5.5], dtype=np.float32)
-    input_dict = {"operand": operand, "exponent_bits": 8, "mantissa_bits": 0}
+    # Input 10: 5D float32 array
+    operand = np.ones((1, 2, 1, 3, 2), dtype=np.float32) * 1.5
+    input_dict = {
+        "operand": operand,
+        "exponent_bits": 4,
+        "mantissa_bits": 5,
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.reduce_precision_1"] = reduce_precision_inputs()
 

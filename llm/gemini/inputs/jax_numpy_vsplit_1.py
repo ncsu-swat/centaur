@@ -4,63 +4,94 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def vsplit_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, split into 2 parts
-    ary = np.random.randn(6, 4).astype(np.float32)
+    # Input 1: 1D array split into 2 equal sections
+    ary = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype=np.float32)
     indices_or_sections = 2
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Input 2: 2D array, split into 3 parts
-    ary = np.random.randn(6, 4).astype(np.float32)
-    indices_or_sections = 3
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
-
-    # Input 3: 2D array, integer type, split into 4 parts
-    ary = np.random.randint(-10, 10, size=(12, 5)).astype(np.int32)
+    # Input 2: 2D array split into 4 equal sections
+    ary = np.arange(16, dtype=np.int32).reshape(4, 4)
     indices_or_sections = 4
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Input 4: 3D array, float64 type, split into 2 parts
-    ary = np.random.randn(8, 4, 2).astype(np.float64)
-    indices_or_sections = 2
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
-
-    # Input 5: 3D array, float64 type, split into 4 parts
-    ary = np.random.randn(8, 4, 2).astype(np.float64)
-    indices_or_sections = 4
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
-
-    # Input 6: 4D array, split into 5 parts
-    ary = np.random.randn(10, 3, 3, 3).astype(np.float32)
+    # Input 3: 2D array split into 5 equal sections, float64
+    ary = np.random.randn(10, 5).astype(np.float64)
     indices_or_sections = 5
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Input 7: 2D array, int64 type, split into 3 parts
-    ary = np.random.randint(0, 100, size=(15, 2)).astype(np.int64)
+    # Input 4: 3D array split into 3 sections
+    ary = np.random.randn(6, 3, 2).astype(np.float32)
     indices_or_sections = 3
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Input 8: 3D array, split into 3 parts
-    ary = np.random.randn(9, 9, 9).astype(np.float32)
-    indices_or_sections = 3
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    # Input 5: 1D array with negative values, split into 4 sections
+    ary = np.array([-8, -6, -4, -2, 0, 2, 4, 6], dtype=np.int64)
+    indices_or_sections = 4
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Input 9: 2D array, split into 2 parts (each of size 1 along axis 0)
-    ary = np.random.randn(2, 10).astype(np.float32)
+    # Input 6: 4D boolean array split into 2 sections
+    ary = np.zeros((2, 2, 2, 2), dtype=bool)
     indices_or_sections = 2
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Input 10: 4D array, split into 6 parts
-    ary = np.random.randn(12, 2, 2, 2).astype(np.float32)
+    # Input 7: 2D complex array split into 1 section
+    ary = (np.random.randn(6, 2) + 1j * np.random.randn(6, 2)).astype(
+        np.complex64
+    )
+    indices_or_sections = 1
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 8: 3D uint8 array split into 6 sections
+    ary = np.arange(12 * 4 * 4, dtype=np.uint8).reshape(12, 4, 4)
     indices_or_sections = 6
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 9: 2D column vector split into 3 sections
+    ary = np.linspace(-10.0, 10.0, 9, dtype=np.float32).reshape(9, 1)
+    indices_or_sections = 3
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 10: 5D array split into 2 sections
+    ary = np.random.randn(4, 1, 2, 3, 1).astype(np.float32)
+    indices_or_sections = 2
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 11: Single-element 1D array split into 1 section
+    ary = np.array([42], dtype=np.int32)
+    indices_or_sections = 1
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.vsplit_1"] = vsplit_inputs()
 

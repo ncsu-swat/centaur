@@ -4,205 +4,262 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_sum_inputs():
+
+def sum_inputs():
     list_of_inputs = []
 
-    # Input 1
-    a = np.random.randn(3, 4).astype(np.float32)
+    # Input 1: 1D int32 array
+    a = np.array([1, -2, 3, -4, 5], dtype=np.int32)
+    axis = [0]
+    dtype = np.dtype(np.int32)
+    keepdims = False
+    initial = np.array(0, dtype=np.int32)
+    where = np.array([True, False, True, True, False])
+    promote_integers = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
+
+    # Input 2: 2D float32 array, reduce along axis 1
+    a = np.array([[1.5, -2.5, 3.0], [4.0, 5.5, -6.0]], dtype=np.float32)
     axis = [1]
-    dtype = np.dtype('float32')
-    keepdims = False
-    initial = np.array(0.0, dtype=np.float32)
-    where = np.ones((3, 4), dtype=bool)
-    promote_integers = True
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2
-    a = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int32)
-    axis = [0, 2]
-    dtype = np.dtype('int64')
-    keepdims = True
-    initial = np.array(5, dtype=np.int64)
-    where = np.random.choice([True, False], size=(2, 3, 4))
-    promote_integers = False
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3
-    a = np.random.randn(10).astype(np.float64)
-    axis = [0]
-    dtype = np.dtype('float64')
-    keepdims = False
-    initial = np.array(-1.0, dtype=np.float64)
-    where = np.ones((10,), dtype=bool)
-    promote_integers = True
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    axis = [1, 3]
-    dtype = np.dtype('float32')
+    dtype = np.dtype(np.float32)
     keepdims = True
     initial = np.array(0.0, dtype=np.float32)
-    where = np.ones((2, 2, 2, 2), dtype=bool)
+    where = np.ones((2, 3), dtype=bool)
     promote_integers = False
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
 
-    # Input 5
-    a = np.random.randint(-5, 5, size=(5, 5)).astype(np.int16)
+    # Input 3: 2D int32 array, reduce along axis 0
+    a = np.array([[-10, 20], [30, -40], [50, 60]], dtype=np.int32)
     axis = [0]
-    dtype = np.dtype('int32')
+    dtype = np.dtype(np.int32)
     keepdims = False
     initial = np.array(10, dtype=np.int32)
-    where = np.ones((5, 5), dtype=bool)
+    where = np.array([[True, False], [True, True], [False, True]])
     promote_integers = True
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
 
-    # Input 6
-    a = np.random.randn(4, 1, 3).astype(np.float32)
-    axis = [2]
-    dtype = np.dtype('float32')
-    keepdims = True
-    initial = np.array(-0.5, dtype=np.float32)
-    where = np.ones((4, 1, 3), dtype=bool)
-    promote_integers = True
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7
-    a = np.random.randint(0, 5, size=(5,)).astype(np.int32)
-    axis = [0]
-    dtype = np.dtype('int32')
-    keepdims = True
-    initial = np.array(0, dtype=np.int32)
-    where = np.array([True, False, True, False, True], dtype=bool)
-    promote_integers = False
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8
-    a = np.random.randn(2, 3).astype(np.float64)
-    axis = [0, 1]
-    dtype = np.dtype('float64')
-    keepdims = False
-    initial = np.array(100.0, dtype=np.float64)
-    where = np.ones((2, 3), dtype=bool)
-    promote_integers = True
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9
-    a = np.random.randn(1, 1, 1).astype(np.float32)
-    axis = [0, 1, 2]
-    dtype = np.dtype('float32')
+    # Input 4: 3D float32 array, reduce over axes [0, 2]
+    a = (np.arange(24, dtype=np.float32).reshape((2, 3, 4))) - 10.0
+    axis = [0, 2]
+    dtype = np.dtype(np.float32)
     keepdims = True
     initial = np.array(1.0, dtype=np.float32)
-    where = np.ones((1, 1, 1), dtype=bool)
+    where = a > 0
     promote_integers = False
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
 
-    # Input 10
-    a = np.random.randint(-20, 20, size=(3, 2)).astype(np.int64)
+    # Input 5: 3D int32 array, reduce along axis 1
+    a = np.array(
+        [[[1, 2], [3, 4]], [[5, 6], [7, 8]], [[-1, -2], [-3, -4]]],
+        dtype=np.int32,
+    )
     axis = [1]
-    dtype = np.dtype('int64')
+    dtype = np.dtype(np.int32)
     keepdims = False
-    initial = np.array(-10, dtype=np.int64)
-    where = np.ones((3, 2), dtype=bool)
+    initial = np.array(0, dtype=np.int32)
+    where = np.ones((3, 2, 2), dtype=bool)
     promote_integers = True
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "dtype": dtype,
-        "keepdims": keepdims,
-        "initial": initial,
-        "where": where,
-        "promote_integers": promote_integers
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
+
+    # Input 6: 4D float32 array, reduce over axes [1, 3]
+    a = np.random.randn(2, 3, 2, 4).astype(np.float32)
+    axis = [1, 3]
+    dtype = np.dtype(np.float32)
+    keepdims = True
+    initial = np.array(-0.5, dtype=np.float32)
+    where = a > -0.5
+    promote_integers = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
+
+    # Input 7: 2D float32 array, reduce over all axes [0, 1]
+    a = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], dtype=np.float32)
+    axis = [0, 1]
+    dtype = np.dtype(np.float32)
+    keepdims = False
+    initial = np.array(0.0, dtype=np.float32)
+    where = np.array([[True, False, True], [False, True, False]])
+    promote_integers = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
+
+    # Input 8: 1D float32 array, keepdims=True
+    a = np.array([-3.14, 2.71, 0.0, -1.41], dtype=np.float32)
+    axis = [0]
+    dtype = np.dtype(np.float32)
+    keepdims = True
+    initial = np.array(5.0, dtype=np.float32)
+    where = np.array([True, True, False, True])
+    promote_integers = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
+
+    # Input 9: 3D int32 array, broadcasted where condition
+    a = np.ones((2, 3, 4), dtype=np.int32)
+    axis = [2]
+    dtype = np.dtype(np.int32)
+    keepdims = True
+    initial = np.array(2, dtype=np.int32)
+    where = np.array([[[True], [False], [True]]])
+    promote_integers = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
+
+    # Input 10: 2D int32 array, reduce along axis 1
+    a = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int32)
+    axis = [1]
+    dtype = np.dtype(np.int32)
+    keepdims = False
+    initial = np.array(5, dtype=np.int32)
+    where = np.array([[True, True, False], [False, True, True]])
+    promote_integers = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
+
+    # Input 11: 4D float32 array, reduce along axis 0
+    a = np.zeros((3, 2, 2, 2), dtype=np.float32)
+    axis = [0]
+    dtype = np.dtype(np.float32)
+    keepdims = False
+    initial = np.array(0.0, dtype=np.float32)
+    where = np.zeros((3, 2, 2, 2), dtype=bool)
+    promote_integers = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "keepdims": keepdims,
+                "initial": initial,
+                "where": where,
+                "promote_integers": promote_integers,
+            }
+        )
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sum_3"] = jax_numpy_sum_inputs()
+
+generated_inputs["jax.numpy.sum_3"] = sum_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

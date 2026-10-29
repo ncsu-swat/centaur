@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# All input arrays must have the same number of dimensions after promoting 0D to 1D (Rule 25)
+# list of float scalars to stack horizontally with valid string dtype (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not((If(v["arg1_ndim"] == 0, 1, v["arg1_ndim"])) == (If(v["arg2_ndim"] == 0, 1, v["arg2_ndim"]))) if n else
-          (If(v["arg1_ndim"] == 0, 1, v["arg1_ndim"])) == (If(v["arg2_ndim"] == 0, 1, v["arg2_ndim"])))
+    s.add(Not(And(v["arg1_length"] > 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39)))) if n else
+          And(v["arg1_length"] > 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39))))
 )
 
 def rule_25_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_25_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_length = Int('arg1_length')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg1_length == len(arg1))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 25
-        rule_25(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_25(solver, {'arg1_length': arg1_length, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_25(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_25(solver, {'arg1_length': arg1['length'], 'arg2_value': arg2['value']}, neg)

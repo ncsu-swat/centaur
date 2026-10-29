@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Valid subscripts string for einsum to prevent invalid character error (Rule 1)
+# subscripts must be a valid einsum equation to prevent invalid character in einsum equation (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(Or(Or(Or(Or(v["arg1_value"] == 0, v["arg1_value"] == 1), v["arg1_value"] == 2), v["arg1_value"] == 3), v["arg1_value"] == 4)) if n else

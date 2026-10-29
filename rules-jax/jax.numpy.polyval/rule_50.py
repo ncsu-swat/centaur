@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# coefficients and input evaluation tensors must have valid numeric or non-string types (Rule 50)
+# conditional data type alignment between polynomial coefficients p and evaluation tensor x (Rule 50)
 
 rule_50 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] == 1, v["arg1_dtype"] != 11), v["arg2_dtype"] != 11)) if n else
-          And(And(v["arg1_ndim"] == 1, v["arg1_dtype"] != 11), v["arg2_dtype"] != 11))
+    s.add(Not(And(v["arg1_ndim"] == 1, If(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 10)))) if n else
+          And(v["arg1_ndim"] == 1, If(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 10))))
 )
 
 def rule_50_func(arg1, arg2, solver=None, neg=False):
@@ -37,9 +37,9 @@ def rule_50_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 50
-        rule_50(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim, 'arg2_dtype': arg2_dtype})
+        rule_50(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_50(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_50(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)

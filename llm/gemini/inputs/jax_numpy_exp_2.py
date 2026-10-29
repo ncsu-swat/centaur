@@ -4,57 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def exp_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
-    input_dict = {"x": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 1. Zero
+    list_of_inputs.append({"x": 0.0})
 
-    # Input 2: negative float
-    input_dict = {"x": -1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 2. Positive standard float
+    list_of_inputs.append({"x": 1.0})
 
-    # Input 3: zero
-    input_dict = {"x": 0.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 3. Negative standard float
+    list_of_inputs.append({"x": -1.0})
 
-    # Input 4: large positive float
-    input_dict = {"x": 50.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 4. Small positive float
+    list_of_inputs.append({"x": 1e-4})
 
-    # Input 5: large negative float
-    input_dict = {"x": -50.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 5. Small negative float
+    list_of_inputs.append({"x": -1e-4})
 
-    # Input 6: small positive float
-    input_dict = {"x": 1e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 6. Large positive float
+    list_of_inputs.append({"x": 50.0})
 
-    # Input 7: small negative float
-    input_dict = {"x": -1e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 7. Large negative float
+    list_of_inputs.append({"x": -50.0})
 
-    # Input 8: mathematical constant pi
-    input_dict = {"x": 3.141592653589793}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 8. Fractional float
+    list_of_inputs.append({"x": 0.5})
 
-    # Input 9: infinity
-    input_dict = {"x": float('inf')}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 9. Negative fractional float
+    list_of_inputs.append({"x": -0.5})
 
-    # Input 10: negative infinity
-    input_dict = {"x": float('-inf')}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 10. Pi
+    list_of_inputs.append({"x": float(np.pi)})
 
-    # Input 11: NaN
-    input_dict = {"x": float('nan')}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 11. Infinity
+    list_of_inputs.append({"x": float("inf")})
 
-    return list_of_inputs
+    # 12. Negative infinity
+    list_of_inputs.append({"x": float("-inf")})
+
+    # 13. NaN
+    list_of_inputs.append({"x": float("nan")})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
 
 generated_inputs["jax.numpy.exp_2"] = exp_inputs()
 

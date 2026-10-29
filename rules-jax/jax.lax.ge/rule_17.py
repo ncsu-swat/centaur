@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension relationship between the two input tensors (Rule 17)
+# non-scalar operands must have identical rank (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, Or(v["arg2_ndim"] == v["arg1_ndim"], v["arg2_ndim"] == 0), True)) if n else
-          If(v["arg1_ndim"] > 0, Or(v["arg2_ndim"] == v["arg1_ndim"], v["arg2_ndim"] == 0), True))
+    s.add(Not(If(And(v["arg1_ndim"] >= 1, v["arg2_ndim"] >= 1), v["arg1_ndim"] == v["arg2_ndim"], True)) if n else
+          If(And(v["arg1_ndim"] >= 1, v["arg2_ndim"] >= 1), v["arg1_ndim"] == v["arg2_ndim"], True))
 )
 
 def rule_17_func(arg1, arg2, solver=None, neg=False):

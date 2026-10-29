@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def abs_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar int32, negative
-    x = np.int32(-42)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: Zero
+    input_dict = {"x": int(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of int32, mixed signs
-    x = np.array([-10, 0, 10, -20, 30], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: Small positive integer
+    input_dict = {"x": int(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array of int64, mixed signs
-    x = np.array([[-1, 2, -3], [4, -5, 6]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Small negative integer
+    input_dict = {"x": int(-1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array of int16
-    x = np.array([[[ -1,  2], [ -3,  4]], [[ -5,  6], [ -7,  8]]], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: Moderate positive integer
+    input_dict = {"x": int(42)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Scalar int64, positive
-    x = np.int64(100)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: Moderate negative integer
+    input_dict = {"x": int(-42)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array of int8, including boundaries
-    x = np.array([-128, -1, 0, 1, 127], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Large positive integer
+    input_dict = {"x": int(10000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D array of int32
-    x = np.random.randint(-100, 100, size=(2, 2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Large negative integer
+    input_dict = {"x": int(-10000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array of int16 containing all zeros
-    x = np.zeros((3, 3), dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Max 32-bit signed integer boundary
+    input_dict = {"x": int(2147483647)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D array of int8
-    x = np.random.randint(-10, 10, size=(2, 1, 3, 1, 2), dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Large negative boundary value
+    input_dict = {"x": int(-2147483647)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array of int64, large values
-    x = np.array([-922337203685477580, 922337203685477580], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Negative power of two
+    input_dict = {"x": int(-1024)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Positive power of two
+    input_dict = {"x": int(1024)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.abs_2"] = abs_inputs()
 

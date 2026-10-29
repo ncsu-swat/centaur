@@ -4,63 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def spacing_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with positive values
+    # Input 1: 0D scalar float32
+    x = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 2: 1D array float32
     x = np.array([0.0, 0.25, 0.5, 0.75, 1.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D float32 array with negative values
-    x = np.array([-1.0, -0.5, -0.25, -0.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array float64 with negative values
+    x = np.array([-1000.0, -1.0, 0.0, 1.0, 1000.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D float64 array
-    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array float32
+    x = np.random.randn(3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D array (scalar representation)
-    x = np.array(42.0, dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array float64
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D float16 array
-    x = np.random.uniform(-10, 10, size=(2, 3, 4)).astype(np.float16)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D array int32
+    x = np.array([0, 1, 10, -5], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D int32 array (implicitly cast to float)
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D array int64
+    x = np.array([[10, 20], [-30, 40]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Boolean array (implicitly cast to float)
-    x = np.array([True, False, True], dtype=bool)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array float16
+    x = np.array([0.1, 0.5, 1.0, 2.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D float32 array with large values
-    x = np.random.uniform(1e5, 1e6, size=(2, 2, 2, 2)).astype(np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D array bool
+    x = np.array([True, False, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Array with very small float64 values
-    x = np.array([1e-30, 1e-15, 1e-5], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D array float32
+    x = (np.ones((2, 2, 2, 2), dtype=np.float32) * 1e5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float64 array with mixed large, small, negative and positive values
-    x = np.array([-1e10, -1.0, 0.0, 1.0, 1e10], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 1D array with special float values
+    x = np.array([np.inf, -np.inf, np.nan, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.spacing"] = spacing_inputs()
 

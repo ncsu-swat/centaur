@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The number of axes specified must equal the number of dimensions of the input tensor (Rule 1)
+# axes length matches the number of dimensions of tensor a (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(v["arg2_length"] == v["arg1_ndim"]) if n else

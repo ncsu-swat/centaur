@@ -4,103 +4,123 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asarray_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {
-        "a": 1.0,
-        "dtype": np.float32,
-        "order": "K",
-        "copy": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2
-    input_dict = {
-        "a": -2.5,
-        "dtype": np.float64,
-        "order": "K",
-        "copy": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3
+    # Input 1: Zero float to float32
     input_dict = {
         "a": 0.0,
-        "dtype": np.int32,
+        "dtype": np.dtype(np.float32),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
+    # Input 2: Positive float to float64
     input_dict = {
-        "a": 3.1415926535,
-        "dtype": np.float32,
+        "a": 1.0,
+        "dtype": np.dtype(np.float64),
         "order": "K",
-        "copy": False
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
+    # Input 3: Negative float to float32
     input_dict = {
-        "a": -1e-5,
-        "dtype": np.float16,
+        "a": -3.14159,
+        "dtype": np.dtype(np.float32),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
+    # Input 4: Positive float to int32
     input_dict = {
-        "a": 123456.78,
-        "dtype": np.int64,
+        "a": 42.0,
+        "dtype": np.dtype(np.int32),
         "order": "K",
-        "copy": False
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
+    # Input 5: Large negative float to int64
     input_dict = {
-        "a": float('inf'),
-        "dtype": np.float64,
+        "a": -1000.0,
+        "dtype": np.dtype(np.int64),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
+    # Input 6: Mathematical constant to float16
     input_dict = {
-        "a": float('nan'),
-        "dtype": np.float32,
+        "a": 2.71828,
+        "dtype": np.dtype(np.float16),
         "order": "K",
-        "copy": False
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
+    # Input 7: Float to complex64
+    input_dict = {
+        "a": 0.5,
+        "dtype": np.dtype(np.complex64),
+        "order": "K",
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Negative zero float with float32
     input_dict = {
         "a": -0.0,
-        "dtype": np.complex64,
+        "dtype": np.dtype(np.float32),
         "order": "K",
-        "copy": True
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
+    # Input 9: Small positive float to bool
     input_dict = {
-        "a": 42.42,
-        "dtype": np.uint32,
+        "a": 1e-4,
+        "dtype": np.dtype(np.bool_),
         "order": "K",
-        "copy": False
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Positive float to uint32
+    input_dict = {
+        "a": 65535.0,
+        "dtype": np.dtype(np.uint32),
+        "order": "K",
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Infinity float to float32
+    input_dict = {
+        "a": float("inf"),
+        "dtype": np.dtype(np.float32),
+        "order": "K",
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: NaN float to float64
+    input_dict = {
+        "a": float("nan"),
+        "dtype": np.dtype(np.float64),
+        "order": "K",
+        "copy": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asarray_5"] = asarray_inputs()
 

@@ -4,41 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def conjugate_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 3.14})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard negative float
-    list_of_inputs.append({"x": -2.718})
+    # Input 2: Positive float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero float
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Negative float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero float
-    list_of_inputs.append({"x": -0.0})
+    # Input 4: Standard floating-point value (pi)
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive float
-    list_of_inputs.append({"x": 1.23e10})
+    # Input 5: Standard negative floating-point value (e)
+    input_dict = {"x": -2.718281828459045}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 6: Small positive float
-    list_of_inputs.append({"x": 4.56e-10})
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Positive infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 7: Large negative float
+    input_dict = {"x": -1e8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 8: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Not a Number (NaN)
-    list_of_inputs.append({"x": float('nan')})
+    # Input 9: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Arbitrary float value
-    list_of_inputs.append({"x": 42.0})
+    # Input 10: NaN
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Arbitrary fractional float
+    input_dict = {"x": 42.42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

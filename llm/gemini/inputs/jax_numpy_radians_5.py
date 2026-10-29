@@ -4,46 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.numpy as jnp
+
 
 def radians_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0})
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 2: Positive acute angle
-    list_of_inputs.append({"x": 45})
+    input_dict = {"x": 45}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 3: Right angle
-    list_of_inputs.append({"x": 90})
+    input_dict = {"x": 90}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 4: Straight angle
-    list_of_inputs.append({"x": 180})
+    input_dict = {"x": 180}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Full rotation
-    list_of_inputs.append({"x": 360})
+    # Input 5: Full turn
+    input_dict = {"x": 360}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 6: Negative angle
-    list_of_inputs.append({"x": -90})
+    input_dict = {"x": -45}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large negative angle
-    list_of_inputs.append({"x": -720})
+    # Input 7: Negative straight angle
+    input_dict = {"x": -180}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Numpy int32 scalar
-    list_of_inputs.append({"x": np.int32(270)})
+    # Input 8: Negative full turn
+    input_dict = {"x": -360}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Numpy int64 scalar
-    list_of_inputs.append({"x": np.int64(-135)})
+    # Input 9: Small positive integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Numpy int16 scalar
-    list_of_inputs.append({"x": np.int16(30)})
+    # Input 10: Large positive integer
+    input_dict = {"x": 720}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Large positive angle
-    list_of_inputs.append({"x": 1080})
+    # Input 11: Large negative integer
+    input_dict = {"x": -1080}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Arbitrary prime integer
+    input_dict = {"x": 37}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.radians_5"] = radians_inputs()
 

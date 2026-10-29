@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the first axis must be less than the number of dimensions if it is non-negative (Rule 10)
+# axis2 must be within valid index bounds for tensor v_1 using conditional normalization (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True)) if n else
-          If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True))
+    s.add(Not(If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0)) if n else
+          If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0))
 )
 
 def rule_10_func(arg1, arg2, solver=None, neg=False):

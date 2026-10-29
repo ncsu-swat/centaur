@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when divisor is a 1-D tensor, its dimension size must match the last dimension of the dividend tensor or be 1 (Rule 46)
+# 3-D tensors sharing the first two spatial/batch dimensions (Rule 46)
 
 rule_46 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg2_ndim"] == 1, v["arg1_ndim"] >= 1), Or(Select(v["arg2_shape"], 0) == Select(v["arg1_shape"], v["arg1_ndim"] - 1), Select(v["arg2_shape"], 0) == 1), True)) if n else
-          If(And(v["arg2_ndim"] == 1, v["arg1_ndim"] >= 1), Or(Select(v["arg2_shape"], 0) == Select(v["arg1_shape"], v["arg1_ndim"] - 1), Select(v["arg2_shape"], 0) == 1), True))
+    s.add(Not(And(And(And(v["arg1_ndim"] == 3, v["arg2_ndim"] == 3), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0)), Select(v["arg1_shape"], 1) == Select(v["arg2_shape"], 1))) if n else
+          And(And(And(v["arg1_ndim"] == 3, v["arg2_ndim"] == 3), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0)), Select(v["arg1_shape"], 1) == Select(v["arg2_shape"], 1)))
 )
 
 def rule_46_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_46_func(arg1, arg2, solver=None, neg=False):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 46
-        rule_46(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_46(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_46(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_46(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

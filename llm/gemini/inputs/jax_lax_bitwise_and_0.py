@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_and_inputs():
     list_of_inputs = []
 
-    # Input 1: Boolean 1D arrays
-    x = np.array([True, False, True, False], dtype=bool)
-    y = np.array([True, True, False, False], dtype=bool)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 1: 1D arrays with int32
+    x = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    y = np.array([5, 4, 3, 2, 1], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: Int32 1D arrays
-    x = np.array([1, 2, 3, 4], dtype=np.int32)
-    y = np.array([5, 6, 7, 8], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 2: 2D arrays with int64, including negative values
+    x = np.array([[-1, 2], [-3, 4]], dtype=np.int64)
+    y = np.array([[7, -8], [9, -10]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: Int16 2D arrays with negative values
-    x = np.array([[-1, 2], [-3, 4]], dtype=np.int16)
-    y = np.array([[5, -6], [7, -8]], dtype=np.int16)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 3: 2D arrays with broadcasting
+    x = np.array([[1], [2], [3]], dtype=np.int32)
+    y = np.array([[4, 5, 6]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: Int8 3D arrays, broadcasting with matching number of dimensions
-    x = np.array([[[1], [2]], [[3], [4]]], dtype=np.int8)  # shape (2, 2, 1)
-    y = np.array([[[5, 6]], [[7, 8]]], dtype=np.int8)      # shape (2, 1, 2)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 4: Boolean arrays 1D
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    y = np.array([True, True, False, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: Int64 1D arrays
-    x = np.array([100000, 200000], dtype=np.int64)
-    y = np.array([300000, 400000], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: Boolean arrays 2D
+    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    y = np.array([[True, True], [False, False]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: Int8 2D arrays
-    x = np.array([[127, 0], [-128, 64]], dtype=np.int8)
-    y = np.array([[15, 15], [-15, -15]], dtype=np.int8)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 6: 0D scalar arrays with int32
+    x = np.array(12, dtype=np.int32)
+    y = np.array(10, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: Boolean 3D arrays
-    x = np.random.choice([True, False], size=(2, 2, 2)).astype(bool)
-    y = np.random.choice([True, False], size=(2, 2, 2)).astype(bool)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: 3D arrays with int32
+    x = np.arange(8, dtype=np.int32).reshape(2, 2, 2)
+    y = np.full((2, 2, 2), 15, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: Int32 2D arrays
-    x = np.array([[1024, 2048], [4096, 8192]], dtype=np.int32)
-    y = np.array([[1024, 0], [4096, 0]], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: 1D arrays with int64, negative values
+    x = np.array([-128, -1, 0, 127], dtype=np.int64)
+    y = np.array([127, -1, 0, -128], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Int64 2D arrays
-    x = np.array([[4294967295, -1], [0, 1]], dtype=np.int64)
-    y = np.array([[4294967295, 4294967295], [1, 0]], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 9: 4D arrays with int32 and broadcasting
+    x = np.ones((2, 1, 3, 1), dtype=np.int32) * 15
+    y = np.ones((2, 4, 1, 5), dtype=np.int32) * 7
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: Int16 4D arrays, Broadcasting with size-1 dimensions
-    x = np.ones((2, 1, 3, 1), dtype=np.int16) * 7
-    y = np.ones((2, 2, 1, 5), dtype=np.int16) * 3
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 10: 0D scalar array broadcast with 2D array
+    x = np.array(15, dtype=np.int32)
+    y = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 11: Int8 1D arrays, broadcasting 1 element array to 3 elements
-    x = np.array([15], dtype=np.int8)
-    y = np.array([7, 8, 9], dtype=np.int8)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 11: 3D arrays with boolean broadcasting
+    x = np.array([[[True], [False]], [[False], [True]]], dtype=np.bool_)
+    y = np.array([[[True, False]], [[False, True]]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    return [copy.deepcopy(inp) for inp in list_of_inputs]
+    return list_of_inputs
+
 
 generated_inputs["jax.lax.bitwise_and"] = bitwise_and_inputs()
 

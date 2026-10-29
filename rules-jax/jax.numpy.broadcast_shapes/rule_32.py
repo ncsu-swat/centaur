@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# broadcasting compatibility of two shape lists (Rule 32)
+# NumPy broadcast rule when second tuple shape has rank greater than or equal to first tuple shape (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (If(v["arg1_length"] >= v["arg2_length"], v["arg1_length"] - 1, v["arg2_length"] - 1) + 1), Or(Or(Or(Or(v["arg1_length"] - i - 1 < 0, v["arg2_length"] - i - 1 < 0), Select(v["arg1_values"], v["arg1_length"] - i - 1) == Select(v["arg2_values"], v["arg2_length"] - i - 1)), Select(v["arg1_values"], v["arg1_length"] - i - 1) == 1), Select(v["arg2_values"], v["arg2_length"] - i - 1) == 1)) for i in range(6)])) if n else
-          And([Implies(i < (If(v["arg1_length"] >= v["arg2_length"], v["arg1_length"] - 1, v["arg2_length"] - 1) + 1), Or(Or(Or(Or(v["arg1_length"] - i - 1 < 0, v["arg2_length"] - i - 1 < 0), Select(v["arg1_values"], v["arg1_length"] - i - 1) == Select(v["arg2_values"], v["arg2_length"] - i - 1)), Select(v["arg1_values"], v["arg1_length"] - i - 1) == 1), Select(v["arg2_values"], v["arg2_length"] - i - 1) == 1)) for i in range(6)]))
+    s.add(Not(If(v["arg2_length"] >= v["arg1_length"], And([Implies(i < (v["arg1_length"] - 1 + 1), Or(Or(Select(v["arg2_values"], v["arg2_length"] - v["arg1_length"] + i) == Select(v["arg1_values"], i), Select(v["arg2_values"], v["arg2_length"] - v["arg1_length"] + i) == 1), Select(v["arg1_values"], i) == 1)) for i in range(6)]), True)) if n else
+          If(v["arg2_length"] >= v["arg1_length"], And([Implies(i < (v["arg1_length"] - 1 + 1), Or(Or(Select(v["arg2_values"], v["arg2_length"] - v["arg1_length"] + i) == Select(v["arg1_values"], i), Select(v["arg2_values"], v["arg2_length"] - v["arg1_length"] + i) == 1), Select(v["arg1_values"], i) == 1)) for i in range(6)]), True))
 )
 
 def rule_32_func(arg1, arg2, solver=None, neg=False):
@@ -20,9 +20,9 @@ def rule_32_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
@@ -41,9 +41,9 @@ def rule_32_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 32
-        rule_32(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_32(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_32(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_32(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

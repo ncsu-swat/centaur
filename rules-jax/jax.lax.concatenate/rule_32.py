@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the specified dimension is 0, the tensor rank must be at least 1 (Rule 32)
+# concatenation axis for a 3-D tensor must be between -3 and 2 (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] == 0, v["arg1_ndim"] >= 1, v["arg1_ndim"] >= 0)) if n else
-          If(v["arg2_value"] == 0, v["arg1_ndim"] >= 1, v["arg1_ndim"] >= 0))
+    s.add(Not(If(v["arg1_ndim"] == 3, And(-3 <= v["arg2_value"], v["arg2_value"] <= 2), True)) if n else
+          If(v["arg1_ndim"] == 3, And(-3 <= v["arg2_value"], v["arg2_value"] <= 2), True))
 )
 
 def rule_32_func(arg1, arg2, solver=None, neg=False):

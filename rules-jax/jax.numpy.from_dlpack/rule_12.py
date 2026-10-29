@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor x must have a rank of at most 8 (Rule 12)
+# rank of DLPack tensor must not exceed maximum supported dimensionality (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
     s.add(Not(v["arg1_ndim"] <= 8) if n else

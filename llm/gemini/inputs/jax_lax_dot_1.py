@@ -4,158 +4,224 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 import jax
 from jax.sharding import Mesh, PartitionSpec
-from jax.experimental.mesh_utils import create_device_mesh
+import numpy as np
+
+_mesh = Mesh(np.array([jax.devices("cpu")[0]]), ("x",))
+jax.set_mesh(_mesh)
+
 
 def dot_inputs():
-    # Set up global mesh context to allow PartitionSpec() usage
-    devices = jax.devices()
-    mesh = Mesh(create_device_mesh((len(devices),), devices), ('x',))
-    jax.set_mesh(mesh).__enter__()
-
     list_of_inputs = []
 
-    # All inputs use homogeneous dimension_numbers to avoid numpy inhomogeneous shape errors.
-    # We use 3D arrays of shape (B, M, K) and (B, K, N) with:
-    # lhs_contracting = [2], rhs_contracting = [1]
-    # lhs_batch = [0], rhs_batch = [0]
-    # dimension_numbers = (([2], [1]), ([0], [0])) (homogeneous shape (2, 2, 1))
-    # out_sharding is set to PartitionSpec() which is a tuple subclass of length 0.
+    # Input 1: Batched matrix multiplication (1 batch dim, 1 contracting dim), float32
+    lhs = np.random.randn(2, 3, 4).astype(np.float32)
+    rhs = np.random.randn(2, 4, 5).astype(np.float32)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "default"
+    preferred_element_type = np.dtype(np.float32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 1: Standard float32, batch=1
-    lhs = np.random.randn(1, 3, 4).astype(np.float32)
-    rhs = np.random.randn(1, 4, 5).astype(np.float32)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "default",
-        "preferred_element_type": np.float32,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Batched matrix multiplication with float32, 'high' precision
+    lhs = np.random.randn(4, 2, 3).astype(np.float32)
+    rhs = np.random.randn(4, 3, 2).astype(np.float32)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "high"
+    preferred_element_type = np.dtype(np.float32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 2: float32, batch=2, different sizes
-    lhs = np.random.randn(2, 5, 3).astype(np.float32)
-    rhs = np.random.randn(2, 3, 6).astype(np.float32)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "high",
-        "preferred_element_type": np.float32,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Negative float32 values, 'highest' precision
+    lhs = -np.random.uniform(1.0, 5.0, size=(3, 5, 2)).astype(np.float32)
+    rhs = np.random.uniform(-4.0, -1.0, size=(3, 2, 4)).astype(np.float32)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "highest"
+    preferred_element_type = np.dtype(np.float32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 3: float64, batch=1
-    lhs = np.random.randn(1, 4, 4).astype(np.float64)
-    rhs = np.random.randn(1, 4, 4).astype(np.float64)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "highest",
-        "preferred_element_type": np.float64,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Different dimension ordering for contracting/batch dims, 'fastest' precision
+    lhs = np.random.randn(3, 2, 4).astype(np.float32)
+    rhs = np.random.randn(4, 2, 5).astype(np.float32)
+    dimension_numbers = (((2,), (0,)), ((1,), (1,)))
+    precision = "fastest"
+    preferred_element_type = np.dtype(np.float32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 4: int32, batch=1
-    lhs = np.random.randint(-10, 10, size=(1, 3, 3)).astype(np.int32)
-    rhs = np.random.randint(-10, 10, size=(1, 3, 3)).astype(np.int32)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "default",
-        "preferred_element_type": np.int32,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2 batch dims, 2 contracting dims, 'high' precision
+    lhs = np.random.randn(2, 3, 2, 4, 5).astype(np.float32)
+    rhs = np.random.randn(2, 3, 4, 5, 3).astype(np.float32)
+    dimension_numbers = (((3, 4), (2, 3)), ((0, 1), (0, 1)))
+    precision = "high"
+    preferred_element_type = np.dtype(np.float32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 5: complex64, batch=1
-    lhs = (np.random.randn(1, 4, 2) + 1j * np.random.randn(1, 4, 2)).astype(np.complex64)
-    rhs = (np.random.randn(1, 2, 4) + 1j * np.random.randn(1, 2, 4)).astype(np.complex64)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "default",
-        "preferred_element_type": np.complex64,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Integer dot product (int32)
+    lhs = np.random.randint(-10, 10, size=(2, 4, 3)).astype(np.int32)
+    rhs = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int32)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "default"
+    preferred_element_type = np.dtype(np.int32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 6: Negative values, float32, batch=2
-    lhs = np.random.uniform(-5.0, -1.0, size=(2, 3, 5)).astype(np.float32)
-    rhs = np.random.uniform(-5.0, -1.0, size=(2, 5, 3)).astype(np.float32)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "default",
-        "preferred_element_type": np.float32,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Complex numbers dot product (complex64)
+    lhs = (
+        np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)
+    ).astype(np.complex64)
+    rhs = (
+        np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)
+    ).astype(np.complex64)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "default"
+    preferred_element_type = np.dtype(np.complex64)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 7: Large dimensions, float32, batch=1
-    lhs = np.random.randn(1, 16, 32).astype(np.float32)
-    rhs = np.random.randn(1, 32, 16).astype(np.float32)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "high",
-        "preferred_element_type": np.float32,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Batch size 1 with float32
+    lhs = np.random.randn(1, 3, 3).astype(np.float32)
+    rhs = np.random.randn(1, 3, 2).astype(np.float32)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "highest"
+    preferred_element_type = np.dtype(np.float32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 8: Small dimensions, float32, batch=4
-    lhs = np.random.randn(4, 2, 2).astype(np.float32)
-    rhs = np.random.randn(4, 2, 2).astype(np.float32)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "default",
-        "preferred_element_type": np.float32,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Positive integers (int32)
+    lhs = np.random.randint(1, 10, size=(2, 2, 2)).astype(np.int32)
+    rhs = np.random.randint(1, 10, size=(2, 2, 2)).astype(np.int32)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "default"
+    preferred_element_type = np.dtype(np.int32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
-    # Input 9: High precision, float32, batch=1
-    lhs = np.random.randn(1, 4, 3).astype(np.float32)
-    rhs = np.random.randn(1, 3, 4).astype(np.float32)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "high",
-        "preferred_element_type": np.float32,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Highest precision, float64, batch=2
-    lhs = np.random.randn(2, 3, 3).astype(np.float64)
-    rhs = np.random.randn(2, 3, 3).astype(np.float64)
-    input_dict = {
-        "lhs": lhs,
-        "rhs": rhs,
-        "dimension_numbers": (([2], [1]), ([0], [0])),
-        "precision": "highest",
-        "preferred_element_type": np.float64,
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Larger batched matrices with float32
+    lhs = np.random.randn(8, 16, 8).astype(np.float32)
+    rhs = np.random.randn(8, 8, 12).astype(np.float32)
+    dimension_numbers = (((2,), (1,)), ((0,), (0,)))
+    precision = "high"
+    preferred_element_type = np.dtype(np.float32)
+    out_sharding = PartitionSpec()
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "lhs": lhs,
+                "rhs": rhs,
+                "dimension_numbers": dimension_numbers,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+                "out_sharding": out_sharding,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.dot_1"] = dot_inputs()
 

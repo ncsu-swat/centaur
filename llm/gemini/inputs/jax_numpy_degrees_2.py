@@ -4,54 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import math
 
 def degrees_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard python float (0.0)
+    # Input 1: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard python float (pi)
-    input_dict = {"x": 3.141592653589793}
+    # Input 2: Pi (180 degrees)
+    input_dict = {"x": math.pi}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Standard python float (negative)
-    input_dict = {"x": -1.5707963267948966}
+    # Input 3: Negative Pi (-180 degrees)
+    input_dict = {"x": -math.pi}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.float32 positive scalar
-    input_dict = {"x": np.float32(1.0)}
+    # Input 4: Half Pi (90 degrees)
+    input_dict = {"x": math.pi / 2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.float32 negative scalar
-    input_dict = {"x": np.float32(-2.5)}
+    # Input 5: Negative quarter Pi (-45 degrees)
+    input_dict = {"x": -math.pi / 4.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.float64 positive scalar
-    input_dict = {"x": np.float64(10.0)}
+    # Input 6: Full circle (2*Pi)
+    input_dict = {"x": 2.0 * math.pi}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.float64 negative scalar
-    input_dict = {"x": np.float64(-100.0)}
+    # Input 7: Arbitrary positive float (1 radian)
+    input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very large float
-    input_dict = {"x": 1e6}
+    # Input 8: Arbitrary negative float (-2.5 radians)
+    input_dict = {"x": -2.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Very small float
-    input_dict = {"x": 1e-6}
+    # Input 9: Small float close to zero
+    input_dict = {"x": 1e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Infinity float
-    input_dict = {"x": float('inf')}
+    # Input 10: Large positive float
+    input_dict = {"x": 1000.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: NaN float
-    input_dict = {"x": float('nan')}
+    # Input 11: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 13: NaN
+    input_dict = {"x": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

@@ -4,46 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def iscomplexobj_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative float
-    list_of_inputs.append({"x": -5.5})
+    # Input 2: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero float
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Positive integer-valued float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large float
-    list_of_inputs.append({"x": 1e10})
+    # Input 4: Negative integer-valued float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small float (close to zero)
-    list_of_inputs.append({"x": 1e-10})
+    # Input 5: Arbitrary positive float
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Positive infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 6: Arbitrary negative float
+    input_dict = {"x": -42.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 7: Very small positive float
+    input_dict = {"x": 1e-10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: NaN (Not a Number)
-    list_of_inputs.append({"x": float('nan')})
+    # Input 8: Very large positive float
+    input_dict = {"x": 1e10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy float32 scalar
-    list_of_inputs.append({"x": float(np.float32(3.14))})
+    # Input 9: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy float64 scalar
-    list_of_inputs.append({"x": float(np.float64(-0.001))})
+    # Input 10: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Another standard float
-    list_of_inputs.append({"x": 42.42})
+    # Input 11: NaN
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Float max
+    input_dict = {"x": 1.7976931348623157e308}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.iscomplexobj_2"] = iscomplexobj_inputs()
 

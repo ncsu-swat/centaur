@@ -4,124 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
+import numpy as np
 
-# Monkey-patch JAX's internal utility to accept standard Python lists in ediff1d
-try:
-    import jax._src.numpy.util as jax_util
-except ImportError:
-    try:
-        import jax.numpy.util as jax_util
-    except ImportError:
-        jax_util = None
-
-if jax_util is not None:
-    _orig_check_arraylike = getattr(jax_util, "check_arraylike", None)
-    _orig_ensure_arraylike = getattr(jax_util, "ensure_arraylike", None)
-    
-    def patched_check_arraylike(fun_name, *args):
-        new_args = [jnp.asarray(arg) if isinstance(arg, list) else arg for arg in args]
-        if _orig_check_arraylike:
-            return _orig_check_arraylike(fun_name, *new_args)
-            
-    def patched_ensure_arraylike(fun_name, *args):
-        new_args = [jnp.asarray(arg) if isinstance(arg, list) else arg for arg in args]
-        if _orig_ensure_arraylike:
-            return _orig_ensure_arraylike(fun_name, *new_args)
-        if len(new_args) == 1:
-            return new_args[0]
-        return new_args
-
-    jax_util.check_arraylike = patched_check_arraylike
-    jax_util.ensure_arraylike = patched_ensure_arraylike
 
 def ediff1d_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic integer list
-    input_dict = {
-        "ary": [1, 2, 4, 7],
-        "to_end": np.array([10, 20], dtype=np.int32),
-        "to_begin": np.array([-5, -3], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D integer array with 1D arrays for to_begin and to_end
+    ary = np.array([1, 2, 4, 7, 0], dtype=np.int32)
+    to_end = np.array([99, 100], dtype=np.int32)
+    to_begin = np.array([-5], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 2: Float32 list
-    input_dict = {
-        "ary": [1.5, 2.5, 4.0],
-        "to_end": np.array([5.5], dtype=np.float32),
-        "to_begin": np.array([0.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float array with float32 arrays
+    ary = np.array([1.5, -2.3, 3.7, 4.1], dtype=np.float32)
+    to_end = np.array([0.0, -1.0], dtype=np.float32)
+    to_begin = np.array([10.5], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 3: Negative integer values
-    input_dict = {
-        "ary": [-10, -5, 0, 5],
-        "to_end": np.array([-1, -2], dtype=np.int32),
-        "to_begin": np.array([1, 2], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D integer array with 0D (scalar) arrays
+    ary = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    to_end = np.array(5, dtype=np.int32)
+    to_begin = np.array(0, dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 4: Large values using int64
-    input_dict = {
-        "ary": [1000, 2000, 3000],
-        "to_end": np.array([4000], dtype=np.int64),
-        "to_begin": np.array([0], dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D negative float array with float64 arrays
+    ary = np.array([-10.0, -20.0, -30.0], dtype=np.float64)
+    to_end = np.array([-40.0, -50.0], dtype=np.float64)
+    to_begin = np.array([-5.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 5: Nested list representing 2D structure
-    input_dict = {
-        "ary": [[1, 2], [3, 4]],
-        "to_end": np.array([5, 6], dtype=np.int32),
-        "to_begin": np.array([0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D nested array with multi-dimensional to_end array
+    ary = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32)
+    to_end = np.array([[9, 10], [11, 12]], dtype=np.int32)
+    to_begin = np.array([0], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 6: Float64 precision values
-    input_dict = {
-        "ary": [1.0, 1.1, 1.2],
-        "to_end": np.array([1.3], dtype=np.float64),
-        "to_begin": np.array([0.9], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D int16 array with int16 arrays
+    ary = np.array([10, -20, 30, -40, 50], dtype=np.int16)
+    to_end = np.array([100], dtype=np.int16)
+    to_begin = np.array([0], dtype=np.int16)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 7: Single element list
-    input_dict = {
-        "ary": [42],
-        "to_end": np.array([100], dtype=np.int32),
-        "to_begin": np.array([0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Single-element array
+    ary = np.array([42], dtype=np.int64)
+    to_end = np.array([1, 2], dtype=np.int64)
+    to_begin = np.array([3, 4], dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 8: Multi-dimensional nested list
-    input_dict = {
-        "ary": [[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
-        "to_end": np.array([9, 10], dtype=np.int32),
-        "to_begin": np.array([-1, 0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array with widely varying magnitudes
+    ary = np.array([1e-5, 1e5, -1e-5, -1e5], dtype=np.float32)
+    to_end = np.array([0.0], dtype=np.float32)
+    to_begin = np.array([1e2, -1e2], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 9: Empty list
-    input_dict = {
-        "ary": [],
-        "to_end": np.array([1, 2], dtype=np.int32),
-        "to_begin": np.array([3, 4], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array of floats with 2D to_begin array
+    ary = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]], dtype=np.float32)
+    to_end = np.array([1.0], dtype=np.float32)
+    to_begin = np.array([[0.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # Input 10: Mixed integer and float types in list
-    input_dict = {
-        "ary": [1, 2.5, 3],
-        "to_end": np.array([4.5, 5.0], dtype=np.float64),
-        "to_begin": np.array([0.0, 0.5], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D array of large 64-bit integers
+    ary = np.array([10000000000, 20000000000, 15000000000], dtype=np.int64)
+    to_end = np.array([30000000000], dtype=np.int64)
+    to_begin = np.array([0], dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
+
+    # Input 11: Complex numbers array
+    ary = np.array([1.0 + 2.0j, 3.0 + 4.0j, 5.0 + 6.0j], dtype=np.complex64)
+    to_end = np.array([7.0 + 8.0j], dtype=np.complex64)
+    to_begin = np.array([0.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ediff1d_4"] = ediff1d_inputs()
 

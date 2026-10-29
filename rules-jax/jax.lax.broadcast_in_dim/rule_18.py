@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Each dimension of broadcast_dimensions must be unique to avoid mapping multiple dimensions to the same target dimension (Rule 18)
+# broadcast dimension axes must be mutually distinct (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
     s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg1_length"] - 1 + 1), If(i != j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j), True)) for j in range(6)])) for i in range(6)])) if n else
@@ -33,9 +33,9 @@ def rule_18_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_18(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_18(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

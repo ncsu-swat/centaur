@@ -4,63 +4,66 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tensorinv_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, ind=1, float32
-    a = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {"a": a, "ind": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    def make_invertible_tensor(shape, ind, dtype=np.float32):
+        n = int(np.prod(shape[:ind]))
+        if np.issubdtype(dtype, np.complexfloating):
+            mat = (
+                np.random.randn(n, n) + 1j * np.random.randn(n, n)
+            ).astype(dtype)
+        else:
+            mat = np.random.randn(n, n).astype(dtype)
+        mat += np.eye(n, dtype=dtype) * (n + 2.0)
+        return mat.reshape(shape)
 
-    # Input 2: 3D array, ind=2, float32
-    a = np.random.randn(2, 2, 4).astype(np.float32)
-    input_dict = {"a": a, "ind": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D square matrix with ind=1, float32
+    a = make_invertible_tensor((4, 4), 1, np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 1}))
 
-    # Input 3: 3D array, ind=2, float64
-    a = np.random.randn(3, 2, 6).astype(np.float64)
-    input_dict = {"a": a, "ind": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 3D tensor with ind=2, float32
+    a = make_invertible_tensor((2, 2, 4), 2, np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 2}))
 
-    # Input 4: 4D array, ind=2, float32
-    a = np.random.randn(2, 3, 2, 3).astype(np.float32)
-    input_dict = {"a": a, "ind": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 3D tensor with ind=2, float64
+    a = make_invertible_tensor((2, 3, 6), 2, np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 2}))
 
-    # Input 5: 3D array, ind=1, float64
-    a = np.random.randn(8, 2, 4).astype(np.float64)
-    input_dict = {"a": a, "ind": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 4D tensor with ind=2, float32
+    a = make_invertible_tensor((2, 2, 2, 2), 2, np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 2}))
 
-    # Input 6: 6D array, ind=3, float32
-    a = np.random.randn(2, 2, 2, 2, 2, 2).astype(np.float32)
-    input_dict = {"a": a, "ind": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 4D tensor with ind=3, float64
+    a = make_invertible_tensor((2, 2, 2, 8), 3, np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 3}))
 
-    # Input 7: 2D array, ind=1, complex64
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    input_dict = {"a": a, "ind": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D tensor with ind=3, float32, including dimension of size 1
+    a = make_invertible_tensor((2, 1, 3, 6), 3, np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 3}))
 
-    # Input 8: Minimal dimension, ind=1, float32
-    a = np.random.randn(1, 1).astype(np.float32)
-    input_dict = {"a": a, "ind": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D tensor with ind=2, float32, unequal sizes per half
+    a = make_invertible_tensor((3, 4, 2, 6), 2, np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 2}))
 
-    # Input 9: 3D array, ind=1, float32
-    a = np.random.randn(16, 4, 4).astype(np.float32)
-    input_dict = {"a": a, "ind": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D square matrix with ind=1, complex64
+    a = make_invertible_tensor((5, 5), 1, np.complex64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 1}))
 
-    # Input 10: 4D array, ind=2, float64
-    a = np.random.randn(3, 4, 2, 6).astype(np.float64)
-    input_dict = {"a": a, "ind": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D tensor with ind=2, complex128
+    a = make_invertible_tensor((2, 3, 1, 6), 2, np.complex128)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 2}))
+
+    # Input 10: 5D tensor with ind=3, float32
+    a = make_invertible_tensor((2, 2, 3, 3, 4), 3, np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "ind": 3}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.tensorinv"] = tensorinv_inputs()
 

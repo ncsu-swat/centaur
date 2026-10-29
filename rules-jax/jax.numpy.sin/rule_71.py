@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scalar values of int or float should be within typical numerical limits (Rule 71)
+# input tensor has 32-bit signed integer data type (Rule 71)
 
 rule_71 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -100000, v["arg1_value"] <= 100000)) if n else
-          And(v["arg1_value"] >= -100000, v["arg1_value"] <= 100000))
+    s.add(Not(And(v["arg1_dtype"] == 3, v["arg1_ndim"] >= 1)) if n else
+          And(v["arg1_dtype"] == 3, v["arg1_ndim"] >= 1))
 )
 
 def rule_71_func(arg1, solver=None, neg=False):
@@ -19,18 +19,22 @@ def rule_71_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_ndim = Int('arg1_ndim')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 71
-        rule_71(solver, {'arg1_value': arg1_value})
+        rule_71(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_71(solver, {'arg1_value': arg1['value']}, neg)
+        rule_71(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype']}, neg)

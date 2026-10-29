@@ -4,63 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fabs_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar int32, negative
-    x = np.int32(-5)
-    input_dict = {"x": x}
+    # Input 1: Zero
+    input_dict = {"x": int(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of int32, mixed positive/negative
-    x = np.array([-10, 20, -30, 40], dtype=np.int32)
-    input_dict = {"x": x}
+    # Input 2: Positive integer
+    input_dict = {"x": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array of int64, mixed
-    x = np.array([[-1, 2], [-3, 4]], dtype=np.int64)
-    input_dict = {"x": x}
+    # Input 3: Negative integer
+    input_dict = {"x": int(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array of int16, mixed
-    x = np.array([[[-5, 6], [-7, 8]], [[-9, 10], [-11, 12]]], dtype=np.int16)
-    input_dict = {"x": x}
+    # Input 4: Moderate positive integer
+    input_dict = {"x": int(42)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D array of int8, edge values
-    x = np.array([-128, 127, 0, -1], dtype=np.int8)
-    input_dict = {"x": x}
+    # Input 5: Moderate negative integer
+    input_dict = {"x": int(-100)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger 2D array of int32
-    x = np.random.randint(-100, 100, size=(10, 10), dtype=np.int32)
-    input_dict = {"x": x}
+    # Input 6: Large positive integer
+    input_dict = {"x": int(65535)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D array of int64
-    x = np.random.randint(-50, 50, size=(2, 2, 2, 2), dtype=np.int64)
-    input_dict = {"x": x}
+    # Input 7: Large negative integer
+    input_dict = {"x": int(-32768)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar int64, large negative
-    x = np.int64(-999999)
-    input_dict = {"x": x}
+    # Input 8: Very large positive integer
+    input_dict = {"x": int(1000000)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D array of int32, all negative
-    x = np.array([-1, -2, -3, -4, -5], dtype=np.int32)
-    input_dict = {"x": x}
+    # Input 9: Very large negative integer
+    input_dict = {"x": int(-9999999)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D array of int32, containing zeros and negative values
-    x = np.zeros((3, 3, 3), dtype=np.int32) - 5
-    input_dict = {"x": x}
+    # Input 10: Negative power of 2
+    input_dict = {"x": int(-2**20)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Positive power of 2
+    input_dict = {"x": int(2**15)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fabs_2"] = fabs_inputs()
 

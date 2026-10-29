@@ -4,17 +4,19 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cov_inputs():
     list_of_inputs = []
 
-    # Input 1
-    m = np.random.randn(2, 5).astype(np.float32)
-    y = np.random.randn(3, 5).astype(np.float32)
-    fweights = np.array([1, 2, 1, 1, 1], dtype=np.int32)
-    aweights = np.array([1.0, 2.0, 1.0, 1.0, 1.0], dtype=np.float32)
+    # Input 1: rowvar=True, float32 2D arrays, ddof=1
+    N = 10
+    m = np.random.randn(3, N).astype(np.float32)
+    y = np.random.randn(2, N).astype(np.float32)
+    fweights = np.random.randint(1, 5, size=(N,), dtype=np.int32)
+    aweights = np.random.uniform(0.5, 2.0, size=(N,)).astype(np.float32)
     input_dict = {
         "m": m,
         "y": y,
@@ -23,49 +25,16 @@ def cov_inputs():
         "ddof": 1,
         "fweights": fweights,
         "aweights": aweights,
-        "dtype": np.dtype('float32')
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    m = np.random.randn(3, 10).astype(np.float64)
-    y = np.random.randn(1, 10).astype(np.float64)
-    fweights = np.array([1, 1, 2, 1, 1, 2, 1, 1, 1, 1], dtype=np.int32)
-    aweights = np.array([1.0, 1.0, 1.5, 1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
-    input_dict = {
-        "m": m,
-        "y": y,
-        "rowvar": True,
-        "bias": True,
-        "ddof": 0,
-        "fweights": fweights,
-        "aweights": aweights,
-        "dtype": np.dtype('float64')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3
-    m = np.random.randn(5, 2).astype(np.float32)
-    y = np.random.randn(5, 3).astype(np.float32)
-    fweights = np.array([2, 1, 1, 2, 1], dtype=np.int32)
-    aweights = np.array([1.0, 1.0, 2.0, 1.0, 1.0], dtype=np.float32)
-    input_dict = {
-        "m": m,
-        "y": y,
-        "rowvar": False,
-        "bias": False,
-        "ddof": 1,
-        "fweights": fweights,
-        "aweights": aweights,
-        "dtype": np.dtype('float32')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4
-    m = np.random.randn(8, 4).astype(np.float64)
-    y = np.random.randn(8, 1).astype(np.float64)
-    fweights = np.array([1, 1, 1, 1, 1, 1, 1, 1], dtype=np.int32)
-    aweights = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+    # Input 2: rowvar=False, float64 2D arrays, bias=True, ddof=0
+    N = 8
+    m = np.random.randn(N, 4).astype(np.float64)
+    y = np.random.randn(N, 2).astype(np.float64)
+    fweights = np.random.randint(1, 4, size=(N,), dtype=np.int64)
+    aweights = np.random.uniform(0.1, 1.0, size=(N,)).astype(np.float64)
     input_dict = {
         "m": m,
         "y": y,
@@ -74,83 +43,70 @@ def cov_inputs():
         "ddof": 0,
         "fweights": fweights,
         "aweights": aweights,
-        "dtype": np.dtype('float64')
+        "dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    m = np.random.randn(1, 6).astype(np.float32)
-    y = np.random.randn(2, 6).astype(np.float32)
-    fweights = np.array([2, 2, 2, 2, 2, 2], dtype=np.int32)
-    aweights = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5], dtype=np.float32)
+    # Input 3: rowvar=True, 1D float32 arrays, ddof=0
+    N = 12
+    m = np.random.randn(N).astype(np.float32)
+    y = np.random.randn(N).astype(np.float32)
+    fweights = np.ones(N, dtype=np.int32)
+    aweights = np.random.uniform(0.2, 1.5, size=(N,)).astype(np.float32)
     input_dict = {
         "m": m,
         "y": y,
         "rowvar": True,
         "bias": False,
-        "ddof": 1,
+        "ddof": 0,
         "fweights": fweights,
         "aweights": aweights,
-        "dtype": np.dtype('float32')
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    m = np.random.randn(4, 4).astype(np.float32)
-    y = np.random.randn(4, 4).astype(np.float32)
-    fweights = np.array([1, 2, 3, 4], dtype=np.int32)
-    aweights = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    input_dict = {
-        "m": m,
-        "y": y,
-        "rowvar": True,
-        "bias": True,
-        "ddof": 1,
-        "fweights": fweights,
-        "aweights": aweights,
-        "dtype": np.dtype('float32')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7
-    m = np.random.randn(12, 2).astype(np.float64)
-    y = np.random.randn(12, 2).astype(np.float64)
-    fweights = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], dtype=np.int32)
-    aweights = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+    # Input 4: rowvar=False, 1D float64 arrays, ddof=1
+    N = 15
+    m = np.random.randn(N).astype(np.float64)
+    y = np.random.randn(N).astype(np.float64)
+    fweights = np.random.randint(1, 3, size=(N,), dtype=np.int64)
+    aweights = np.ones(N, dtype=np.float64)
     input_dict = {
         "m": m,
         "y": y,
         "rowvar": False,
         "bias": False,
-        "ddof": 0,
+        "ddof": 1,
         "fweights": fweights,
         "aweights": aweights,
-        "dtype": np.dtype('float64')
+        "dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    m = np.random.randn(5, 7).astype(np.float32)
-    y = np.random.randn(2, 7).astype(np.float32)
-    fweights = np.array([2, 1, 2, 1, 2, 1, 2], dtype=np.int32)
-    aweights = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+    # Input 5: complex64 inputs, rowvar=True
+    N = 16
+    m = (np.random.randn(4, N) + 1j * np.random.randn(4, N)).astype(np.complex64)
+    y = (np.random.randn(1, N) + 1j * np.random.randn(1, N)).astype(np.complex64)
+    fweights = np.random.randint(1, 4, size=(N,), dtype=np.int32)
+    aweights = np.random.uniform(0.5, 1.5, size=(N,)).astype(np.float32)
     input_dict = {
         "m": m,
         "y": y,
         "rowvar": True,
-        "bias": True,
+        "bias": False,
         "ddof": 1,
         "fweights": fweights,
         "aweights": aweights,
-        "dtype": np.dtype('float32')
+        "dtype": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    m = np.random.randn(6, 3).astype(np.float64)
-    y = np.random.randn(6, 2).astype(np.float64)
-    fweights = np.array([1, 2, 1, 2, 1, 2], dtype=np.int32)
-    aweights = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5], dtype=np.float64)
+    # Input 6: complex128 inputs, rowvar=False, bias=True, ddof=0
+    N = 20
+    m = (np.random.randn(N, 3) + 1j * np.random.randn(N, 3)).astype(np.complex128)
+    y = (np.random.randn(N, 2) + 1j * np.random.randn(N, 2)).astype(np.complex128)
+    fweights = np.random.randint(1, 5, size=(N,), dtype=np.int64)
+    aweights = np.random.uniform(0.1, 2.0, size=(N,)).astype(np.float64)
     input_dict = {
         "m": m,
         "y": y,
@@ -159,28 +115,85 @@ def cov_inputs():
         "ddof": 0,
         "fweights": fweights,
         "aweights": aweights,
-        "dtype": np.dtype('float64')
+        "dtype": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    m = np.random.randn(3, 3).astype(np.float32)
-    y = np.random.randn(3, 3).astype(np.float32)
-    fweights = np.array([1, 1, 1], dtype=np.int32)
-    aweights = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    # Input 7: 2D m and 1D y, rowvar=True with negative values
+    N = 6
+    m = np.array([[-3.0, -1.0, 0.0, 1.5, 2.0, -0.5],
+                  [1.0, -2.0, 3.0, -4.0, 5.0, -6.0]], dtype=np.float32)
+    y = np.array([-1.0, 0.0, 1.0, 2.0, -1.0, 0.5], dtype=np.float32)
+    fweights = np.array([1, 2, 1, 3, 1, 2], dtype=np.int32)
+    aweights = np.array([0.5, 1.0, 1.5, 0.5, 2.0, 1.0], dtype=np.float32)
+    input_dict = {
+        "m": m,
+        "y": y,
+        "rowvar": True,
+        "bias": True,
+        "ddof": 0,
+        "fweights": fweights,
+        "aweights": aweights,
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: rowvar=False, 2D m with 1 variable, 2D y with 2 variables
+    N = 7
+    m = np.random.randn(N, 1).astype(np.float32)
+    y = np.random.randn(N, 2).astype(np.float32)
+    fweights = np.random.randint(1, 3, size=(N,), dtype=np.int32)
+    aweights = np.random.uniform(0.8, 1.2, size=(N,)).astype(np.float32)
+    input_dict = {
+        "m": m,
+        "y": y,
+        "rowvar": False,
+        "bias": False,
+        "ddof": 1,
+        "fweights": fweights,
+        "aweights": aweights,
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: larger dimensions, rowvar=True, float64
+    N = 25
+    m = np.random.randn(5, N).astype(np.float64)
+    y = np.random.randn(3, N).astype(np.float64)
+    fweights = np.random.randint(1, 4, size=(N,), dtype=np.int64)
+    aweights = np.random.uniform(0.5, 1.5, size=(N,)).astype(np.float64)
     input_dict = {
         "m": m,
         "y": y,
         "rowvar": True,
         "bias": False,
+        "ddof": 1,
+        "fweights": fweights,
+        "aweights": aweights,
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: input float32 upcast to float64 via dtype parameter
+    N = 10
+    m = np.random.randn(N, 3).astype(np.float32)
+    y = np.random.randn(N, 1).astype(np.float32)
+    fweights = np.ones(N, dtype=np.int32)
+    aweights = np.ones(N, dtype=np.float32)
+    input_dict = {
+        "m": m,
+        "y": y,
+        "rowvar": False,
+        "bias": False,
         "ddof": 0,
         "fweights": fweights,
         "aweights": aweights,
-        "dtype": np.dtype('float32')
+        "dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cov"] = cov_inputs()
 

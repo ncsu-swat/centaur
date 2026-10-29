@@ -4,49 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cbrt_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 8.0})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard negative float
-    list_of_inputs.append({"x": -27.0})
+    # Input 2: Positive integer represented as float
+    input_dict = {"x": 8.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero float
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Negative integer represented as float
+    input_dict = {"x": -27.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero float
-    list_of_inputs.append({"x": -0.0})
+    # Input 4: One
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small positive float
-    list_of_inputs.append({"x": 1e-6})
+    # Input 5: Negative one
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small negative float
-    list_of_inputs.append({"x": -1e-6})
+    # Input 6: Fractional positive float
+    input_dict = {"x": 0.125}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large positive float
-    list_of_inputs.append({"x": 1e15})
+    # Input 7: Fractional negative float
+    input_dict = {"x": -0.008}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large negative float
-    list_of_inputs.append({"x": -1e15})
+    # Input 8: Large positive float
+    input_dict = {"x": 1e12}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Positive Infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 9: Small positive float
+    input_dict = {"x": 1e-15}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative Infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 10: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: NaN (Not a Number) float
-    list_of_inputs.append({"x": float('nan')})
+    # Input 11: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 12: Decimal float
-    list_of_inputs.append({"x": 3.1415926535})
+    # Input 12: Arbitrary decimal float
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cbrt_2"] = cbrt_inputs()
 

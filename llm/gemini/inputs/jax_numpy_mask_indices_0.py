@@ -4,100 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import jax.numpy as jnp
 import copy
+import jax.numpy as jnp
 
 class CallableStr(str):
     def __call__(self, x, k=0):
         if "triu" in self:
             return jnp.triu(x, k)
-        else:
-            return jnp.tril(x, k)
+        return jnp.tril(x, k)
 
 def mask_indices_inputs():
     list_of_inputs = []
 
-    # Input 1: triu with k=0
+    # Input 1: Basic triu on 3x3 matrix
     list_of_inputs.append({
-        "n": int(3),
+        "n": 3,
         "mask_func": CallableStr("triu"),
-        "k": int(0),
-        "size": int(6)
+        "k": 0,
+        "size": 6
     })
 
-    # Input 2: tril with negative k
+    # Input 2: Basic tril on 3x3 matrix
     list_of_inputs.append({
-        "n": int(4),
+        "n": 3,
         "mask_func": CallableStr("tril"),
-        "k": int(-1),
-        "size": int(3)
+        "k": 0,
+        "size": 6
     })
 
-    # Input 3: triu with positive k
+    # Input 3: Positive offset k with triu
     list_of_inputs.append({
-        "n": int(5),
+        "n": 4,
         "mask_func": CallableStr("triu"),
-        "k": int(1),
-        "size": int(10)
+        "k": 1,
+        "size": 6
     })
 
-    # Input 4: tril with k=0
+    # Input 4: Negative offset k with tril
     list_of_inputs.append({
-        "n": int(2),
+        "n": 4,
         "mask_func": CallableStr("tril"),
-        "k": int(0),
-        "size": int(3)
+        "k": -1,
+        "size": 6
     })
 
-    # Input 5: triu with larger negative k and larger size
+    # Input 5: Negative offset k with triu
     list_of_inputs.append({
-        "n": int(6),
+        "n": 5,
         "mask_func": CallableStr("triu"),
-        "k": int(-2),
-        "size": int(15)
+        "k": -2,
+        "size": 15
     })
 
-    # Input 6: tril with larger positive k
+    # Input 6: Positive offset k with tril
     list_of_inputs.append({
-        "n": int(3),
+        "n": 5,
         "mask_func": CallableStr("tril"),
-        "k": int(2),
-        "size": int(6)
+        "k": 2,
+        "size": 15
     })
 
-    # Input 7: triu with larger matrix size
+    # Input 7: Small matrix n=2
     list_of_inputs.append({
-        "n": int(10),
+        "n": 2,
         "mask_func": CallableStr("triu"),
-        "k": int(0),
-        "size": int(55)
+        "k": 0,
+        "size": 3
     })
 
-    # Input 8: tril with highly negative k
+    # Input 8: Minimal 1x1 matrix
     list_of_inputs.append({
-        "n": int(5),
+        "n": 1,
         "mask_func": CallableStr("tril"),
-        "k": int(-3),
-        "size": int(3)
+        "k": 0,
+        "size": 1
     })
 
-    # Input 9: triu with large k
+    # Input 9: Large offset with triu
     list_of_inputs.append({
-        "n": int(4),
+        "n": 6,
         "mask_func": CallableStr("triu"),
-        "k": int(2),
-        "size": int(3)
+        "k": 3,
+        "size": 6
     })
 
-    # Input 10: tril with positive k and medium matrix size
+    # Input 10: Standard tril on 4x4 matrix
     list_of_inputs.append({
-        "n": int(8),
+        "n": 4,
         "mask_func": CallableStr("tril"),
-        "k": int(1),
-        "size": int(44)
+        "k": 0,
+        "size": 10
     })
 
-    return list_of_inputs
+    # Input 11: Empty matrix
+    list_of_inputs.append({
+        "n": 0,
+        "mask_func": CallableStr("triu"),
+        "k": 0,
+        "size": 0
+    })
+
+    # Input 12: Positive offset with tril
+    list_of_inputs.append({
+        "n": 3,
+        "mask_func": CallableStr("tril"),
+        "k": 1,
+        "size": 8
+    })
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
 generated_inputs["jax.numpy.mask_indices"] = mask_indices_inputs()
 

@@ -4,95 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_full_inputs():
+
+def full_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 2D shape with positive fill value, int32 dtype
+    # Input 1: 1D shape with int32 dtype
+    input_dict = {
+        "shape": (5,),
+        "fill_value": 7,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 2D shape with float32 dtype and negative integer fill value
     input_dict = {
         "shape": (2, 3),
-        "fill_value": 5,
-        "dtype": np.dtype('int32')
+        "fill_value": -4,
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D shape with negative fill value, int64 dtype
-    input_dict = {
-        "shape": (4,),
-        "fill_value": -1,
-        "dtype": np.dtype('int64')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 3D shape, zero fill value, float32 dtype
-    input_dict = {
-        "shape": (3, 3, 3),
-        "fill_value": 0,
-        "dtype": np.dtype('float32')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 2D shape, large positive fill value, float64 dtype
-    input_dict = {
-        "shape": (1, 5),
-        "fill_value": 42,
-        "dtype": np.dtype('float64')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 1D shape, fill value 100, int16 dtype
-    input_dict = {
-        "shape": (10,),
-        "fill_value": 100,
-        "dtype": np.dtype('int16')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 4D shape, large negative fill value, int32 dtype
-    input_dict = {
-        "shape": (2, 2, 2, 2),
-        "fill_value": -999,
-        "dtype": np.dtype('int32')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 0D shape (scalar), fill value 7, int32 dtype
+    # Input 3: 0D (scalar) shape with float64 dtype
     input_dict = {
         "shape": (),
-        "fill_value": 7,
-        "dtype": np.dtype('int32')
+        "fill_value": 42,
+        "dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D column vector shape, fill value 12345, int64 dtype
+    # Input 4: 3D shape with bool dtype and 0 fill value
     input_dict = {
-        "shape": (5, 1),
-        "fill_value": 12345,
-        "dtype": np.dtype('int64')
+        "shape": (2, 2, 2),
+        "fill_value": 0,
+        "dtype": np.dtype(np.bool_),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D shape, fill value 1, bool dtype
+    # Input 5: 3D shape with bool dtype and non-zero fill value
     input_dict = {
-        "shape": (8, 8),
+        "shape": (1, 4, 1),
         "fill_value": 1,
-        "dtype": np.dtype('bool')
+        "dtype": np.dtype(np.bool_),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D shape, fill value -5, int8 dtype
+    # Input 6: 4D shape with uint8 dtype
     input_dict = {
-        "shape": (2, 4, 3),
-        "fill_value": -5,
-        "dtype": np.dtype('int8')
+        "shape": (1, 2, 3, 4),
+        "fill_value": 255,
+        "dtype": np.dtype(np.uint8),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Shape containing zero dimension
+    input_dict = {
+        "shape": (0, 5),
+        "fill_value": 10,
+        "dtype": np.dtype(np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 2D shape with complex64 dtype
+    input_dict = {
+        "shape": (3, 3),
+        "fill_value": -1,
+        "dtype": np.dtype(np.complex64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large 1D shape with int16 dtype
+    input_dict = {
+        "shape": (100,),
+        "fill_value": 300,
+        "dtype": np.dtype(np.int16),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 5D shape with int8 dtype and negative fill value
+    input_dict = {
+        "shape": (1, 1, 2, 1, 3),
+        "fill_value": -128,
+        "dtype": np.dtype(np.int8),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D shape with uint32 dtype
+    input_dict = {
+        "shape": (4, 4),
+        "fill_value": 65536,
+        "dtype": np.dtype(np.uint32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.full_5"] = jax_numpy_full_inputs()
+
+generated_inputs["jax.numpy.full_5"] = full_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

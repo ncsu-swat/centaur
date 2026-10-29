@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for real floating-point tensors, the maximum value must be greater than or equal to the minimum value (Rule 16)
+# for real-valued tensors, the maximum value should be at least 1 to allow real acosh output (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0), True)) if n else
-          If(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0), True))
+    s.add(Not(If(v["arg1_dtype"] <= 8, Select(v["arg1_range"], 1) >= 1, True)) if n else
+          If(v["arg1_dtype"] <= 8, Select(v["arg1_range"], 1) >= 1, True))
 )
 
 def rule_16_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_16_func(arg1, solver=None, neg=False):
         arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 16
-        rule_16(solver, {'arg1_dtype': arg1_dtype, 'arg1_range': arg1_range})
+        rule_16(solver, {'arg1_range': arg1_range, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_16(solver, {'arg1_dtype': arg1['dtype'], 'arg1_range': arg1['range']}, neg)
+        rule_16(solver, {'arg1_range': arg1['range'], 'arg1_dtype': arg1['dtype']}, neg)

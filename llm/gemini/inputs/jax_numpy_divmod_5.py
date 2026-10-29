@@ -4,79 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def divmod_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float and 1D float32 tensor
-    list_of_inputs.append({
-        "x1": 10.0,
-        "x2": np.array([3.0, 4.0, 5.0], dtype=np.float32)
-    })
+    # Input 1: positive float and 1D float array
+    x1 = 10.5
+    x2 = np.array([2.0, 3.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: negative float and 1D float32 tensor
-    list_of_inputs.append({
-        "x1": -10.0,
-        "x2": np.array([3.0, 4.0, 5.0], dtype=np.float32)
-    })
+    # Input 2: negative float and 1D positive float array
+    x1 = -15.75
+    x2 = np.array([2.5, 5.0, 7.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: positive float and 2D float32 tensor
-    list_of_inputs.append({
-        "x1": 5.5,
-        "x2": np.array([[1.5, 2.0], [2.5, 3.0]], dtype=np.float32)
-    })
+    # Input 3: positive float and 2D float array
+    x1 = 100.0
+    x2 = np.array([[3.0, 7.0], [11.0, 13.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: negative float and 2D float64 tensor
-    list_of_inputs.append({
-        "x1": -12.3,
-        "x2": np.array([[2.1, -3.4], [-4.5, 5.6]], dtype=np.float64)
-    })
+    # Input 4: positive float and 2D negative float array
+    x1 = 42.0
+    x2 = np.array([[-5.0, -8.0], [-10.0, -2.5]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: positive float and 3D float32 tensor
-    list_of_inputs.append({
-        "x1": 100.0,
-        "x2": np.ones((2, 2, 2), dtype=np.float32) * 3.0
-    })
+    # Input 5: negative float and negative float array
+    x1 = -50.25
+    x2 = np.array([-2.5, -4.0, -6.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: float and 1D int32 tensor
-    list_of_inputs.append({
-        "x1": 7.0,
-        "x2": np.array([2, 3, 4], dtype=np.int32)
-    })
+    # Input 6: zero float and non-zero float array
+    x1 = 0.0
+    x2 = np.array([1.5, -3.2, 4.8], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: float and 1D int64 tensor with negative values
-    list_of_inputs.append({
-        "x1": -8.5,
-        "x2": np.array([-3, -2, 2, 3], dtype=np.int64)
-    })
+    # Input 7: float and 3D array
+    x1 = 25.5
+    x2 = np.ones((2, 3, 4), dtype=np.float32) * 2.5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: float and 0D float32 tensor
-    list_of_inputs.append({
-        "x1": 9.0,
-        "x2": np.array(2.5, dtype=np.float32)
-    })
+    # Input 8: small float and 1D float array with small numbers
+    x1 = 0.005
+    x2 = np.array([0.001, 0.002, 0.003], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: float and 2D float32 tensor with random values
-    list_of_inputs.append({
-        "x1": 15.75,
-        "x2": np.random.uniform(1.0, 10.0, (5, 5)).astype(np.float32)
-    })
+    # Input 9: float and 4D float array
+    x1 = 12.0
+    x2 = np.full((2, 2, 2, 2), 3.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: float and 4D float64 tensor
-    list_of_inputs.append({
-        "x1": 1.0,
-        "x2": np.ones((2, 2, 2, 2), dtype=np.float64) * 0.3
-    })
+    # Input 10: float and 0D float array (scalar array)
+    x1 = 7.3
+    x2 = np.array(2.1, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: float and 1D float16 tensor
-    list_of_inputs.append({
-        "x1": 5.0,
-        "x2": np.array([1.5, 2.5], dtype=np.float16)
-    })
+    # Input 11: float and integer tensor divisor
+    x1 = 20.0
+    x2 = np.array([[2, 3, 5], [7, 11, 13]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.divmod_5"] = divmod_inputs()
 

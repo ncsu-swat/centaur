@@ -4,83 +4,111 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def clamp_inputs():
     list_of_inputs = []
 
-    # Input 1: float32, all 1D arrays of the same size
-    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    min_val = np.array([2.0, 2.0, 2.0, 2.0, 2.0], dtype=np.float32)
-    max_val = np.array([4.0, 4.0, 4.0, 4.0, 4.0], dtype=np.float32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 arrays of the same shape
+    min_val = np.array([-1.0, -0.5, 0.0], dtype=np.float32)
+    x = np.array([-2.0, 0.2, 1.5], dtype=np.float32)
+    max_val = np.array([1.0, 0.5, 2.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 2: float32, x is 2D, min and max are 0D (scalars as tensors)
-    x = np.random.randn(3, 3).astype(np.float32)
-    min_val = np.array(-0.5, dtype=np.float32)
-    max_val = np.array(0.5, dtype=np.float32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float32 arrays of the same shape with negative values
+    min_val = np.full((3, 3), -2.0, dtype=np.float32)
+    x = np.random.randn(3, 3).astype(np.float32) * 5.0
+    max_val = np.full((3, 3), 2.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 3: int32, negative values, 1D arrays
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
-    min_val = np.array([-2, -2, -2, -2, -2], dtype=np.int32)
-    max_val = np.array([3, 3, 3, 3, 3], dtype=np.int32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D scalar float32 arrays
+    min_val = np.array(-5.0, dtype=np.float32)
+    x = np.array(3.14, dtype=np.float32)
+    max_val = np.array(5.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 4: float64, 3D arrays, same shapes
-    x = np.random.uniform(-10.0, 10.0, size=(2, 2, 2)).astype(np.float64)
-    min_val = np.full((2, 2, 2), -1.0, dtype=np.float64)
-    max_val = np.full((2, 2, 2), 1.0, dtype=np.float64)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float64 arrays of the same shape
+    min_val = np.zeros((2, 3, 4), dtype=np.float64)
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    max_val = np.ones((2, 3, 4), dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 5: float32, same shape 2D arrays
-    x = np.random.randn(2, 4).astype(np.float32)
-    min_val = np.full((2, 4), -1.0, dtype=np.float32)
-    max_val = np.full((2, 4), 1.0, dtype=np.float32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D int32 arrays of the same shape
+    min_val = np.array([0, 10, 20], dtype=np.int32)
+    x = np.array([-5, 15, 35], dtype=np.int32)
+    max_val = np.array([5, 20, 30], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 6: int32, 1D array x, scalar min and max
-    x = np.arange(10, dtype=np.int32)
-    min_val = np.array(3, dtype=np.int32)
-    max_val = np.array(7, dtype=np.int32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D int64 arrays of the same shape
+    min_val = np.full((4, 2), -100, dtype=np.int64)
+    x = np.random.randint(-200, 200, size=(4, 2), dtype=np.int64)
+    max_val = np.full((4, 2), 100, dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 7: float32, 4D arrays, scalar min/max
-    x = np.random.randn(1, 2, 2, 1).astype(np.float32)
-    min_val = np.array(-0.1, dtype=np.float32)
-    max_val = np.array(0.1, dtype=np.float32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 0D scalar min and max broadcasting over 2D float32 x
+    min_val = np.array(-1.0, dtype=np.float32)
+    x = np.random.randn(5, 5).astype(np.float32)
+    max_val = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 8: int32, 2D arrays, same shape
-    x = np.array([[10, 20], [30, 40]], dtype=np.int32)
-    min_val = np.array([[15, 15], [25, 25]], dtype=np.int32)
-    max_val = np.array([[35, 35], [35, 35]], dtype=np.int32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: float32, 5D arrays, scalar min/max
-    x = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    min_val = np.array(-2.0, dtype=np.float32)
+    # Input 8: 0D scalar min and max broadcasting over 3D float32 x
+    min_val = np.array(0.0, dtype=np.float32)
+    x = np.random.randn(3, 4, 2).astype(np.float32)
     max_val = np.array(2.0, dtype=np.float32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
-    # Input 10: int32, 1D arrays, same shape
-    x = np.array([0, 10, 20, 30], dtype=np.int32)
-    min_val = np.array([5, 5, 5, 5], dtype=np.int32)
-    max_val = np.array([25, 25, 25, 25], dtype=np.int32)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D float32 arrays of the same shape
+    min_val = np.full((2, 2, 3, 3), -0.5, dtype=np.float32)
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    max_val = np.full((2, 2, 3, 3), 0.5, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
+
+    # Input 10: 2D float64 arrays of the same shape
+    min_val = np.full((2, 5), -3.0, dtype=np.float64)
+    x = np.random.randn(2, 5).astype(np.float64) * 4.0
+    max_val = np.full((2, 5), 3.0, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
+
+    # Input 11: 0D scalar min and max broadcasting over 1D int32 x
+    min_val = np.array(0, dtype=np.int32)
+    x = np.array([-10, 5, 20], dtype=np.int32)
+    max_val = np.array(10, dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
+
+    # Input 12: 0D scalar min and max broadcasting over 2D int64 x
+    min_val = np.array(-50, dtype=np.int64)
+    x = np.random.randint(-100, 100, size=(3, 3), dtype=np.int64)
+    max_val = np.array(50, dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"min": min_val, "x": x, "max": max_val})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.clamp_1"] = clamp_inputs()
 

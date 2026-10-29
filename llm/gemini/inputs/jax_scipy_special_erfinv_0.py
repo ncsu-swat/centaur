@@ -4,43 +4,60 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def erfinv_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({"x": np.array([-0.9, -0.5, 0.0, 0.5, 0.9], dtype=np.float32)})
+    # Input 1: 0D array (scalar)
+    x = np.array(0.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2
-    list_of_inputs.append({"x": np.array(0.3, dtype=np.float32)})
+    # Input 2: 1D array with values in (-1, 1)
+    x = np.array([-0.8, -0.5, 0.0, 0.5, 0.8], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3
-    list_of_inputs.append({"x": np.array([[-0.2, 0.4], [0.1, -0.8]], dtype=np.float32)})
+    # Input 3: 1D array with domain boundaries [-1, 1]
+    x = np.array([-1.0, 0.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4
-    list_of_inputs.append({"x": np.array([[[0.1, -0.1], [0.2, -0.2]], [[0.3, -0.3], [0.4, -0.4]]], dtype=np.float64)})
+    # Input 4: 2D array of float32 values
+    x = np.linspace(-0.95, 0.95, 12, dtype=np.float32).reshape(3, 4)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5
-    list_of_inputs.append({"x": np.array([-0.1, -0.01, 0.0, 0.01, 0.1], dtype=np.float64)})
+    # Input 5: 2D array of float64 values
+    rng = np.random.default_rng(42)
+    x = rng.uniform(-0.9, 0.9, size=(4, 5)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6
-    list_of_inputs.append({"x": np.array([0.95, 0.99, 0.999], dtype=np.float32)})
+    # Input 6: 3D array of float32 values
+    x = rng.uniform(-0.99, 0.99, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7
-    list_of_inputs.append({"x": np.array([-0.95, -0.99, -0.999], dtype=np.float32)})
+    # Input 7: Values very close to zero
+    x = np.array([-1e-7, -1e-5, 0.0, 1e-5, 1e-7], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8
-    list_of_inputs.append({"x": np.array([[[[0.05, -0.05]]]], dtype=np.float32)})
+    # Input 8: Float16 array
+    x = np.array([-0.75, -0.25, 0.25, 0.75], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9
-    list_of_inputs.append({"x": np.zeros((5,), dtype=np.float32)})
+    # Input 9: 4D array
+    x = rng.uniform(-0.5, 0.5, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10
-    list_of_inputs.append({"x": np.array([[-0.7, 0.7], [-0.2, 0.2]], dtype=np.float64)})
+    # Input 10: Array containing all zeros
+    x = np.zeros((3, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.erfinv"] = erfinv_inputs()
 

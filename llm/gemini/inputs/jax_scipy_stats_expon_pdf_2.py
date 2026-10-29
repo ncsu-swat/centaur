@@ -7,62 +7,102 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def generate_expon_pdf_inputs():
+
+def expon_pdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D array, standard parameters
+    # Input 1: 1D array, default-like parameters
     x = np.array([0.0, 1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {"x": x, "loc": 0.0, "scale": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    loc = 0.0
+    scale = 1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 2: 1D array with negative values and shifted loc
-    x = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    input_dict = {"x": x, "loc": 0.5, "scale": 1.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array with negative values (below loc)
+    x = np.array([-2.0, -1.0, 0.0, 0.5, 1.5], dtype=np.float32)
+    loc = 0.0
+    scale = 1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 3: 2D array, scale > 1
+    # Input 3: 2D array, non-zero loc and fractional scale
     x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    input_dict = {"x": x, "loc": 0.0, "scale": 2.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    loc = 1.0
+    scale = 0.5
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 4: 3D array, float64
-    x = np.random.uniform(-5, 5, (2, 2, 2)).astype(np.float64)
-    input_dict = {"x": x, "loc": -1.0, "scale": 3.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array with float64
+    x = np.array([[0.5, 1.5, 2.5], [3.5, 4.5, 5.5]], dtype=np.float64)
+    loc = -1.0
+    scale = 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 5: 0D array (scalar tensor)
-    x = np.array(1.5, dtype=np.float32)
-    input_dict = {"x": x, "loc": 0.0, "scale": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 0D scalar tensor
+    x = np.array(2.5, dtype=np.float32)
+    loc = 0.0
+    scale = 1.5
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 6: 1D array with very small scale
-    x = np.array([0.01, 0.02, 0.05], dtype=np.float32)
-    input_dict = {"x": x, "loc": 0.0, "scale": 0.01}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array, large scale
+    x = np.linspace(0, 10, 12, dtype=np.float32).reshape(2, 2, 3)
+    loc = 2.0
+    scale = 10.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 7: Large array of size 10, large loc
-    x = np.linspace(10, 20, 10, dtype=np.float32)
-    input_dict = {"x": x, "loc": 10.0, "scale": 5.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D array, small scale
+    x = np.ones((2, 1, 2, 3), dtype=np.float32) * 0.5
+    loc = 0.2
+    scale = 0.1
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 8: High dimensional 4D array
-    x = np.random.exponential(scale=1.0, size=(2, 3, 2, 1)).astype(np.float32)
-    input_dict = {"x": x, "loc": 0.2, "scale": 0.8}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Negative loc and scale > 1
+    x = np.array([-5.0, -2.5, 0.0, 2.5, 5.0], dtype=np.float64)
+    loc = -3.0
+    scale = 4.5
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 9: Large positive values, large scale
+    # Input 9: Large values in x
     x = np.array([100.0, 200.0, 500.0], dtype=np.float32)
-    input_dict = {"x": x, "loc": 50.0, "scale": 100.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    loc = 50.0
+    scale = 50.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 10: Array with zeros, negative scale offset
-    x = np.zeros((3, 3), dtype=np.float32)
-    input_dict = {"x": x, "loc": -2.0, "scale": 4.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    loc = 0.0
+    scale = 1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
+
+    # Input 11: 1D array with values exactly at loc
+    x = np.array([3.14, 3.14, 4.14], dtype=np.float64)
+    loc = 3.14
+    scale = 1.5
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.expon.pdf_2"] = generate_expon_pdf_inputs()
+
+generated_inputs["jax.scipy.stats.expon.pdf_2"] = expon_pdf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

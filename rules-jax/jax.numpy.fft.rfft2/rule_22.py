@@ -7,33 +7,45 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axes elements of tuple must not refer to the same axis (Rule 22)
+# when s and axes are provided as tuples, both lengths must be 2 and axes must be distinct (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_values"], 0) != Select(v["arg1_values"], 1)) if n else
-          Select(v["arg1_values"], 0) != Select(v["arg1_values"], 1))
+    s.add(Not(And(And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), v["arg3_length"] == 2), Select(v["arg3_values"], 0) != Select(v["arg3_values"], 1))) if n else
+          And(And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), v["arg3_length"] == 2), Select(v["arg3_values"], 0) != Select(v["arg3_values"], 1)))
 )
 
-def rule_22_func(arg1, solver=None, neg=False):
+def rule_22_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+            return False
+        if not (isinstance(arg3, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg2_length = Int('arg2_length')
+        arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
 
         # Value assignments
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_length == len(arg2))
+        solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 22
-        rule_22(solver, {'arg1_values': arg1_values})
+        rule_22(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_22(solver, {'arg1_values': arg1['values']}, neg)
+        rule_22(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

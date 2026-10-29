@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# boundaries for integer axis relative to input tensor dimensions (Rule 1)
+# shift and axis tuples must have the same length (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(v["arg1_length"] == v["arg2_length"]) if n else
+          v["arg1_length"] == v["arg2_length"])
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_1_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_value = Int('arg2_value')
+        arg1_length = Int('arg1_length')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg1_length == len(arg1))
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 1
-        rule_1(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_1(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_1(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_1(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length']}, neg)

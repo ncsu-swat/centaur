@@ -10,8 +10,8 @@ from z3 import *
 # axis must be within the valid range of operand dimensions (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else
+          And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"]))
 )
 
 def rule_10_func(arg1, arg2, solver=None, neg=False):

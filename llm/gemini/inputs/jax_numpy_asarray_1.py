@@ -4,63 +4,126 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asarray_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, copy=True, order='K'
-    a = np.array([1.0, -2.0, 3.5], dtype=np.float32)
-    input_dict = {"a": a, "dtype": np.float32, "order": "K", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array
+    a = np.array([1.0, 2.5, -3.7, 4.2], dtype=np.float32)
+    dtype = np.dtype(np.float32)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 2: 2D int32 array, copy=False, order='K'
-    a = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    input_dict = {"a": a, "dtype": np.int32, "order": "K", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D int32 array with negative values
+    a = np.array([[-10, 20, -30], [40, -50, 60]], dtype=np.int32)
+    dtype = np.dtype(np.int32)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 3: 3D float64 array, copy=True, order='K'
+    # Input 3: 3D float64 array
     a = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {"a": a, "dtype": np.float32, "order": "K", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    dtype = np.dtype(np.float64)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 4: 1D bool array, copy=False, order='K'
-    a = np.array([True, False, True], dtype=bool)
-    input_dict = {"a": a, "dtype": np.bool_, "order": "K", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 0D scalar array
+    a = np.array(42, dtype=np.int64)
+    dtype = np.dtype(np.int64)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 5: 4D int64 array, copy=True, order='K'
-    a = np.arange(16).reshape(2, 2, 2, 2).astype(np.int64)
-    input_dict = {"a": a, "dtype": np.int64, "order": "K", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D boolean array
+    a = np.array([[True, False], [False, True]], dtype=np.bool_)
+    dtype = np.dtype(np.bool_)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 6: 2D complex64 array, copy=False, order='K'
-    a = np.array([[1 + 2j, 3 - 4j]], dtype=np.complex64)
-    input_dict = {"a": a, "dtype": np.complex64, "order": "K", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D uint8 array
+    a = np.arange(24, dtype=np.uint8).reshape((2, 3, 2, 2))
+    dtype = np.dtype(np.uint8)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 7: 1D uint8 array, copy=True, order='K'
-    a = np.array([0, 128, 255], dtype=np.uint8)
-    input_dict = {"a": a, "dtype": np.float64, "order": "K", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D complex64 array
+    a = np.array([1.0 + 2.0j, -3.0 - 4.0j, 0.5j], dtype=np.complex64)
+    dtype = np.dtype(np.complex64)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 8: 3D float32 array with negative values, copy=False, order='K'
-    a = np.random.uniform(-10.0, 10.0, size=(3, 3, 3)).astype(np.float32)
-    input_dict = {"a": a, "dtype": np.float32, "order": "K", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Empty 1D float32 array
+    a = np.array([], dtype=np.float32)
+    dtype = np.dtype(np.float32)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 9: 1D int16 array, copy=True, order='K'
-    a = np.array([-32768, 0, 32767], dtype=np.int16)
-    input_dict = {"a": a, "dtype": np.int32, "order": "K", "copy": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D float16 array
+    a = np.array([[0.1, -0.2], [100.5, -200.25]], dtype=np.float16)
+    dtype = np.dtype(np.float16)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
-    # Input 10: 5D float32 array, copy=False, order='K'
-    a = np.ones((1, 2, 1, 3, 1), dtype=np.float32)
-    input_dict = {"a": a, "dtype": np.float32, "order": "K", "copy": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D int16 array with positive and negative values
+    a = np.array([[[-1, 2], [3, -4]], [[5, -6], [-7, 8]]], dtype=np.int16)
+    dtype = np.dtype(np.int16)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
+
+    # Input 11: 2D complex128 array
+    a = np.array(
+        [[1.5 - 2.5j, 3.0 + 0.0j], [-4.2 + 1.1j, 0.0 - 5.0j]],
+        dtype=np.complex128,
+    )
+    dtype = np.dtype(np.complex128)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
+
+    # Input 12: Empty 3D int32 array with zero dimension
+    a = np.empty((2, 0, 3), dtype=np.int32)
+    dtype = np.dtype(np.int32)
+    order = "K"
+    copy_flag = True
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "dtype": dtype, "order": order, "copy": copy_flag})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asarray_1"] = asarray_inputs()
 

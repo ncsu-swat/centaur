@@ -4,34 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_xor_inputs():
     list_of_inputs = []
 
-    # 1. 1D int32
-    list_of_inputs.append({"x": np.array([1, 2], dtype=np.int32), "y": np.array([3, 4], dtype=np.int32)})
-    # 2. 2D int32
-    list_of_inputs.append({"x": np.array([[1]], dtype=np.int32), "y": np.array([[2]], dtype=np.int32)})
-    # 3. Boolean
-    list_of_inputs.append({"x": np.array([True], dtype=bool), "y": np.array([False], dtype=bool)})
-    # 4. int64 with negatives
-    list_of_inputs.append({"x": np.array([-1], dtype=np.int64), "y": np.array([2], dtype=np.int64)})
-    # 5. 3D int16
-    list_of_inputs.append({"x": np.array([[[1]]], dtype=np.int16), "y": np.array([[[2]]], dtype=np.int16)})
-    # 6. Scalar-like 0D
-    list_of_inputs.append({"x": np.array(5, dtype=np.int32), "y": np.array(3, dtype=np.int32)})
-    # 7. uint8 with broadcasting
-    list_of_inputs.append({"x": np.array([[1, 2]], dtype=np.uint8), "y": np.array([1], dtype=np.uint8)})
-    # 8. Boolean 2D
-    list_of_inputs.append({"x": np.array([[True]], dtype=bool), "y": np.array([[False]], dtype=bool)})
-    # 9. int8
-    list_of_inputs.append({"x": np.array([-5], dtype=np.int8), "y": np.array([5], dtype=np.int8)})
-    # 10. 4D int32
-    list_of_inputs.append({"x": np.zeros((1, 1, 1, 1), dtype=np.int32), "y": np.ones((1, 1, 1, 1), dtype=np.int32)})
+    # Input 1: 1D int32 arrays of the same shape
+    x = np.array([0, 1, 2, 3], dtype=np.int32)
+    y = np.array([3, 2, 1, 0], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    return [copy.deepcopy(inp) for inp in list_of_inputs]
+    # Input 2: 2D int32 arrays with negative values
+    x = np.array([[-1, -2], [3, 4]], dtype=np.int32)
+    y = np.array([[5, -6], [-7, 8]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 3: 1D boolean arrays
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    y = np.array([False, False, True, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 2D boolean arrays with broadcasting
+    x = np.array([[True], [False], [True]], dtype=np.bool_)
+    y = np.array([[False, True, False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 5: 0D scalar arrays (int64)
+    x = np.array(42, dtype=np.int64)
+    y = np.array(-17, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: 3D int32 arrays
+    x = np.random.randint(0, 256, size=(2, 3, 4), dtype=np.int32)
+    y = np.random.randint(0, 256, size=(2, 3, 4), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: 4D int64 arrays
+    x = np.random.randint(-1000, 1000, size=(2, 2, 3, 2), dtype=np.int64)
+    y = np.random.randint(-1000, 1000, size=(2, 2, 3, 2), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: Broadcasting 1D array to 2D array (int64)
+    x = np.array([1, 2, 4, 8], dtype=np.int64)
+    y = np.array([[15], [0], [-1]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: 2D int32 arrays with bitwise patterns
+    x = np.array([[0x7FFFFFFF, 0x00000000], [0x12345678, 0x55555555]], dtype=np.int32)
+    y = np.array([[0x55555555, 0x7FFFFFFF], [0x7F007F00, 0x007F007F]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: Negative int32 values with broadcasting
+    x = np.array([-128, -1, 0, 127], dtype=np.int32)
+    y = np.array([[-1], [1]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 3D bool arrays with broadcasting
+    x = np.ones((2, 1, 4), dtype=np.bool_)
+    y = np.zeros((1, 3, 4), dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_xor_1"] = bitwise_xor_inputs()
 

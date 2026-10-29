@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis parameter must be valid for both 1D and multi-dimensional operands (Rule 16)
+# when reverse is enabled, operand tensor must have rank of at least 1 (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == -1), And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"]))) if n else
-          If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == -1), And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"])))
+    s.add(Not(If(v["arg2_value"] == True, v["arg1_ndim"] >= 1, True)) if n else
+          If(v["arg2_value"] == True, v["arg1_ndim"] >= 1, True))
 )
 
 def rule_16_func(arg1, arg2, solver=None, neg=False):
@@ -22,17 +22,17 @@ def rule_16_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not isinstance(arg2, bool):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_value = Int('arg2_value')
+        arg2_value = Bool('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg2_value == arg2)
 
         # Constraints for rule 16
         rule_16(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})

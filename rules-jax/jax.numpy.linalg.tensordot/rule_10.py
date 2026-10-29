@@ -7,32 +7,45 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The preferred accumulation element type must be a floating-point or complex datatype (Rule 10)
+# valid axis indices in a 2-element tuple of axes (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), v["arg1_value"] == 9), v["arg1_value"] == 10)) if n else
-          Or(Or(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), v["arg1_value"] == 9), v["arg1_value"] == 10))
+    s.add(Not(And(And(And(And(v["arg3_length"] == 2, Select(v["arg3_values"], 0) >= 0), Select(v["arg3_values"], 0) < v["arg1_ndim"]), Select(v["arg3_values"], 1) >= 0), Select(v["arg3_values"], 1) < v["arg2_ndim"])) if n else
+          And(And(And(And(v["arg3_length"] == 2, Select(v["arg3_values"], 0) >= 0), Select(v["arg3_values"], 0) < v["arg1_ndim"]), Select(v["arg3_values"], 1) >= 0), Select(v["arg3_values"], 1) < v["arg2_ndim"]))
 )
 
-def rule_10_func(arg1, solver=None, neg=False):
+def rule_10_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, np.ndarray):
+            return False
+        if not (isinstance(arg3, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
+        arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 10
-        rule_10(solver, {'arg1_value': arg1_value})
+        rule_10(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_10(solver, {'arg1_value': arg1['value']}, neg)
+        rule_10(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

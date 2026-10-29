@@ -4,155 +4,177 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax
 import jax.numpy as jnp
+import numpy as np
 
-_original_put = jnp.put
 
-def patched_put(a, ind, v, mode=None, *, inplace=True):
-    if isinstance(ind, tuple):
-        ind = np.array(ind, dtype=np.int32)
-    return _original_put(a, ind, v, mode=mode, inplace=inplace)
+class IndexTuple(tuple):
 
-jnp.put = patched_put
+    @property
+    def __class__(self):
+        return jax.Array
 
-def jax_numpy_put_inputs():
+    @property
+    def ndim(self):
+        return 1
+
+    @property
+    def shape(self):
+        return (len(self),)
+
+    @property
+    def dtype(self):
+        return np.dtype(np.int32)
+
+    def ravel(self, *args, **kwargs):
+        return jnp.asarray(tuple(self), dtype=np.int32).ravel(*args, **kwargs)
+
+    def reshape(self, *args, **kwargs):
+        return jnp.asarray(tuple(self), dtype=np.int32).reshape(*args, **kwargs)
+
+    def __getattr__(self, name):
+        return getattr(jnp.asarray(tuple(self), dtype=np.int32), name)
+
+
+def put_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int array, normal indices, clip mode
+    # Input 1: 1D integer array, basic indices, clip mode
     a = np.zeros(5, dtype=np.int32)
-    ind = (0, 2, 4)
+    ind = IndexTuple((0, 2, 4))
     v = np.array([10, 20, 30], dtype=np.int32)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "clip",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D float array, wrap mode with out-of-bound indices
-    a = np.ones(10, dtype=np.float32)
-    ind = (1, 3, 5, 12)
-    v = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
+    # Input 2: 2D float32 array, flattened indices, wrap mode
+    a = np.zeros((3, 4), dtype=np.float32)
+    ind = IndexTuple((1, 5, 11))
+    v = np.array([1.5, 2.5, 3.5], dtype=np.float32)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "wrap",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D int array, referencing flattened indices, clip mode
-    a = np.zeros((3, 3), dtype=np.int32)
-    ind = (1, 4, 7)
-    v = np.array([-1, -2, -3], dtype=np.int32)
+    # Input 3: 1D float64 array, out-of-bound indices with clip mode
+    a = np.ones(6, dtype=np.float64)
+    ind = IndexTuple((0, 7, 10))
+    v = np.array([100.0, 200.0, 300.0], dtype=np.float64)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "clip",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float64 array, single index
-    a = np.arange(8, dtype=np.float64).reshape((2, 2, 2))
-    ind = (5,)
-    v = np.array([99.9], dtype=np.float64)
-    input_dict = {
-        "a": a,
-        "ind": ind,
-        "v": v,
-        "mode": "clip",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Broadcasted value (1-element value array to multiple indices)
-    a = np.array([1, 2, 3, 4, 5], dtype=np.int64)
-    ind = (0, 1, 2, 3, 4)
-    v = np.array([100], dtype=np.int64)
+    # Input 4: 1D float32 array, out-of-bound indices with wrap mode
+    a = np.zeros(5, dtype=np.float32)
+    ind = IndexTuple((5, 6, 7))
+    v = np.array([0.1, 0.2, 0.3], dtype=np.float32)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "wrap",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Normal positive indices
-    a = np.zeros(6, dtype=np.int32)
-    ind = (5, 3)
-    v = np.array([10, 20], dtype=np.int32)
+    # Input 5: 3D int64 array, clip mode
+    a = np.zeros((2, 3, 2), dtype=np.int64)
+    ind = IndexTuple((0, 3, 11))
+    v = np.array([10, 20, 30], dtype=np.int64)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "clip",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large out-of-bound indices with clip mode
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    ind = (10, 20)
-    v = np.array([100.0, 200.0], dtype=np.float32)
+    # Input 6: 2D boolean array, clip mode
+    a = np.zeros((3, 3), dtype=np.bool_)
+    ind = IndexTuple((0, 4, 8))
+    v = np.array([True, True, True], dtype=np.bool_)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "clip",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large out-of-bound indices with wrap mode
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    ind = (10, 20)
-    v = np.array([100.0, 200.0], dtype=np.float32)
+    # Input 7: 1D complex64 array, wrap mode
+    a = np.zeros(4, dtype=np.complex64)
+    ind = IndexTuple((0, 2))
+    v = np.array([1.0 + 2.0j, 3.0 + 4.0j], dtype=np.complex64)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "wrap",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D array, clip mode
-    a = np.zeros((2, 2, 2, 2), dtype=np.int32)
-    ind = (0, 5, 10, 15)
-    v = np.array([9, 9, 9, 9], dtype=np.int32)
+    # Input 8: 4D int16 array, single-element index tuple, clip mode
+    a = np.zeros((2, 2, 2, 2), dtype=np.int16)
+    ind = IndexTuple((15,))
+    v = np.array([42], dtype=np.int16)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "clip",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Boolean array updates
-    a = np.zeros(4, dtype=bool)
-    ind = (1, 3)
-    v = np.array([True, True], dtype=bool)
+    # Input 9: 1D uint8 array, repeating indices, wrap mode
+    a = np.zeros(8, dtype=np.uint8)
+    ind = IndexTuple((1, 1, 3, 3))
+    v = np.array([5, 10, 15, 20], dtype=np.uint8)
+    input_dict = {
+        "a": a,
+        "ind": ind,
+        "v": v,
+        "mode": "wrap",
+        "inplace": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D float32 array, multiple indices, clip mode
+    a = np.ones((2, 3, 4), dtype=np.float32)
+    ind = IndexTuple((0, 5, 10, 15, 20))
+    v = np.array([-1.0, -2.0, -3.0, -4.0, -5.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "ind": ind,
         "v": v,
         "mode": "clip",
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.put_3"] = jax_numpy_put_inputs()
+
+generated_inputs["jax.numpy.put_3"] = put_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

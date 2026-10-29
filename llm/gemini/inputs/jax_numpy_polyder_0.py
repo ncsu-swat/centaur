@@ -4,63 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def polyder_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 1D array, order 1
+    # Input 1: Basic 1D float32 array, m=1
     p = np.array([2.0, -5.0, 3.0, -1.0], dtype=np.float32)
     m = 1
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
-    # Input 2: Int32 1D array, order 2
-    p = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    # Input 2: 1D float64 array, second order derivative (m=2)
+    p = np.array([3.0, 0.0, -2.0, 4.0, -7.0], dtype=np.float64)
     m = 2
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
-    # Input 3: Float64 1D array, order 1
-    p = np.array([0.5, -2.5, 10.0], dtype=np.float64)
+    # Input 3: 1D int32 array with negative coefficients, m=1
+    p = np.array([-4, 7, -2, 9], dtype=np.int32)
     m = 1
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
-    # Input 4: Negative and positive values, order 3
-    p = np.array([-10, 20, -30, 40, -50], dtype=np.int64)
+    # Input 4: 1D int64 array, higher order differentiation (m=3)
+    p = np.array([1, -3, 3, -1, 5, -6], dtype=np.int64)
     m = 3
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
-    # Input 5: Single element polynomial, order 1 (derivative should be 0)
+    # Input 5: Complex numbers (complex64), m=1
+    p = np.array([1.0 + 2.0j, -3.0 + 0.5j, 4.0 - 1.0j], dtype=np.complex64)
+    m = 1
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
+
+    # Input 6: Complex numbers (complex128), m=2
+    p = np.array(
+        [2.5 - 1.5j, 0.0 + 3.0j, -1.0 - 2.0j, 5.0 + 0.0j], dtype=np.complex128
+    )
+    m = 2
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
+
+    # Input 7: Constant polynomial (length 1), m=1
     p = np.array([42.0], dtype=np.float32)
     m = 1
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
-    # Input 6: Higher order derivative on large polynomial
-    p = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0], dtype=np.float32)
-    m = 4
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
-
-    # Input 7: All zeros polynomial, order 2
-    p = np.zeros(10, dtype=np.float32)
-    m = 2
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
-
-    # Input 8: Very large order of differentiation (exceeding degree, returns empty/zero)
+    # Input 8: Polynomial degree smaller than order of differentiation, m=4
     p = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    m = 4
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
+
+    # Input 9: High degree polynomial, m=5
+    p = np.linspace(-10.0, 10.0, num=12, dtype=np.float64)
     m = 5
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
-    # Input 9: Large random values, float64, order 1
-    p = np.random.uniform(-100, 100, size=20).astype(np.float64)
+    # Input 10: All zero polynomial coefficients, m=1
+    p = np.zeros(6, dtype=np.float32)
     m = 1
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
-    # Input 10: Array with small decimals, order 2
-    p = np.array([1e-3, -2e-4, 5e-5, -1e-6], dtype=np.float32)
-    m = 2
-    list_of_inputs.append({"p": copy.deepcopy(p), "m": m})
+    # Input 11: Order of differentiation m=0 (identity)
+    p = np.array([1.5, -2.5, 3.5], dtype=np.float32)
+    m = 0
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.polyder"] = polyder_inputs()
 

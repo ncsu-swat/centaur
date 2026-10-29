@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# integer axis within valid range (Rule 28)
+# for a 1D tensor the integer axis must be 0 or -1 (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(0 - v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(0 - v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == -1), True)) if n else
+          If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == -1), True))
 )
 
 def rule_28_func(arg1, arg2, solver=None, neg=False):

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Shape parameter b and scale parameter must be strictly positive (Rule 8)
+# shape parameter and scale parameter must both be strictly positive (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
     s.add(Not(And(Select(v["arg1_range"], 0) > 0, Select(v["arg2_range"], 0) > 0)) if n else

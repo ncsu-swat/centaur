@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input tensor c must be at least 1-dimensional and at most 5-dimensional (Rule 35)
+# input tensor c is either a non-empty 1D vector or has multiple batch dimensions (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] < 6)) if n else
-          And(v["arg1_ndim"] >= 1, v["arg1_ndim"] < 6))
+    s.add(Not(If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) >= 1, v["arg1_ndim"] > 1)) if n else
+          If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) >= 1, v["arg1_ndim"] > 1))
 )
 
 def rule_35_func(arg1, solver=None, neg=False):
@@ -25,14 +25,17 @@ def rule_35_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 35
-        rule_35(solver, {'arg1_ndim': arg1_ndim})
+        rule_35(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_35(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_35(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

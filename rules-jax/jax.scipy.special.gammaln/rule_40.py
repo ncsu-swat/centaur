@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor x should have a dimension count within a standard range (Rule 40)
+# input tensor is a 3-dimensional array (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] < 10) if n else
-          v["arg1_ndim"] < 10)
+    s.add(Not(v["arg1_ndim"] == 3) if n else
+          v["arg1_ndim"] == 3)
 )
 
 def rule_40_func(arg1, solver=None, neg=False):

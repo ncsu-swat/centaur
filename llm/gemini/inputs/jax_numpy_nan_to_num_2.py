@@ -4,157 +4,184 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def nan_to_num_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, copy=True
-    x = np.array([1.0, np.nan, 2.0, np.inf, -np.inf, np.nan], dtype=np.float32)
-    copy_val = True
+    # Input 1: 1D float32 array with nan, inf, -inf
+    x = np.array([np.nan, 1.0, np.inf, -np.inf, 2.5], dtype=np.float32)
+    copy_flag = True
     nan_val = np.array(0.0, dtype=np.float32)
-    posinf_val = np.array(100.0, dtype=np.float32)
-    neginf_val = np.array(-100.0, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
+    posinf_val = np.array(999.0, dtype=np.float32)
+    neginf_val = np.array(-999.0, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
 
-    # Input 2: 2D array, float64, copy=False
-    x = np.array([[np.nan, 2.0], [np.inf, -np.inf]], dtype=np.float64)
-    copy_val = False
+    # Input 2: 2D float64 array with copy=False
+    x = np.array([[np.nan, 2.0], [-np.inf, np.inf]], dtype=np.float64)
+    copy_flag = False
     nan_val = np.array(-1.0, dtype=np.float64)
     posinf_val = np.array(1e10, dtype=np.float64)
     neginf_val = np.array(-1e10, dtype=np.float64)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
 
-    # Input 3: 3D array, float32, random initialization
-    x = np.random.randn(2, 2, 2).astype(np.float32)
-    x[0, 0, 0] = np.nan
-    x[1, 1, 1] = np.inf
-    copy_val = True
-    nan_val = np.array(99.0, dtype=np.float32)
-    posinf_val = np.array(999.0, dtype=np.float32)
-    neginf_val = np.array(-999.0, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
-
-    # Input 4: 1D array, float16, copy=True
-    x = np.array([np.nan, np.inf, -np.inf], dtype=np.float16)
-    copy_val = True
-    nan_val = np.array(0.0, dtype=np.float16)
-    posinf_val = np.array(500.0, dtype=np.float16)
-    neginf_val = np.array(-500.0, dtype=np.float16)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
-
-    # Input 5: 4D array, float32, copy=False
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    x[0, 0, 0, 0] = np.nan
-    x[1, 1, 1, 1] = -np.inf
-    copy_val = False
-    nan_val = np.array(-9999.0, dtype=np.float32)
-    posinf_val = np.array(9999.0, dtype=np.float32)
-    neginf_val = np.array(-9999.0, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
-
-    # Input 6: 0D array (scalar array)
-    x = np.array(np.nan, dtype=np.float32)
-    copy_val = True
-    nan_val = np.array(1.23, dtype=np.float32)
-    posinf_val = np.array(4.56, dtype=np.float32)
-    neginf_val = np.array(-4.56, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
-
-    # Input 7: Array without any NaNs or Infs
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    copy_val = False
+    # Input 3: 3D float32 array
+    x = np.array(
+        [[[np.nan, 0.0], [np.inf, -np.inf]], [[1.0, 2.0], [np.nan, np.nan]]],
+        dtype=np.float32,
+    )
+    copy_flag = True
     nan_val = np.array(0.0, dtype=np.float32)
-    posinf_val = np.array(0.0, dtype=np.float32)
-    neginf_val = np.array(0.0, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
+    posinf_val = np.array(1e5, dtype=np.float32)
+    neginf_val = np.array(-1e5, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
 
-    # Input 8: 5D array, float64
-    x = np.ones((2, 2, 2, 2, 2), dtype=np.float64) * np.nan
-    copy_val = True
-    nan_val = np.array(-5.0, dtype=np.float64)
-    posinf_val = np.array(5.0, dtype=np.float64)
-    neginf_val = np.array(-5.0, dtype=np.float64)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
-
-    # Input 9: 1D array, large substitution values
-    x = np.array([np.nan, 10.0, np.inf], dtype=np.float32)
-    copy_val = True
+    # Input 4: 0D scalar float32 array
+    x = np.array(np.nan, dtype=np.float32)
+    copy_flag = True
     nan_val = np.array(42.0, dtype=np.float32)
+    posinf_val = np.array(100.0, dtype=np.float32)
+    neginf_val = np.array(-100.0, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
+
+    # Input 5: 1D float16 array
+    x = np.array([-np.inf, np.nan, 0.5, np.inf], dtype=np.float16)
+    copy_flag = False
+    nan_val = np.array(0.0, dtype=np.float16)
+    posinf_val = np.array(65504.0, dtype=np.float16)
+    neginf_val = np.array(-65504.0, dtype=np.float16)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
+
+    # Input 6: 2D int32 array (non-inexact dtype returned unmodified)
+    x = np.array([[1, -2, 3], [4, 5, -6]], dtype=np.int32)
+    copy_flag = True
+    nan_val = np.array(0, dtype=np.int32)
+    posinf_val = np.array(2147483647, dtype=np.int32)
+    neginf_val = np.array(-2147483648, dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
+
+    # Input 7: 4D float32 array
+    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    x[0, 0, 0, 0] = np.nan
+    x[0, 1, 0, 1] = np.inf
+    x[1, 0, 1, 0] = -np.inf
+    copy_flag = True
+    nan_val = np.array(5.0, dtype=np.float32)
     posinf_val = np.array(1000.0, dtype=np.float32)
     neginf_val = np.array(-1000.0, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
 
-    # Input 10: Array with matched-shape replacement tensors
-    x = np.array([np.nan, np.inf, -np.inf], dtype=np.float32)
-    copy_val = False
-    nan_val = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    posinf_val = np.array([4.0, 5.0, 6.0], dtype=np.float32)
-    neginf_val = np.array([7.0, 8.0, 9.0], dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "copy": copy_val,
-        "nan": nan_val,
-        "posinf": posinf_val,
-        "neginf": neginf_val
-    })
+    # Input 8: Complex64 1D array
+    x = np.array(
+        [complex(np.nan, 1.0), complex(2.0, np.inf), complex(-np.inf, np.nan)],
+        dtype=np.complex64,
+    )
+    copy_flag = False
+    nan_val = np.array(0.0, dtype=np.float32)
+    posinf_val = np.array(1e6, dtype=np.float32)
+    neginf_val = np.array(-1e6, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
+
+    # Input 9: 2D float32 array with broadcastable 1D replacement tensors
+    x = np.array([[np.nan, np.inf], [-np.inf, np.nan]], dtype=np.float32)
+    copy_flag = True
+    nan_val = np.array([10.0, 20.0], dtype=np.float32)
+    posinf_val = np.array([100.0, 200.0], dtype=np.float32)
+    neginf_val = np.array([-100.0, -200.0], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
+
+    # Input 10: 1D float64 with all finite elements
+    x = np.array([1.23, -4.56, 7.89, -10.11], dtype=np.float64)
+    copy_flag = True
+    nan_val = np.array(0.0, dtype=np.float64)
+    posinf_val = np.array(1e300, dtype=np.float64)
+    neginf_val = np.array(-1e300, dtype=np.float64)
+    list_of_inputs.append(
+        {
+            "x": x,
+            "copy": copy_flag,
+            "nan": nan_val,
+            "posinf": posinf_val,
+            "neginf": neginf_val,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.nan_to_num_2"] = nan_to_num_inputs()
 

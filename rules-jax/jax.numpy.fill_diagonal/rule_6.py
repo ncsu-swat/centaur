@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# diagonal fill value tuple must be non-empty (Rule 6)
+# diagonal fill values given as a tuple cannot be empty (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
     s.add(Not(v["arg1_length"] > 0) if n else

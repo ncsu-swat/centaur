@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# number of breakpoints in a list must be less than the size of the detrend axis (Rule 18)
+# all breakpoint indices in a list must be strictly less than the dimension size along the specified non-negative axis (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg3_length"] < Select(v["arg1_shape"], v["arg2_value"]), v["arg3_length"] < Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"]))) if n else
-          If(v["arg2_value"] >= 0, v["arg3_length"] < Select(v["arg1_shape"], v["arg2_value"]), v["arg3_length"] < Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"])))
+    s.add(Not(If(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), And([Implies(i < (v["arg3_length"] - 1 + 1), Select(v["arg3_values"], i) < Select(v["arg1_shape"], v["arg2_value"])) for i in range(6)]), True)) if n else
+          If(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), And([Implies(i < (v["arg3_length"] - 1 + 1), Select(v["arg3_values"], i) < Select(v["arg1_shape"], v["arg2_value"])) for i in range(6)]), True))
 )
 
 def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -34,6 +34,7 @@ def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_value = Int('arg2_value')
         arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
@@ -41,11 +42,13 @@ def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
         solver.add(arg2_value == int(arg2))
         solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_length': arg3_length})
+        rule_18(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length']}, neg)
+        rule_18(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

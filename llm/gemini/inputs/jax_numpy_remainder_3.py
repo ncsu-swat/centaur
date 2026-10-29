@@ -4,43 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def remainder_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive floats
-    list_of_inputs.append({"x1": 5.0, "x2": 2.0})
+    # Input 1: Positive dividend and positive divisor
+    input_dict = {"x1": 10.0, "x2": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative dividend, positive divisor
-    list_of_inputs.append({"x1": -5.0, "x2": 2.0})
+    # Input 2: Positive dividend and negative divisor
+    input_dict = {"x1": 10.0, "x2": -3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Positive dividend, negative divisor
-    list_of_inputs.append({"x1": 5.0, "x2": -2.0})
+    # Input 3: Negative dividend and positive divisor
+    input_dict = {"x1": -10.0, "x2": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Both negative floats
-    list_of_inputs.append({"x1": -5.0, "x2": -2.0})
+    # Input 4: Negative dividend and negative divisor
+    input_dict = {"x1": -10.0, "x2": -3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Zero dividend
-    list_of_inputs.append({"x1": 0.0, "x2": 3.5})
+    # Input 5: Non-integer dividend and divisor with exact division
+    input_dict = {"x1": 7.5, "x2": 2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Fractional values
-    list_of_inputs.append({"x1": 7.3, "x2": 2.1})
+    # Input 6: Dividend smaller than divisor
+    input_dict = {"x1": 1.25, "x2": 4.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large values
-    list_of_inputs.append({"x1": 123456.78, "x2": 123.45})
+    # Input 7: Fractional values
+    input_dict = {"x1": 0.55, "x2": 0.12}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very small values
-    list_of_inputs.append({"x1": 0.0001, "x2": 0.00003})
+    # Input 8: Zero dividend
+    input_dict = {"x1": 0.0, "x2": 5.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Divisor larger than dividend
-    list_of_inputs.append({"x1": 1.5, "x2": 10.0})
+    # Input 9: Large magnitude values
+    input_dict = {"x1": 1000000.75, "x2": 1234.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative divisor larger in magnitude
-    list_of_inputs.append({"x1": 2.5, "x2": -10.0})
+    # Input 10: Small magnitude values
+    input_dict = {"x1": 1e-4, "x2": 3e-5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Irrational approximations
+    input_dict = {"x1": 3.1415926535, "x2": 2.7182818284}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.remainder_3"] = remainder_inputs()
 

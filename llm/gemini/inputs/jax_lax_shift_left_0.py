@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def shift_left_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D int32 arrays of same shape
-    x = np.array([1, 2, 4, 8], dtype=np.int32)
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 1: 1D int32 arrays of same shape
+    x = np.array([1, 2, 4, 8, 16], dtype=np.int32)
+    y = np.array([1, 2, 1, 0, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D int64 arrays of same shape
-    x = np.array([[10, 20], [30, 40]], dtype=np.int64)
-    y = np.array([[1, 2], [3, 4]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 2: 2D int32 arrays with broadcasting
+    x = np.array([[1], [3], [5]], dtype=np.int32)
+    y = np.array([[0, 1, 2, 3]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: Another 1D int32 array of same shape
-    x = np.array([5, 10, 15], dtype=np.int32)
-    y = np.array([2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 3: 2D int32 arrays of same shape
+    x = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int32)
+    y = np.array([[1, 2, 3], [3, 2, 1]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 2D broadcasting with SAME number of dimensions (2D and 2D)
-    x = np.array([[2, 4], [6, 8]], dtype=np.int32)
-    y = np.array([[1, 2]], dtype=np.int32)  # shape (1, 2)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 4: 1D int32 arrays with negative values in x
+    x = np.array([-1, -4, 5, -8], dtype=np.int32)
+    y = np.array([1, 2, 1, 0], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: Negative integer values with 2D matching shape
-    x = np.array([[-1, -2], [-3, -4]], dtype=np.int32)
-    y = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 5: 3D int32 arrays with broadcasting
+    x = np.ones((2, 1, 4), dtype=np.int32)
+    y = np.zeros((2, 3, 4), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 2D array and 0-D scalar array (y is scalar)
-    x = np.array([[5, 6], [7, 8]], dtype=np.int32)
-    y = np.array(2, dtype=np.int32)  # shape ()
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 6: 0D scalar int64 arrays
+    x = np.array(7, dtype=np.int64)
+    y = np.array(3, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: 3D int32 arrays of same shape
-    x = np.ones((2, 2, 2), dtype=np.int32)
-    y = np.zeros((2, 2, 2), dtype=np.int32) + 3
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 7: 2D int32 x and 0D scalar int32 y
+    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    y = np.array(2, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: Broadcasting with shape (1, 5) and (5, 1) in int32
-    x = np.arange(5, dtype=np.int32).reshape(1, 5)
-    y = np.arange(5, dtype=np.int32).reshape(5, 1)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 8: 1D int64 arrays
+    x = np.array([1, 3, 7, 15, 31, 63], dtype=np.int64)
+    y = np.array([1, 1, 1, 1, 1, 1], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: 1D int64 arrays of same shape
-    x = np.array([128, 64, 32], dtype=np.int64)
-    y = np.array([1, 2, 3], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 9: 4D int32 arrays with broadcasting
+    x = np.arange(6, dtype=np.int32).reshape(1, 2, 1, 3)
+    y = np.ones((2, 2, 4, 3), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: Larger shifts on 1D int32 arrays of same shape
-    x = np.array([1, 1], dtype=np.int32)
-    y = np.array([30, 31], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 10: 1D int64 arrays with higher shifts
+    x = np.array([100, 200, 300, 400], dtype=np.int64)
+    y = np.array([0, 4, 8, 12], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 11: 3D array broadcasting with 3D array (shape 3,3,3 and 1,1,3)
-    x = np.random.randint(0, 100, size=(3, 3, 3), dtype=np.int32)
-    y = np.array([[[1, 2, 3]]], dtype=np.int32)  # shape (1, 1, 3)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
-
-    # Input 12: 0-D scalar array and 1D array (x is scalar)
-    x = np.array(3, dtype=np.int32)  # shape ()
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 11: 2D int64 arrays with row broadcasting
+    x = np.array([[1, 2, 3, 4], [5, 6, 7, 8]], dtype=np.int64)
+    y = np.array([[1, 2, 3, 4]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.shift_left"] = shift_left_inputs()
 

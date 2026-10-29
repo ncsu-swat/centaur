@@ -4,65 +4,91 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_transpose_inputs():
+
+def transpose_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32, simple transpose
-    operand = np.random.randn(3, 4).astype(np.float32)
+    # Input 1: 2D float32 transpose
+    operand = np.random.randn(3, 5).astype(np.float32)
     permutation = np.array([1, 0], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
 
-    # Input 2: 3D float32, permute axes (0, 2, 1)
-    operand = np.random.randn(2, 3, 4).astype(np.float32)
-    permutation = np.array([0, 2, 1], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
+    # Input 2: 2D identity permutation float64
+    operand = np.random.randn(4, 4).astype(np.float64)
+    permutation = np.array([0, 1], dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
 
-    # Input 3: 4D float32, reverse all dimensions
-    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    permutation = np.array([3, 2, 1, 0], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
-
-    # Input 4: 1D float32, trivial transpose
-    operand = np.random.randn(10).astype(np.float32)
+    # Input 3: 1D array
+    operand = np.array([-2.5, 0.0, 1.5, -4.2], dtype=np.float32)
     permutation = np.array([0], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
 
-    # Input 5: 5D float32, complex permutation
-    operand = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    permutation = np.array([0, 2, 4, 1, 3], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
-
-    # Input 6: 2D int32, simple transpose, permutation as int64 tensor
-    operand = np.arange(12).reshape(3, 4).astype(np.int32)
-    permutation = np.array([1, 0], dtype=np.int64)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
-
-    # Input 7: 3D float64, rotate axes (right shift)
-    operand = np.random.randn(3, 4, 5).astype(np.float64)
-    permutation = np.array([2, 0, 1], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
-
-    # Input 8: 3D bool array
-    operand = (np.random.randn(2, 3, 2) > 0).astype(np.bool_)
+    # Input 4: 3D int32 array with cyclic permutation
+    operand = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int32)
     permutation = np.array([1, 2, 0], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
 
-    # Input 9: 6D float32, reverse dimensions
-    operand = np.random.randn(1, 2, 1, 3, 1, 4).astype(np.float32)
+    # Input 5: 3D reversed permutation
+    operand = np.random.randn(2, 4, 6).astype(np.float32)
+    permutation = np.array([2, 1, 0], dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
+
+    # Input 6: 4D complex64 array
+    operand = (
+        np.random.randn(2, 3, 4, 5) + 1j * np.random.randn(2, 3, 4, 5)
+    ).astype(np.complex64)
+    permutation = np.array([0, 3, 1, 2], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
+
+    # Input 7: 4D bool array
+    operand = np.random.choice([True, False], size=(3, 2, 5, 4))
+    permutation = np.array([3, 2, 1, 0], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
+
+    # Input 8: 5D float16 array
+    operand = np.random.randn(2, 1, 3, 2, 4).astype(np.float16)
+    permutation = np.array([4, 0, 3, 1, 2], dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
+
+    # Input 9: Array with zero-sized dimension
+    operand = np.empty((0, 3, 2), dtype=np.float32)
+    permutation = np.array([2, 0, 1], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
+
+    # Input 10: 6D int64 array
+    operand = np.random.randint(-100, 100, size=(1, 2, 1, 3, 2, 1)).astype(
+        np.int64
+    )
     permutation = np.array([5, 4, 3, 2, 1, 0], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
-
-    # Input 10: 2D int64, simple transpose
-    operand = np.random.randint(-10, 10, size=(5, 5)).astype(np.int64)
-    permutation = np.array([1, 0], dtype=np.int32)
-    list_of_inputs.append({"operand": operand, "permutation": permutation})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "permutation": permutation})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.lax.transpose_3"] = jax_lax_transpose_inputs()
+
+generated_inputs["jax.lax.transpose_3"] = transpose_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

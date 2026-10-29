@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Maximum dimension limit for input tensors (Rule 33)
+# Both operands are restricted to tensors of rank at most 4 (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] <= 5, v["arg2_ndim"] <= 5)) if n else
-          And(v["arg1_ndim"] <= 5, v["arg2_ndim"] <= 5))
+    s.add(Not(And(v["arg1_ndim"] <= 4, v["arg2_ndim"] <= 4)) if n else
+          And(v["arg1_ndim"] <= 4, v["arg2_ndim"] <= 4))
 )
 
 def rule_33_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension size must be non-negative and the data type must be a valid numeric, boolean, or dtype object (Rule 45)
+# half-precision float16 identity matrix with dimension at least 1 (Rule 45)
 
 rule_45 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 0, (Or(v["arg2_value"] <= 10, v["arg2_value"] == 12)))) if n else
-          And(v["arg1_value"] >= 0, (Or(v["arg2_value"] <= 10, v["arg2_value"] == 12))))
+    s.add(Not(And(v["arg1_value"] >= 1, v["arg2_value"] == 6)) if n else
+          And(v["arg1_value"] >= 1, v["arg2_value"] == 6))
 )
 
 def rule_45_func(arg1, arg2, solver=None, neg=False):

@@ -4,46 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arcsin_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0.0})
+    input_dict = {"x": float(0.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive value
-    list_of_inputs.append({"x": 0.5})
+    # Input 2: Positive upper boundary
+    input_dict = {"x": float(1.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative value
-    list_of_inputs.append({"x": -0.5})
+    # Input 3: Negative lower boundary
+    input_dict = {"x": float(-1.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Upper boundary of domain
-    list_of_inputs.append({"x": 1.0})
+    # Input 4: Positive common angle value (pi/6)
+    input_dict = {"x": float(0.5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Lower boundary of domain
-    list_of_inputs.append({"x": -1.0})
+    # Input 5: Negative common angle value (-pi/6)
+    input_dict = {"x": float(-0.5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small positive value
-    list_of_inputs.append({"x": 0.12345})
+    # Input 6: Approx sqrt(2)/2
+    input_dict = {"x": float(0.7071067811865475)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small negative value
-    list_of_inputs.append({"x": -0.12345})
+    # Input 7: Approx -sqrt(3)/2
+    input_dict = {"x": float(-0.8660254037844386)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Value close to 1
-    list_of_inputs.append({"x": 0.999})
+    # Input 8: Small positive float
+    input_dict = {"x": float(1e-5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Value close to -1
-    list_of_inputs.append({"x": -0.999})
+    # Input 9: Small negative float
+    input_dict = {"x": float(-1e-5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Value outside [-1, 1] (returns nan for real input, but still a valid float)
-    list_of_inputs.append({"x": 1.5})
+    # Input 10: Out of domain positive (evaluates to NaN)
+    input_dict = {"x": float(2.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Negative value outside [-1, 1]
-    list_of_inputs.append({"x": -2.0})
+    # Input 11: Out of domain negative (evaluates to NaN)
+    input_dict = {"x": float(-2.0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Arbitrary valid float
+    input_dict = {"x": float(0.3333333333333333)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arcsin_2"] = arcsin_inputs()
 

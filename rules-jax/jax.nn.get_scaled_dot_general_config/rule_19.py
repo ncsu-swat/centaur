@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if mode is none, then the maximum value of global_scale must be greater than 0 (Rule 19)
+# if mode is fill, all elements of global_scale tensor must be equal (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 5, Select(v["arg2_range"], 1) > 0, True)) if n else
-          If(v["arg1_value"] == 5, Select(v["arg2_range"], 1) > 0, True))
+    s.add(Not(If(v["arg1_value"] == 36, Select(v["arg2_range"], 0) == Select(v["arg2_range"], 1), Select(v["arg2_range"], 0) <= Select(v["arg2_range"], 1))) if n else
+          If(v["arg1_value"] == 36, Select(v["arg2_range"], 0) == Select(v["arg2_range"], 1), Select(v["arg2_range"], 0) <= Select(v["arg2_range"], 1)))
 )
 
 def rule_19_func(arg1, arg2, solver=None, neg=False):

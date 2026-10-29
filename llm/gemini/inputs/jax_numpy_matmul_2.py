@@ -4,100 +4,152 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
+import copy
 import jax
 import numpy as np
-import copy
 
-# Monkeypatch jax.lax.Precision to support comparison operators for numpy min/max
-jax.lax.Precision.__lt__ = lambda self, other: self.value < other.value
-jax.lax.Precision.__gt__ = lambda self, other: self.value > other.value
-jax.lax.Precision.__le__ = lambda self, other: self.value <= other.value
-jax.lax.Precision.__ge__ = lambda self, other: self.value >= other.value
+
+class PrecisionTuple(tuple):
+
+    def __array__(self, dtype=None, copy=None):
+        return np.array([0, 0], dtype=np.int32)
+
 
 def matmul_inputs():
     list_of_inputs = []
-    
-    # Input 1: 1D vectors dot product
-    list_of_inputs.append({
-        "a": np.array([1.0, -2.0, 3.0], dtype=np.float32),
-        "b": np.array([-4.0, 5.0, -6.0], dtype=np.float32),
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype('float32')
-    })
-    
-    # Input 2: 2D standard matmul (float32)
-    list_of_inputs.append({
-        "a": np.random.randn(3, 4).astype(np.float32),
-        "b": np.random.randn(4, 5).astype(np.float32),
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": np.dtype('float32')
-    })
 
-    # Input 3: float64 standard matmul
-    list_of_inputs.append({
-        "a": np.random.randn(2, 5).astype(np.float64),
-        "b": np.random.randn(5, 3).astype(np.float64),
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": np.dtype('float64')
-    })
+    # Input 1: 1D @ 1D (vector dot product)
+    a = np.array([1.0, -2.0, 3.5], dtype=np.float32)
+    b = np.array([-0.5, 4.0, 2.0], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: int32 matrices
-    list_of_inputs.append({
-        "a": np.random.randint(-10, 10, size=(4, 4)).astype(np.int32),
-        "b": np.random.randint(-10, 10, size=(4, 2)).astype(np.int32),
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype('int32')
-    })
+    # Input 2: 2D @ 2D matrix multiplication with negative values
+    a = np.array([[-1.0, 2.0, 0.0], [3.0, -4.0, 5.0]], dtype=np.float32)
+    b = np.array([[2.0, -1.0], [0.5, 3.0], [-2.0, 1.0]], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
+        ),
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: complex64 matrices
-    list_of_inputs.append({
-        "a": (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64),
-        "b": (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64),
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype('complex64')
-    })
+    # Input 3: 1D @ 2D vector-matrix multiplication
+    a = np.array([1.5, -2.5, 0.5, 3.0], dtype=np.float64)
+    b = np.random.randn(4, 5).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST)
+        ),
+        "preferred_element_type": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Batched 3D matrices
-    list_of_inputs.append({
-        "a": np.random.randn(2, 3, 4).astype(np.float32),
-        "b": np.random.randn(2, 4, 5).astype(np.float32),
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": np.dtype('float32')
-    })
+    # Input 4: 2D @ 1D matrix-vector multiplication
+    a = np.random.randn(6, 4).astype(np.float32)
+    b = np.array([-1.0, 2.0, -3.0, 4.0], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.HIGH)
+        ),
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D 'a' and 2D 'b'
-    list_of_inputs.append({
-        "a": np.random.randn(5).astype(np.float32),
-        "b": np.random.randn(5, 3).astype(np.float32),
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype('float32')
-    })
+    # Input 5: 3D batched matrix multiplication
+    a = np.random.randn(3, 4, 5).astype(np.float32)
+    b = np.random.randn(3, 5, 2).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGH, jax.lax.Precision.DEFAULT)
+        ),
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D 'a' and 1D 'b'
-    list_of_inputs.append({
-        "a": np.random.randn(3, 5).astype(np.float32),
-        "b": np.random.randn(5).astype(np.float32),
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype('float32')
-    })
+    # Input 6: Broadcasted leading dimensions (1, 4, 3) @ (2, 3, 5)
+    a = np.random.randn(1, 4, 3).astype(np.float32)
+    b = np.random.randn(2, 3, 5).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Multi-dimensional batched with broadcasting
-    list_of_inputs.append({
-        "a": np.random.randn(1, 3, 4).astype(np.float32),
-        "b": np.random.randn(5, 4, 2).astype(np.float32),
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype('float32')
-    })
+    # Input 7: 4D batched tensor multiplication
+    a = np.random.randn(2, 3, 4, 6).astype(np.float32)
+    b = np.random.randn(2, 3, 6, 8).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGHEST, jax.lax.Precision.DEFAULT)
+        ),
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger matrix multiplication
-    list_of_inputs.append({
-        "a": np.random.randn(64, 128).astype(np.float32),
-        "b": np.random.randn(128, 64).astype(np.float32),
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": np.dtype('float32')
-    })
+    # Input 8: Complex-valued matrix multiplication
+    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
+    b = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
+        "preferred_element_type": np.dtype(np.complex64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Accumulating float32 inputs into float64 output
+    a = np.random.randn(5, 7).astype(np.float32)
+    b = np.random.randn(7, 4).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
+        ),
+        "preferred_element_type": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Multi-dimensional broadcasting with 4D @ 3D
+    a = np.random.randn(2, 1, 5, 3).astype(np.float32)
+    b = np.random.randn(4, 3, 2).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "precision": PrecisionTuple(
+            (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        ),
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.matmul_2"] = matmul_inputs()
 

@@ -4,87 +4,99 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax._src.numpy.ufuncs as ufuncs
+import numpy as np
 
-orig_isposneginf = ufuncs._isposneginf
-ufuncs._isposneginf = lambda infval, x, out: orig_isposneginf(infval, x, None)
 
 def isneginf_inputs():
     list_of_inputs = []
 
     # Input 1: Negative infinity
     input_dict = {
-        "x": float('-inf'),
-        "out": np.empty((), dtype=bool)
+        "x": float("-inf"),
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 2: Positive infinity
     input_dict = {
-        "x": float('inf'),
-        "out": np.empty((), dtype=bool)
+        "x": float("inf"),
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Positive float
+    # Input 3: NaN
     input_dict = {
-        "x": 123.45,
-        "out": np.empty((), dtype=bool)
+        "x": float("nan"),
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative float
-    input_dict = {
-        "x": -67.89,
-        "out": np.empty((), dtype=bool)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Zero
+    # Input 4: Zero
     input_dict = {
         "x": 0.0,
-        "out": np.empty((), dtype=bool)
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative zero
+    # Input 5: Negative zero
     input_dict = {
         "x": -0.0,
-        "out": np.empty((), dtype=bool)
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Not a number (NaN)
+    # Input 6: Positive finite float
     input_dict = {
-        "x": float('nan'),
-        "out": np.empty((), dtype=bool)
+        "x": 1.0,
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very large float
+    # Input 7: Negative finite float
     input_dict = {
-        "x": 1e300,
-        "out": np.empty((), dtype=bool)
+        "x": -1.0,
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Very small negative float
+    # Input 8: Arbitrary decimal float
+    input_dict = {
+        "x": 3.141592653589793,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large negative float
     input_dict = {
         "x": -1e300,
-        "out": np.empty((), dtype=bool)
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Tiny positive float
+    # Input 10: Small positive float (near zero)
     input_dict = {
         "x": 1e-300,
-        "out": np.empty((), dtype=bool)
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Minimum finite float64
+    input_dict = {
+        "x": float(np.finfo(np.float64).min),
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative non-integer float
+    input_dict = {
+        "x": -42.75,
+        "out": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isneginf_2"] = isneginf_inputs()
 

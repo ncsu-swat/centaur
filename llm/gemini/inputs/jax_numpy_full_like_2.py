@@ -4,133 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def full_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, positive float fill, simple 1D shape
-    a = np.arange(5, dtype=np.float32)
-    fill_value = 3.5
-    dtype = np.dtype('float32')
-    shape = (5,)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 1: 1D array, positive float fill_value, float32 dtype, 1D shape
+    input_dict = {
+        "a": np.zeros(5, dtype=np.float32),
+        "fill_value": 3.14,
+        "dtype": np.dtype(np.float32),
+        "shape": (5,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, int32, negative float fill, 2D shape
-    a = np.zeros((3, 3), dtype=np.int32)
-    fill_value = -1.0
-    dtype = np.dtype('int32')
-    shape = (2, 4)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 2: 2D array, negative float fill_value, int32 dtype, 2D shape
+    input_dict = {
+        "a": np.ones((2, 3), dtype=np.int32),
+        "fill_value": -7.0,
+        "dtype": np.dtype(np.int32),
+        "shape": (3, 4),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D array, float64, zero fill, 3D shape
-    a = np.ones((2, 2, 2), dtype=np.float64)
-    fill_value = 0.0
-    dtype = np.dtype('float64')
-    shape = (1, 2, 3)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 3: 3D array, zero float fill_value, float64 dtype, 3D shape
+    input_dict = {
+        "a": np.arange(8, dtype=np.float64).reshape((2, 2, 2)),
+        "fill_value": 0.0,
+        "dtype": np.dtype(np.float64),
+        "shape": (2, 2, 2),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array, bool, large float fill (will cast to True), 1D shape
-    a = np.array([True, False, True], dtype=bool)
-    fill_value = 100.5
-    dtype = np.dtype('bool')
-    shape = (4,)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 4: 0D array, positive float fill_value, bool dtype, 1D shape
+    input_dict = {
+        "a": np.array(1.0, dtype=np.float32),
+        "fill_value": 1.0,
+        "dtype": np.dtype(np.bool_),
+        "shape": (4,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D array, complex64, small float fill, 4D shape
-    a = np.random.randn(2, 2, 2, 2).astype(np.complex64)
-    fill_value = 1e-5
-    dtype = np.dtype('complex64')
-    shape = (2, 1, 2, 1)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 5: 4D array, fractional float fill_value, float16 dtype, 4D shape
+    input_dict = {
+        "a": np.ones((1, 2, 1, 3), dtype=np.float16),
+        "fill_value": 0.5,
+        "dtype": np.dtype(np.float16),
+        "shape": (1, 2, 3, 4),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array, float16, positive float fill, 1D shape
-    a = np.empty((4, 4), dtype=np.float32)
-    fill_value = 0.125
-    dtype = np.dtype('float16')
-    shape = (8,)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 6: 2D array, integer-like float fill_value, uint8 dtype, 2D shape
+    input_dict = {
+        "a": np.full((3, 3), 5, dtype=np.uint8),
+        "fill_value": 255.0,
+        "dtype": np.dtype(np.uint8),
+        "shape": (2, 5),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 0D array, int16, float fill, 0D shape
-    a = np.array(5, dtype=np.int32)
-    fill_value = 2.0
-    dtype = np.dtype('int16')
-    shape = ()
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 7: 1D array, negative float fill_value, complex64 dtype, 2D shape
+    input_dict = {
+        "a": np.array([1.0, 2.0, 3.0], dtype=np.complex64),
+        "fill_value": -2.5,
+        "dtype": np.dtype(np.complex64),
+        "shape": (3, 2),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D array, float32, large negative float fill, 3D shape
-    a = np.ones((2, 3, 4), dtype=np.float32)
-    fill_value = -999.99
-    dtype = np.dtype('float32')
-    shape = (3, 3, 3)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 8: 2D array, float fill_value, int64 dtype, 0D shape (scalar)
+    input_dict = {
+        "a": np.zeros((4, 4), dtype=np.int64),
+        "fill_value": 42.0,
+        "dtype": np.dtype(np.int64),
+        "shape": (),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D array, int64, float fill, 5D shape
-    a = np.ones((1, 1, 1, 1, 1), dtype=np.int64)
-    fill_value = 42.42
-    dtype = np.dtype('int64')
-    shape = (2, 2, 2, 2, 2)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 9: 5D array, float fill_value, float32 dtype, 5D shape
+    input_dict = {
+        "a": np.empty((1, 1, 1, 1, 1), dtype=np.float32),
+        "fill_value": 99.9,
+        "dtype": np.dtype(np.float32),
+        "shape": (1, 2, 1, 2, 1),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array, float64, huge float fill, 2D shape
-    a = np.random.rand(5, 5).astype(np.float64)
-    fill_value = 1e300
-    dtype = np.dtype('float64')
-    shape = (10, 10)
-    list_of_inputs.append({
-        "a": a,
-        "fill_value": fill_value,
-        "dtype": dtype,
-        "shape": shape
-    })
+    # Input 10: 3D array, negative float fill_value, int16 dtype, 3D shape
+    input_dict = {
+        "a": np.ones((2, 1, 2), dtype=np.int16),
+        "fill_value": -128.0,
+        "dtype": np.dtype(np.int16),
+        "shape": (4, 1, 3),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D array, float fill_value, complex128 dtype, 1D shape
+    input_dict = {
+        "a": np.zeros(2, dtype=np.complex128),
+        "fill_value": 1.414,
+        "dtype": np.dtype(np.complex128),
+        "shape": (10,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.full_like_2"] = full_like_inputs()
 

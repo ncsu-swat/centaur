@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input x as a list of floats must not be empty (Rule 43)
+# non-empty list of floats must start with a non-negative value (Rule 43)
 
 rule_43 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] >= 1) if n else
-          v["arg1_length"] >= 1)
+    s.add(Not(And(v["arg1_length"] >= 1, Select(v["arg1_values"], 0) >= 0.0)) if n else
+          And(v["arg1_length"] >= 1, Select(v["arg1_values"], 0) >= 0.0))
 )
 
 def rule_43_func(arg1, solver=None, neg=False):
@@ -25,14 +25,17 @@ def rule_43_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), RealSort())
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 43
-        rule_43(solver, {'arg1_length': arg1_length})
+        rule_43(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_43(solver, {'arg1_length': arg1['length']}, neg)
+        rule_43(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

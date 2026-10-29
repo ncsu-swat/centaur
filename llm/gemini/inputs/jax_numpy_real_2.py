@@ -4,41 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def real_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive Python integer
-    list_of_inputs.append({"val": 5})
+    # Input 1: Zero
+    input_dict = {"val": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative Python integer
-    list_of_inputs.append({"val": -10})
+    # Input 2: Small positive integer
+    input_dict = {"val": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero
-    list_of_inputs.append({"val": 0})
+    # Input 3: Small negative integer
+    input_dict = {"val": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large Python integer
-    list_of_inputs.append({"val": 1000000})
+    # Input 4: Moderate positive integer
+    input_dict = {"val": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy int32 positive
-    list_of_inputs.append({"val": np.int32(42)})
+    # Input 5: Moderate negative integer
+    input_dict = {"val": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int32 negative
-    list_of_inputs.append({"val": np.int32(-100)})
+    # Input 6: Large positive integer
+    input_dict = {"val": 65536}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy int64
-    list_of_inputs.append({"val": np.int64(9876543210)})
+    # Input 7: Large negative integer
+    input_dict = {"val": -123456}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy uint8
-    list_of_inputs.append({"val": np.uint8(255)})
+    # Input 8: Very large positive integer (near 32-bit limit)
+    input_dict = {"val": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy int16 negative
-    list_of_inputs.append({"val": np.int16(-32768)})
+    # Input 9: Very large negative integer (near 32-bit limit)
+    input_dict = {"val": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy int_ scalar
-    list_of_inputs.append({"val": np.int_(15)})
+    # Input 10: Odd positive integer
+    input_dict = {"val": 7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Odd negative integer
+    input_dict = {"val": -999}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

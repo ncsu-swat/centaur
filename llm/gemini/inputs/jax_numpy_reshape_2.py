@@ -4,83 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def reshape_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D to 2D, C-order, copy=True
-    a = np.arange(6, dtype=np.float32)
+    # Input 1: 1D to 2D, C order, boolean copy True
+    a = np.arange(6, dtype=np.int32)
     shape = (2, 3)
-    order = 'C'
+    order = "C"
     copy_val = True
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
 
-    # Input 2: 2D to 1D, C-order, copy=False
-    a = np.random.randint(0, 10, size=(3, 2)).astype(np.int32)
+    # Input 2: 2D to 1D, F order, boolean copy False
+    a = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
     shape = (6,)
-    order = 'C'
+    order = "F"
     copy_val = False
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
 
-    # Input 3: Using -1 in shape, F-order, copy=True
-    a = np.random.randn(4, 4).astype(np.float64)
-    shape = (2, -1)
-    order = 'F'
-    copy_val = True
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
-
-    # Input 4: 3D to 2D, C-order, copy=False
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    shape = (6, 4)
-    order = 'C'
+    # Input 3: Using -1 in shape inference
+    a = np.zeros((3, 4, 2), dtype=np.float64)
+    shape = (-1, 8)
+    order = "C"
     copy_val = False
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
 
-    # Input 5: 1D to 3D, F-order, copy=True
-    a = np.arange(24, dtype=np.int64)
-    shape = (2, 3, 4)
-    order = 'F'
+    # Input 4: 0-D to 1-D with size 1
+    a = np.array(42, dtype=np.int64)
+    shape = (1,)
+    order = "C"
     copy_val = True
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
 
-    # Input 6: Shape with -1 in 3D, C-order, copy=False
-    a = np.random.randn(2, 3, 2, 2).astype(np.float32)
-    shape = (3, -1, 4)
-    order = 'C'
+    # Input 5: High dimensional reshape
+    a = np.ones((2, 2, 2, 2), dtype=np.complex64)
+    shape = (4, 4)
+    order = "F"
+    copy_val = True
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
+
+    # Input 6: Reshape to 0-D (scalar shape)
+    a = np.array([3.14], dtype=np.float32)
+    shape = ()
+    order = "C"
     copy_val = False
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
 
-    # Input 7: Squeezing/unsqueezing, boolean type, C-order, copy=True
-    a = np.array([True, False, True, True, False], dtype=np.bool_)
-    shape = (1, 5, 1)
-    order = 'C'
-    copy_val = True
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
-
-    # Input 8: Larger dimensions, F-order, copy=True
-    a = np.random.randn(10, 10, 10).astype(np.float32)
-    shape = (100, 10)
-    order = 'F'
-    copy_val = True
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
-
-    # Input 9: Int16 type, C-order, copy=False
-    a = np.random.randint(-100, 100, size=(8, 8)).astype(np.int16)
-    shape = (4, 16)
-    order = 'C'
+    # Input 7: Empty array reshape
+    a = np.empty((0, 5), dtype=np.int8)
+    shape = (0, 10)
+    order = "C"
     copy_val = False
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
 
-    # Input 10: Float16 type, 1D to 1D (no-op), F-order, copy=True
-    a = np.random.randn(12).astype(np.float16)
-    shape = (12,)
-    order = 'F'
+    # Input 8: Reshape with multiple 1-dimensions
+    a = np.arange(12, dtype=np.uint8)
+    shape = (1, 3, 1, 4, 1)
+    order = "F"
     copy_val = True
-    list_of_inputs.append({"a": a, "shape": shape, "order": order, "copy": copy_val})
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
+
+    # Input 9: Boolean tensor
+    a = np.array([[True, False], [False, True]], dtype=np.bool_)
+    shape = (4, 1)
+    order = "C"
+    copy_val = False
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
+
+    # Input 10: 3D to 3D with -1 inference and F order
+    a = np.arange(24, dtype=np.int16).reshape((2, 3, 4))
+    shape = (4, -1, 2)
+    order = "F"
+    copy_val = True
+    list_of_inputs.append(
+        {"a": a, "shape": shape, "order": order, "copy": copy_val}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.reshape_2"] = reshape_inputs()
 

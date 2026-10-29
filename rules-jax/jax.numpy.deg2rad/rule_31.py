@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scalar angle input should be within a standard degree range to prevent extreme values (Rule 31)
+# scalar angle value does not exceed two full rotations in either direction (Rule 31)
 
 rule_31 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -360, v["arg1_value"] <= 360)) if n else
-          And(v["arg1_value"] >= -360, v["arg1_value"] <= 360))
+    s.add(Not(And(v["arg1_value"] >= -720, v["arg1_value"] <= 720)) if n else
+          And(v["arg1_value"] >= -720, v["arg1_value"] <= 720))
 )
 
 def rule_31_func(arg1, solver=None, neg=False):

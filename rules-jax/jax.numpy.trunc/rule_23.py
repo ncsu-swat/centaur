@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if input is a float, it should not be a subnormal value near zero (Rule 23)
+# scalar integer input constrained to 16-bit signed integer boundaries (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg1_value"] >= 0.00001, If(v["arg1_value"] < 0, v["arg1_value"] <= -0.00001, True))) if n else
-          If(v["arg1_value"] > 0, v["arg1_value"] >= 0.00001, If(v["arg1_value"] < 0, v["arg1_value"] <= -0.00001, True)))
+    s.add(Not(And(v["arg1_value"] >= -32768, v["arg1_value"] <= 32767)) if n else
+          And(v["arg1_value"] >= -32768, v["arg1_value"] <= 32767))
 )
 
 def rule_23_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_23_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 23
         rule_23(solver, {'arg1_value': arg1_value})

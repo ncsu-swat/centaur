@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# string tensor input requires string output dtype (Rule 26)
+# converting string input with specified float32 dtype (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_dtype"] == 11, v["arg2_value"] == 11, True)) if n else
-          If(v["arg1_dtype"] == 11, v["arg2_value"] == 11, True))
+    s.add(Not(If(v["arg1_value"] == 38, v["arg2_value"] == 7, True)) if n else
+          If(v["arg1_value"] == 38, v["arg2_value"] == 7, True))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_26_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, str):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 26
-        rule_26(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_26(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_26(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_26(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

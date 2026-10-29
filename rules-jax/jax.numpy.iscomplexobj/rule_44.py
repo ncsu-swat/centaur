@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# A primitive input x of type float or int must be non-zero in strict contexts (Rule 44)
+# numeric primitive input must be strictly negative (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] != 0) if n else
-          v["arg1_value"] != 0)
+    s.add(Not(v["arg1_value"] < 0) if n else
+          v["arg1_value"] < 0)
 )
 
 def rule_44_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_44_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (float, np.floating)) or (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool))):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations

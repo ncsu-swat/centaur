@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input tensors must not have zero-sized dimensions (Rule 14)
+# both input tensors are square matrices (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And((If(v["arg1_ndim"] > 0, (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])), True)), (If(v["arg2_ndim"] > 0, (And([Implies(j < (v["arg2_ndim"] - 1 + 1), Select(v["arg2_shape"], j) > 0) for j in range(6)])), True)))) if n else
-          And((If(v["arg1_ndim"] > 0, (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])), True)), (If(v["arg2_ndim"] > 0, (And([Implies(j < (v["arg2_ndim"] - 1 + 1), Select(v["arg2_shape"], j) > 0) for j in range(6)])), True))))
+    s.add(Not(And(And(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1)), Select(v["arg2_shape"], 0) == Select(v["arg2_shape"], 1))) if n else
+          And(And(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1)), Select(v["arg2_shape"], 0) == Select(v["arg2_shape"], 1)))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_14(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_14(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

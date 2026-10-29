@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if axis is non-negative, it must be smaller than the number of dimensions of the tensor (Rule 40)
+# axis index cannot exceed the maximum dimension index of arr (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True)) if n else
-          If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True))
+    s.add(Not(v["arg2_value"] <= v["arg1_ndim"] - 1) if n else
+          v["arg2_value"] <= v["arg1_ndim"] - 1)
 )
 
 def rule_40_func(arg1, arg2, solver=None, neg=False):

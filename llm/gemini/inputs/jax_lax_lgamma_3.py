@@ -4,44 +4,47 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def lgamma_inputs():
     list_of_inputs = []
 
-    # Input 1: float32 representing integer 5
-    list_of_inputs.append({"x": np.float32(5.0)})
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: float64 representing integer 10
-    list_of_inputs.append({"x": np.float64(10.0)})
+    input_dict = {"x": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: float32 representing integer 3
-    list_of_inputs.append({"x": np.float32(3.0)})
+    input_dict = {"x": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: float64 representing integer 8
-    list_of_inputs.append({"x": np.float64(8.0)})
+    input_dict = {"x": 4.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: float32 representing integer 12
-    list_of_inputs.append({"x": np.float32(12.0)})
+    input_dict = {"x": 5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: float64 representing integer 4
-    list_of_inputs.append({"x": np.float64(4.0)})
+    input_dict = {"x": 6.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: float32 representing integer 6
-    list_of_inputs.append({"x": np.float32(6.0)})
+    input_dict = {"x": 7.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: float64 representing integer 15
-    list_of_inputs.append({"x": np.float64(15.0)})
+    input_dict = {"x": 8.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: float32 representing integer 100
-    list_of_inputs.append({"x": np.float32(100.0)})
+    input_dict = {"x": 9.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: float64 representing integer 1
-    list_of_inputs.append({"x": np.float64(1.0)})
+    input_dict = {"x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: float32 representing integer 2
-    list_of_inputs.append({"x": np.float32(2.0)})
+    input_dict = {"x": 20.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    input_dict = {"x": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

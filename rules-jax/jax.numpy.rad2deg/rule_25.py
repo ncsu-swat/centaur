@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For scalar inputs of float or int type, multiplying positive values by 2 should increase them (Rule 25)
+# scalar numeric input magnitude should be reasonably bounded (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg1_value"] * 2 > v["arg1_value"], True)) if n else
-          If(v["arg1_value"] > 0, v["arg1_value"] * 2 > v["arg1_value"], True))
+    s.add(Not(And(-1000 <= v["arg1_value"], v["arg1_value"] <= 1000)) if n else
+          And(-1000 <= v["arg1_value"], v["arg1_value"] <= 1000))
 )
 
 def rule_25_func(arg1, solver=None, neg=False):

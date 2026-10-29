@@ -4,55 +4,15 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def bessel_i0e_inputs():
     list_of_inputs = []
 
-    # Input 1: Positive integer-valued float32
-    x = np.float32(5.0)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 2: Negative integer-valued float32
-    x = np.float32(-10.0)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 3: Zero float64
-    x = np.float64(0.0)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: Large positive integer-valued float64
-    x = np.float64(100.0)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: 1D array of integer-valued float32
-    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 6: 1D array with mixed negative and positive integer-valued float32
-    x = np.array([-5.0, -2.0, 0.0, 2.0, 5.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 7: 2D array of integer-valued float64
-    x = np.array([[1.0, -2.0, 3.0], [-4.0, 5.0, -6.0]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 8: 3D array of integer-valued float32
-    x = np.arange(-12, 12, dtype=np.float32).reshape((2, 3, 4))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 9: 1D array of larger integer-valued float32
-    x = np.array([-1000.0, -500.0, 0.0, 500.0, 1000.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 10: 4D array of integer-valued float32
-    x = np.random.randint(-50, 50, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 11: 1D array of type float16 (if supported, else float32)
-    x = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    values = [0.0, 1.0, -1.0, 2.0, -2.0, 5.0, -5.0, 10.0, -10.0, 20.0, -20.0, 50.0]
+    for val in values:
+        input_dict = {"x": val}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

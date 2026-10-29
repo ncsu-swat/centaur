@@ -4,113 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rfft_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, norm="backward"
-    a = np.random.randn(8).astype(np.float32)
+    # Input 1: 1D float32 array, default-like parameters
     input_dict = {
-        "a": a,
-        "n": 8,
-        "axis": 0,
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 2D array, float64, norm="ortho"
-    a = np.random.randn(4, 4).astype(np.float64)
-    input_dict = {
-        "a": a,
+        "a": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
         "n": 4,
         "axis": -1,
-        "norm": "ortho"
+        "norm": "backward",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array with padding (n > dimension), float32, norm="forward"
-    a = np.random.randn(3, 5).astype(np.float32)
+    # Input 2: 1D float64 array, odd n, ortho norm
     input_dict = {
-        "a": a,
-        "n": 6,
-        "axis": 1,
-        "norm": "forward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 3D array with truncation (n < dimension), float64, norm="backward"
-    a = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 3,
-        "axis": 1,
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 1D integer array, norm="ortho"
-    a = np.random.randint(-10, 10, size=(16,)).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "n": 16,
-        "axis": 0,
-        "norm": "ortho"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 3D array, float32, norm="forward", target axis = 2
-    a = np.random.randn(4, 4, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 8,
-        "axis": 2,
-        "norm": "forward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 2D int64 array, norm="backward", axis = 0
-    a = np.random.randint(-5, 5, size=(8, 8)).astype(np.int64)
-    input_dict = {
-        "a": a,
-        "n": 4,
-        "axis": 0,
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 4D array, float32, negative axis, norm="ortho"
-    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    input_dict = {
-        "a": a,
+        "a": np.array([-1.5, 0.0, 2.5, -3.0, 4.0], dtype=np.float64),
         "n": 5,
-        "axis": -2,
-        "norm": "ortho"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 1D array with negative values, float64, norm="forward"
-    a = np.array([-1.2, -0.5, 3.4, -5.6, 7.8, -9.0, 2.1, 0.0]).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 12,
         "axis": 0,
-        "norm": "forward"
+        "norm": "ortho",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D high-dimensional array, float32, norm="backward"
-    a = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
+    # Input 3: 2D array, forward norm, transform along axis 0
     input_dict = {
-        "a": a,
-        "n": 2,
-        "axis": -4,
-        "norm": "backward"
+        "a": np.random.randn(6, 4).astype(np.float32),
+        "n": 6,
+        "axis": 0,
+        "norm": "forward",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D array, transform along axis 1 (or -1) with n larger than dimension (zero-padding)
+    input_dict = {
+        "a": np.random.randn(3, 5).astype(np.float32),
+        "n": 8,
+        "axis": 1,
+        "norm": "backward",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D array, transform with n smaller than dimension (truncation)
+    input_dict = {
+        "a": np.random.randn(4, 10).astype(np.float64),
+        "n": 4,
+        "axis": -1,
+        "norm": "ortho",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D array, axis=1, backward norm
+    input_dict = {
+        "a": np.random.randn(2, 8, 3).astype(np.float32),
+        "n": 8,
+        "axis": 1,
+        "norm": "backward",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D array with negative axis, forward norm
+    input_dict = {
+        "a": np.random.randn(3, 4, 7).astype(np.float64),
+        "n": 7,
+        "axis": -2,
+        "norm": "forward",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Integer input array (real-valued)
+    input_dict = {
+        "a": np.array([[1, -2, 3], [4, -5, 6]], dtype=np.int32),
+        "n": 3,
+        "axis": -1,
+        "norm": "ortho",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 4D array, axis=2, odd n padding
+    input_dict = {
+        "a": np.random.randn(2, 3, 4, 5).astype(np.float32),
+        "n": 7,
+        "axis": 2,
+        "norm": "backward",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D array of size 1
+    input_dict = {
+        "a": np.array([3.14], dtype=np.float32),
+        "n": 1,
+        "axis": 0,
+        "norm": "forward",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D float64 array, axis 0
+    input_dict = {
+        "a": np.random.randn(5, 2, 2, 2).astype(np.float64),
+        "n": 6,
+        "axis": 0,
+        "norm": "ortho",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.rfft"] = rfft_inputs()
 

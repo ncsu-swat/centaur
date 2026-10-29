@@ -4,73 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def not_equal_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D boolean array, y is True
-    x = np.array([True, False, True, False], dtype=bool)
+    # Input 1: 1D boolean array and boolean True
+    x = np.array([True, False, True, False], dtype=np.bool_)
     y = True
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D integer array (binary), y is False
-    x = np.array([[1, 0], [0, 1]], dtype=np.int32)
+    # Input 2: 1D integer array with 0s and 1s, and boolean False
+    x = np.array([0, 1, 0, 1, 2], dtype=np.int32)
     y = False
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D float array, y is True
-    x = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 3: 2D float32 array and boolean True
+    x = np.array([[-1.0, 1.0], [0.0, 2.5]], dtype=np.float32)
     y = True
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 0D array (scalar), y is True
-    x = np.array(0, dtype=np.int32)
-    y = True
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 4D float array with negative values, y is False
-    x = np.random.uniform(-5.0, 5.0, size=(2, 2, 2, 2)).astype(np.float64)
+    # Input 4: 3D int64 array with negative values and boolean False
+    x = np.array([[[-2, 0], [1, -1]], [[0, 3], [-5, 0]]], dtype=np.int64)
     y = False
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 2D boolean array, y is True
-    x = np.array([[True, True], [False, False]], dtype=bool)
+    # Input 5: 0D scalar array and boolean True
+    x = np.array(1, dtype=np.int32)
     y = True
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: 1D float array, y is False
-    x = np.array([-1.0, 0.0, 1.0], dtype=np.float32)
+    # Input 6: 2D boolean array and boolean False
+    x = np.array(
+        [[True, True], [False, False], [True, False]], dtype=np.bool_
+    )
     y = False
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 3D integer array, y is True
-    x = np.random.randint(-10, 10, size=(2, 2, 3)).astype(np.int64)
+    # Input 7: 4D float64 array and boolean True
+    x = np.zeros((2, 1, 3, 2), dtype=np.float64)
     y = True
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Large 2D boolean array, y is False
-    x = np.random.choice([True, False], size=(10, 10))
+    # Input 8: 1D float array with NaNs and Infs and boolean False
+    x = np.array([np.nan, np.inf, -np.inf, 0.0, 1.0], dtype=np.float32)
     y = False
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 5D int16 array, y is True
-    x = np.ones((2, 1, 2, 1, 2), dtype=np.int16)
+    # Input 9: Empty 2D array and boolean True
+    x = np.empty((0, 5), dtype=np.int32)
     y = True
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 1D uint8 array and boolean False
+    x = np.array([0, 255, 1, 128], dtype=np.uint8)
+    y = False
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 2D complex64 array and boolean True
+    x = np.array([[1.0 + 0.0j, 0.0 + 0.0j], [1.0 + 1.0j, 0.0 + 1.0j]], dtype=np.complex64)
+    y = True
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.not_equal_6"] = not_equal_inputs()
 

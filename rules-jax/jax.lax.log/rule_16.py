@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# floating point or complex input tensor dtype constraint (Rule 16)
+# input array must have floating-point or complex type (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
-          And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
+    s.add(Not(If(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10, False)) if n else
+          If(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10, False))
 )
 
 def rule_16_func(arg1, solver=None, neg=False):

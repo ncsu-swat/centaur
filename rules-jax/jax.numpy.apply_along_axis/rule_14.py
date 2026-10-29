@@ -7,37 +7,42 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the function is an activation like relu, sigmoid, or softmax, the input tensor cannot have a boolean or string data type (Rule 14)
+# reduction function with axis within valid range for array (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(If(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 12), v["arg1_value"] == 13), And(v["arg2_dtype"] != 0, v["arg2_dtype"] != 11), True)) if n else
-          If(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 12), v["arg1_value"] == 13), And(v["arg2_dtype"] != 0, v["arg2_dtype"] != 11), True))
+    s.add(Not(And(And((Or(v["arg1_value"] == 6, v["arg1_value"] == 9)), v["arg2_value"] + v["arg3_ndim"] >= 0), v["arg2_value"] < v["arg3_ndim"])) if n else
+          And(And((Or(v["arg1_value"] == 6, v["arg1_value"] == 9)), v["arg2_value"] + v["arg3_ndim"] >= 0), v["arg2_value"] < v["arg3_ndim"]))
 )
 
-def rule_14_func(arg1, arg2, solver=None, neg=False):
+def rule_14_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, str):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+            return False
+        if not isinstance(arg3, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        arg2_dtype = Int('arg2_dtype')
+        arg2_value = Int('arg2_value')
+        arg3_ndim = Int('arg3_ndim')
 
         # Value assignments
         solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg2_value == int(arg2))
+        solver.add(arg3_ndim == arg3.ndim)
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_value': arg1_value, 'arg2_dtype': arg2_dtype})
+        rule_14(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value, 'arg3_ndim': arg3_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_value': arg1['value'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_14(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value'], 'arg3_ndim': arg3['ndim']}, neg)

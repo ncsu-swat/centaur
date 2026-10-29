@@ -4,90 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def gumbel_l_logcdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard parameters
-    input_dict = {
-        "x": 1.0,
-        "loc": 0.0,
-        "scale": 1.0
-    }
+    # Input 1: Standard values
+    input_dict = {"x": 0.0, "loc": 0.0, "scale": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative x value
-    input_dict = {
-        "x": -1.5,
-        "loc": 0.0,
-        "scale": 1.0
-    }
+    # Input 2: Positive shift and larger scale
+    input_dict = {"x": 1.5, "loc": 0.5, "scale": 2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Positive shifted distribution
-    input_dict = {
-        "x": 5.0,
-        "loc": 2.0,
-        "scale": 1.5
-    }
+    # Input 3: Negative x and negative loc, small scale
+    input_dict = {"x": -2.5, "loc": -1.0, "scale": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large scale parameter
-    input_dict = {
-        "x": 0.0,
-        "loc": -1.0,
-        "scale": 10.0
-    }
+    # Input 4: Large positive x
+    input_dict = {"x": 10.0, "loc": 5.0, "scale": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small scale parameter
-    input_dict = {
-        "x": -2.0,
-        "loc": -3.0,
-        "scale": 0.5
-    }
+    # Input 5: Large negative x
+    input_dict = {"x": -10.0, "loc": 0.0, "scale": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large x relative to loc
-    input_dict = {
-        "x": 15.0,
-        "loc": 2.0,
-        "scale": 3.0
-    }
+    # Input 6: Arbitrary fractional values
+    input_dict = {"x": 0.123, "loc": 0.456, "scale": 0.789}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Very small x (negative infinity direction)
-    input_dict = {
-        "x": -20.0,
-        "loc": 0.0,
-        "scale": 2.0
-    }
+    # Input 7: Very large scale and x
+    input_dict = {"x": 100.0, "loc": 10.0, "scale": 15.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Float inputs using np.float64
-    input_dict = {
-        "x": float(np.float64(2.5)),
-        "loc": float(np.float64(1.0)),
-        "scale": float(np.float64(2.0))
-    }
+    # Input 8: Negative x with positive loc and moderate scale
+    input_dict = {"x": -0.5, "loc": 2.0, "scale": 4.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Float inputs using np.float32 cast to Python float
-    input_dict = {
-        "x": float(np.float32(-0.5)),
-        "loc": float(np.float32(0.5)),
-        "scale": float(np.float32(0.1))
-    }
+    # Input 9: Transcendental / mathematical constants
+    input_dict = {"x": 3.14159, "loc": 2.71828, "scale": 1.41421}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Equal x and loc
-    input_dict = {
-        "x": 3.14,
-        "loc": 3.14,
-        "scale": 1.5
-    }
+    # Input 10: Deep negative region
+    input_dict = {"x": -50.0, "loc": -20.0, "scale": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Small scale value
+    input_dict = {"x": 0.0, "loc": 1.0, "scale": 0.1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

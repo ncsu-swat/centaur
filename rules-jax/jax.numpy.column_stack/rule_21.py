@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the optional dtype parameter must represent a valid data type index (Rule 21)
+# dtype parameter must be an integer or floating-point type (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(0 <= v["arg1_value"], v["arg1_value"] <= 12)) if n else
-          And(0 <= v["arg1_value"], v["arg1_value"] <= 12))
+    s.add(Not(And(1 <= v["arg1_value"], v["arg1_value"] <= 8)) if n else
+          And(1 <= v["arg1_value"], v["arg1_value"] <= 8))
 )
 
 def rule_21_func(arg1, solver=None, neg=False):

@@ -4,63 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def glu_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, axis=0 (size 4)
+    # Input 1: 1D array along axis 0
     x = np.random.randn(4).astype(np.float32)
     input_dict = {"x": x, "axis": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, axis=1 (size 6)
-    x = np.random.randn(3, 6).astype(np.float32)
+    # Input 2: 1D array along axis -1
+    x = np.random.randn(6).astype(np.float32)
+    input_dict = {"x": x, "axis": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D array along axis 1 (last axis)
+    x = np.random.randn(3, 8).astype(np.float32)
     input_dict = {"x": x, "axis": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, axis=0 (size 2)
-    x = np.random.randn(2, 5).astype(np.float32)
+    # Input 4: 2D array along axis 0 (first axis)
+    x = np.random.randn(10, 5).astype(np.float32)
     input_dict = {"x": x, "axis": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, axis=2 (size 8)
-    x = np.random.randn(2, 3, 8).astype(np.float32)
+    # Input 5: 2D array, negative values, float64
+    x = -np.abs(np.random.randn(4, 6)).astype(np.float64)
+    input_dict = {"x": x, "axis": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D array using negative axis indexing
+    x = np.random.randn(6, 4).astype(np.float32)
+    input_dict = {"x": x, "axis": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D array along axis -1
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"x": x, "axis": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D array along middle axis
+    x = np.random.randn(5, 8, 3).astype(np.float32)
+    input_dict = {"x": x, "axis": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D array along axis 0, float16
+    x = np.random.randn(4, 5, 6).astype(np.float16)
+    input_dict = {"x": x, "axis": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D array along axis 3
+    x = np.random.randn(2, 4, 3, 12).astype(np.float32)
+    input_dict = {"x": x, "axis": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D array along axis -3
+    x = np.random.randn(2, 6, 5, 7).astype(np.float64)
+    input_dict = {"x": x, "axis": -3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 5D array along axis 2
+    x = np.random.randn(1, 2, 4, 3, 2).astype(np.float32)
     input_dict = {"x": x, "axis": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array, axis=1 (size 4)
-    x = np.random.randn(2, 4, 3).astype(np.float32)
-    input_dict = {"x": x, "axis": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 4D array, axis=-1 (size 10)
-    x = np.random.randn(2, 2, 2, 10).astype(np.float32)
-    input_dict = {"x": x, "axis": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: float64 array, 1D, axis=0 (size 8)
-    x = np.random.randn(8).astype(np.float64)
-    input_dict = {"x": x, "axis": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: array with negative values, 2D, axis=1 (size 4)
-    x = np.array([[-1.0, -2.0, 3.0, 4.0], [5.0, -6.0, -7.0, 8.0]]).astype(np.float32)
-    input_dict = {"x": x, "axis": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Large array, axis=0 (size 128)
-    x = np.random.randn(128, 64).astype(np.float32)
-    input_dict = {"x": x, "axis": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D array, axis=-1 (size 2)
-    x = np.random.randn(5, 2).astype(np.float32)
-    input_dict = {"x": x, "axis": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
     return list_of_inputs
+
 
 generated_inputs["jax.nn.glu"] = glu_inputs()
 

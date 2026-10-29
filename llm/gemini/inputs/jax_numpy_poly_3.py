@@ -4,54 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def poly_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
-    input_dict = {"seq_of_zeros": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: negative float
-    input_dict = {"seq_of_zeros": -2.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero float
+    # Input 1: Zero
     input_dict = {"seq_of_zeros": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.float32 scalar
-    input_dict = {"seq_of_zeros": np.float32(3.5)}
+    # Input 2: Positive integer as float
+    input_dict = {"seq_of_zeros": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.float64 scalar
-    input_dict = {"seq_of_zeros": np.float64(-0.123)}
+    # Input 3: Negative float
+    input_dict = {"seq_of_zeros": -2.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: large float
-    input_dict = {"seq_of_zeros": 1000.0}
+    # Input 4: Positive fractional float
+    input_dict = {"seq_of_zeros": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: small float
+    # Input 5: Float approximation of pi
+    input_dict = {"seq_of_zeros": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Large positive float
+    input_dict = {"seq_of_zeros": 1e6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Large negative float
+    input_dict = {"seq_of_zeros": -500.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Small positive float
     input_dict = {"seq_of_zeros": 1e-5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: negative large float
-    input_dict = {"seq_of_zeros": -500.0}
+    # Input 9: Small negative float
+    input_dict = {"seq_of_zeros": -0.00042}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: pi-like float
-    input_dict = {"seq_of_zeros": 3.1415926535}
+    # Input 10: Arbitrary float
+    input_dict = {"seq_of_zeros": 42.195}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: e-like float
-    input_dict = {"seq_of_zeros": 2.7182818284}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11: negative small float
-    input_dict = {"seq_of_zeros": -1.2e-4}
+    # Input 11: Negative zero
+    input_dict = {"seq_of_zeros": -0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

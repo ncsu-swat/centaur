@@ -10,105 +10,126 @@ import copy
 def geomspace_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({
+    # Input 1: Basic positive range, endpoint=True, float32, axis=0
+    input_dict = {
         "start": 1,
         "stop": 1000,
         "num": 4,
         "endpoint": True,
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype("float32"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    list_of_inputs.append({
+    # Input 2: Powers of two, endpoint=False, float64, axis=0
+    input_dict = {
         "start": 2,
-        "stop": 16,
-        "num": 4,
+        "stop": 1024,
+        "num": 10,
         "endpoint": False,
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype("float64"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    list_of_inputs.append({
-        "start": 10,
-        "stop": 100000,
-        "num": 5,
-        "endpoint": True,
-        "dtype": np.float32,
-        "axis": -1
-    })
-
-    # Input 4
-    list_of_inputs.append({
-        "start": 1,
-        "stop": 256,
-        "num": 9,
-        "endpoint": True,
-        "dtype": np.float32,
-        "axis": 0
-    })
-
-    # Input 5
-    list_of_inputs.append({
-        "start": 3,
-        "stop": 243,
-        "num": 5,
-        "endpoint": False,
-        "dtype": np.float32,
-        "axis": 0
-    })
-
-    # Input 6
-    list_of_inputs.append({
-        "start": 5,
-        "stop": 125,
+    # Input 3: Negative range, endpoint=True, float32, axis=-1
+    input_dict = {
+        "start": -1,
+        "stop": -100,
         "num": 3,
         "endpoint": True,
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype("float32"),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    list_of_inputs.append({
-        "start": -1,
-        "stop": -1000,
+    # Input 4: Decreasing sequence, endpoint=True, float32, axis=0
+    input_dict = {
+        "start": 1000,
+        "stop": 1,
         "num": 4,
         "endpoint": True,
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype("float32"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    list_of_inputs.append({
+    # Input 5: Decreasing negative sequence, endpoint=False, float64, axis=-1
+    input_dict = {
+        "start": -1000,
+        "stop": -1,
+        "num": 5,
+        "endpoint": False,
+        "dtype": np.dtype("float64"),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Integer dtype output, endpoint=True, int32, axis=0
+    input_dict = {
+        "start": 1,
+        "stop": 16,
+        "num": 5,
+        "endpoint": True,
+        "dtype": np.dtype("int32"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Single element output, endpoint=True, float32, axis=0
+    input_dict = {
+        "start": 8,
+        "stop": 64,
+        "num": 1,
+        "endpoint": True,
+        "dtype": np.dtype("float32"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Base-3 geometric sequence, endpoint=True, float64, axis=-1
+    input_dict = {
+        "start": 3,
+        "stop": 243,
+        "num": 6,
+        "endpoint": True,
+        "dtype": np.dtype("float64"),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Negative range with int64 dtype, endpoint=False, axis=0
+    input_dict = {
         "start": -2,
         "stop": -32,
         "num": 5,
         "endpoint": False,
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype("int64"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    list_of_inputs.append({
+    # Input 10: Wide range, endpoint=False, float32, axis=-1
+    input_dict = {
+        "start": 10,
+        "stop": 100000,
+        "num": 5,
+        "endpoint": False,
+        "dtype": np.dtype("float32"),
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Empty sequence (num=0), endpoint=True, float32, axis=0
+    input_dict = {
         "start": 1,
-        "stop": 1024,
-        "num": 11,
+        "stop": 100,
+        "num": 0,
         "endpoint": True,
-        "dtype": np.float32,
-        "axis": 0
-    })
-
-    # Input 10
-    list_of_inputs.append({
-        "start": 8,
-        "stop": 64,
-        "num": 2,
-        "endpoint": True,
-        "dtype": np.float32,
-        "axis": 0
-    })
+        "dtype": np.dtype("float32"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

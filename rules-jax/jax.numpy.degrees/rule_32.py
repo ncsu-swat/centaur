@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for primitive numeric inputs, values should represent angles in radians typically between -2pi and 2pi (Rule 32)
+# tuple of integers with bounded size for angle sequences (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -6.28, v["arg1_value"] <= 6.28)) if n else
-          And(v["arg1_value"] >= -6.28, v["arg1_value"] <= 6.28))
+    s.add(Not(And(v["arg1_length"] >= 1, v["arg1_length"] <= 4)) if n else
+          And(v["arg1_length"] >= 1, v["arg1_length"] <= 4))
 )
 
 def rule_32_func(arg1, solver=None, neg=False):
@@ -19,18 +19,20 @@ def rule_32_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_length = Int('arg1_length')
 
         # Value assignments
+        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 32
-        rule_32(solver, {'arg1_value': arg1_value})
+        rule_32(solver, {'arg1_length': arg1_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_32(solver, {'arg1_value': arg1['value']}, neg)
+        rule_32(solver, {'arg1_length': arg1['length']}, neg)

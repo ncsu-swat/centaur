@@ -7,37 +7,32 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if operand is a 0-dimensional tensor, axes list must be empty (Rule 6)
+# operand must have a numerical dtype, excluding boolean and string (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 0, v["arg2_length"] == 0, True)) if n else
-          If(v["arg1_ndim"] == 0, v["arg2_length"] == 0, True))
+    s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
+          And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
 )
 
-def rule_6_func(arg1, arg2, solver=None, neg=False):
+def rule_6_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
-            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 6
-        rule_6(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
+        rule_6(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_6(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)
+        rule_6(solver, {'arg1_dtype': arg1['dtype']}, neg)

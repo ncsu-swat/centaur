@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor dimension should be within a standard limit (Rule 19)
+# input tensor is either empty or its minimum value does not exceed its maximum value (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 8)) if n else
-          And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 8))
+    s.add(Not(Or((Or([And(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) == 0) for i in range(6)])), Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1))) if n else
+          Or((Or([And(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) == 0) for i in range(6)])), Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1)))
 )
 
 def rule_19_func(arg1, solver=None, neg=False):
@@ -25,14 +25,20 @@ def rule_19_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 19
-        rule_19(solver, {'arg1_ndim': arg1_ndim})
+        rule_19(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_19(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_19(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

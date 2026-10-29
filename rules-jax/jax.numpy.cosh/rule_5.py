@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scalar input should be within a range to prevent float32 overflow (Rule 5)
+# Scalar input must be within reasonable bounds to prevent floating-point overflow (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -88, v["arg1_value"] <= 88)) if n else
-          And(v["arg1_value"] >= -88, v["arg1_value"] <= 88))
+    s.add(Not(And(v["arg1_value"] >= -710, v["arg1_value"] <= 710)) if n else
+          And(v["arg1_value"] >= -710, v["arg1_value"] <= 710))
 )
 
 def rule_5_func(arg1, solver=None, neg=False):

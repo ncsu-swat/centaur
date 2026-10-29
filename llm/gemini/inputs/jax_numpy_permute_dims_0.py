@@ -4,73 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def permute_dims_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32, transpose axes
+    # Input 1: 0-D scalar array
+    a = np.array(42.0, dtype=np.float32)
+    axes = ()
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
+
+    # Input 2: 1-D array
+    a = np.array([1, 2, 3, 4], dtype=np.int32)
+    axes = (0,)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
+
+    # Input 3: 2-D float array, standard transpose
     a = np.random.randn(3, 5).astype(np.float32)
     axes = (1, 0)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
 
-    # Input 2: 3D int32, axes permutation (0, 2, 1)
-    a = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int32)
-    axes = (0, 2, 1)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 3D float64, cyclic permutation (2, 0, 1)
-    a = np.random.randn(4, 5, 6).astype(np.float64)
-    axes = (2, 0, 1)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 4D uint8, complete reverse (3, 2, 1, 0)
-    a = np.random.randint(0, 256, size=(2, 2, 3, 3)).astype(np.uint8)
-    axes = (3, 2, 1, 0)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 1D bool, identity permute (0,)
-    a = np.random.choice([True, False], size=(10,)).astype(bool)
-    axes = (0,)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 5D float32, complex permute (4, 0, 2, 1, 3)
-    a = np.random.randn(2, 3, 2, 4, 2).astype(np.float32)
-    axes = (4, 0, 2, 1, 3)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 2D complex64, identity (0, 1)
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
+    # Input 4: 2-D boolean array, identity permutation
+    a = np.array([[True, False], [False, True]], dtype=np.bool_)
     axes = (0, 1)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
 
-    # Input 8: 3D int16, axes permutation (1, 2, 0)
-    a = np.random.randint(-100, 100, size=(3, 4, 5)).astype(np.int16)
+    # Input 5: 3-D int64 array, cyclic shift
+    a = np.arange(24, dtype=np.int64).reshape((2, 3, 4))
     axes = (1, 2, 0)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
 
-    # Input 9: 4D float16, pairwise swap (1, 0, 3, 2)
-    a = np.random.randn(2, 2, 4, 4).astype(np.float16)
-    axes = (1, 0, 3, 2)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3-D float64 array, reverse axes
+    a = np.random.randn(4, 5, 6).astype(np.float64)
+    axes = (2, 1, 0)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
 
-    # Input 10: 6D int64, complete reverse (5, 4, 3, 2, 1, 0)
-    a = np.random.randint(-1000, 1000, size=(2, 2, 2, 2, 2, 2)).astype(np.int64)
+    # Input 7: 4-D complex64 array
+    a = (np.random.randn(2, 3, 4, 5) + 1j * np.random.randn(2, 3, 4, 5)).astype(
+        np.complex64
+    )
+    axes = (3, 0, 2, 1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
+
+    # Input 8: 4-D uint8 array
+    a = np.random.randint(0, 256, size=(1, 8, 16, 3), dtype=np.uint8)
+    axes = (0, 3, 1, 2)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
+
+    # Input 9: 5-D float32 array
+    a = np.random.randn(2, 2, 3, 2, 4).astype(np.float32)
+    axes = (4, 3, 2, 1, 0)
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
+
+    # Input 10: 6-D int16 array with singleton dimensions
+    a = np.ones((1, 2, 1, 3, 1, 4), dtype=np.int16)
     axes = (5, 4, 3, 2, 1, 0)
-    input_dict = {"a": a, "axes": axes}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "axes": axes}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.permute_dims"] = permute_dims_inputs()
 

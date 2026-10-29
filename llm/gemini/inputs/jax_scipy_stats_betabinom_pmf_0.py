@@ -4,93 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def betabinom_pmf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D float32 arrays
-    k = np.array([0, 1, 2, 3], dtype=np.float32)
-    n = np.array([3, 3, 3, 3], dtype=np.float32)
-    a = np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32)
-    b = np.array([3.0, 3.0, 3.0, 3.0], dtype=np.float32)
-    loc = np.array([0, 0, 0, 0], dtype=np.float32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 1: 0-D scalar-like arrays
+    input_dict = {
+        "k": np.array(2, dtype=np.int32),
+        "n": np.array(5, dtype=np.int32),
+        "a": np.array(2.0, dtype=np.float32),
+        "b": np.array(3.0, dtype=np.float32),
+        "loc": np.array(0, dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar arrays (0D)
-    k = np.array(2, dtype=np.int32)
-    n = np.array(5, dtype=np.int32)
-    a = np.array(1.5, dtype=np.float32)
-    b = np.array(2.5, dtype=np.float32)
-    loc = np.array(0, dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 2: 1-D arrays with float32
+    input_dict = {
+        "k": np.array([0, 1, 2, 3], dtype=np.float32),
+        "n": np.array([3, 3, 3, 3], dtype=np.float32),
+        "a": np.array([1.5, 2.0, 2.5, 3.0], dtype=np.float32),
+        "b": np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32),
+        "loc": np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D arrays with float64
-    k = np.array([[1, 2], [0, 3]], dtype=np.float64)
-    n = np.array([[4, 4], [4, 4]], dtype=np.float64)
-    a = np.array([[2.0, 3.0], [1.5, 2.5]], dtype=np.float64)
-    b = np.array([[1.0, 1.0], [2.0, 2.0]], dtype=np.float64)
-    loc = np.array([[0, 0], [0, 0]], dtype=np.float64)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 3: 2-D arrays with broadcasting
+    input_dict = {
+        "k": np.array([[0, 1, 2], [1, 2, 3]], dtype=np.int32),
+        "n": np.array([[5], [10]], dtype=np.int32),
+        "a": np.array([1.0, 2.0, 3.0], dtype=np.float32),
+        "b": np.array([[2.0]], dtype=np.float32),
+        "loc": np.array([[0]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Broadcasting shapes
-    k = np.array([1, 2, 3], dtype=np.int32)
-    n = np.array([[5], [10]], dtype=np.int32)
-    a = np.array([1.5], dtype=np.float32)
-    b = np.array([2.0], dtype=np.float32)
-    loc = np.array([0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 4: float64 precision with non-zero location offset
+    input_dict = {
+        "k": np.array([5.0, 6.0, 7.0], dtype=np.float64),
+        "n": np.array([10.0, 10.0, 10.0], dtype=np.float64),
+        "a": np.array([0.5, 1.0, 2.0], dtype=np.float64),
+        "b": np.array([0.5, 1.0, 2.0], dtype=np.float64),
+        "loc": np.array([5.0, 5.0, 5.0], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Non-zero loc parameter
-    k = np.array([2, 3, 4], dtype=np.float32)
-    n = np.array([5, 5, 5], dtype=np.float32)
-    a = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    b = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    loc = np.array([1, 1, 1], dtype=np.float32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 5: 3-D arrays
+    input_dict = {
+        "k": np.ones((2, 3, 4), dtype=np.int32) * 2,
+        "n": np.ones((2, 3, 4), dtype=np.int32) * 5,
+        "a": np.full((2, 3, 4), 1.2, dtype=np.float32),
+        "b": np.full((2, 3, 4), 3.4, dtype=np.float32),
+        "loc": np.zeros((2, 3, 4), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Multi-dimensional, mixed types (integer and float)
-    k = np.ones((2, 3, 2), dtype=np.int32)
-    n = np.ones((2, 3, 2), dtype=np.int32) * 5
-    a = np.full((2, 3, 2), 0.5, dtype=np.float32)
-    b = np.full((2, 3, 2), 1.5, dtype=np.float32)
-    loc = np.zeros((2, 3, 2), dtype=np.float32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 6: Negative location parameter
+    input_dict = {
+        "k": np.array([-1, 0, 1], dtype=np.int32),
+        "n": np.array([4, 4, 4], dtype=np.int32),
+        "a": np.array([2.0, 2.0, 2.0], dtype=np.float32),
+        "b": np.array([5.0, 5.0, 5.0], dtype=np.float32),
+        "loc": np.array([-2, -2, -2], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Values of k that exceed limits (should still be valid to evaluate, yielding 0)
-    k = np.array([-1, 0, 1, 10], dtype=np.float32)
-    n = np.array([5, 5, 5, 5], dtype=np.float32)
-    a = np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32)
-    b = np.array([3.0, 3.0, 3.0, 3.0], dtype=np.float32)
-    loc = np.array([0, 0, 0, 0], dtype=np.float32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 7: Values outside support (k < loc or k > n + loc)
+    input_dict = {
+        "k": np.array([10.0, -5.0, 20.0], dtype=np.float32),
+        "n": np.array([5.0, 5.0, 5.0], dtype=np.float32),
+        "a": np.array([1.0, 1.0, 1.0], dtype=np.float32),
+        "b": np.array([1.0, 1.0, 1.0], dtype=np.float32),
+        "loc": np.array([0.0, 0.0, 0.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: High dimensions with random input satisfying constraints
-    k = np.random.randint(0, 5, size=(2, 1, 3)).astype(np.float32)
-    n = np.array([[[5, 6, 7]]], dtype=np.float32)
-    a = np.array([2.5], dtype=np.float32)
-    b = np.array([3.5], dtype=np.float32)
-    loc = np.array([0], dtype=np.float32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 8: Boundary case n = 0
+    input_dict = {
+        "k": np.array([[0, 0], [0, 0]], dtype=np.int32),
+        "n": np.array([[0, 0], [0, 0]], dtype=np.int32),
+        "a": np.array([[2.5, 1.5], [0.5, 3.5]], dtype=np.float64),
+        "b": np.array([[1.0, 1.0], [2.0, 2.0]], dtype=np.float64),
+        "loc": np.array([[0, 0], [0, 0]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small positive parameters (a, b near zero)
-    k = np.array([1], dtype=np.int32)
-    n = np.array([2], dtype=np.int32)
-    a = np.array([0.01], dtype=np.float32)
-    b = np.array([0.01], dtype=np.float32)
-    loc = np.array([0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 9: 2-D k with 1-D size-1 broadcasting parameters
+    input_dict = {
+        "k": np.array([[1, 2], [3, 4]], dtype=np.float32),
+        "n": np.array([5], dtype=np.float32),
+        "a": np.array([3.0], dtype=np.float32),
+        "b": np.array([4.0], dtype=np.float32),
+        "loc": np.array([1.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger numbers
-    k = np.array([50], dtype=np.int32)
-    n = np.array([100], dtype=np.int32)
-    a = np.array([10.0], dtype=np.float64)
-    b = np.array([20.0], dtype=np.float64)
-    loc = np.array([0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "a": a, "b": b, "loc": loc})
+    # Input 10: Large shape parameters a and b with int64 / float64
+    input_dict = {
+        "k": np.array([5, 10, 15], dtype=np.int64),
+        "n": np.array([20, 20, 20], dtype=np.int64),
+        "a": np.array([100.0, 200.0, 300.0], dtype=np.float64),
+        "b": np.array([100.0, 200.0, 300.0], dtype=np.float64),
+        "loc": np.array([0, 0, 0], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.betabinom.pmf"] = betabinom_pmf_inputs()
 

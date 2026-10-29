@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if base tensor contains negative values, exponent tensor should be of integer dtype to avoid complex or undefined results in real operations (Rule 19)
+# negative base values require integer or complex exponent data types (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(If(Select(v["arg1_range"], 0) < 0, And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), True)) if n else
-          If(Select(v["arg1_range"], 0) < 0, And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), True))
+    s.add(Not(If(Select(v["arg1_range"], 0) < 0, Or(v["arg2_dtype"] <= 5, v["arg2_dtype"] >= 9), True)) if n else
+          If(Select(v["arg1_range"], 0) < 0, Or(v["arg2_dtype"] <= 5, v["arg2_dtype"] >= 9), True))
 )
 
 def rule_19_func(arg1, arg2, solver=None, neg=False):

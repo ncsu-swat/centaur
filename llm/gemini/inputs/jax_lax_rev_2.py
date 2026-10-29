@@ -4,65 +4,98 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_rev_inputs():
+
+def rev_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, reverse dim 0
-    operand = np.array([-1.0, 2.0, -3.0, 4.0, -5.0], dtype=np.float32)
+    # Input 1: 1D float32, reverse along axis 0
+    operand = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
     dimensions = (0,)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 2: 2D int32 array, reverse dim 0
+    # Input 2: 2D int32, reverse along axis 0
     operand = np.arange(12, dtype=np.int32).reshape(3, 4)
     dimensions = (0,)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 3: 2D float64 array, reverse dim 1
-    operand = np.random.randn(3, 4).astype(np.float64)
+    # Input 3: 2D float64, reverse along axis 1
+    operand = np.random.randn(4, 5).astype(np.float64)
     dimensions = (1,)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 4: 2D float32 array, reverse both dims
-    operand = np.random.randn(2, 5).astype(np.float32)
+    # Input 4: 2D int64, reverse along both axes (0, 1)
+    operand = np.arange(-6, 6, dtype=np.int64).reshape(3, 4)
     dimensions = (0, 1)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 5: 3D int16 array, reverse dim 2
-    operand = np.arange(24, dtype=np.int16).reshape(2, 3, 4)
-    dimensions = (2,)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
-
-    # Input 6: 3D float32 array, reverse dims 0 and 2
-    operand = np.random.randn(3, 3, 3).astype(np.float32)
+    # Input 5: 3D bool, reverse along axes (0, 2)
+    operand = np.random.choice([True, False], size=(2, 3, 4))
     dimensions = (0, 2)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 7: 4D float32 array, reverse dims 1 and 3
-    operand = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    # Input 6: 3D float32, reverse no axes (empty tuple)
+    operand = np.random.randn(2, 2, 2).astype(np.float32)
+    dimensions = ()
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
+
+    # Input 7: 4D complex64, reverse along axes (1, 3)
+    operand = (
+        np.random.randn(2, 3, 2, 4) + 1j * np.random.randn(2, 3, 2, 4)
+    ).astype(np.complex64)
     dimensions = (1, 3)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 8: 2D bool array, reverse dim 0
-    operand = np.array([[True, False], [False, True], [True, True]], dtype=np.bool_)
+    # Input 8: 1D int8 with negative values, reverse along axis 0
+    operand = np.array([-10, -5, 0, 5, 10], dtype=np.int8)
     dimensions = (0,)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 9: 5D float32 array, reverse all dims
-    operand = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    dimensions = (0, 1, 2, 3, 4)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    # Input 9: 5D uint8, reverse along axes (0, 2, 4)
+    operand = np.random.randint(0, 256, size=(2, 1, 3, 1, 2), dtype=np.uint8)
+    dimensions = (0, 2, 4)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
-    # Input 10: 1D int64 array, reverse dim 0
-    operand = np.arange(-10, 10, dtype=np.int64)
-    dimensions = (0,)
-    list_of_inputs.append({"operand": operand, "dimensions": dimensions})
+    # Input 10: 3D float16, reverse along axis 1
+    operand = np.random.randn(3, 5, 2).astype(np.float16)
+    dimensions = (1,)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
+
+    # Input 11: 2D float32 with inf and nan values, reverse along axis (0, 1)
+    operand = np.array(
+        [[np.nan, np.inf], [-np.inf, 0.0]], dtype=np.float32
+    )
+    dimensions = (0, 1)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "dimensions": dimensions})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.lax.rev_2"] = jax_lax_rev_inputs()
+
+generated_inputs["jax.lax.rev_2"] = rev_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

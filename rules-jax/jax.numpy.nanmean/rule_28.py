@@ -7,16 +7,18 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# all dimensions specified in the axis tuple must be valid axes of the input tensor (Rule 28)
+# valid output dtype with valid tuple axis elements and boolean where mask (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_length"] > 0, (And([Implies(i < (v["arg2_length"] - 1 + 1), (And(-1 * v["arg1_ndim"] <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= v["arg1_ndim"] - 1))) for i in range(6)])))) if n else
-          And(v["arg2_length"] > 0, (And([Implies(i < (v["arg2_length"] - 1 + 1), (And(-1 * v["arg1_ndim"] <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= v["arg1_ndim"] - 1))) for i in range(6)]))))
+    s.add(Not(And(And(And(v["arg4_dtype"] == 0, 0 <= v["arg3_value"]), v["arg3_value"] <= 10), (And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) <= v["arg1_ndim"] - 1)) for i in range(6)])))) if n else
+          And(And(And(v["arg4_dtype"] == 0, 0 <= v["arg3_value"]), v["arg3_value"] <= 10), (And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) <= v["arg1_ndim"] - 1)) for i in range(6)]))))
 )
 
-def rule_28_func(arg1, arg2, solver=None, neg=False):
+def rule_28_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
@@ -24,23 +26,31 @@ def rule_28_func(arg1, arg2, solver=None, neg=False):
             return False
         if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
+        if not (isinstance(arg3, torch.dtype) or isinstance(arg3, tf.dtypes.DType) or isinstance(arg3, np.dtype)):
+            return False
+        if not isinstance(arg4, np.ndarray):
+            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg2_length = Int('arg2_length')
         arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg3_value = Int('arg3_value')
+        arg4_dtype = Int('arg4_dtype')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_length == len(arg2))
         for i in range(len(arg2)):
             arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg3_value == list_of_available_dtypes.index(np_dtype(arg3)))
+        solver.add(arg4_dtype == list_of_available_dtypes.index(arg4.dtype))
 
         # Constraints for rule 28
-        rule_28(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_28(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values, 'arg3_value': arg3_value, 'arg4_dtype': arg4_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_28(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_28(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values'], 'arg3_value': arg3['value'], 'arg4_dtype': arg4['dtype']}, neg)

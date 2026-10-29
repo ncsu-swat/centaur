@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tuple of floats representing input should not be empty (Rule 17)
+# input tuple of floats must contain at least one element (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
     s.add(Not(v["arg1_length"] > 0) if n else

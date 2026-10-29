@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Complex to non-complex casting restriction for safety (Rule 27)
+# safe casting from dtype to string dtype specifiers depends on source precision (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), Or(v["arg2_value"] == 9, v["arg2_value"] == 10), True)) if n else
-          If(Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), Or(v["arg2_value"] == 9, v["arg2_value"] == 10), True))
+    s.add(Not(If(v["arg2_value"] == 38, And(v["arg1_value"] <= 7, v["arg1_value"] >= 0), And(v["arg2_value"] == 39, v["arg1_value"] <= 6))) if n else
+          If(v["arg2_value"] == 38, And(v["arg1_value"] <= 7, v["arg1_value"] >= 0), And(v["arg2_value"] == 39, v["arg1_value"] <= 6)))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_27_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_value = Int('arg2_value')
+        arg1_value = Int('arg1_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_27(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_27(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

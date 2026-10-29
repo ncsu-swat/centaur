@@ -4,63 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def argmax_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, axis=0, keepdims=False
-    a = np.array([1.0, 3.0, 5.0, 4.0, 2.0], dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, axis=0, keepdims=False
+    a = np.array([1.0, 3.0, 2.0, 5.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(0), "keepdims": False})
+    )
 
-    # Input 2: 2D array, float32, axis=0, keepdims=True
-    a = np.array([[1.0, 3.0, 2.0], [5.0, 4.0, 1.0]], dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D array, axis=1, keepdims=True
+    a = np.array([[1, 5, 2], [7, 3, 9]], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(1), "keepdims": True})
+    )
 
-    # Input 3: 2D array, int32, axis=1, keepdims=False
-    a = np.array([[10, 20, 30], [60, 50, 40]], dtype=np.int32)
-    input_dict = {"a": a, "axis": 1, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array with negative axis, keepdims=False
+    a = np.random.randn(4, 5).astype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(-1), "keepdims": False})
+    )
 
-    # Input 4: 3D array, float64, axis=2, keepdims=True
-    a = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {"a": a, "axis": 2, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D array, axis=0, keepdims=True
+    a = np.random.randint(-10, 10, size=(2, 3, 4), dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(0), "keepdims": True})
+    )
 
-    # Input 5: 4D array, int64, axis=-1, keepdims=False
-    a = np.random.randint(-100, 100, size=(2, 2, 3, 3)).astype(np.int64)
-    input_dict = {"a": a, "axis": -1, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array, axis=2, keepdims=False
+    a = np.random.randn(3, 4, 5).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(2), "keepdims": False})
+    )
 
-    # Input 6: 2D array with duplicate max values, float32, axis=1, keepdims=True
-    a = np.array([[1.5, 3.5, 3.5], [2.0, 2.0, 1.0]], dtype=np.float32)
-    input_dict = {"a": a, "axis": 1, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D array, axis=-2, keepdims=True
+    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(-2), "keepdims": True})
+    )
 
-    # Input 7: 1D array with negative values, int32, axis=0, keepdims=False
-    a = np.array([-10, -5, -2, -50, -1], dtype=np.int32)
-    input_dict = {"a": a, "axis": 0, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Boolean array, axis=0, keepdims=False
+    a = np.array([[False, True], [True, False]], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(0), "keepdims": False})
+    )
 
-    # Input 8: 3D array, float32, axis=0, keepdims=False
-    a = np.random.uniform(-1.0, 1.0, (3, 3, 3)).astype(np.float32)
-    input_dict = {"a": a, "axis": 0, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Array with duplicates to test tie-breaking (first occurrence), keepdims=True
+    a = np.array([2, 3, 3, 1], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(0), "keepdims": True})
+    )
 
-    # Input 9: 2D array, boolean, axis=0, keepdims=True
-    a = np.array([[True, False, True], [False, False, True]], dtype=bool)
-    input_dict = {"a": a, "axis": 0, "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Array with negative numbers, axis=1, keepdims=False
+    a = np.array([[-5.0, -2.0, -10.0], [-1.0, -8.0, -3.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(1), "keepdims": False})
+    )
 
-    # Input 10: 5D array, float32, axis=3, keepdims=False
-    a = np.random.randn(2, 2, 2, 4, 2).astype(np.float32)
-    input_dict = {"a": a, "axis": 3, "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 5D array, axis=3, keepdims=True
+    a = np.ones((2, 2, 2, 3, 2), dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(3), "keepdims": True})
+    )
+
+    # Input 11: 1D array with single element, axis=-1, keepdims=False
+    a = np.array([42], dtype=np.int16)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis": int(-1), "keepdims": False})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.argmax"] = argmax_inputs()
 

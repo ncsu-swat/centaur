@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Valid axis range for tensor argsort (Rule 21)
+# valid axis range for a 3-dimensional tensor (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] >= 1, v["arg2_value"] + v["arg1_ndim"] >= 0), v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(And(v["arg1_ndim"] >= 1, v["arg2_value"] + v["arg1_ndim"] >= 0), v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True)) if n else
+          If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):

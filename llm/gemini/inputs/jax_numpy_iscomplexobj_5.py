@@ -4,44 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def iscomplexobj_inputs():
     list_of_inputs = []
 
-    # Input 1: List of real integers
-    list_of_inputs.append({"x": [1, 2, 3, 4]})
+    # Input 1: List of integers
+    input_dict = {"x": [1, 2, 3, 4]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: List of complex numbers
-    list_of_inputs.append({"x": [1+2j, -3-4j]})
+    # Input 2: List of negative integers
+    input_dict = {"x": [-10, -20, -30]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: List of real floats
-    list_of_inputs.append({"x": [1.0, -2.5, 3.14]})
+    # Input 3: List of floats
+    input_dict = {"x": [1.5, -2.3, 0.0, 4.7]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: List containing a mix of real and complex numbers
-    list_of_inputs.append({"x": [1.0, 2j, -3.5]})
+    # Input 4: List of complex numbers
+    input_dict = {"x": [1 + 2j, 3 - 4j, -5j]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Empty list
-    list_of_inputs.append({"x": []})
+    # Input 5: Mixed list containing real and complex numbers
+    input_dict = {"x": [0, 1.5, -2 + 3j]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D list of complex numbers
-    list_of_inputs.append({"x": [[1+1j, 2j], [3, 4-2j]]})
+    # Input 6: List of booleans
+    input_dict = {"x": [True, False, True]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D list of real integers
-    list_of_inputs.append({"x": [[1, -2], [3, 4]]})
+    # Input 7: Nested 2D list of integers
+    input_dict = {"x": [[1, 2], [3, 4]]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: List of complex numbers with zero imaginary parts
-    list_of_inputs.append({"x": [1+0j, -2.5+0j]})
+    # Input 8: Nested 2D list of complex numbers
+    input_dict = {"x": [[1 + 0j, 2 - 1j], [-3j, 4.0 + 0j]]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D nested list of complex numbers
-    list_of_inputs.append({"x": [[[1j, -2j]], [[3j, 4j]]]})
+    # Input 9: Nested 3D list of floats
+    input_dict = {"x": [[[1.0, -2.0], [3.0, 4.0]], [[-5.0, 6.0], [7.0, -8.0]]]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: List of boolean values
-    list_of_inputs.append({"x": [True, False, True]})
+    # Input 10: Nested 3D list with complex elements
+    input_dict = {"x": [[[0j, 1.0], [2.0, 3.0]], [[4.0, 5.0], [6.0, 7.0 + 1j]]]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: List of numpy complex types
-    list_of_inputs.append({"x": [np.complex64(1+1j), np.complex64(-2)]})
+    # Input 11: Empty list
+    input_dict = {"x": []}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

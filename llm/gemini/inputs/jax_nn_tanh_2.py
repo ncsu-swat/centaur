@@ -4,59 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_nn_tanh_inputs():
+
+def tanh_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    input_dict = {"x": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Standard negative float
-    input_dict = {"x": -1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero float
+    # Input 1: zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large positive float
+    # Input 2: positive unit
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: negative unit
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: small positive float
+    input_dict = {"x": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: small negative float
+    input_dict = {"x": -0.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: moderately large positive float
+    input_dict = {"x": 5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: moderately large negative float
+    input_dict = {"x": -5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: very small float close to zero
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: very small negative float close to zero
+    input_dict = {"x": -1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: large positive float (saturating tanh)
     input_dict = {"x": 50.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large negative float
+    # Input 11: large negative float (saturating tanh)
     input_dict = {"x": -50.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small positive float
-    input_dict = {"x": 1e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Small negative float
-    input_dict = {"x": -1e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Floating point representation of e
-    input_dict = {"x": 2.71828}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Floating point representation of -e
-    input_dict = {"x": -2.71828}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Float value between 0 and 1
-    input_dict = {"x": 0.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11: Float value between -1 and 0
-    input_dict = {"x": -0.5}
+    # Input 12: mathematical constant pi
+    input_dict = {"x": float(np.pi)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.nn.tanh_2"] = jax_nn_tanh_inputs()
+
+generated_inputs["jax.nn.tanh_2"] = tanh_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

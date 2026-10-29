@@ -4,54 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def arctan_inputs():
     list_of_inputs = []
-    
+
     # Input 1: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 2: Positive float (1.0)
+
+    # Input 2: Positive 1.0 (pi/4)
     input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 3: Negative float (-1.0)
+
+    # Input 3: Negative 1.0 (-pi/4)
     input_dict = {"x": -1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 4: Large positive float
+
+    # Input 4: Large positive value
     input_dict = {"x": 1e5}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 5: Large negative float
+
+    # Input 5: Large negative value
     input_dict = {"x": -1e5}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 6: Very small positive float
+
+    # Input 6: Small positive value near zero
     input_dict = {"x": 1e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 7: Very small negative float
+
+    # Input 7: Small negative value near zero
     input_dict = {"x": -1e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 8: Positive infinity
-    input_dict = {"x": float('inf')}
+
+    # Input 8: Positive square root of 3 (pi/3)
+    input_dict = {"x": float(np.sqrt(3.0))}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 9: Negative infinity
-    input_dict = {"x": float('-inf')}
+
+    # Input 9: Positive infinity
+    input_dict = {"x": float("inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 10: NaN (Not a Number)
-    input_dict = {"x": float('nan')}
+
+    # Input 10: Negative infinity
+    input_dict = {"x": float("-inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
-    
-    # Input 11: Common value approximation (sqrt(3))
-    input_dict = {"x": 1.7320508}
+
+    # Input 11: Arbitrary negative float
+    input_dict = {"x": -2.71828}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Arbitrary positive float
+    input_dict = {"x": 3.1415926535}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

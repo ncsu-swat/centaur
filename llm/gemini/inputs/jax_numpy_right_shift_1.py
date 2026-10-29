@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def right_shift_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D arrays, int32
-    x1 = np.array([2, 4, 8, 16, 32], dtype=np.int32)
-    x2 = np.array([1, 1, 2, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 1: 1D int32 arrays
+    x1 = np.array([1, 2, 4, 8, 16], dtype=np.int32)
+    x2 = np.array([1, 1, 1, 1, 1], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D arrays, int32
-    x1 = np.array([[10, 20], [30, 40]], dtype=np.int32)
-    x2 = np.array([[1, 2], [1, 2]], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 3: Broadcasting 1D array with a scalar-like 0D array, int32
-    x1 = np.array([128, 64, 32], dtype=np.int32)
-    x2 = np.array(2, dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 4: Broadcasting 3D array and 1D array, int32
-    x1 = np.ones((2, 3, 4), dtype=np.int32) * 120
+    # Input 2: 1D int32 arrays with varying shift amounts
+    x1 = np.array([16, 32, 64, 128], dtype=np.int32)
     x2 = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: Large int64 elements with shift values, int64
-    x1 = np.array([2**40, 2**45, 2**50], dtype=np.int64)
-    x2 = np.array([10, 20, 30], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 3: Scalar tensors (0D)
+    x1 = np.array(64, dtype=np.int32)
+    x2 = np.array(3, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: 0D arrays (scalars), int32
-    x1 = np.array(255, dtype=np.int32)
-    x2 = np.array(4, dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 4: 2D int32 arrays with same shape
+    x1 = np.array([[8, 16], [32, 64]], dtype=np.int32)
+    x2 = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: Higher-dimensional 4D arrays, int32
-    x1 = np.random.randint(0, 1000, size=(2, 2, 2, 2), dtype=np.int32)
-    x2 = np.random.randint(0, 5, size=(2, 2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 5: 2D int32 broadcasted with 1D int32
+    x1 = np.array([[16, 32, 64], [128, 200, 255]], dtype=np.int32)
+    x2 = np.array([1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Mixed dimensions row-wise broadcasting, int32
-    x1 = np.array([[1024, 2048, 4096]], dtype=np.int32)
-    x2 = np.array([[2], [4]], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: 3D int64 arrays
+    x1 = np.arange(24, dtype=np.int64).reshape((2, 3, 4)) * 4
+    x2 = np.ones((2, 3, 4), dtype=np.int64) * 2
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Zero shifts (should keep original values), int32
-    x1 = np.array([5, 10, 15], dtype=np.int32)
-    x2 = np.array([0, 0, 0], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: Broadcasting (2, 1, 3) and (1, 4, 3)
+    x1 = np.random.randint(0, 100, size=(2, 1, 3), dtype=np.int32)
+    x2 = np.random.randint(0, 4, size=(1, 4, 3), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Boundary values - shifting to 0, int32
-    x1 = np.array([1, 3, 7], dtype=np.int32)
-    x2 = np.array([4, 4, 4], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: Signed negative values (int32)
+    x1 = np.array([-16, -32, -64, -128], dtype=np.int32)
+    x2 = np.array([1, 2, 1, 2], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: Empty arrays, int32
-    x1 = np.array([], dtype=np.int32).reshape(0, 5)
-    x2 = np.array([], dtype=np.int32).reshape(0, 5)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 9: int32 arrays with 0 shift
+    x1 = np.array([10, 20, 30, 40], dtype=np.int32)
+    x2 = np.array([0, 0, 0, 0], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 4D int32 array broadcasted with 0D scalar tensor
+    x1 = np.random.randint(0, 64, size=(2, 2, 3, 2), dtype=np.int32)
+    x2 = np.array(1, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: int64 arrays with larger shift amounts
+    x1 = np.array([1024, 2048, 4096, 8192], dtype=np.int64)
+    x2 = np.array([5, 6, 7, 8], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.right_shift_1"] = right_shift_inputs()
 

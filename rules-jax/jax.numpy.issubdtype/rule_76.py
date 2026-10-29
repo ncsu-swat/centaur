@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if supertype is np.float64, then subtype must be a floating-point type (Rule 76)
+# float64 dtype cannot subtype narrower floating-point dtypes float16 or float32 (Rule 76)
 
 rule_76 = lambda s, v, n=False: (
-    s.add(Not(If((v["arg2_value"] == 8), (Or([And(i < (8 + 1), v["arg1_value"] == i) for i in range(6)])), (And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 12), 0 <= v["arg2_value"]), v["arg2_value"] <= 12)))) if n else
-          If((v["arg2_value"] == 8), (Or([And(i < (8 + 1), v["arg1_value"] == i) for i in range(6)])), (And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 12), 0 <= v["arg2_value"]), v["arg2_value"] <= 12))))
+    s.add(Not(If(v["arg1_value"] == 8, And(v["arg2_value"] != 6, v["arg2_value"] != 7), True)) if n else
+          If(v["arg1_value"] == 8, And(v["arg2_value"] != 6, v["arg2_value"] != 7), True))
 )
 
 def rule_76_func(arg1, arg2, solver=None, neg=False):

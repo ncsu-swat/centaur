@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# integer axis is within valid range of input tensor dimensions (Rule 1)
+# integer axis is within valid insertion range (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] <= v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] + 1 >= 0)) if n else
-          And(v["arg2_value"] <= v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] + 1 >= 0))
+    s.add(Not(And(0 - v["arg1_ndim"] - 1 <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"])) if n else
+          And(0 - v["arg1_ndim"] - 1 <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"]))
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):

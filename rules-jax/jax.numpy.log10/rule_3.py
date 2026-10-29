@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# all shape dimensions of the input tensor must be positive if it is not a scalar (Rule 3)
+# all dimensions of the input tensor should have positive size (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_ndim"] == 0, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]))) if n else
-          Or(v["arg1_ndim"] == 0, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])))
+    s.add(Not(And(v["arg1_ndim"] >= 0, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]))) if n else
+          And(v["arg1_ndim"] >= 0, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])))
 )
 
 def rule_3_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_3_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 3
-        rule_3(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_3(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_3(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_3(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

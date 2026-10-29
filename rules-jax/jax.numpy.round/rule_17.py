@@ -7,35 +7,40 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# max value of tensor must be greater than or equal to min value (Rule 17)
+# rounding a 1D tensor with non-negative decimals and positive length (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0), True)) if n else
-          If(v["arg1_ndim"] > 0, Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0), True))
+    s.add(Not(And(And(v["arg1_ndim"] == 1, v["arg2_value"] >= 0), Select(v["arg1_shape"], 0) > 0)) if n else
+          And(And(v["arg1_ndim"] == 1, v["arg2_value"] >= 0), Select(v["arg1_shape"], 0) > 0))
 )
 
-def rule_17_func(arg1, solver=None, neg=False):
+def rule_17_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim})
+        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

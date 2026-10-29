@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if both dtype arguments are identical, they must be within the valid dtype index range (Rule 41)
+# int16 dtype subtyping bounds within integer family (Rule 41)
 
 rule_41 = lambda s, v, n=False: (
-    s.add(Not(If((v["arg1_value"] == v["arg2_value"]), (And(0 <= v["arg1_value"], v["arg1_value"] <= 12)), True)) if n else
-          If((v["arg1_value"] == v["arg2_value"]), (And(0 <= v["arg1_value"], v["arg1_value"] <= 12)), True))
+    s.add(Not(If(v["arg1_value"] == 2, Or((And(2 <= v["arg2_value"], v["arg2_value"] <= 4)), v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12))) if n else
+          If(v["arg1_value"] == 2, Or((And(2 <= v["arg2_value"], v["arg2_value"] <= 4)), v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12)))
 )
 
 def rule_41_func(arg1, arg2, solver=None, neg=False):

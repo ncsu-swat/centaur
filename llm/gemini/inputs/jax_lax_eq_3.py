@@ -5,49 +5,49 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import copy
-import numpy as np
 
-
-def jax_lax_eq_inputs():
+def lax_eq_inputs():
     list_of_inputs = []
 
     # Input 1: Equal positive floats
     list_of_inputs.append({"x": 1.0, "y": 1.0})
 
     # Input 2: Unequal positive floats
-    list_of_inputs.append({"x": 1.0, "y": 2.5})
+    list_of_inputs.append({"x": 2.5, "y": 3.75})
 
-    # Input 3: Equal negative floats
-    list_of_inputs.append({"x": -3.14, "y": -3.14})
+    # Input 3: Negative and positive float
+    list_of_inputs.append({"x": -1.5, "y": 1.5})
 
-    # Input 4: Unequal negative floats
-    list_of_inputs.append({"x": -0.5, "y": -1.5})
+    # Input 4: Equal negative floats
+    list_of_inputs.append({"x": -42.0, "y": -42.0})
 
-    # Input 5: Zeroes
-    list_of_inputs.append({"x": 0.0, "y": 0.0})
+    # Input 5: Positive zero and negative zero
+    list_of_inputs.append({"x": 0.0, "y": -0.0})
 
-    # Input 6: Zero and positive float
-    list_of_inputs.append({"x": 0.0, "y": 0.0001})
+    # Input 6: Very large floats
+    list_of_inputs.append({"x": 1e20, "y": 1e20})
 
-    # Input 7: Large values
-    list_of_inputs.append({"x": 1e9, "y": 1e9})
+    # Input 7: Very small floats
+    list_of_inputs.append({"x": 1e-15, "y": 2e-15})
 
-    # Input 8: Very small values
-    list_of_inputs.append({"x": 1e-9, "y": -1e-9})
-
-    # Input 9: Infinity
+    # Input 8: Positive infinity
     list_of_inputs.append({"x": float("inf"), "y": float("inf")})
 
-    # Input 10: Negative infinity and positive infinity
-    list_of_inputs.append({"x": float("-inf"), "y": float("inf")})
+    # Input 9: Negative infinity vs finite float
+    list_of_inputs.append({"x": float("-inf"), "y": -1e30})
 
-    # Input 11: NaN
+    # Input 10: NaN comparisons
     list_of_inputs.append({"x": float("nan"), "y": float("nan")})
 
-    return list_of_inputs
+    # Input 11: Zero vs small positive float
+    list_of_inputs.append({"x": 0.0, "y": 1e-7})
 
+    # Input 12: High-precision differing floats
+    list_of_inputs.append({"x": 3.141592653589793, "y": 3.141592653589794})
 
-generated_inputs["jax.lax.eq_3"] = jax_lax_eq_inputs()
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
+generated_inputs["jax.lax.eq_3"] = lax_eq_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

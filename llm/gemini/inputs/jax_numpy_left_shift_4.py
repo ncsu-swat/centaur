@@ -4,68 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def left_shift_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic scalars (int32)
-    x = np.array(5, dtype=np.int32)
-    y = np.array(2, dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 1: Zero shift on zero
+    input_dict = {"x": int(0), "y": int(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D arrays of the same size (int32)
-    x = np.array([1, 2, 3, 4], dtype=np.int32)
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 2: Shift positive integer by 1
+    input_dict = {"x": int(1), "y": int(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Broadcasting 1D array and scalar (int64)
-    x = np.array([10, 20, 30], dtype=np.int64)
-    y = np.array(3, dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 3: Shift positive integer by multiple bits
+    input_dict = {"x": int(2), "y": int(3)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Broadcasting scalar and 1D array (int16)
-    x = np.array(7, dtype=np.int16)
-    y = np.array([0, 1, 2, 3], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 4: Negative integer shifted by 2
+    input_dict = {"x": int(-1), "y": int(2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D arrays (int32)
-    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    y = np.array([[2, 3], [4, 5]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 5: Larger negative integer shifted
+    input_dict = {"x": int(-16), "y": int(4)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative values in x (int32)
-    x = np.array([-1, -5, -10], dtype=np.int32)
-    y = np.array([1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 6: Larger positive integer shifted
+    input_dict = {"x": int(1024), "y": int(5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 8-bit integers (int8)
-    x = np.array([1, 2, 3], dtype=np.int8)
-    y = np.array([1, 2, 3], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 7: Shift odd number
+    input_dict = {"x": int(7), "y": int(10)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Unsigned integers (uint32)
-    x = np.array([15, 30], dtype=np.uint32)
-    y = np.array([2, 4], dtype=np.uint32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 8: Negative integer shifted by 1
+    input_dict = {"x": int(-50), "y": int(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D arrays (int32)
-    x = np.ones((2, 2, 2), dtype=np.int32)
-    y = np.ones((2, 2, 2), dtype=np.int32) * 2
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 9: Non-zero integer shifted by 0
+    input_dict = {"x": int(12345), "y": int(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Broadcasting 2D and 1D arrays (int32)
-    x = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    y = np.array([1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 10: Shift by 15 bits
+    input_dict = {"x": int(3), "y": int(15)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Shift by 0 (int32)
-    x = np.array([12, 34, 56], dtype=np.int32)
-    y = np.array([0, 0, 0], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 11: Negative number shifted by 8 bits
+    input_dict = {"x": int(-100), "y": int(8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Positive number shifted by 6 bits
+    input_dict = {"x": int(42), "y": int(6)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.left_shift_4"] = left_shift_inputs()
 

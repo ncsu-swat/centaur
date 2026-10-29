@@ -4,57 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def eye_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic square float32
-    input_dict = {'N': 3, 'M': 3, 'k': 0, 'dtype': np.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic square identity with float32
+    list_of_inputs.append(
+        {"N": 3, "M": 3, "k": 0, "dtype": np.dtype(np.float32)}
+    )
 
-    # Input 2: Non-square float32
-    input_dict = {'N': 3, 'M': 5, 'k': 0, 'dtype': np.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Rectangular matrix with M > N and positive k offset
+    list_of_inputs.append({"N": 3, "M": 5, "k": 1, "dtype": np.dtype(np.int32)})
 
-    # Input 3: Square int32 with positive diagonal offset
-    input_dict = {'N': 4, 'M': 4, 'k': 1, 'dtype': np.int32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Rectangular matrix with N > M and negative k offset
+    list_of_inputs.append(
+        {"N": 6, "M": 4, "k": -2, "dtype": np.dtype(np.float64)}
+    )
 
-    # Input 4: Square int32 with negative diagonal offset
-    input_dict = {'N': 4, 'M': 4, 'k': -1, 'dtype': np.int32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Boolean identity matrix
+    list_of_inputs.append({"N": 4, "M": 4, "k": 0, "dtype": np.dtype(np.bool_)})
 
-    # Input 5: Rectangular float64 with positive diagonal offset
-    input_dict = {'N': 5, 'M': 3, 'k': 2, 'dtype': np.float64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Offset k larger than M (all zeros result)
+    list_of_inputs.append(
+        {"N": 3, "M": 3, "k": 5, "dtype": np.dtype(np.float32)}
+    )
 
-    # Input 6: Rectangular float64 with negative diagonal offset
-    input_dict = {'N': 3, 'M': 6, 'k': -2, 'dtype': np.float64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Large negative offset k less than -N
+    list_of_inputs.append({"N": 4, "M": 4, "k": -10, "dtype": np.dtype(np.int64)})
 
-    # Input 7: Boolean dtype
-    input_dict = {'N': 3, 'M': 3, 'k': 0, 'dtype': np.bool_}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Single element matrix (1x1)
+    list_of_inputs.append(
+        {"N": 1, "M": 1, "k": 0, "dtype": np.dtype(np.uint8)}
+    )
 
-    # Input 8: Complex64 square matrix
-    input_dict = {'N': 5, 'M': 5, 'k': 0, 'dtype': np.complex64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Complex dtype with offset
+    list_of_inputs.append(
+        {"N": 5, "M": 5, "k": -1, "dtype": np.dtype(np.complex64)}
+    )
 
-    # Input 9: Large dimensions, int64 with offset
-    input_dict = {'N': 100, 'M': 100, 'k': 10, 'dtype': np.int64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Zero-sized dimension N=0
+    list_of_inputs.append(
+        {"N": 0, "M": 4, "k": 0, "dtype": np.dtype(np.float32)}
+    )
 
-    # Input 10: Small 1x1 matrix
-    input_dict = {'N': 1, 'M': 1, 'k': 0, 'dtype': np.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Zero-sized dimension M=0
+    list_of_inputs.append({"N": 4, "M": 0, "k": 1, "dtype": np.dtype(np.int16)})
 
-    # Input 11: Extreme diagonal offset
-    input_dict = {'N': 3, 'M': 3, 'k': 5, 'dtype': np.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Larger matrix with int8
+    list_of_inputs.append(
+        {"N": 10, "M": 12, "k": 3, "dtype": np.dtype(np.int8)}
+    )
+
+    # Input 12: Complex128 dtype
+    list_of_inputs.append(
+        {"N": 2, "M": 6, "k": -1, "dtype": np.dtype(np.complex128)}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.eye_1"] = eye_inputs()
 

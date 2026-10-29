@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor must have a valid boolean, integer, float, or complex dtype (Rule 9)
+# Input tensor must have a valid supported numerical or boolean data type (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
     s.add(Not(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10)) if n else

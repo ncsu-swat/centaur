@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tuple of floats should have a non-negative length (Rule 59)
+# tuple of booleans has length at least 1 (Rule 59)
 
 rule_59 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] >= 0) if n else
-          v["arg1_length"] >= 0)
+    s.add(Not(v["arg1_length"] >= 1) if n else
+          v["arg1_length"] >= 1)
 )
 
 def rule_59_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_59_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, bool) for e in arg1)):
             return False
 
         # Variable declarations

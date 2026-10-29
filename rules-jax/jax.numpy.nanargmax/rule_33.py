@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor should have floating-point data type to support NaN operations (Rule 33)
+# tensor dtype must not be complex or string (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8)) if n else
-          Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8))
+    s.add(Not(And(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10), v["arg1_dtype"] != 11)) if n else
+          And(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10), v["arg1_dtype"] != 11))
 )
 
 def rule_33_func(arg1, solver=None, neg=False):

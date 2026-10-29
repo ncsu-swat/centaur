@@ -4,58 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def sort_complex_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D complex array (complex64)
-    a = np.array([3+4j, 1-2j, 1+2j, 2+0j], dtype=np.complex64)
+    # Input 1: 1D complex64 array with mixed signs
+    a = np.array([1 + 2j, -2 + 4j, 3 - 1j, -2 - 3j], dtype=np.complex64)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 2: 1D complex array with negative values (complex128)
-    a = np.array([-1-1j, -2+3j, 0+0j, -1+1j], dtype=np.complex128)
+    # Input 2: 1D complex128 array with identical real parts to test tie-breaking
+    a = np.array([2 + 5j, 2 - 1j, 2 + 0j, 2 + 3j], dtype=np.complex128)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 3: 2D real array (will be upcast to complex)
-    a = np.array([[5, 3, 4], [6, 9, 2]], dtype=np.float32)
+    # Input 3: 2D complex64 array
+    a = np.array(
+        [[5 + 1j, 3 - 2j, 4 + 0j], [-6 + 3j, 9 - 1j, 2 + 2j]],
+        dtype=np.complex64,
+    )
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 4: 2D complex array
-    a = np.array([[2+3j, 1+1j], [5-1j, 4+2j]], dtype=np.complex64)
+    # Input 4: 2D float32 array (will be upcast to complex)
+    a = np.array([[5.0, 3.0, 4.0], [6.0, 9.0, 2.0]], dtype=np.float32)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 5: 3D complex array to test sorting along the last axis
-    a = np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)
-    a = a.astype(np.complex64)
+    # Input 5: 3D complex64 array
+    a = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(
+        np.complex64
+    )
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 6: 1D integer array (will be upcast to complex)
-    a = np.array([10, -5, 0, 3, -1], dtype=np.int32)
+    # Input 6: 1D int32 array (integers converted to complex)
+    a = np.array([-10, 5, 0, -2, 100, 3], dtype=np.int32)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 7: 1D array with identical real parts, varying imaginary parts
-    a = np.array([2+3j, 2-1j, 2+0j, 2+5j], dtype=np.complex64)
+    # Input 7: 1D float64 array with negative values
+    a = np.array([-1.5, 2.3, -0.4, 0.0, 10.2, -8.7], dtype=np.float64)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 8: Single element 1D array
-    a = np.array([42-42j], dtype=np.complex128)
+    # Input 8: 4D complex128 array
+    a = (np.random.randn(2, 2, 3, 4) + 1j * np.random.randn(2, 2, 3, 4)).astype(
+        np.complex128
+    )
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 9: Large 1D complex array
-    a = (np.random.rand(100) + 1j * np.random.rand(100)).astype(np.complex64)
+    # Input 9: 1D boolean array
+    a = np.array([True, False, True, False, True], dtype=np.bool_)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 10: 2D array with 1 row
-    a = np.array([[3+3j, 1+1j, 2+2j]], dtype=np.complex64)
+    # Input 10: 1D empty complex array
+    a = np.array([], dtype=np.complex64)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 11: Empty array along sorting axis
-    a = np.empty((2, 0), dtype=np.complex64)
+    # Input 11: 2D int64 array with negative numbers
+    a = np.array([[-3, 4, 1], [0, -5, -2]], dtype=np.int64)
+    list_of_inputs.append({"a": copy.deepcopy(a)})
+
+    # Input 12: 1D complex128 array with pure imaginary numbers
+    a = np.array([0 + 3j, 0 - 2j, 0 + 0j, 0 + 1j], dtype=np.complex128)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sort_complex"] = sort_complex_inputs()
 

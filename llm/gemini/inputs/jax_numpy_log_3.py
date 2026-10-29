@@ -4,45 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import math
 
-def jax_numpy_log_inputs():
+def log_inputs():
     list_of_inputs = []
 
     # Input 1: Standard positive float
-    list_of_inputs.append({"x": 1.0})
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Small positive float
-    list_of_inputs.append({"x": 0.5})
+    # Input 2: Euler's number e
+    input_dict = {"x": math.e}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Approximation of e
-    list_of_inputs.append({"x": 2.718281828459045})
+    # Input 3: Value between 0 and 1
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Integer-valued float
-    list_of_inputs.append({"x": 10.0})
+    # Input 4: Large positive float
+    input_dict = {"x": 1e10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive float
-    list_of_inputs.append({"x": 10000.0})
+    # Input 5: Small positive float close to zero
+    input_dict = {"x": 1e-15}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Extremely small positive float
-    list_of_inputs.append({"x": 1e-8})
+    # Input 6: Zero (results in -inf)
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Double precision float representation of pi
-    list_of_inputs.append({"x": 3.141592653589793})
+    # Input 7: Negative float (results in nan)
+    input_dict = {"x": -2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Floating point value greater than 1
-    list_of_inputs.append({"x": 50.5})
+    # Input 8: Another negative float
+    input_dict = {"x": -100.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Zero (results in -inf, but valid float input)
-    list_of_inputs.append({"x": 0.0})
+    # Input 9: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative float (results in nan, but valid float input)
-    list_of_inputs.append({"x": -2.5})
+    # Input 10: NaN float
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Arbitrary float
+    input_dict = {"x": 42.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.log_3"] = jax_numpy_log_inputs()
+generated_inputs["jax.numpy.log_3"] = log_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -4,93 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rfftfreq_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive values, float32
+    # Input 1: Basic even n with standard float32
     input_dict = {
-        "n": 10,
+        "n": 8,
         "d": np.array(1.0, dtype=np.float32),
-        "dtype": np.float32
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Odd n, float64
+    # Input 2: Odd n with float64
     input_dict = {
-        "n": 15,
+        "n": 9,
         "d": np.array(0.5, dtype=np.float64),
-        "dtype": np.float64
+        "dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Larger n, smaller spacing, float32
-    input_dict = {
-        "n": 128,
-        "d": np.array(0.01, dtype=np.float32),
-        "dtype": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D tensor with 1 element for spacing, float64
-    input_dict = {
-        "n": 256,
-        "d": np.array([2.0], dtype=np.float64),
-        "dtype": np.float64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Minimal window size n=1, float32
+    # Input 3: Small n (n=1)
     input_dict = {
         "n": 1,
-        "d": np.array(0.1, dtype=np.float32),
-        "dtype": np.float32
+        "d": np.array(2.0, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative spacing, float64
-    input_dict = {
-        "n": 100,
-        "d": np.array(-0.5, dtype=np.float64),
-        "dtype": np.float64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Large spacing, float32
-    input_dict = {
-        "n": 64,
-        "d": np.array(100.0, dtype=np.float32),
-        "dtype": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Small odd n, 1D tensor spacing, float32
-    input_dict = {
-        "n": 5,
-        "d": np.array([0.001], dtype=np.float32),
-        "dtype": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Negative spacing and float64 dtype
-    input_dict = {
-        "n": 50,
-        "d": np.array(-1.25, dtype=np.float64),
-        "dtype": np.float64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Power of 2 window size, float32
+    # Input 4: Large even n
     input_dict = {
         "n": 1024,
-        "d": np.array(1.5, dtype=np.float32),
-        "dtype": np.float32
+        "d": np.array(0.01, dtype=np.float64),
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Negative sample spacing
+    input_dict = {
+        "n": 16,
+        "d": np.array(-0.25, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 1D tensor for d (shape (1,))
+    input_dict = {
+        "n": 32,
+        "d": np.array([1.5], dtype=np.float64),
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D broadcastable tensor for d (shape (1, 1))
+    input_dict = {
+        "n": 10,
+        "d": np.array([[0.1]], dtype=np.float32),
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Integer tensor d
+    input_dict = {
+        "n": 50,
+        "d": np.array(3, dtype=np.int32),
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large odd n with small sample spacing
+    input_dict = {
+        "n": 501,
+        "d": np.array(1e-4, dtype=np.float64),
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: n=2 minimal non-trivial even length
+    input_dict = {
+        "n": 2,
+        "d": np.array(10.0, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.rfftfreq_2"] = rfftfreq_inputs()
 

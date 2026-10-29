@@ -4,53 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def expm1_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array with values close to 0 (float32)
-    x = np.array([1e-4, 1e-6, 2e-10, -1e-5], dtype=np.float32)
+    # Input 1: 1D array with positive, negative, and zero float32 values
+    x = np.array([2.0, -4.0, 0.0, -1.0, 3.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: 1D array with mixed values (float32)
-    x = np.array([2.0, -4.0, 3.0, -1.0], dtype=np.float32)
+    # Input 2: 1D array with very small values close to zero (float32)
+    x = np.array([1e-4, 1e-6, 2e-10, -1e-5, -3e-8], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: 2D array of positive values (float64)
-    x = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float64)
+    # Input 3: 2D array of float64 values
+    x = np.random.randn(3, 4).astype(np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 2D array of negative values (float32)
-    x = np.array([[-0.1, -2.3], [-10.5, -0.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: 3D array of random standard normal values (float32)
-    x = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 6: 0D array (scalar array)
+    # Input 4: 0D scalar array
     x = np.array(0.5, dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: 1D array with zeros (float32)
-    x = np.zeros((5,), dtype=np.float32)
+    # Input 5: 3D array of float16 values
+    x = np.random.uniform(-2.0, 2.0, size=(2, 3, 2)).astype(np.float16)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: 4D array with very small negative values (float64)
-    x = -np.random.uniform(1e-15, 1e-8, size=(2, 2, 2, 2)).astype(np.float64)
+    # Input 6: 1D integer array
+    x = np.array([-2, -1, 0, 1, 2, 5], dtype=np.int32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: 1D array of integers (int32)
-    x = np.array([-2, -1, 0, 1, 2], dtype=np.int32)
+    # Input 7: 4D array of float32 values
+    x = np.random.randn(2, 2, 3, 4).astype(np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: 2D array of complex numbers (complex64)
-    x = np.array([[1.0 + 1.0j, -1.0 + 0.5j], [0.0 - 2.0j, 0.1 - 0.1j]], dtype=np.complex64)
+    # Input 8: Complex64 numbers
+    x = np.array([0.1 + 0.2j, -0.5 + 1.0j, 0.0 - 0.3j], dtype=np.complex64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 9: Complex128 numbers in a 2D array
+    x = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(
+        np.complex128
+    )
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 10: Boolean array
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 12: 1D array with special float values (inf, -inf, nan)
+    x = np.array([np.inf, -np.inf, np.nan, 0.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.expm1_1"] = expm1_inputs()
 

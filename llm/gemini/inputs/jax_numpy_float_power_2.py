@@ -4,44 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def float_power_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive floats
-    list_of_inputs.append({"x": 2.0, "y": 3.0})
+    # Input 1: Basic positive base and positive exponent
+    input_dict = {"x": 2.0, "y": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative exponent
-    list_of_inputs.append({"x": 5.0, "y": -1.0})
+    # Input 2: Positive base and negative exponent
+    input_dict = {"x": 4.0, "y": -0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Fractional exponent (square root)
-    list_of_inputs.append({"x": 9.0, "y": 0.5})
+    # Input 3: Negative base and positive even integer exponent
+    input_dict = {"x": -3.0, "y": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative base, odd integer exponent
-    list_of_inputs.append({"x": -2.0, "y": 3.0})
+    # Input 4: Negative base and positive odd integer exponent
+    input_dict = {"x": -2.0, "y": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Zero base with positive exponent
-    list_of_inputs.append({"x": 0.0, "y": 5.0})
+    # Input 5: Negative base and negative integer exponent
+    input_dict = {"x": -5.0, "y": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Fractional base and fractional exponent
-    list_of_inputs.append({"x": 1.5, "y": 2.5})
+    # Input 6: Zero base with positive exponent
+    input_dict = {"x": 0.0, "y": 2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Base > 1, negative exponent
-    list_of_inputs.append({"x": 10.0, "y": -2.0})
+    # Input 7: Base of 1.0 with large exponent
+    input_dict = {"x": 1.0, "y": 100.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative base, even integer exponent
-    list_of_inputs.append({"x": -3.0, "y": 2.0})
+    # Input 8: Positive base with fractional exponent
+    input_dict = {"x": 9.0, "y": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Non-zero base, zero exponent
-    list_of_inputs.append({"x": 4.0, "y": 0.0})
+    # Input 9: Fractional base with negative fractional exponent
+    input_dict = {"x": 0.25, "y": -1.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Decimal base and negative fractional exponent
-    list_of_inputs.append({"x": 0.25, "y": -0.5})
+    # Input 10: Float base with zero exponent
+    input_dict = {"x": 7.8, "y": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Very small base
-    list_of_inputs.append({"x": 1e-5, "y": 2.0})
+    # Input 11: Small base with positive exponent
+    input_dict = {"x": 1e-4, "y": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Transcendental base with fractional exponent
+    input_dict = {"x": 2.718281828459045, "y": 1.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

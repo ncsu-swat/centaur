@@ -10,104 +10,59 @@ import copy
 def hfft_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D real array, default-like parameters
-    a = np.random.randn(10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 18,
-        "axis": -1,
-        "norm": "backward"
-    }
+    # Input 1: 1D complex64, backward norm
+    a = (np.random.randn(4) + 1j * np.random.randn(4)).astype(np.complex64)
+    input_dict = {"a": a, "n": 6, "axis": -1, "norm": "backward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D complex array with forward normalization
-    a = (np.random.randn(8) + 1j * np.random.randn(8)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "n": 14,
-        "axis": 0,
-        "norm": "forward"
-    }
+    # Input 2: 2D float32, ortho norm, odd n
+    a = np.random.randn(3, 4).astype(np.float32)
+    input_dict = {"a": a, "n": 5, "axis": 1, "norm": "ortho"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D real array, float64, ortho normalization
-    a = np.random.randn(4, 5).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 8,
-        "axis": -1,
-        "norm": "ortho"
-    }
+    # Input 3: 2D complex128, forward norm, axis 0
+    a = (np.random.randn(5, 3) + 1j * np.random.randn(5, 3)).astype(np.complex128)
+    input_dict = {"a": a, "n": 8, "axis": 0, "norm": "forward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D complex array, specifying axis 0
-    a = (np.random.randn(6, 4) + 1j * np.random.randn(6, 4)).astype(np.complex128)
-    input_dict = {
-        "a": a,
-        "n": 10,
-        "axis": 0,
-        "norm": "backward"
-    }
+    # Input 4: 3D complex64, backward norm, negative axis
+    a = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
+    input_dict = {"a": a, "n": 4, "axis": -1, "norm": "backward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D complex array, middle axis
-    a = (np.random.randn(3, 4, 5) + 1j * np.random.randn(3, 4, 5)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "n": 8,
-        "axis": 1,
-        "norm": "ortho"
-    }
+    # Input 5: 3D float64, ortho norm, axis 1
+    a = np.random.randn(2, 6, 3).astype(np.float64)
+    input_dict = {"a": a, "n": 7, "axis": 1, "norm": "ortho"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D real array, negative axis
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 6,
-        "axis": -2,
-        "norm": "forward"
-    }
+    # Input 6: 1D float32, forward norm
+    a = np.random.randn(8).astype(np.float32)
+    input_dict = {"a": a, "n": 10, "axis": 0, "norm": "forward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D real array with odd n (produces odd-length output)
-    a = np.random.randn(6).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 11,
-        "axis": -1,
-        "norm": "backward"
-    }
+    # Input 7: 4D complex128, backward norm
+    a = (np.random.randn(2, 3, 5, 2) + 1j * np.random.randn(2, 3, 5, 2)).astype(np.complex128)
+    input_dict = {"a": a, "n": 6, "axis": 2, "norm": "backward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D real array
-    a = np.random.randn(2, 2, 3, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "n": 9,
-        "axis": -1,
-        "norm": "ortho"
-    }
+    # Input 8: 2D complex64, ortho norm, negative axis -2
+    a = (np.random.randn(5, 4) + 1j * np.random.randn(5, 4)).astype(np.complex64)
+    input_dict = {"a": a, "n": 3, "axis": -2, "norm": "ortho"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D complex array, odd output length
-    a = (np.random.randn(5, 5) + 1j * np.random.randn(5, 5)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "n": 7,
-        "axis": 1,
-        "norm": "forward"
-    }
+    # Input 9: 3D complex64, forward norm, axis -3
+    a = (np.random.randn(4, 3, 2) + 1j * np.random.randn(4, 3, 2)).astype(np.complex64)
+    input_dict = {"a": a, "n": 12, "axis": -3, "norm": "forward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D float64 array, larger size
-    a = np.random.randn(12).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "n": 22,
-        "axis": 0,
-        "norm": "backward"
-    }
+    # Input 10: 1D complex128, ortho norm, minimal n
+    a = (np.random.randn(3) + 1j * np.random.randn(3)).astype(np.complex128)
+    input_dict = {"a": a, "n": 1, "axis": 0, "norm": "ortho"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D float32, backward norm, small n
+    a = np.random.randn(4, 2).astype(np.float32)
+    input_dict = {"a": a, "n": 2, "axis": -1, "norm": "backward"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

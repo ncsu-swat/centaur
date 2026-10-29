@@ -4,123 +4,153 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def argsort_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D boolean array, standard parameters
+    # Input 1: 1D boolean array, axis=0
     a = np.array([True, False, True, False, True], dtype=bool)
+    input_dict = {
+        "a": a,
+        "axis": 0,
+        "stable": True,
+        "descending": False,
+        "dtype": np.int32,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 1D boolean array, axis=-1, descending
+    a = np.array([False, False, True, True, False, True, False, True], dtype=bool)
+    input_dict = {
+        "a": a,
+        "axis": -1,
+        "stable": False,
+        "descending": True,
+        "dtype": np.int64,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D boolean array, axis=0
+    a = np.array(
+        [[True, False, True, False], [False, True, False, True], [True, True, False, False]],
+        dtype=bool,
+    )
+    input_dict = {
+        "a": a,
+        "axis": 0,
+        "stable": True,
+        "descending": True,
+        "dtype": np.int32,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D boolean array, axis=1
+    a = np.array(
+        [[True, True, False], [False, True, False], [False, False, True], [True, False, True]],
+        dtype=bool,
+    )
+    input_dict = {
+        "a": a,
+        "axis": 1,
+        "stable": False,
+        "descending": False,
+        "dtype": np.int64,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D boolean array, axis=-1, all True
+    a = np.ones((5, 5), dtype=bool)
     input_dict = {
         "a": a,
         "axis": -1,
         "stable": True,
         "descending": False,
-        "dtype": np.int32
+        "dtype": np.int32,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D boolean array, sorting along axis 1, descending
-    a = np.array([[True, False, True], [False, False, True]], dtype=bool)
+    # Input 6: 2D boolean array, axis=-2, all False
+    a = np.zeros((2, 6), dtype=bool)
+    input_dict = {
+        "a": a,
+        "axis": -2,
+        "stable": False,
+        "descending": True,
+        "dtype": np.int64,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D boolean array, axis=0
+    a = (np.random.randn(2, 3, 4) > 0).astype(bool)
+    input_dict = {
+        "a": a,
+        "axis": 0,
+        "stable": True,
+        "descending": False,
+        "dtype": np.int32,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D boolean array, axis=1
+    a = (np.random.randn(3, 2, 4) > 0).astype(bool)
     input_dict = {
         "a": a,
         "axis": 1,
         "stable": False,
         "descending": True,
-        "dtype": np.int64
+        "dtype": np.int64,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D boolean array, axis=0, stable=True, int16 dtype
-    a = np.random.choice([True, False], size=(2, 3, 4)).astype(bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "stable": True,
-        "descending": False,
-        "dtype": np.int16
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D boolean array, stable=False, descending=False, dtype=int32
-    a = np.array([False, False, True, True], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "stable": False,
-        "descending": False,
-        "dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 2D boolean array, axis=0, stable=True, descending=True, dtype=int64
-    a = np.random.choice([True, False], size=(5, 5)).astype(bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "stable": True,
-        "descending": True,
-        "dtype": np.int64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 4D boolean array, axis=-2, stable=True, descending=False, dtype=int32
-    a = np.random.choice([True, False], size=(2, 2, 3, 3)).astype(bool)
-    input_dict = {
-        "a": a,
-        "axis": -2,
-        "stable": True,
-        "descending": False,
-        "dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 1D boolean array (all True), axis=0, descending=True
-    a = np.ones(10, dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "stable": False,
-        "descending": True,
-        "dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D boolean array (all False), axis=-1, stable=True
-    a = np.zeros((4, 4), dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "stable": True,
-        "descending": False,
-        "dtype": np.int64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 3D boolean array, axis=2, stable=True, descending=True, dtype=int16
-    a = np.random.choice([True, False], size=(2, 4, 3)).astype(bool)
+    # Input 9: 3D boolean array, axis=2
+    a = (np.random.randn(2, 4, 3) > 0).astype(bool)
     input_dict = {
         "a": a,
         "axis": 2,
         "stable": True,
         "descending": True,
-        "dtype": np.int16
+        "dtype": np.int32,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D boolean array, axis=-1, stable=False, descending=True, dtype=int64
-    a = np.array([True, True, False, False, True], dtype=bool)
+    # Input 10: 3D boolean array, axis=-1
+    a = (np.random.randn(4, 2, 3) > 0).astype(bool)
     input_dict = {
         "a": a,
         "axis": -1,
         "stable": False,
+        "descending": False,
+        "dtype": np.int64,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D boolean array, axis=3
+    a = (np.random.randn(2, 2, 3, 3) > 0).astype(bool)
+    input_dict = {
+        "a": a,
+        "axis": 3,
+        "stable": True,
+        "descending": False,
+        "dtype": np.int32,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 4D boolean array, axis=-3
+    a = (np.random.randn(2, 3, 2, 2) > 0).astype(bool)
+    input_dict = {
+        "a": a,
+        "axis": -3,
+        "stable": True,
         "descending": True,
-        "dtype": np.int64
+        "dtype": np.int64,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.argsort_4"] = argsort_inputs()
 

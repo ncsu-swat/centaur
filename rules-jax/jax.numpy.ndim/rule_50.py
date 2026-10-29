@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Boolean input value is logically consistent with its evaluated identity (Rule 50)
+# Scalar floating-point input division by one satisfies identity (Rule 50)
 
 rule_50 = lambda s, v, n=False: (
-    s.add(Not((If(v["arg1_value"], True, False)) == v["arg1_value"]) if n else
-          (If(v["arg1_value"], True, False)) == v["arg1_value"])
+    s.add(Not(v["arg1_value"] / 1 == v["arg1_value"]) if n else
+          v["arg1_value"] / 1 == v["arg1_value"])
 )
 
 def rule_50_func(arg1, solver=None, neg=False):
@@ -19,12 +19,12 @@ def rule_50_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, bool):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Bool('arg1_value')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
         solver.add(arg1_value == arg1)

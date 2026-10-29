@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input tensor must be at least 1D and axis must be within the dimension range (Rule 39)
+# when assume_unique_indices is true, index tensor must be 1-dimensional (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] > 0, v["arg2_value"] >= 0 - v["arg1_ndim"]), v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(And(v["arg1_ndim"] > 0, v["arg2_value"] >= 0 - v["arg1_ndim"]), v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(If(v["arg2_value"] == True, v["arg1_ndim"] == 1, True)) if n else
+          If(v["arg2_value"] == True, v["arg1_ndim"] == 1, True))
 )
 
 def rule_39_func(arg1, arg2, solver=None, neg=False):
@@ -22,17 +22,17 @@ def rule_39_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not isinstance(arg2, bool):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_value = Int('arg2_value')
+        arg2_value = Bool('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg2_value == arg2)
 
         # Constraints for rule 39
         rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the number of dimensions of the array to be broadcasted must be less than or equal to the target array (Rule 1)
+# dimension of array to broadcast must not exceed target array dimension (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(v["arg1_ndim"] <= v["arg2_ndim"]) if n else

@@ -4,46 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def xlogy_inputs():
     list_of_inputs = []
 
-    # Input 1: x=0.0, y=0.0 (special case, should return 0)
-    list_of_inputs.append({"x": 0.0, "y": 0.0})
+    # Input 1: (0.0, 0.0) special defined point
+    input_dict = {"x": 0.0, "y": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: x=0.0, y=5.5
-    list_of_inputs.append({"x": 0.0, "y": 5.5})
+    # Input 2: standard positive floats
+    input_dict = {"x": 1.0, "y": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: x=1.0, y=1.0
-    list_of_inputs.append({"x": 1.0, "y": 1.0})
+    # Input 3: y equals e (Euler's number)
+    input_dict = {"x": 2.5, "y": float(np.e)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: x=2.5, y=10.0
-    list_of_inputs.append({"x": 2.5, "y": 10.0})
+    # Input 4: negative x, positive y
+    input_dict = {"x": -3.0, "y": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: x=-3.0, y=2.0 (negative x value)
-    list_of_inputs.append({"x": -3.0, "y": 2.0})
+    # Input 5: x is zero, positive y
+    input_dict = {"x": 0.0, "y": 5.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: x=0.5, y=0.5
-    list_of_inputs.append({"x": 0.5, "y": 0.5})
+    # Input 6: small fractional floats
+    input_dict = {"x": 0.5, "y": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: x=1e-5, y=1e5
-    list_of_inputs.append({"x": 1e-5, "y": 1e5})
+    # Input 7: large positive values
+    input_dict = {"x": 1e4, "y": 1e6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: x=100.0, y=0.1
-    list_of_inputs.append({"x": 100.0, "y": 0.1})
+    # Input 8: small positive values near zero
+    input_dict = {"x": 1e-6, "y": 1e-3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: x=-1.5, y=0.01
-    list_of_inputs.append({"x": -1.5, "y": 0.01})
+    # Input 9: negative x with larger y
+    input_dict = {"x": -0.75, "y": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: x=0.0, y=-2.0
-    list_of_inputs.append({"x": 0.0, "y": -2.0})
+    # Input 10: positive x, y less than 1
+    input_dict = {"x": 10.0, "y": 0.1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: x=4.2, y=4.2
-    list_of_inputs.append({"x": 4.2, "y": 4.2})
+    # Input 11: x is zero, negative y (returns 0.0 by definition)
+    input_dict = {"x": 0.0, "y": -4.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: non-integer float values
+    input_dict = {"x": 3.14159, "y": 2.71828}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.xlogy_2"] = xlogy_inputs()
 

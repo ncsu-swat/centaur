@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# An input of integer or float type should be within a valid range (Rule 37)
+# scalar input is within moderately bounded dynamic range (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -100000, v["arg1_value"] < 100000)) if n else
-          And(v["arg1_value"] > -100000, v["arg1_value"] < 100000))
+    s.add(Not(And(v["arg1_value"] >= -15, v["arg1_value"] <= 15)) if n else
+          And(v["arg1_value"] >= -15, v["arg1_value"] <= 15))
 )
 
 def rule_37_func(arg1, solver=None, neg=False):

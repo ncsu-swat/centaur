@@ -4,61 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def gcd_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple scalars (int32)
-    x1 = np.int32(12)
-    x2 = np.int32(18)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 1: Basic positive integers
+    input_dict = {"x1": 12, "x2": 18}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative scalar values (int64)
-    x1 = np.int64(-24)
-    x2 = np.int64(36)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: Positive and negative integers
+    input_dict = {"x1": -24, "x2": 36}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero values (int16)
-    x1 = np.int16(0)
-    x2 = np.int16(15)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 3: Zero and a positive integer
+    input_dict = {"x1": 0, "x2": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D arrays of int32
-    x1 = np.array([12, 18, 24], dtype=np.int32)
-    x2 = np.array([5, 10, 15], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 4: Positive integer and zero
+    input_dict = {"x1": 7, "x2": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D array and a scalar (broadcasting)
-    x1 = np.array([12, 24, 36], dtype=np.int32)
-    x2 = np.int32(6)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 5: Both zeros
+    input_dict = {"x1": 0, "x2": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D arrays of int64
-    x1 = np.array([[12, 24], [36, 48]], dtype=np.int64)
-    x2 = np.array([[6, 8], [12, 16]], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: Both negative integers
+    input_dict = {"x1": -15, "x2": -25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Broadcasting 2D and 1D arrays (int32)
-    x1 = np.array([[10, 20], [30, 40]], dtype=np.int32)
-    x2 = np.array([5, 10], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: Coprime integers
+    input_dict = {"x1": 101, "x2": 103}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D arrays (int16)
-    x1 = np.array([[[15, 30], [45, 60]]], dtype=np.int16)
-    x2 = np.array([[[5, 10], [15, 20]]], dtype=np.int16)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: Larger integers
+    input_dict = {"x1": 1000000, "x2": 2500000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large integers (int64)
-    x1 = np.array([100000000, 200000000], dtype=np.int64)
-    x2 = np.array([50000000, 150000000], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 9: One negative and one positive unit
+    input_dict = {"x1": -1, "x2": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative values in 1D arrays (int32)
-    x1 = np.array([-10, -20, 30], dtype=np.int32)
-    x2 = np.array([5, -10, 15], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 10: Equal integers
+    input_dict = {"x1": 42, "x2": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Powers of two
+    input_dict = {"x1": 128, "x2": 256}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative coprime integers
+    input_dict = {"x1": -77, "x2": 121}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

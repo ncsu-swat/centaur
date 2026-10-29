@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# complex inputs are valid for any dimension (Rule 29)
+# list of floats contains bounded numerical elements (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), v["arg1_ndim"] >= 0, True)) if n else
-          If(Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), v["arg1_ndim"] >= 0, True))
+    s.add(Not(And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -10000, Select(v["arg1_values"], i) <= 10000)) for i in range(6)]))) if n else
+          And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -10000, Select(v["arg1_values"], i) <= 10000)) for i in range(6)])))
 )
 
 def rule_29_func(arg1, solver=None, neg=False):
@@ -19,22 +19,23 @@ def rule_29_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_dtype = Int('arg1_dtype')
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), RealSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 29
-        rule_29(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim})
+        rule_29(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_29(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_29(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

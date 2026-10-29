@@ -10,72 +10,79 @@ import copy
 def modf_inputs():
     list_of_inputs = []
 
-    # Input 1
+    # Input 1: Zero
     input_dict = {
         "x": 0,
         "out": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    input_dict = {
-        "x": 5,
-        "out": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3
-    input_dict = {
-        "x": -10,
-        "out": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4
-    input_dict = {
-        "x": 123456,
-        "out": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5
-    input_dict = {
-        "x": -9876,
-        "out": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6
+    # Input 2: Small positive integer
     input_dict = {
         "x": 1,
         "out": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
+    # Input 3: Small negative integer
     input_dict = {
         "x": -1,
         "out": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
+    # Input 4: Moderate positive integer
     input_dict = {
         "x": 42,
         "out": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
+    # Input 5: Moderate negative integer
     input_dict = {
-        "x": -2023,
+        "x": -100,
         "out": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
+    # Input 6: Large positive integer
     input_dict = {
         "x": 1000000,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Large negative integer
+    input_dict = {
+        "x": -65536,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Power of two
+    input_dict = {
+        "x": 256,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Negative prime
+    input_dict = {
+        "x": -17,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 32-bit boundary integer
+    input_dict = {
+        "x": 2147483647,
+        "out": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative 32-bit boundary integer
+    input_dict = {
+        "x": -2147483648,
         "out": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# base should be positive (Rule 16)
+# dtype must be a valid numeric type (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] > 0) if n else
-          v["arg1_value"] > 0)
+    s.add(Not(And(1 <= v["arg1_value"], v["arg1_value"] <= 10)) if n else
+          And(1 <= v["arg1_value"], v["arg1_value"] <= 10))
 )
 
 def rule_16_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_16_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Int('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 16
         rule_16(solver, {'arg1_value': arg1_value})

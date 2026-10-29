@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def floor_divide_inputs():
     list_of_inputs = []
 
     # Input 1: 1D int32 array, positive divisor
-    x1 = np.array([10, 20, 30], dtype=np.int32)
+    x1 = np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5], dtype=np.int32)
     x2 = 3
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 1D int64 array with negative values, positive divisor
-    x1 = np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3], dtype=np.int64)
-    x2 = 3
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: 1D int64 array, negative divisor
+    x1 = np.array([10, -20, 30, -40, 50], dtype=np.int64)
+    x2 = -4
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: 2D float32 array, negative divisor
-    x1 = np.array([[6.0, 7.5], [8.0, 9.1]], dtype=np.float32)
-    x2 = -2
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 4: 2D int16 array, positive divisor
-    x1 = np.array([[12, 15, 18], [21, 24, 27]], dtype=np.int16)
-    x2 = 5
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 5: 3D int32 array, positive divisor
-    x1 = np.arange(1, 9, dtype=np.int32).reshape(2, 2, 2)
+    # Input 3: 2D float32 array, positive divisor
+    x1 = np.array([[1.5, 2.7, 3.2], [4.9, 5.1, 6.8]], dtype=np.float32)
     x2 = 2
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: 0D array (scalar-like tensor), positive divisor
-    x1 = np.array(42, dtype=np.int32)
-    x2 = 10
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 7: 1D float64 array, negative divisor
-    x1 = np.array([-10.5, -20.0, 35.5], dtype=np.float64)
+    # Input 4: 2D float64 array, negative divisor
+    x1 = np.array([[-10.5, 0.0], [12.3, -4.7]], dtype=np.float64)
     x2 = -3
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: 1D uint8 array, positive divisor
-    x1 = np.array([100, 150, 200, 250], dtype=np.uint8)
-    x2 = 12
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 5: 3D int32 array
+    x1 = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
+    x2 = 5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: 4D int32 array, positive divisor
-    x1 = np.ones((2, 2, 2, 2), dtype=np.int32) * 50
+    # Input 6: 0D scalar array
+    x1 = np.array(42, dtype=np.int32)
     x2 = 7
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: 2D int32 array containing zeros and negatives, positive divisor
-    x1 = np.array([[-10, 0, 10], [-20, 0, 20]], dtype=np.int32)
-    x2 = 4
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: 4D float32 array
+    x1 = np.random.uniform(-100, 100, size=(2, 2, 3, 3)).astype(np.float32)
+    x2 = 10
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: 1D float32 array, large integer divisor
-    x1 = np.array([1000.0, 2000.0, 3000.0], dtype=np.float32)
-    x2 = 350
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: uint8 array
+    x1 = np.array([0, 15, 128, 255], dtype=np.uint8)
+    x2 = 16
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 9: Large 1D array with divisor 1
+    x1 = np.linspace(-50, 50, 100, dtype=np.float32)
+    x2 = 1
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 2D int16 array with negative values and divisor -1
+    x1 = np.array([[-32, 16], [0, -1]], dtype=np.int16)
+    x2 = -1
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: 1D array containing zeros
+    x1 = np.array([0, 0, 0, 0], dtype=np.int32)
+    x2 = 8
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.floor_divide_2"] = floor_divide_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# fill_value tuple size must match the number of dimensions of the input tensor (Rule 3)
+# fill_value as a tuple of indices must match the dimension of array a (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == v["arg2_length"]) if n else
-          v["arg1_ndim"] == v["arg2_length"])
+    s.add(Not(v["arg2_length"] == v["arg1_ndim"]) if n else
+          v["arg2_length"] == v["arg1_ndim"])
 )
 
 def rule_3_func(arg1, arg2, solver=None, neg=False):

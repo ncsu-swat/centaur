@@ -4,133 +4,135 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logspace_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic base-10 logspace with float32
+    # Input 1: Basic standard usage
     input_dict = {
         "start": 0,
         "stop": 2,
         "num": 5,
         "endpoint": True,
         "base": 10,
-        "dtype": np.float32,
-        "axis": 0
+        "dtype": np.dtype("float32"),
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Base-2 logspace excluding the endpoint
+    # Input 2: endpoint False, base 2, float64
     input_dict = {
         "start": 1,
-        "stop": 5,
+        "stop": 4,
         "num": 10,
         "endpoint": False,
         "base": 2,
-        "dtype": np.float64,
-        "axis": 0
+        "dtype": np.dtype("float64"),
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative start to positive stop
+    # Input 3: Negative start and stop values
     input_dict = {
         "start": -3,
-        "stop": 3,
+        "stop": -1,
         "num": 7,
         "endpoint": True,
         "base": 10,
-        "dtype": np.float32,
-        "axis": -1
+        "dtype": np.dtype("float32"),
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Base-3 logspace with float64
-    input_dict = {
-        "start": 0,
-        "stop": 4,
-        "num": 9,
-        "endpoint": True,
-        "base": 3,
-        "dtype": np.float64,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Float16 dtype with negative bounds
-    input_dict = {
-        "start": -5,
-        "stop": -1,
-        "num": 5,
-        "endpoint": False,
-        "base": 2,
-        "dtype": np.float16,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Complex64 dtype logspace
-    input_dict = {
-        "start": 2,
-        "stop": 4,
-        "num": 3,
-        "endpoint": True,
-        "base": 5,
-        "dtype": np.complex64,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Single element logspace
-    input_dict = {
-        "start": 1,
-        "stop": 1,
-        "num": 1,
-        "endpoint": True,
-        "base": 10,
-        "dtype": np.float32,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Reverse direction logspace (start > stop)
+    # Input 4: Decreasing sequence, start > stop
     input_dict = {
         "start": 5,
-        "stop": 1,
-        "num": 5,
-        "endpoint": False,
-        "base": 10,
-        "dtype": np.float64,
-        "axis": 0
+        "stop": 0,
+        "num": 6,
+        "endpoint": True,
+        "base": 3,
+        "dtype": np.dtype("float32"),
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large number of points
+    # Input 5: num=1 case
+    input_dict = {
+        "start": 2,
+        "stop": 8,
+        "num": 1,
+        "endpoint": True,
+        "base": 2,
+        "dtype": np.dtype("float32"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: num=0 case
+    input_dict = {
+        "start": 0,
+        "stop": 5,
+        "num": 0,
+        "endpoint": True,
+        "base": 10,
+        "dtype": np.dtype("float64"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Complex dtype
+    input_dict = {
+        "start": 1,
+        "stop": 3,
+        "num": 4,
+        "endpoint": False,
+        "base": 2,
+        "dtype": np.dtype("complex64"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Base = 1
     input_dict = {
         "start": 0,
         "stop": 10,
-        "num": 100,
+        "num": 15,
         "endpoint": True,
-        "base": 2,
-        "dtype": np.float32,
-        "axis": -1
+        "base": 1,
+        "dtype": np.dtype("float32"),
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Base-10 with negative range and float64 dtype
+    # Input 9: Large num value
     input_dict = {
-        "start": -10,
-        "stop": -2,
-        "num": 10,
-        "endpoint": False,
+        "start": -2,
+        "stop": 2,
+        "num": 100,
+        "endpoint": True,
         "base": 10,
-        "dtype": np.float64,
-        "axis": 0
+        "dtype": np.dtype("float64"),
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: start == stop
+    input_dict = {
+        "start": 3,
+        "stop": 3,
+        "num": 8,
+        "endpoint": False,
+        "base": 5,
+        "dtype": np.dtype("float32"),
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.logspace_3"] = logspace_inputs()
 

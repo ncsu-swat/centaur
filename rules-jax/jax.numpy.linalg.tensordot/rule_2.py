@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The contracting dimensions of x1 and x2 must match in size when axes is an integer k (Rule 2)
+# contracted dimensions must match in size when axes is an integer (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"]), v["arg3_value"] <= v["arg2_ndim"]), (Or(v["arg3_value"] == 0, And([Implies(i < (v["arg3_value"] - 1 + 1), Select(v["arg1_shape"], v["arg1_ndim"] - v["arg3_value"] + i) == Select(v["arg2_shape"], i)) for i in range(6)]))))) if n else
-          And(And(And(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"]), v["arg3_value"] <= v["arg2_ndim"]), (Or(v["arg3_value"] == 0, And([Implies(i < (v["arg3_value"] - 1 + 1), Select(v["arg1_shape"], v["arg1_ndim"] - v["arg3_value"] + i) == Select(v["arg2_shape"], i)) for i in range(6)])))))
+    s.add(Not(And(And(And(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"]), v["arg3_value"] <= v["arg2_ndim"]), (And([Implies(i < (v["arg3_value"] - 1 + 1), Select(v["arg1_shape"], v["arg1_ndim"] - v["arg3_value"] + i) == Select(v["arg2_shape"], i)) for i in range(6)])))) if n else
+          And(And(And(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"]), v["arg3_value"] <= v["arg2_ndim"]), (And([Implies(i < (v["arg3_value"] - 1 + 1), Select(v["arg1_shape"], v["arg1_ndim"] - v["arg3_value"] + i) == Select(v["arg2_shape"], i)) for i in range(6)]))))
 )
 
 def rule_2_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -46,9 +46,9 @@ def rule_2_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 2
-        rule_2(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim, 'arg3_value': arg3_value})
+        rule_2(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_2(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim'], 'arg3_value': arg3['value']}, neg)
+        rule_2(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_value': arg3['value']}, neg)

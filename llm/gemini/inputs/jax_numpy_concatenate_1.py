@@ -10,77 +10,95 @@ import copy
 def concatenate_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array (unstacks to 1D arrays), axis 0
+    # Input 1: 2D array unstacked along axis 0, concatenated along axis 0, float32
+    arrays = np.random.randn(2, 3).astype(np.float32)
     list_of_inputs.append({
-        "arrays": np.random.randn(2, 5).astype(np.float32),
+        "arrays": arrays,
         "axis": 0,
-        "dtype": np.float32
+        "dtype": np.dtype(np.float32)
     })
 
-    # Input 2: 3D array (unstacks to 2D arrays), axis 0
+    # Input 2: 2D array unstacked along axis 0, concatenated along axis -1, int32
+    arrays = np.random.randint(-10, 10, size=(3, 4), dtype=np.int32)
     list_of_inputs.append({
-        "arrays": np.random.randn(3, 4, 5).astype(np.float32),
-        "axis": 0,
-        "dtype": np.float32
-    })
-
-    # Input 3: 3D array (unstacks to 2D arrays), axis 1
-    list_of_inputs.append({
-        "arrays": np.random.randn(3, 4, 5).astype(np.float32),
-        "axis": 1,
-        "dtype": np.float32
-    })
-
-    # Input 4: 3D array, negative axis -1, float64
-    list_of_inputs.append({
-        "arrays": np.random.randn(4, 2, 3).astype(np.float64),
+        "arrays": arrays,
         "axis": -1,
-        "dtype": np.float64
+        "dtype": np.dtype(np.int32)
     })
 
-    # Input 5: 3D array, int32, axis 1
+    # Input 3: 2D array unstacked along axis 0, concatenated along axis 0, bool
+    arrays = np.random.choice([True, False], size=(4, 2))
     list_of_inputs.append({
-        "arrays": np.random.randint(0, 10, (2, 3, 3)).astype(np.int32),
-        "axis": 1,
-        "dtype": np.int32
-    })
-
-    # Input 6: 2D array, int64, negative axis -1
-    list_of_inputs.append({
-        "arrays": np.random.randint(0, 10, (5, 2)).astype(np.int64),
-        "axis": -1,
-        "dtype": np.int64
-    })
-
-    # Input 7: 4D array, axis 1
-    list_of_inputs.append({
-        "arrays": np.random.randn(2, 2, 3, 4).astype(np.float32),
-        "axis": 1,
-        "dtype": np.float32
-    })
-
-    # Input 8: 3D array, uint8, axis 0
-    list_of_inputs.append({
-        "arrays": np.random.randint(0, 256, (3, 5, 5)).astype(np.uint8),
+        "arrays": arrays,
         "axis": 0,
-        "dtype": np.uint8
+        "dtype": np.dtype(np.bool_)
     })
 
-    # Input 9: 3D array, float16, negative axis -2
+    # Input 4: 3D array unstacked along axis 0, concatenated along axis 0, float32
+    arrays = np.random.randn(2, 3, 4).astype(np.float32)
     list_of_inputs.append({
-        "arrays": np.random.randn(2, 3, 4).astype(np.float16),
+        "arrays": arrays,
+        "axis": 0,
+        "dtype": np.dtype(np.float32)
+    })
+
+    # Input 5: 3D array unstacked along axis 0, concatenated along axis 1, float32
+    arrays = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append({
+        "arrays": arrays,
+        "axis": 1,
+        "dtype": np.dtype(np.float32)
+    })
+
+    # Input 6: 3D array unstacked along axis 0, concatenated along axis -1, int32
+    arrays = np.random.randint(0, 100, size=(4, 2, 5), dtype=np.int32)
+    list_of_inputs.append({
+        "arrays": arrays,
+        "axis": -1,
+        "dtype": np.dtype(np.int32)
+    })
+
+    # Input 7: 3D array unstacked along axis 0, concatenated along axis -2, bool
+    arrays = np.random.choice([True, False], size=(3, 2, 4))
+    list_of_inputs.append({
+        "arrays": arrays,
         "axis": -2,
-        "dtype": np.float16
+        "dtype": np.dtype(np.bool_)
     })
 
-    # Input 10: 5D array, axis 2
+    # Input 8: 4D array unstacked along axis 0, concatenated along axis 0, float32
+    arrays = np.random.randn(2, 3, 2, 2).astype(np.float32)
     list_of_inputs.append({
-        "arrays": np.random.randn(2, 2, 2, 2, 2).astype(np.float32),
-        "axis": 2,
-        "dtype": np.float32
+        "arrays": arrays,
+        "axis": 0,
+        "dtype": np.dtype(np.float32)
     })
 
-    return list_of_inputs
+    # Input 9: 4D array unstacked along axis 0, concatenated along axis 2, int32
+    arrays = np.random.randint(-50, 50, size=(2, 3, 2, 2), dtype=np.int32)
+    list_of_inputs.append({
+        "arrays": arrays,
+        "axis": 2,
+        "dtype": np.dtype(np.int32)
+    })
+
+    # Input 10: 4D array unstacked along axis 0, concatenated along axis 1, bool
+    arrays = np.random.choice([True, False], size=(3, 2, 4, 3))
+    list_of_inputs.append({
+        "arrays": arrays,
+        "axis": 1,
+        "dtype": np.dtype(np.bool_)
+    })
+
+    # Input 11: 5D array unstacked along axis 0, concatenated along axis 3, float32
+    arrays = np.random.randn(2, 2, 3, 2, 2).astype(np.float32)
+    list_of_inputs.append({
+        "arrays": arrays,
+        "axis": 3,
+        "dtype": np.dtype(np.float32)
+    })
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
 generated_inputs["jax.numpy.concatenate_1"] = concatenate_inputs()
 

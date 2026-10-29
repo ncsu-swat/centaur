@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Row and column dimensions should be strictly positive to avoid empty outputs (Rule 35)
+# for square matrices, row and column dimensions are equal and strictly positive (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > 0, v["arg2_value"] > 0)) if n else
-          And(v["arg1_value"] > 0, v["arg2_value"] > 0))
+    s.add(Not(And(v["arg1_value"] == v["arg2_value"], v["arg1_value"] >= 1)) if n else
+          And(v["arg1_value"] == v["arg2_value"], v["arg1_value"] >= 1))
 )
 
 def rule_35_func(arg1, arg2, solver=None, neg=False):

@@ -4,145 +4,217 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_put_along_axis_inputs():
+
+def put_along_axis_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, axis=1, clip mode
-    arr = np.random.randn(3, 4).astype(np.float32)
-    indices = np.random.randint(0, 4, size=(3, 1)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(99),
-        "axis": int(1),
-        "inplace": False,
-        "mode": "clip"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, axis=0, mode='promise_in_bounds'
+    arr = np.array([10, 20, 30, 40, 50], dtype=np.int32)
+    indices = np.array([1, 3], dtype=np.int64)
+    values = 99
+    axis = 0
+    inplace = False
+    mode = "promise_in_bounds"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 2: 2D array, axis=0, clip mode
-    arr = np.random.randint(-10, 10, size=(5, 2)).astype(np.int32)
-    indices = np.random.randint(0, 5, size=(1, 2)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(-1),
-        "axis": int(0),
-        "inplace": False,
-        "mode": "clip"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D array, axis=1, mode='clip'
+    arr = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
+    indices = np.array([[2], [0]], dtype=np.int64)
+    values = -1
+    axis = 1
+    inplace = False
+    mode = "clip"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 3: 1D array, axis=0, drop mode
-    arr = np.random.randn(10).astype(np.float64)
-    indices = np.random.randint(0, 10, size=(3,)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(42),
-        "axis": int(0),
-        "inplace": False,
-        "mode": "drop"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, axis=0, negative axis, mode='drop'
+    arr = np.zeros((4, 3), dtype=np.int64)
+    indices = np.array([[1, 2, 3]], dtype=np.int64)
+    values = 7
+    axis = -2
+    inplace = False
+    mode = "drop"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 4: 3D array, axis=2, drop mode
-    arr = np.random.randn(2, 3, 4).astype(np.float32)
-    indices = np.random.randint(0, 4, size=(2, 3, 1)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(0),
-        "axis": int(2),
-        "inplace": False,
-        "mode": "drop"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array, float data, axis=-1, mode='fill'
+    arr = np.ones((3, 4), dtype=np.float32)
+    indices = np.array([[0, 2], [1, 3], [2, 0]], dtype=np.int32)
+    values = 0
+    axis = -1
+    inplace = False
+    mode = "fill"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 5: 3D array, axis=0, clip mode
-    arr = np.random.randint(0, 100, size=(2, 3, 4)).astype(np.int64)
-    indices = np.random.randint(0, 2, size=(1, 3, 4)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(5),
-        "axis": int(0),
-        "inplace": False,
-        "mode": "clip"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array, axis=1, mode='promise_in_bounds'
+    arr = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
+    indices = np.zeros((2, 1, 4), dtype=np.int64)
+    values = 100
+    axis = 1
+    inplace = False
+    mode = "promise_in_bounds"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 6: 2D array, same shape for indices, axis=1, drop mode
-    arr = np.random.randn(4, 4).astype(np.float32)
-    indices = np.random.randint(0, 4, size=(4, 4)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(-100),
-        "axis": int(1),
-        "inplace": False,
-        "mode": "drop"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array, axis=2, mode='clip'
+    arr = np.ones((2, 2, 5), dtype=np.int64)
+    indices = np.array([[[1, 3], [0, 4]], [[2, 2], [3, 1]]], dtype=np.int32)
+    values = -50
+    axis = 2
+    inplace = False
+    mode = "clip"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 7: 4D array, axis=3, clip mode
-    arr = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    indices = np.random.randint(0, 2, size=(2, 2, 2, 1)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(7),
-        "axis": int(3),
-        "inplace": False,
-        "mode": "clip"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array, axis=0, mode='drop'
+    arr = np.full((3, 2, 2), 5, dtype=np.int32)
+    indices = np.array([[[0, 1], [2, 0]]], dtype=np.int64)
+    values = 42
+    axis = 0
+    inplace = False
+    mode = "drop"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 8: Column vector array, axis=0, clip mode
-    arr = np.random.randn(6, 1).astype(np.float32)
-    indices = np.random.randint(0, 6, size=(1, 1)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(123),
-        "axis": int(0),
-        "inplace": False,
-        "mode": "clip"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array, axis=-1, mode='promise_in_bounds'
+    arr = np.zeros((2, 2, 2, 3), dtype=np.int32)
+    indices = np.ones((2, 2, 2, 1), dtype=np.int64)
+    values = 10
+    axis = -1
+    inplace = False
+    mode = "promise_in_bounds"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 9: 2D array, negative axis=-1, drop mode
-    arr = np.random.randint(-5, 5, size=(3, 5)).astype(np.int32)
-    indices = np.random.randint(0, 5, size=(3, 2)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(8),
-        "axis": int(-1),
-        "inplace": False,
-        "mode": "drop"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D array, axis=-1, mode='drop'
+    arr = np.array([100, 200, 300], dtype=np.int64)
+    indices = np.array([2, 1, 0], dtype=np.int64)
+    values = 555
+    axis = -1
+    inplace = False
+    mode = "drop"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 10: 3D array, negative axis=-2, clip mode
-    arr = np.random.randn(2, 4, 3).astype(np.float32)
-    indices = np.random.randint(0, 4, size=(2, 1, 3)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "values": int(-9),
-        "axis": int(-2),
-        "inplace": False,
-        "mode": "clip"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D array, full column replacement, axis=0, mode='clip'
+    arr = np.arange(12, dtype=np.int32).reshape(3, 4)
+    indices = np.array([[2, 1, 0, 2], [0, 0, 1, 1]], dtype=np.int32)
+    values = -999
+    axis = 0
+    inplace = False
+    mode = "clip"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.put_along_axis_3"] = jax_numpy_put_along_axis_inputs()
+
+generated_inputs["jax.numpy.put_along_axis_3"] = put_along_axis_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

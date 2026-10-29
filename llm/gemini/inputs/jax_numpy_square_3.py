@@ -4,50 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def square_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive float
-    input_dict = {"x": 3.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative float
-    input_dict = {"x": -2.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero
+    # Input 1: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Small positive float
-    input_dict = {"x": 1e-5}
+    # Input 2: Positive integer represented as float
+    input_dict = {"x": 2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive float
-    input_dict = {"x": 1e5}
+    # Input 3: Negative integer represented as float
+    input_dict = {"x": -3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative float with multiple decimal places
-    input_dict = {"x": -123.456}
+    # Input 4: Positive fractional float
+    input_dict = {"x": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Pi approximation
-    input_dict = {"x": 3.1415926535}
+    # Input 5: Negative fractional float
+    input_dict = {"x": -2.75}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small negative float
-    input_dict = {"x": -0.0001}
+    # Input 6: Large positive float
+    input_dict = {"x": 1e4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative zero
-    input_dict = {"x": -0.0}
+    # Input 7: Large negative float
+    input_dict = {"x": -1e4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Another positive float
-    input_dict = {"x": 999.99}
+    # Input 8: Small positive float
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Small negative float
+    input_dict = {"x": -1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Irrational approximation
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative irrational approximation
+    input_dict = {"x": -2.718281828459045}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

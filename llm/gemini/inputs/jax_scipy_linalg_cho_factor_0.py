@@ -4,116 +4,161 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cho_factor_inputs():
     list_of_inputs = []
 
-    def make_pd(shape, dtype):
-        M = np.random.randn(*shape).astype(dtype)
-        dims = list(range(len(shape)))
-        dims[-1], dims[-2] = dims[-2], dims[-1]
-        Mt = np.transpose(M, dims)
-        A = np.matmul(M, Mt)
-        N = shape[-1]
-        eye = np.eye(N, dtype=dtype)
-        for _ in range(len(shape) - 2):
-            eye = np.expand_dims(eye, axis=0)
-        A += eye * 0.1  # Add perturbation to ensure strict positive-definiteness
-        return A
+    # Helper function to generate positive-definite matrices
+    def make_spd(shape, dtype=np.float32):
+        n = shape[-1]
+        if np.issubdtype(dtype, np.complexfloating):
+            m = np.random.randn(*shape).astype(
+                dtype
+            ) + 1j * np.random.randn(*shape).astype(dtype)
+            m_h = np.swapaxes(m.conj(), -1, -2)
+            eye = np.eye(n, dtype=dtype)
+            return np.matmul(m, m_h) + eye * (n + 1.0)
+        else:
+            m = np.random.randn(*shape).astype(dtype)
+            m_t = np.swapaxes(m, -1, -2)
+            eye = np.eye(n, dtype=dtype)
+            return np.matmul(m, m_t) + eye * (n + 1.0)
 
-    # Input 1: 2x2 float32, lower=True
-    a = make_pd((2, 2), np.float32)
-    list_of_inputs.append({
-        'a': a,
-        'lower': True,
-        'overwrite_a': False,
-        'check_finite': True
-    })
+    # Input 1: 2x2 float32 matrix, default flags
+    a = make_spd((2, 2), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": False,
+                "overwrite_a": False,
+                "check_finite": True,
+            }
+        )
+    )
 
-    # Input 2: 3x3 float64, lower=False
-    a = make_pd((3, 3), np.float64)
-    list_of_inputs.append({
-        'a': a,
-        'lower': False,
-        'overwrite_a': True,
-        'check_finite': False
-    })
+    # Input 2: 3x3 float64 matrix, lower=True
+    a = make_spd((3, 3), dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": True,
+                "overwrite_a": False,
+                "check_finite": False,
+            }
+        )
+    )
 
-    # Input 3: Batched (2, 4, 4) float32, lower=True
-    a = make_pd((2, 4, 4), np.float32)
-    list_of_inputs.append({
-        'a': a,
-        'lower': True,
-        'overwrite_a': True,
-        'check_finite': True
-    })
+    # Input 3: Batched 3D float32 matrices (4, 5, 5)
+    a = make_spd((4, 5, 5), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": True,
+                "overwrite_a": True,
+                "check_finite": True,
+            }
+        )
+    )
 
-    # Input 4: Batched (3, 2, 5, 5) float64, lower=False
-    a = make_pd((3, 2, 5, 5), np.float64)
-    list_of_inputs.append({
-        'a': a,
-        'lower': False,
-        'overwrite_a': False,
-        'check_finite': False
-    })
+    # Input 4: 3x3 complex64 Hermitian positive-definite matrix
+    a = make_spd((3, 3), dtype=np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": False,
+                "overwrite_a": False,
+                "check_finite": True,
+            }
+        )
+    )
 
-    # Input 5: 10x10 float32, lower=True
-    a = make_pd((10, 10), np.float32)
-    list_of_inputs.append({
-        'a': a,
-        'lower': True,
-        'overwrite_a': False,
-        'check_finite': False
-    })
+    # Input 5: 4x4 complex128 Hermitian positive-definite matrix
+    a = make_spd((4, 4), dtype=np.complex128)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": True,
+                "overwrite_a": True,
+                "check_finite": False,
+            }
+        )
+    )
 
-    # Input 6: 1x1 float64, lower=False
-    a = make_pd((1, 1), np.float64)
-    list_of_inputs.append({
-        'a': a,
-        'lower': False,
-        'overwrite_a': True,
-        'check_finite': True
-    })
+    # Input 6: 1x1 float32 scalar-like matrix
+    a = np.array([[4.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": False,
+                "overwrite_a": False,
+                "check_finite": False,
+            }
+        )
+    )
 
-    # Input 7: Batched (4, 3, 3) float32, lower=False
-    a = make_pd((4, 3, 3), np.float32)
-    list_of_inputs.append({
-        'a': a,
-        'lower': False,
-        'overwrite_a': False,
-        'check_finite': True
-    })
+    # Input 7: Batched 4D float64 matrices (2, 3, 4, 4)
+    a = make_spd((2, 3, 4, 4), dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": False,
+                "overwrite_a": False,
+                "check_finite": True,
+            }
+        )
+    )
 
-    # Input 8: 6x6 float64, lower=True
-    a = make_pd((6, 6), np.float64)
-    list_of_inputs.append({
-        'a': a,
-        'lower': True,
-        'overwrite_a': True,
-        'check_finite': True
-    })
+    # Input 8: Larger 10x10 float32 matrix
+    a = make_spd((10, 10), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": True,
+                "overwrite_a": False,
+                "check_finite": True,
+            }
+        )
+    )
 
-    # Input 9: Batched (1, 5, 5) float32, lower=True
-    a = make_pd((1, 5, 5), np.float32)
-    list_of_inputs.append({
-        'a': a,
-        'lower': True,
-        'overwrite_a': False,
-        'check_finite': True
-    })
+    # Input 9: Batched complex64 matrices (2, 3, 3)
+    a = make_spd((2, 3, 3), dtype=np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": True,
+                "overwrite_a": False,
+                "check_finite": False,
+            }
+        )
+    )
 
-    # Input 10: 8x8 float32, lower=False
-    a = make_pd((8, 8), np.float32)
-    list_of_inputs.append({
-        'a': a,
-        'lower': False,
-        'overwrite_a': False,
-        'check_finite': False
-    })
+    # Input 10: 6x6 float64 matrix with all flags True
+    a = make_spd((6, 6), dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "lower": True,
+                "overwrite_a": True,
+                "check_finite": True,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.cho_factor"] = cho_factor_inputs()
 

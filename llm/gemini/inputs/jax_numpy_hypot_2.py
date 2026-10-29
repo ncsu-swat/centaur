@@ -4,17 +4,17 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import math
 
 def hypot_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive floats
+    # Input 1: Classic 3-4-5 right triangle
     input_dict = {"x1": 3.0, "x2": 4.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative floats
+    # Input 2: Both negative values
     input_dict = {"x1": -3.0, "x2": -4.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
@@ -22,36 +22,40 @@ def hypot_inputs():
     input_dict = {"x1": -5.0, "x2": 12.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Zeros
+    # Input 4: Zero with positive float
+    input_dict = {"x1": 0.0, "x2": 7.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Both zeros
     input_dict = {"x1": 0.0, "x2": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: One zero, one positive
-    input_dict = {"x1": 0.0, "x2": 5.5}
+    # Input 6: Large float values
+    input_dict = {"x1": 1e150, "x2": 2e150}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large floats
-    input_dict = {"x1": 1e150, "x2": 1e150}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Very small floats
+    # Input 7: Very small float values
     input_dict = {"x1": 1e-150, "x2": 1e-150}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Infinity
-    input_dict = {"x1": float('inf'), "x2": 3.0}
+    # Input 8: Different magnitudes
+    input_dict = {"x1": 1e20, "x2": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: NaN value
-    input_dict = {"x1": float('nan'), "x2": 1.0}
+    # Input 9: Floating-point decimals
+    input_dict = {"x1": 0.3333333333333333, "x2": 0.6666666666666666}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Decimals
-    input_dict = {"x1": 1.234, "x2": 5.678}
+    # Input 10: Infinity value
+    input_dict = {"x1": math.inf, "x2": 5.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Negative infinity
-    input_dict = {"x1": float('-inf'), "x2": float('-inf')}
+    # Input 11: Negative infinity value
+    input_dict = {"x1": -math.inf, "x2": math.inf}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: NaN value
+    input_dict = {"x1": math.nan, "x2": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

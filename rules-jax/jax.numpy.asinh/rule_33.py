@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input is a tuple of integers, its length should be bounded between 1 and 4 (Rule 33)
+# input tuple of floats must have length bounded between 1 and 64 (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] >= 1, v["arg1_length"] <= 4)) if n else
-          And(v["arg1_length"] >= 1, v["arg1_length"] <= 4))
+    s.add(Not(And(1 <= v["arg1_length"], v["arg1_length"] <= 64)) if n else
+          And(1 <= v["arg1_length"], v["arg1_length"] <= 64))
 )
 
 def rule_33_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_33_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
             return False
 
         # Variable declarations

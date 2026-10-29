@@ -4,43 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def iterable_inputs():
     list_of_inputs = []
 
     # Input 1: Python True
-    list_of_inputs.append({"y": True})
+    input_dict = {"y": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 2: Python False
-    list_of_inputs.append({"y": False})
+    input_dict = {"y": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: numpy bool_ True
-    list_of_inputs.append({"y": np.bool_(True)})
+    # Input 3: numpy bool True
+    input_dict = {"y": np.bool_(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: numpy bool_ False
-    list_of_inputs.append({"y": np.bool_(False)})
+    # Input 4: numpy bool False
+    input_dict = {"y": np.bool_(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 0D numpy array True
-    list_of_inputs.append({"y": np.array(True, dtype=np.bool_)})
+    # Input 5: Python bool from int 1
+    input_dict = {"y": bool(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 0D numpy array False
-    list_of_inputs.append({"y": np.array(False, dtype=np.bool_)})
+    # Input 6: Python bool from int 0
+    input_dict = {"y": bool(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D numpy array with single True
-    list_of_inputs.append({"y": np.array([True], dtype=np.bool_)})
+    # Input 7: numpy True_ constant
+    input_dict = {"y": np.True_}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D numpy array with True and False
-    list_of_inputs.append({"y": np.array([True, False], dtype=np.bool_)})
+    # Input 8: numpy False_ constant
+    input_dict = {"y": np.False_}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D numpy array with True
-    list_of_inputs.append({"y": np.array([[True]], dtype=np.bool_)})
+    # Input 9: Python bool from comparison
+    input_dict = {"y": bool(2 > 1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D numpy array 2x2
-    list_of_inputs.append({"y": np.array([[True, False], [False, True]], dtype=np.bool_)})
+    # Input 10: Python bool from comparison
+    input_dict = {"y": bool(1 > 2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.iterable_6"] = iterable_inputs()
 

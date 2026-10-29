@@ -4,59 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_scipy_stats_bernoulli_ppf_inputs():
+def bernoulli_ppf_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {"q": 0.1, "p": 0.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2
+    # Input 1: Median with fair coin
     input_dict = {"q": 0.5, "p": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
+    # Input 2: Lower quantile with fair coin
+    input_dict = {"q": 0.1, "p": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Upper quantile with fair coin
     input_dict = {"q": 0.9, "p": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    input_dict = {"q": 0.2, "p": 0.1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5
-    input_dict = {"q": 0.8, "p": 0.1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6
+    # Input 4: Minimum quantile (0.0)
     input_dict = {"q": 0.0, "p": 0.3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
+    # Input 5: Maximum quantile (1.0)
     input_dict = {"q": 1.0, "p": 0.7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    input_dict = {"q": 0.5, "p": 0.9}
+    # Input 6: Highly biased towards 1
+    input_dict = {"q": 0.05, "p": 0.99}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    input_dict = {"q": 0.3, "p": 0.8}
+    # Input 7: Highly biased towards 0
+    input_dict = {"q": 0.95, "p": 0.01}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    input_dict = {"q": 0.75, "p": 0.25}
+    # Input 8: Boundary parameter p = 0.0
+    input_dict = {"q": 0.5, "p": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11
-    input_dict = {"q": 0.99, "p": 0.01}
+    # Input 9: Boundary parameter p = 1.0
+    input_dict = {"q": 0.5, "p": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Transition point q = 1 - p
+    input_dict = {"q": 0.6, "p": 0.4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Just below transition point
+    input_dict = {"q": 0.39, "p": 0.6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Just above transition point
+    input_dict = {"q": 0.41, "p": 0.6}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.bernoulli.ppf_2"] = jax_scipy_stats_bernoulli_ppf_inputs()
+generated_inputs["jax.scipy.stats.bernoulli.ppf_2"] = bernoulli_ppf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

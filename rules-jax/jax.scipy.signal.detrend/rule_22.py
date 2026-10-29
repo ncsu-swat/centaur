@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# breakpoints in a tensor must lie within the bounds of the detrended axis (Rule 22)
+# all breakpoints in a list must be within valid index range along a negative axis (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), Select(v["arg3_range"], 0) >= 0), Select(v["arg3_range"], 1) < Select(v["arg1_shape"], v["arg2_value"]))) if n else
-          And(And(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), Select(v["arg3_range"], 0) >= 0), Select(v["arg3_range"], 1) < Select(v["arg1_shape"], v["arg2_value"])))
+    s.add(Not(If(And(v["arg2_value"] < 0, v["arg2_value"] >= -1 * v["arg1_ndim"]), And([Implies(i < (v["arg3_length"] - 1 + 1), And(0 <= Select(v["arg3_values"], i), Select(v["arg3_values"], i) < Select(v["arg1_shape"], v["arg1_ndim"] + v["arg2_value"]))) for i in range(6)]), True)) if n else
+          If(And(v["arg2_value"] < 0, v["arg2_value"] >= -1 * v["arg1_ndim"]), And([Implies(i < (v["arg3_length"] - 1 + 1), And(0 <= Select(v["arg3_values"], i), Select(v["arg3_values"], i) < Select(v["arg1_shape"], v["arg1_ndim"] + v["arg2_value"]))) for i in range(6)]), True))
 )
 
 def rule_22_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -25,7 +25,7 @@ def rule_22_func(arg1, arg2, arg3, solver=None, neg=False):
             return False
         if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
-        if not isinstance(arg3, np.ndarray):
+        if not (isinstance(arg3, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
             return False
 
         # Variable declarations
@@ -33,20 +33,22 @@ def rule_22_func(arg1, arg2, arg3, solver=None, neg=False):
         arg1_ndim = Int('arg1_ndim')
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_value = Int('arg2_value')
-        arg3_range = Array('arg3_range', IntSort(), IntSort())
+        arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         for i in range(arg1.ndim):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
         solver.add(arg2_value == int(arg2))
-        arg3_range = Store(arg3_range, 0, int(np.min(arg3)))
-        arg3_range = Store(arg3_range, 1, int(np.max(arg3)))
+        solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 22
-        rule_22(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_range': arg3_range})
+        rule_22(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_22(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_range': arg3['range']}, neg)
+        rule_22(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

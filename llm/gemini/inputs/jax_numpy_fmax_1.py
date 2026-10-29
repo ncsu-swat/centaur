@@ -10,55 +10,60 @@ import copy
 def fmax_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float arrays of the same size with negative and positive values
-    x1 = np.array([1.0, -2.0, 3.0, -4.0], dtype=np.float32)
-    x2 = np.array([-1.0, 2.0, -3.0, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 1: 1D integer arrays with positive and negative values
+    x1 = np.array([1, 3, -7, 8], dtype=np.int32)
+    x2 = np.array([-1, 4, 6, -9], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D random float32 arrays of same size
-    x1 = np.random.randn(3, 4).astype(np.float32)
-    x2 = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: 2D float arrays of same shape
+    x1 = np.array([[1.5, -2.3], [0.0, 4.2]], dtype=np.float32)
+    x2 = np.array([[-0.5, 3.1], [-1.2, 2.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: Broadcasting 1D array to 2D array
-    x1 = np.random.randn(5).astype(np.float32)
-    x2 = np.random.randn(3, 5).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 3: Arrays with NaN and Inf values
+    x1 = np.array([np.inf, 6.0, -np.inf, np.nan], dtype=np.float32)
+    x2 = np.array([3.0, np.nan, np.nan, -1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: Arrays containing special float values (nan, inf, -inf)
-    x1 = np.array([[np.nan, 1.0], [2.0, np.inf]], dtype=np.float32)
-    x2 = np.array([[3.0, np.nan], [-np.inf, 4.0]], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 4: Broadcasting 1D to 2D
+    x1 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    x2 = np.array([[5.0], [0.0], [-2.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: 2D integer arrays (int32)
-    x1 = np.random.randint(-100, 100, size=(5, 2)).astype(np.int32)
-    x2 = np.random.randint(-100, 100, size=(5, 2)).astype(np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 6: 3D float64 arrays
+    # Input 5: 3D arrays with float64
     x1 = np.random.randn(2, 3, 4).astype(np.float64)
     x2 = np.random.randn(2, 3, 4).astype(np.float64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: Scalar-like array broadcasting to a 2D array
-    x1 = np.array([10.0], dtype=np.float32)
-    x2 = np.random.randn(4, 4).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: 0D scalar arrays
+    x1 = np.array(5, dtype=np.int64)
+    x2 = np.array(-3, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Broadcasting with multiple dimensions (1, 3, 1) vs (2, 3, 4)
-    x1 = np.random.randn(1, 3, 1).astype(np.float32)
-    x2 = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: Broadcasting 0D to 3D
+    x1 = np.array(0.0, dtype=np.float32)
+    x2 = np.random.randn(2, 2, 2).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Large values and small float64 values
-    x1 = np.array([1e10, -1e10, 1e-10], dtype=np.float64)
-    x2 = np.array([1e9, -1e9, 2e-10], dtype=np.float64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: Boolean tensors
+    x1 = np.array([[True, False], [False, True]], dtype=np.bool_)
+    x2 = np.array([[False, False], [True, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: 4D arrays with complex broadcasting shapes (1, 4, 1, 5) vs (2, 1, 3, 5)
-    x1 = np.random.randn(1, 4, 1, 5).astype(np.float32)
-    x2 = np.random.randn(2, 1, 3, 5).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 9: Unsigned integer tensors
+    x1 = np.array([0, 255, 128], dtype=np.uint8)
+    x2 = np.array([1, 100, 200], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 4D tensors with broadcasting
+    x1 = np.random.randn(1, 3, 1, 5).astype(np.float32)
+    x2 = np.random.randn(2, 1, 4, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: Empty/Zero-sized arrays
+    x1 = np.array([], dtype=np.float32)
+    x2 = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
 

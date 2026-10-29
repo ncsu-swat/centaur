@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input tensor must be of floating-point type for digamma (Rule 1)
+# digamma requires tensor to have floating-point dtype (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)) if n else

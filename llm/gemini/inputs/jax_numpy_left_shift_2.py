@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def left_shift_inputs():
     list_of_inputs = []
@@ -13,59 +14,61 @@ def left_shift_inputs():
     # Input 1: 1D int32 array, shift by 1
     x = np.array([0, 1, 2, 3, 4], dtype=np.int32)
     y = 1
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D int32 array, shift by 2
-    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    # Input 2: 2D int32 array with positive and negative values, shift by 2
+    x = np.array([[-4, -2, 0], [2, 4, 6]], dtype=np.int32)
     y = 2
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D int32 array, shift by 3
+    # Input 3: 0D scalar array int64, shift by 0
+    x = np.array(42, dtype=np.int64)
+    y = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 3D int32 array, shift by 3
     x = np.arange(8, dtype=np.int32).reshape((2, 2, 2))
     y = 3
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 1D signed int32 array with negative values, shift by 1
-    x = np.array([-5, -4, -3, -2, -1, 0, 1, 2], dtype=np.int32)
+    # Input 5: 1D int64 array with negative numbers, shift by 1
+    x = np.array([-10, -1, 0, 1, 10], dtype=np.int64)
     y = 1
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 2D int32 array, shift by 4
-    x = np.array([[10, 20], [30, 40]], dtype=np.int32)
+    # Input 6: 4D int32 array, shift by 4
+    x = np.ones((2, 1, 2, 3), dtype=np.int32)
     y = 4
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 0D (scalar) int64 array, shift by 10
-    x = np.array(5, dtype=np.int64)
-    y = 10
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 7: 4D int32 array, shift by 2
-    x = np.ones((2, 2, 2, 2), dtype=np.int32)
-    y = 2
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 8: 1D int64 array, shift by 0
-    x = np.array([100, 200, 300], dtype=np.int64)
-    y = 0
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 9: 3D int64 array, shift by 16
-    x = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int64)
-    y = 16
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 10: 2D int64 array, shift by 5
-    x = np.array([[128, 256], [512, 1024]], dtype=np.int64)
+    # Input 7: 2D int64 array, shift by 5
+    x = np.array([[100, 200], [300, 400]], dtype=np.int64)
     y = 5
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 11: 1D int32 array with random integers, shift by 3
-    x = np.random.randint(-100, 100, size=(10,)).astype(np.int32)
-    y = 3
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: 1D int32 array, shift by 8
+    x = np.array([1, 255, 1024], dtype=np.int32)
+    y = 8
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: Empty 1D int32 array, shift by 2
+    x = np.array([], dtype=np.int32)
+    y = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 3D int64 array with zeros and ones, shift by 10
+    x = np.zeros((3, 3, 3), dtype=np.int64)
+    x[0, 1, 2] = 1
+    y = 10
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 2D int32 array, shift by 16
+    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    y = 16
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.left_shift_2"] = left_shift_inputs()
 

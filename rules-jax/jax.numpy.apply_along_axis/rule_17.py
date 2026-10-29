@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the tensor has exactly 2 dimensions, the axis parameter must be within the range [-2, 1] (Rule 17)
+# 3D tensor with axis bounded within valid range (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_ndim"] == 2, And(v["arg1_value"] >= -2, v["arg1_value"] <= 1), True)) if n else
-          If(v["arg2_ndim"] == 2, And(v["arg1_value"] >= -2, v["arg1_value"] <= 1), True))
+    s.add(Not(And(And(v["arg2_ndim"] == 3, v["arg1_value"] >= 0), v["arg1_value"] <= 2)) if n else
+          And(And(v["arg2_ndim"] == 3, v["arg1_value"] >= 0), v["arg1_value"] <= 2))
 )
 
 def rule_17_func(arg1, arg2, solver=None, neg=False):

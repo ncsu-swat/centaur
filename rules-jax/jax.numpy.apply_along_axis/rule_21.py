@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis parameter must be within the valid range of the tensor dimensions (Rule 21)
+# when applying along an axis of a 2D array, axis must select rows or columns (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] < v["arg2_ndim"], v["arg1_value"] + v["arg2_ndim"] >= 0)) if n else
-          And(v["arg1_value"] < v["arg2_ndim"], v["arg1_value"] + v["arg2_ndim"] >= 0))
+    s.add(Not(If(v["arg2_ndim"] == 2, Or(Or(Or(v["arg1_value"] == 0, v["arg1_value"] == 1), v["arg1_value"] == -1), v["arg1_value"] == -2), True)) if n else
+          If(v["arg2_ndim"] == 2, Or(Or(Or(v["arg1_value"] == 0, v["arg1_value"] == 1), v["arg1_value"] == -1), v["arg1_value"] == -2), True))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):

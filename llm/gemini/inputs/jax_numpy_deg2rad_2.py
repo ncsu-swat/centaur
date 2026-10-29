@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def deg2rad_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero degrees
+    # Input 1: zero degrees
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Right angle (90 degrees)
+    # Input 2: right angle (90 degrees)
     input_dict = {"x": 90.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Straight angle (180 degrees)
+    # Input 3: straight angle (180 degrees)
     input_dict = {"x": 180.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Full rotation (360 degrees)
+    # Input 4: full circle (360 degrees)
     input_dict = {"x": 360.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative acute angle
+    # Input 5: negative angle (-45 degrees)
     input_dict = {"x": -45.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative straight angle
-    input_dict = {"x": -180.0}
+    # Input 6: negative full rotation (-360 degrees)
+    input_dict = {"x": -360.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Approximately one radian in degrees
-    input_dict = {"x": 57.29577951308232}
+    # Input 7: fractional degree
+    input_dict = {"x": 33.3333}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Double rotation
-    input_dict = {"x": 720.0}
+    # Input 8: small fractional angle
+    input_dict = {"x": 1e-4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small positive angle
-    input_dict = {"x": 0.001}
+    # Input 9: large angle
+    input_dict = {"x": 7200.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative fractional angle
-    input_dict = {"x": -0.1}
+    # Input 10: negative fractional angle
+    input_dict = {"x": -123.456}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: NaN value
+    input_dict = {"x": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.deg2rad_2"] = deg2rad_inputs()
 

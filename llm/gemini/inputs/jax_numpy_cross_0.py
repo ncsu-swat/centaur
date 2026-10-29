@@ -4,65 +4,66 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cross_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D vectors of size 3 (standard 3D cross product)
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    b = np.array([4.0, 5.0, 6.0], dtype=np.float32)
+    # Input 1: 1D vectors of length 3, float32, axis=-1
+    a = np.array([1.0, 2.0, -3.0], dtype=np.float32)
+    b = np.array([4.0, -5.0, 6.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "b": b,
         "axisa": -1,
         "axisb": -1,
         "axisc": -1,
-        "axis": -1
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D vectors of size 2 (2D cross product, returns scalar)
-    a = np.array([1.0, 2.0], dtype=np.float32)
-    b = np.array([3.0, 4.0], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "axisa": -1,
-        "axisb": -1,
-        "axisc": -1,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Batched 3D vectors (2D arrays), shape (5, 3)
-    a = np.random.randn(5, 3).astype(np.float32)
-    b = np.random.randn(5, 3).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "axisa": -1,
-        "axisb": -1,
-        "axisc": -1,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Batched 2D vectors (2D arrays), axis=0, shape (2, 5)
-    a = np.random.randn(2, 5).astype(np.float32)
-    b = np.random.randn(2, 5).astype(np.float32)
+    # Input 2: 1D vectors of length 2, int32, axis=0
+    a = np.array([2, -3], dtype=np.int32)
+    b = np.array([-4, 5], dtype=np.int32)
     input_dict = {
         "a": a,
         "b": b,
         "axisa": 0,
         "axisb": 0,
         "axisc": 0,
-        "axis": 0
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D arrays, cross product along axis 1 (size 3)
+    # Input 3: 2D arrays along axis 1 (length 3), float64
+    a = np.random.randn(4, 3).astype(np.float64)
+    b = np.random.randn(4, 3).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axisa": 1,
+        "axisb": 1,
+        "axisc": 1,
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D arrays along axis 0 (length 2), int64
+    a = np.random.randint(-10, 10, size=(2, 5)).astype(np.int64)
+    b = np.random.randint(-10, 10, size=(2, 5)).astype(np.int64)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axisa": 0,
+        "axisb": 0,
+        "axisc": 0,
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D arrays along axis 1 (length 3), float32
     a = np.random.randn(2, 3, 4).astype(np.float32)
     b = np.random.randn(2, 3, 4).astype(np.float32)
     input_dict = {
@@ -71,76 +72,81 @@ def cross_inputs():
         "axisa": 1,
         "axisb": 1,
         "axisc": 1,
-        "axis": 1
+        "axis": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Broadcasting shapes, a: (4, 3), b: (1, 3)
-    a = np.random.randn(4, 3).astype(np.float32)
-    b = np.random.randn(1, 3).astype(np.float32)
+    # Input 6: 3D arrays along axis -1 (length 3), complex64
+    a = (np.random.randn(3, 4, 3) + 1j * np.random.randn(3, 4, 3)).astype(
+        np.complex64
+    )
+    b = (np.random.randn(3, 4, 3) + 1j * np.random.randn(3, 4, 3)).astype(
+        np.complex64
+    )
     input_dict = {
         "a": a,
         "b": b,
         "axisa": -1,
         "axisb": -1,
         "axisc": -1,
-        "axis": -1
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Float64 inputs, 3D vectors
-    a = np.random.randn(3).astype(np.float64)
-    b = np.random.randn(3).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "axisa": -1,
-        "axisb": -1,
-        "axisc": -1,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Integer inputs, 2D vectors with negative values
-    a = np.array([-1, 5], dtype=np.int32)
-    b = np.array([3, -2], dtype=np.int32)
+    # Input 7: 3D arrays along axis 0 (length 3), float32
+    a = np.random.randn(3, 2, 2).astype(np.float32)
+    b = np.random.randn(3, 2, 2).astype(np.float32)
     input_dict = {
         "a": a,
         "b": b,
         "axisa": 0,
         "axisb": 0,
         "axisc": 0,
-        "axis": 0
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large batch of 3D vectors, integer type
-    a = np.random.randint(-10, 10, size=(10, 3)).astype(np.int32)
-    b = np.random.randint(-10, 10, size=(10, 3)).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "axisa": -1,
-        "axisb": -1,
-        "axisc": -1,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 4D arrays, cross product along axis 2 (size 2)
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    b = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    # Input 8: 4D arrays along axis 2 (length 3), float64
+    a = np.random.randn(2, 4, 3, 5).astype(np.float64)
+    b = np.random.randn(2, 4, 3, 5).astype(np.float64)
     input_dict = {
         "a": a,
         "b": b,
         "axisa": 2,
         "axisb": 2,
         "axisc": 2,
-        "axis": 2
+        "axis": 2,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Broadcasting compatible arrays along axis -1 (length 3), float32
+    a = np.random.randn(1, 3).astype(np.float32)
+    b = np.random.randn(5, 3).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axisa": -1,
+        "axisb": -1,
+        "axisc": -1,
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D broadcastable arrays along axis 1 (length 2), float32
+    a = np.random.randn(3, 2, 1, 4).astype(np.float32)
+    b = np.random.randn(3, 2, 5, 4).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axisa": 1,
+        "axisb": 1,
+        "axisc": 1,
+        "axis": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cross"] = cross_inputs()
 

@@ -4,19 +4,56 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import os
-os.environ["JAX_PLATFORMS"] = "cpu"
-
-import numpy as np
 import copy
+import jax.scipy.special
 
 def betaln_inputs():
     list_of_inputs = []
-    for i in range(1, 11):
-        list_of_inputs.append({
-            "a": np.int32(i),
-            "b": np.int32(i + 1)
-        })
+
+    # Input 1: Basic positive integers
+    input_dict = {"a": 1, "b": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Small distinct integers
+    input_dict = {"a": 2, "b": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Larger first argument
+    input_dict = {"a": 5, "b": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Equal moderate integers
+    input_dict = {"a": 10, "b": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Larger integers
+    input_dict = {"a": 100, "b": 50}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Prime integers
+    input_dict = {"a": 7, "b": 13}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: a=1 with larger b
+    input_dict = {"a": 1, "b": 20}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Larger a with b=1
+    input_dict = {"a": 20, "b": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Moderate asymmetric integers
+    input_dict = {"a": 15, "b": 4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: High magnitude integers
+    input_dict = {"a": 250, "b": 500}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Consecutive integers
+    input_dict = {"a": 8, "b": 9}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
     return list_of_inputs
 
 generated_inputs["jax.scipy.special.betaln_3"] = betaln_inputs()

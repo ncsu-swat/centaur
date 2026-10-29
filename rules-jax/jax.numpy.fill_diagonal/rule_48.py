@@ -7,37 +7,35 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when filling diagonal with a tuple of numbers, the tuple must not be empty and input must be at least 2D (Rule 48)
+# input tensor has at least 2 dimensions with positive leading two dimensions (Rule 48)
 
 rule_48 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 2, v["arg2_length"] > 0)) if n else
-          And(v["arg1_ndim"] >= 2, v["arg2_length"] > 0))
+    s.add(Not(And(And(v["arg1_ndim"] >= 2, Select(v["arg1_shape"], 0) > 0), Select(v["arg1_shape"], 1) > 0)) if n else
+          And(And(v["arg1_ndim"] >= 2, Select(v["arg1_shape"], 0) > 0), Select(v["arg1_shape"], 1) > 0))
 )
 
-def rule_48_func(arg1, arg2, solver=None, neg=False):
+def rule_48_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not ((isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)) or (isinstance(arg2, tuple) and all(isinstance(e, (float, np.floating)) for e in arg2))):
-            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 48
-        rule_48(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
+        rule_48(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_48(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)
+        rule_48(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

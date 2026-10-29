@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# A 2D input tensor must have dimensions of size at least 2 (Rule 83)
+# if tensor is 5D then all five dimensions must be strictly positive (Rule 83)
 
 rule_83 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 2, And(Select(v["arg1_shape"], 0) >= 2, Select(v["arg1_shape"], 1) >= 2), True)) if n else
-          If(v["arg1_ndim"] == 2, And(Select(v["arg1_shape"], 0) >= 2, Select(v["arg1_shape"], 1) >= 2), True))
+    s.add(Not(If(v["arg1_ndim"] == 5, And([Implies(i < (4 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]), True)) if n else
+          If(v["arg1_ndim"] == 5, And([Implies(i < (4 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]), True))
 )
 
 def rule_83_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_83_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 83
-        rule_83(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_83(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_83(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_83(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If k is negative, its magnitude should be less than row dimension N (Rule 39)
+# column dimension M must strictly exceed sub-diagonal offset k (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg2_value"] > 0 - v["arg1_value"], True)) if n else
-          If(v["arg2_value"] < 0, v["arg2_value"] > 0 - v["arg1_value"], True))
+    s.add(Not(v["arg1_value"] - v["arg2_value"] > 0) if n else
+          v["arg1_value"] - v["arg2_value"] > 0)
 )
 
 def rule_39_func(arg1, arg2, solver=None, neg=False):

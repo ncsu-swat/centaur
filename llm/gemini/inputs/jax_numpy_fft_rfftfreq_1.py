@@ -4,83 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rfftfreq_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({
-        "n": int(8),
-        "d": float(1.0),
-        "dtype": np.float32
-    })
+    # Input 1: Basic even n, default-like parameters
+    input_dict = {"n": 8, "d": 1.0, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    list_of_inputs.append({
-        "n": int(16),
-        "d": float(0.5),
-        "dtype": np.float64
-    })
+    # Input 2: Odd n, float64 dtype
+    input_dict = {"n": 9, "d": 0.5, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    list_of_inputs.append({
-        "n": int(100),
-        "d": float(0.1),
-        "dtype": np.float32
-    })
+    # Input 3: n = 1 minimal positive length
+    input_dict = {"n": 1, "d": 2.0, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    list_of_inputs.append({
-        "n": int(256),
-        "d": float(0.01),
-        "dtype": np.float64
-    })
+    # Input 4: n = 2 small even length
+    input_dict = {"n": 2, "d": 0.1, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    list_of_inputs.append({
-        "n": int(1024),
-        "d": float(2.5),
-        "dtype": np.float32
-    })
+    # Input 5: Large n, small sample spacing
+    input_dict = {"n": 1024, "d": 0.001, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    list_of_inputs.append({
-        "n": int(7),
-        "d": float(1.0),
-        "dtype": np.float64
-    })
+    # Input 6: Negative sample spacing
+    input_dict = {"n": 16, "d": -1.0, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    list_of_inputs.append({
-        "n": int(15),
-        "d": float(-0.5),
-        "dtype": np.float32
-    })
+    # Input 7: Medium odd n with negative spacing
+    input_dict = {"n": 25, "d": -0.25, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    list_of_inputs.append({
-        "n": int(50),
-        "d": float(1e-3),
-        "dtype": np.float32
-    })
+    # Input 8: Power of 2 with float16 dtype
+    input_dict = {"n": 64, "d": 1.5, "dtype": np.dtype(np.float16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    list_of_inputs.append({
-        "n": int(12),
-        "d": float(3.14159),
-        "dtype": np.float64
-    })
+    # Input 9: Large odd length
+    input_dict = {"n": 513, "d": 10.0, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    list_of_inputs.append({
-        "n": int(2000),
-        "d": float(0.005),
-        "dtype": np.float32
-    })
+    # Input 10: Zero window length
+    input_dict = {"n": 0, "d": 1.0, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Complex dtype output
+    input_dict = {"n": 128, "d": 0.05, "dtype": np.dtype(np.complex64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.rfftfreq_1"] = rfftfreq_inputs()
 

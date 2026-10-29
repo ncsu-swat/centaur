@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensors must have at least 2 dimensions for batch matrix multiplication (Rule 1)
+# lhs and rhs must have the same number of dimensions and at least rank 3 (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 2, v["arg2_ndim"] >= 2)) if n else
-          And(v["arg1_ndim"] >= 2, v["arg2_ndim"] >= 2))
+    s.add(Not(And(v["arg1_ndim"] >= 3, v["arg1_ndim"] == v["arg2_ndim"])) if n else
+          And(v["arg1_ndim"] >= 3, v["arg1_ndim"] == v["arg2_ndim"]))
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):

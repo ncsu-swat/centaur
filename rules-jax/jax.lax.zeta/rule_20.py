@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# parameter x of Hurwitz zeta must be greater than 1 for convergence (Rule 20)
+# pole avoidance: scalar x must not equal 1 (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] > 1) if n else
-          v["arg1_value"] > 1)
+    s.add(Not(v["arg1_value"] != 1) if n else
+          v["arg1_value"] != 1)
 )
 
 def rule_20_func(arg1, solver=None, neg=False):

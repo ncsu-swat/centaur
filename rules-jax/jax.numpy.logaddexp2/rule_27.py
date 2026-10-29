@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# restrict excessive broadcasting by limiting the difference in ranks (Rule 27)
+# minimum element does not exceed maximum element for both input tensors (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_ndim"] <= v["arg1_ndim"] + 2, v["arg1_ndim"] <= v["arg2_ndim"] + 2)) if n else
-          And(v["arg2_ndim"] <= v["arg1_ndim"] + 2, v["arg1_ndim"] <= v["arg2_ndim"] + 2))
+    s.add(Not(And(Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1), Select(v["arg2_range"], 0) <= Select(v["arg2_range"], 1))) if n else
+          And(Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1), Select(v["arg2_range"], 0) <= Select(v["arg2_range"], 1)))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):
@@ -27,17 +27,19 @@ def rule_27_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_27(solver, {'arg1_range': arg1_range, 'arg2_range': arg2_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_27(solver, {'arg1_range': arg1['range'], 'arg2_range': arg2['range']}, neg)

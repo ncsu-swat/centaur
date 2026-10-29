@@ -7,35 +7,43 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If axis is a list of integers, all elements in the list must be unique (Rule 7)
+# scaling factor b must be broadcastable to the shape of a (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), (And([Implies(j < (v["arg1_length"] - 1 + 1), (If(i != j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j), True))) for j in range(6)]))) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), (And([Implies(j < (v["arg1_length"] - 1 + 1), (If(i != j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j), True))) for j in range(6)]))) for i in range(6)]))
+    s.add(Not(And(v["arg2_ndim"] <= v["arg1_ndim"], (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == 1, Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == Select(v["arg1_shape"], v["arg1_ndim"] - 1 - i))) for i in range(6)])))) if n else
+          And(v["arg2_ndim"] <= v["arg1_ndim"], (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == 1, Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == Select(v["arg1_shape"], v["arg1_ndim"] - 1 - i))) for i in range(6)]))))
 )
 
-def rule_7_func(arg1, solver=None, neg=False):
+def rule_7_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 7
-        rule_7(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_7(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_7(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_7(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

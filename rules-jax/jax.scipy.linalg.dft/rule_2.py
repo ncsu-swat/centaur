@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# DFT matrix output dtype must be complex (Rule 2)
+# dtype must be a complex floating-point dtype: complex64 or complex128 (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(Or(v["arg1_value"] == 9, v["arg1_value"] == 10)) if n else

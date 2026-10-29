@@ -4,63 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ediff1d_inputs():
     list_of_inputs = []
 
-    # 1. 1D int array with positive elements
+    # Input 1: 1D int32 array
     ary = np.array([2, 3, 5, 9, 1, 4], dtype=np.int32)
-    input_dict = {"ary": ary, "to_end": 20, "to_begin": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    to_end = 10
+    to_begin = -5
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 2. 1D float array
-    ary = np.array([1.5, 2.5, 4.0, 7.5], dtype=np.float32)
-    input_dict = {"ary": ary, "to_end": 5, "to_begin": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float32 array
+    ary = np.array([1.5, -2.3, 4.1, 0.0, 7.8], dtype=np.float32)
+    to_end = 0
+    to_begin = 3
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 3. 2D int array
-    ary = np.array([[2, -1, 4, 7], [3, 5, -6, 9]], dtype=np.int32)
-    input_dict = {"ary": ary, "to_end": -1, "to_begin": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D int64 array
+    ary = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int64)
+    to_end = -1
+    to_begin = 100
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 4. 3D float array
-    ary = np.random.randn(2, 3, 2).astype(np.float32)
-    input_dict = {"ary": ary, "to_end": 10, "to_begin": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D float64 array with negative and positive values
+    ary = np.array([[-1.0, 2.5], [3.0, -4.5]], dtype=np.float64)
+    to_end = 2
+    to_begin = -2
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 5. Small 1D array of size 2
-    ary = np.array([10, 20], dtype=np.int32)
-    input_dict = {"ary": ary, "to_end": 1, "to_begin": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D int32 array
+    ary = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
+    to_end = 99
+    to_begin = 0
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 6. 1D array with negative values
-    ary = np.array([-5, -10, -20, -50], dtype=np.int32)
-    input_dict = {"ary": ary, "to_end": -5, "to_begin": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Single-element 1D array
+    ary = np.array([42], dtype=np.int32)
+    to_end = 5
+    to_begin = -10
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 7. Larger 1D range array
-    ary = np.arange(100, dtype=np.int32)
-    input_dict = {"ary": ary, "to_end": 99, "to_begin": 100}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D int32 array with negative values
+    ary = np.array([1000, -2000, 3000, -4000], dtype=np.int32)
+    to_end = 50
+    to_begin = -50
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 8. 1D float64 array
-    ary = np.array([0.1, 0.2, 0.4, 0.8], dtype=np.float64)
-    input_dict = {"ary": ary, "to_end": 1, "to_begin": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D float32 array
+    ary = np.ones((2, 2, 2, 2), dtype=np.float32)
+    to_end = -7
+    to_begin = 7
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 9. 1D int16 array
-    ary = np.array([100, 200, 300, 400], dtype=np.int16)
-    input_dict = {"ary": ary, "to_end": 5, "to_begin": -5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D int64 array
+    ary = np.array([10, 20, 30, 40, 50], dtype=np.int64)
+    to_end = 1
+    to_begin = 2
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
-    # 10. 2D float64 array
-    ary = np.random.randn(5, 5).astype(np.float64)
-    input_dict = {"ary": ary, "to_end": 0, "to_begin": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D int32 array with shape (1, 8)
+    ary = np.array([[7, -3, 2, 11, -9, 0, 5, 8]], dtype=np.int32)
+    to_end = -12
+    to_begin = 25
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
+
+    # Input 11: 3D float32 array
+    ary = np.random.randn(3, 2, 4).astype(np.float32)
+    to_end = 0
+    to_begin = 0
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "to_end": to_end, "to_begin": to_begin})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ediff1d_2"] = ediff1d_inputs()
 

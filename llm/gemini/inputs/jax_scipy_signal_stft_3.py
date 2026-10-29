@@ -7,186 +7,203 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-class SafeTuple(tuple):
-    def __array__(self, dtype=None, copy=None):
-        return np.array(list(self), dtype=object)
+class WindowTuple(tuple):
+    def __array__(self, *args, **kwargs):
+        return np.array([0.0])
 
-def jax_scipy_signal_stft_inputs():
+def stft_inputs():
     list_of_inputs = []
 
-    # Case 1: 1D input, standard sampling frequency, Hann window
-    x = np.random.randn(1000).astype(np.float32)
+    # Input 1: 1D real signal, Hann window
+    x = np.random.randn(1024).astype(np.float64)
     input_dict = {
-        'x': x,
-        'fs': 16000.0,
-        'window': SafeTuple(('hann',)),
-        'nperseg': 256,
-        'noverlap': 128,
-        'nfft': 256,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
+        "x": x,
+        "fs": 1.0,
+        "window": WindowTuple(("hann",)),
+        "nperseg": 256,
+        "noverlap": 128,
+        "nfft": 256,
+        "detrend": False,
+        "return_onesided": True,
+        "boundary": "zeros",
+        "padded": True,
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 2: 1D input, Hamming window, two-sided spectrum, even boundary
+    # Input 2: 1D float32 signal with boxcar window and two-sided spectrum
     x = np.random.randn(500).astype(np.float32)
     input_dict = {
-        'x': x,
-        'fs': 1.0,
-        'window': SafeTuple(('hamming',)),
-        'nperseg': 128,
-        'noverlap': 64,
-        'nfft': 256,
-        'detrend': False,
-        'return_onesided': False,
-        'boundary': 'even',
-        'padded': False,
-        'axis': 0
+        "x": x,
+        "fs": 100.0,
+        "window": WindowTuple(("boxcar",)),
+        "nperseg": 64,
+        "noverlap": 32,
+        "nfft": 128,
+        "detrend": False,
+        "return_onesided": False,
+        "boundary": "even",
+        "padded": False,
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 3: 2D input, Blackman window, high frequency, odd boundary
-    x = np.random.randn(10, 1000).astype(np.float32)
+    # Input 3: 2D array along axis -1, Hamming window
+    x = np.random.randn(10, 512).astype(np.float32)
     input_dict = {
-        'x': x,
-        'fs': 44100.0,
-        'window': SafeTuple(('blackman',)),
-        'nperseg': 512,
-        'noverlap': 256,
-        'nfft': 512,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'odd',
-        'padded': True,
-        'axis': -1
+        "x": x,
+        "fs": 16000.0,
+        "window": WindowTuple(("hamming",)),
+        "nperseg": 128,
+        "noverlap": 64,
+        "nfft": 128,
+        "detrend": False,
+        "return_onesided": True,
+        "boundary": "odd",
+        "padded": True,
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 4: 2D input, Bartlett window, constant boundary
-    x = np.random.randn(200, 50).astype(np.float32)
+    # Input 4: 2D array along axis 0, Blackman window, no overlap
+    x = np.random.randn(512, 8).astype(np.float64)
     input_dict = {
-        'x': x,
-        'fs': 8000.0,
-        'window': SafeTuple(('bartlett',)),
-        'nperseg': 64,
-        'noverlap': 32,
-        'nfft': 128,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'constant',
-        'padded': False,
-        'axis': 0
+        "x": x,
+        "fs": 8000.0,
+        "window": WindowTuple(("blackman",)),
+        "nperseg": 64,
+        "noverlap": 0,
+        "nfft": 64,
+        "detrend": False,
+        "return_onesided": True,
+        "boundary": "constant",
+        "padded": True,
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 5: 3D input, Flattop window, two-sided
-    x = np.random.randn(5, 10, 2000).astype(np.float32)
+    # Input 5: Complex 1D signal with Kaiser window
+    x = (np.random.randn(1000) + 1j * np.random.randn(1000)).astype(np.complex64)
     input_dict = {
-        'x': x,
-        'fs': 100.0,
-        'window': SafeTuple(('flattop',)),
-        'nperseg': 200,
-        'noverlap': 100,
-        'nfft': 200,
-        'detrend': False,
-        'return_onesided': False,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
+        "x": x,
+        "fs": 44100.0,
+        "window": WindowTuple(("kaiser", 4.0)),
+        "nperseg": 256,
+        "noverlap": 128,
+        "nfft": 512,
+        "detrend": False,
+        "return_onesided": False,
+        "boundary": "zeros",
+        "padded": True,
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 6: 1D input with float64 precision, Bohman window
+    # Input 6: 3D float32 tensor with Tukey window
+    x = np.random.randn(4, 8, 256).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "fs": 250.0,
+        "window": WindowTuple(("tukey", 0.25)),
+        "nperseg": 32,
+        "noverlap": 16,
+        "nfft": 64,
+        "detrend": False,
+        "return_onesided": False,
+        "boundary": "zeros",
+        "padded": False,
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D float64 tensor along axis 0 with Bartlett window
+    x = np.random.randn(128, 4, 16).astype(np.float64)
+    input_dict = {
+        "x": x,
+        "fs": 500.0,
+        "window": WindowTuple(("bartlett",)),
+        "nperseg": 64,
+        "noverlap": 48,
+        "nfft": 128,
+        "detrend": False,
+        "return_onesided": True,
+        "boundary": "even",
+        "padded": True,
+        "axis": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D signal with Gaussian window
+    x = np.random.randn(2048).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "fs": 2.0,
+        "window": WindowTuple(("gaussian", 2.0)),
+        "nperseg": 512,
+        "noverlap": 256,
+        "nfft": 512,
+        "detrend": False,
+        "return_onesided": True,
+        "boundary": "constant",
+        "padded": False,
+        "axis": -1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 2D complex128 array along axis 1 with cosine window
+    x = (np.random.randn(16, 256) + 1j * np.random.randn(16, 256)).astype(np.complex128)
+    input_dict = {
+        "x": x,
+        "fs": 1000.0,
+        "window": WindowTuple(("cosine",)),
+        "nperseg": 64,
+        "noverlap": 32,
+        "nfft": 64,
+        "detrend": False,
+        "return_onesided": False,
+        "boundary": "odd",
+        "padded": True,
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D array along middle axis 1 with flattop window
+    x = np.random.randn(2, 500, 3).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "fs": 12.5,
+        "window": WindowTuple(("flattop",)),
+        "nperseg": 100,
+        "noverlap": 50,
+        "nfft": 100,
+        "detrend": False,
+        "return_onesided": False,
+        "boundary": "zeros",
+        "padded": True,
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Small 1D signal with parzen window
     x = np.random.randn(128).astype(np.float64)
     input_dict = {
-        'x': x,
-        'fs': 2.0,
-        'window': SafeTuple(('bohman',)),
-        'nperseg': 32,
-        'noverlap': 16,
-        'nfft': 64,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 7: 2D float64 input, Blackmanharris window, even boundary
-    x = np.random.randn(50, 500).astype(np.float64)
-    input_dict = {
-        'x': x,
-        'fs': 50.0,
-        'window': SafeTuple(('blackmanharris',)),
-        'nperseg': 100,
-        'noverlap': 50,
-        'nfft': 100,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'even',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 8: 3D input, Nuttall window
-    x = np.random.randn(2, 300, 4).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 10.0,
-        'window': SafeTuple(('nuttall',)),
-        'nperseg': 50,
-        'noverlap': 25,
-        'nfft': 50,
-        'detrend': False,
-        'return_onesided': False,
-        'boundary': 'odd',
-        'padded': False,
-        'axis': 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 9: Large 1D input, Parzen window
-    x = np.random.randn(4000).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 22050.0,
-        'window': SafeTuple(('parzen',)),
-        'nperseg': 1024,
-        'noverlap': 512,
-        'nfft': 1024,
-        'detrend': False,
-        'return_onesided': True,
-        'boundary': 'zeros',
-        'padded': True,
-        'axis': -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 10: 2D input with Triang window
-    x = np.random.randn(100, 250).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'fs': 400.0,
-        'window': SafeTuple(('triang',)),
-        'nperseg': 80,
-        'noverlap': 40,
-        'nfft': 128,
-        'detrend': False,
-        'return_onesided': False,
-        'boundary': 'constant',
-        'padded': True,
-        'axis': 0
+        "x": x,
+        "fs": 0.5,
+        "window": WindowTuple(("parzen",)),
+        "nperseg": 16,
+        "noverlap": 8,
+        "nfft": 32,
+        "detrend": False,
+        "return_onesided": True,
+        "boundary": "even",
+        "padded": False,
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.signal.stft_3"] = jax_scipy_signal_stft_inputs()
+generated_inputs["jax.scipy.signal.stft_3"] = stft_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

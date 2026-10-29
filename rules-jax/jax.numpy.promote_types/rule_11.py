@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If both inputs are dtypes and the first is complex, the second must be float or complex (Rule 11)
+# conditional promotion: boolean dtype requires a floating-point counterpart (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), (If(And(9 <= v["arg1_value"], v["arg1_value"] <= 10), And(6 <= v["arg2_value"], v["arg2_value"] <= 10), And(0 <= v["arg2_value"], v["arg2_value"] <= 10))))) if n else
-          And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), (If(And(9 <= v["arg1_value"], v["arg1_value"] <= 10), And(6 <= v["arg2_value"], v["arg2_value"] <= 10), And(0 <= v["arg2_value"], v["arg2_value"] <= 10)))))
+    s.add(Not(If(v["arg1_value"] == 0, And(v["arg2_value"] >= 6, v["arg2_value"] <= 8), And(v["arg2_value"] >= 0, v["arg2_value"] <= 10))) if n else
+          If(v["arg1_value"] == 0, And(v["arg2_value"] >= 6, v["arg2_value"] <= 8), And(v["arg2_value"] >= 0, v["arg2_value"] <= 10)))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):

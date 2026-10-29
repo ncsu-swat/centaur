@@ -4,61 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def less_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar int32
-    x = np.int32(5)
-    y = np.int32(10)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 1: positive integers, x < y
+    input_dict = {"x": 3, "y": 7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar int64 with negative values
-    x = np.int64(-3)
-    y = np.int64(-1)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 2: positive integers, x > y
+    input_dict = {"x": 10, "y": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D int32 arrays
-    x = np.array([1, 2, 3], dtype=np.int32)
-    y = np.array([3, 2, 1], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 3: equal positive integers
+    input_dict = {"x": 42, "y": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D int64 arrays
-    x = np.array([-5, 0, 5], dtype=np.int64)
-    y = np.array([-6, 0, 6], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 4: negative integers, x < y
+    input_dict = {"x": -10, "y": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D int32 arrays with broadcasting
-    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    y = np.array([2, 3], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 5: negative integers, x > y
+    input_dict = {"x": -3, "y": -8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D int64 arrays
-    x = np.array([[1, 2], [3, 4]], dtype=np.int64)
-    y = np.array([[4, 3], [2, 1]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 6: negative and positive integer
+    input_dict = {"x": -1, "y": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D int8 arrays
-    x = np.arange(8, dtype=np.int8).reshape(2, 2, 2)
-    y = (np.ones((2, 2, 2)) * 4).astype(np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 7: positive and negative integer
+    input_dict = {"x": 15, "y": -20}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D uint32 arrays
-    x = np.array([0, 10, 20], dtype=np.uint32)
-    y = np.array([5, 10, 15], dtype=np.uint32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 8: zero and positive integer
+    input_dict = {"x": 0, "y": 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 0D arrays
-    x = np.array(5, dtype=np.int32)
-    y = np.array(10, dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 9: zero and negative integer
+    input_dict = {"x": 0, "y": -50}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D int16 arrays with negative and positive limits
-    x = np.array([-32768, 32767], dtype=np.int16)
-    y = np.array([0, 0], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 10: both zeros
+    input_dict = {"x": 0, "y": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: large positive integers
+    input_dict = {"x": 1000000, "y": 2000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: large negative integers
+    input_dict = {"x": -5000000, "y": -1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

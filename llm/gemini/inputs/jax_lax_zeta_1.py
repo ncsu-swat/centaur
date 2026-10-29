@@ -4,63 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def zeta_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, float32, standard values
-    x = np.array([2.0, 3.0, 4.0], dtype=np.float32)
-    q = np.array([1.0, 1.5, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "q": q})
-
-    # Input 2: 2D arrays, float32
-    x = np.array([[2.5, 3.5], [4.5, 5.5]], dtype=np.float32)
-    q = np.array([[0.5, 1.2], [2.3, 3.1]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "q": q})
-
-    # Input 3: 0D arrays (scalars)
+    # Input 1: 0D scalar float32
     x = np.array(2.0, dtype=np.float32)
     q = np.array(1.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "q": q})
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 4: float64 arrays, 1D
+    # Input 2: 0D scalar float64
+    x = np.array(3.5, dtype=np.float64)
+    q = np.array(0.5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
+
+    # Input 3: 1D array float32
+    x = np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    q = np.array([1.0, 2.0, 0.5, 1.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
+
+    # Input 4: 1D array float64
     x = np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float64)
-    q = np.array([0.1, 0.5, 1.0, 2.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "q": q})
+    q = np.array([0.1, 0.5, 2.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 5: Broadcastable shapes (3, 1) and (1, 4)
-    x = np.array([[2.0], [3.0], [4.0]], dtype=np.float32)
-    q = np.array([[1.0, 1.5, 2.0, 2.5]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "q": q})
+    # Input 5: 2D array float32
+    x = np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float32)
+    q = np.array([[1.0, 1.0], [2.0, 2.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 6: 3D arrays, float32
-    x = np.random.uniform(1.5, 5.0, size=(2, 2, 2)).astype(np.float32)
-    q = np.random.uniform(0.5, 3.0, size=(2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x, "q": q})
+    # Input 6: 2D array float64
+    x = np.array([[2.5, 3.5, 4.5], [5.5, 6.5, 7.5]], dtype=np.float64)
+    q = np.array([[0.5, 1.0, 1.5], [2.0, 2.5, 3.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 7: Large values of x and q
-    x = np.array([10.0, 20.0, 50.0], dtype=np.float32)
-    q = np.array([5.0, 10.0, 20.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "q": q})
+    # Input 7: 3D array float32
+    x = np.full((2, 3, 4), 3.0, dtype=np.float32)
+    q = np.full((2, 3, 4), 1.25, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 8: Close to boundary values (x slightly > 1, q slightly > 0)
-    x = np.array([1.01, 1.05, 1.1], dtype=np.float64)
-    q = np.array([0.01, 0.05, 0.1], dtype=np.float64)
-    list_of_inputs.append({"x": x, "q": q})
+    # Input 8: 3D array float64
+    x = np.linspace(2.0, 8.0, 24, dtype=np.float64).reshape((2, 3, 4))
+    q = np.linspace(0.5, 3.0, 24, dtype=np.float64).reshape((2, 3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 9: Broadcastable shapes (1, 5) and (5, 5)
-    x = np.random.uniform(2.0, 4.0, size=(1, 5)).astype(np.float32)
-    q = np.random.uniform(1.0, 2.0, size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": x, "q": q})
+    # Input 9: 4D array float32
+    x = np.linspace(2.0, 10.0, 16, dtype=np.float32).reshape((2, 2, 2, 2))
+    q = np.linspace(0.1, 5.0, 16, dtype=np.float32).reshape((2, 2, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
-    # Input 10: 4D arrays, float32
-    x = np.random.uniform(1.2, 3.0, size=(2, 2, 2, 2)).astype(np.float32)
-    q = np.random.uniform(0.8, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x, "q": q})
+    # Input 10: 1D array float32 with larger values
+    x = np.array([5.0, 6.0, 7.0, 8.0, 9.0], dtype=np.float32)
+    q = np.array([2.0, 2.5, 3.0, 3.5, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "q": q}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.zeta_1"] = zeta_inputs()
 

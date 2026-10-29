@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input tensors for batch matrix multiplication must be floating-point or complex types (Rule 40)
+# rhs tensor rank must be at least 3 when precision tuple of length 2 is provided (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 6, v["arg2_dtype"] >= 6)) if n else
-          And(v["arg1_dtype"] >= 6, v["arg2_dtype"] >= 6))
+    s.add(Not(And(v["arg1_ndim"] >= 3, v["arg2_length"] == 2)) if n else
+          And(v["arg1_ndim"] >= 3, v["arg2_length"] == 2))
 )
 
 def rule_40_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_40_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, tuple) and all(isinstance(e, str) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_dtype = Int('arg2_dtype')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 40
-        rule_40(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
+        rule_40(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_40(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_40(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

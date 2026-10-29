@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input float value should be within a range to prevent overflow in hyperbolic sine calculation (Rule 48)
+# tensor data type must be within standard numeric type partitions (Rule 48)
 
 rule_48 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -709.0, v["arg1_value"] <= 709.0)) if n else
-          And(v["arg1_value"] >= -709.0, v["arg1_value"] <= 709.0))
+    s.add(Not(If(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10, v["arg1_dtype"] <= 5)) if n else
+          If(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10, v["arg1_dtype"] <= 5))
 )
 
 def rule_48_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_48_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 48
-        rule_48(solver, {'arg1_value': arg1_value})
+        rule_48(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_48(solver, {'arg1_value': arg1['value']}, neg)
+        rule_48(solver, {'arg1_dtype': arg1['dtype']}, neg)

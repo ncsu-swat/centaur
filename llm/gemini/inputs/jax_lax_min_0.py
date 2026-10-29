@@ -4,81 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def min_inputs():
+
+def lax_min_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 arrays
-    x = np.array([-1.0, 2.0, -3.0, 4.0], dtype=np.float32)
-    y = np.array([1.0, -2.0, 3.0, -4.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 arrays of same shape
+    x = np.array([-1.5, 0.0, 2.3, -4.8], dtype=np.float32)
+    y = np.array([0.5, -1.0, 2.0, 3.2], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D float32 arrays
-    x = np.random.randn(3, 4).astype(np.float32)
-    y = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float32 arrays with broadcasting (same rank)
+    x = np.array([[-2.0], [3.5], [1.0]], dtype=np.float32)
+    y = np.array([[1.0, -1.0, 2.0, 0.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D float64 arrays
-    x = np.random.randn(2, 3, 4).astype(np.float64)
-    y = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Scalar (0D tensor) and 2D array, float32
+    x = np.array(0.0, dtype=np.float32)
+    y = np.random.randn(3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 1D int32 arrays
-    x = np.array([-10, 20, 30], dtype=np.int32)
-    y = np.array([5, 15, -25], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D int32 arrays with negative values
+    x = np.array([-10, 5, 0, -3], dtype=np.int32)
+    y = np.array([2, -5, -1, -3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 2D int64 arrays
-    x = np.random.randint(-100, 100, size=(5, 5)).astype(np.int64)
-    y = np.random.randint(-100, 100, size=(5, 5)).astype(np.int64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D int64 arrays of same shape
+    x = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
+    y = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 0D arrays (scalars) float32
-    x = np.array(-5.5, dtype=np.float32)
-    y = np.array(2.3, dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D boolean arrays
+    x = np.array([[True, False], [True, True]], dtype=np.bool_)
+    y = np.array([[False, False], [True, False]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: Complex64 arrays
-    x = (np.random.randn(4) + 1j * np.random.randn(4)).astype(np.complex64)
-    y = (np.random.randn(4) + 1j * np.random.randn(4)).astype(np.complex64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D float64 arrays with broadcasting (same rank)
+    x = np.random.randn(2, 1, 4, 1).astype(np.float64)
+    y = np.random.randn(1, 3, 1, 5).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: Broadcasting with same rank: 2D float32 (1, 3) and (4, 3)
-    x = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
-    y = np.random.randn(4, 3).astype(np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 0D scalars, int32
+    x = np.array(-7, dtype=np.int32)
+    y = np.array(12, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Broadcasting with same rank: 3D int32 (2, 1, 3) and (2, 4, 3)
-    x = np.random.randint(-10, 10, size=(2, 1, 3)).astype(np.int32)
-    y = np.random.randint(-10, 10, size=(2, 4, 3)).astype(np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D int32 arrays with broadcasting (same rank)
+    x = np.array([[1], [2], [3]], dtype=np.int32)
+    y = np.array([[3, 2, 1]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: Large 2D arrays float32
-    x = np.random.randn(128, 128).astype(np.float32)
-    y = np.random.randn(128, 128).astype(np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D float32 arrays
+    x = np.random.randn(2, 3, 2).astype(np.float32)
+    y = np.random.randn(2, 3, 2).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 11: Complex128 arrays
-    x = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex128)
-    y = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex128)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 1D float64 arrays
+    x = np.array([np.nan, 1.0, -np.inf, np.inf], dtype=np.float64)
+    y = np.array([2.0, np.nan, 0.0, -np.inf], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.min"] = min_inputs()
+
+generated_inputs["jax.lax.min"] = lax_min_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

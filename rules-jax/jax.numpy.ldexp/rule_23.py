@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# types of x1 and x2 must be real-valued and integer respectively when both are tensors (Rule 23)
+# exponent tensor values should stay within float32 limits when mantissa is single-precision (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_dtype"] <= 8, v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 5)) if n else
-          And(And(v["arg1_dtype"] <= 8, v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 5))
+    s.add(Not(If(v["arg1_dtype"] == 7, And(Select(v["arg2_range"], 0) >= -150, Select(v["arg2_range"], 1) <= 150), True)) if n else
+          If(v["arg1_dtype"] == 7, And(Select(v["arg2_range"], 0) >= -150, Select(v["arg2_range"], 1) <= 150), True))
 )
 
 def rule_23_func(arg1, arg2, solver=None, neg=False):
@@ -28,16 +28,17 @@ def rule_23_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_dtype = Int('arg1_dtype')
-        arg2_dtype = Int('arg2_dtype')
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 23
-        rule_23(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
+        rule_23(solver, {'arg1_dtype': arg1_dtype, 'arg2_range': arg2_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_23(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_23(solver, {'arg1_dtype': arg1['dtype'], 'arg2_range': arg2['range']}, neg)

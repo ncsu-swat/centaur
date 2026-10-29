@@ -4,83 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_xor_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array, boolean True
+    # Input 1: 1D boolean array
     input_dict = {
         "x": True,
-        "y": np.array([1, 2, 3, 4], dtype=np.int32)
+        "y": np.array([True, False, True, False], dtype=np.bool_),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int64 array, boolean False
+    # Input 2: 1D int32 array with positive values
+    input_dict = {"x": False, "y": np.array([0, 1, 2, 3], dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D int32 array with negative values
+    input_dict = {
+        "x": True,
+        "y": np.array([[-1, -2], [3, 4]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 0D scalar tensor (int64)
+    input_dict = {"x": True, "y": np.array(7, dtype=np.int64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D int32 array
     input_dict = {
         "x": False,
-        "y": np.array([[5, 6], [7, 8]], dtype=np.int64)
+        "y": np.arange(8, dtype=np.int32).reshape((2, 2, 2)),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D boolean array, boolean True
-    input_dict = {
-        "x": True,
-        "y": np.array([True, False, True, False], dtype=bool)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 3D random int32 array, boolean False
+    # Input 6: 2D boolean array
     input_dict = {
         "x": False,
-        "y": np.random.randint(-50, 50, size=(2, 3, 2), dtype=np.int32)
+        "y": np.array(
+            [[True, False, True], [False, True, False]], dtype=np.bool_
+        ),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D uint8 array, boolean True
+    # Input 7: 1D int32 array with mixed values
     input_dict = {
         "x": True,
-        "y": np.random.randint(0, 255, size=(5,), dtype=np.uint8)
+        "y": np.array([-128, -1, 0, 1, 127], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D int16 array, boolean False
+    # Input 8: 4D int64 array
+    input_dict = {
+        "x": True,
+        "y": np.ones((2, 1, 3, 2), dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D int64 array with large values
     input_dict = {
         "x": False,
-        "y": np.array([1024, -2048, 4096], dtype=np.int16)
+        "y": np.array([0, 1024, 65535, 2147483647], dtype=np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D large int64 array with negative numbers, boolean True
+    # Input 10: 2D int64 array with large negative and positive values
     input_dict = {
         "x": True,
-        "y": np.random.randint(-1000, 1000, size=(3, 4), dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 3D small int32 array, boolean True
-    input_dict = {
-        "x": True,
-        "y": np.array([[[1]], [[2]]], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 1D single-element boolean array, boolean False
-    input_dict = {
-        "x": False,
-        "y": np.array([True], dtype=bool)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 4D random int32 array, boolean True
-    input_dict = {
-        "x": True,
-        "y": np.random.randint(-10, 10, size=(2, 2, 2, 2), dtype=np.int32)
+        "y": np.array([[-1000000000, 1000000000], [0, -1]], dtype=np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_xor_5"] = bitwise_xor_inputs()
 

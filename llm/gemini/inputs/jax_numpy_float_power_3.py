@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def float_power_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive integers
+    # Input 1: positive base, positive exponent
     input_dict = {"x": 2, "y": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative base, positive exponent
-    input_dict = {"x": -5, "y": 2}
+    # Input 2: negative base, positive even exponent
+    input_dict = {"x": -3, "y": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Positive base, negative exponent
-    input_dict = {"x": 10, "y": -2}
+    # Input 3: negative base, positive odd exponent
+    input_dict = {"x": -2, "y": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Zero base, positive exponent
-    input_dict = {"x": 0, "y": 5}
+    # Input 4: positive base, zero exponent
+    input_dict = {"x": 10, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Positive base, zero exponent
-    input_dict = {"x": 7, "y": 0}
+    # Input 5: positive base, negative exponent
+    input_dict = {"x": 5, "y": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int32 types
-    input_dict = {"x": np.int32(3), "y": np.int32(4)}
+    # Input 6: zero base, positive exponent
+    input_dict = {"x": 0, "y": 4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.int64 types with negative base
-    input_dict = {"x": np.int64(-2), "y": np.int64(5)}
+    # Input 7: negative base, negative exponent
+    input_dict = {"x": -2, "y": -3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Mixed numpy integer types
-    input_dict = {"x": np.int32(5), "y": np.int64(-1)}
+    # Input 8: numpy int32 scalars
+    input_dict = {"x": np.int32(4), "y": np.int32(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large base, small exponent
-    input_dict = {"x": 1000, "y": 2}
+    # Input 9: numpy int64 scalars
+    input_dict = {"x": np.int64(7), "y": np.int64(3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative base, negative exponent
-    input_dict = {"x": -4, "y": -3}
+    # Input 10: base 1, large exponent
+    input_dict = {"x": 1, "y": 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: base -1, odd exponent
+    input_dict = {"x": -1, "y": 99}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: numpy int16 scalars
+    input_dict = {"x": np.int16(3), "y": np.int16(4)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.float_power_3"] = float_power_inputs()
 

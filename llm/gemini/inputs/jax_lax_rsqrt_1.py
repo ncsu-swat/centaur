@@ -12,53 +12,47 @@ def rsqrt_inputs():
 
     # Input 1: 1D float32 array
     x = np.array([1.0, 4.0, 9.0, 16.0], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
     # Input 2: 2D float32 array
-    x = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    x = np.array([[0.25, 1.0], [4.0, 16.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 3: 3D float64 array
-    x = np.random.uniform(1.0, 100.0, size=(2, 2, 2)).astype(np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Scalar (0D) float64 array
+    x = np.array(2.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 4: 4D float32 array
-    x = np.random.uniform(0.5, 2.0, size=(2, 3, 2, 1)).astype(np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float64 array
+    x = np.arange(1.0, 9.0, dtype=np.float64).reshape((2, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 5: 1D float16 array
-    x = np.array([0.25, 0.0625, 100.0], dtype=np.float16)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D complex64 array
+    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, 5.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 6: 2D complex64 array
-    x = (np.random.uniform(1.0, 5.0, size=(2, 2)) + 1j * np.random.uniform(1.0, 5.0, size=(2, 2))).astype(np.complex64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D complex128 array
+    x = np.array([[2.0 + 0.0j, -4.0 + 1.0j], [0.5 - 1.5j, 3.0 + 2.0j]], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 7: 0D float32 array
-    x = np.array(4.0, dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D float32 array
+    x = np.random.uniform(0.1, 10.0, size=(2, 1, 3, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 8: 5D float32 array
-    x = np.random.uniform(0.1, 1.0, size=(1, 2, 1, 3, 2)).astype(np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D float16 array
+    x = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 9: 2D float64 array
-    x = np.random.uniform(10.0, 20.0, size=(4, 2)).astype(np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D float64 array with large values
+    x = np.array([[1e4, 1e8], [1e12, 1e16]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
-    # Input 10: 3D complex128 array
-    x = (np.random.uniform(0.5, 2.0, size=(2, 2, 2)) + 1j * np.random.uniform(0.5, 2.0, size=(2, 2, 2))).astype(np.complex128)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float32 array with small values
+    x = np.array([[1e-4, 1e-6], [1e-8, 1e-10]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
+
+    # Input 11: 3D complex64 array
+    x = (np.random.uniform(0.5, 5.0, size=(2, 3, 2)) + 1j * np.random.uniform(0.5, 5.0, size=(2, 3, 2))).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": ""}))
 
     return list_of_inputs
 

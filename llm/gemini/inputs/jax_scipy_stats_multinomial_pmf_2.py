@@ -4,75 +4,83 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_stats_multinomial_pmf_inputs():
+
+def multinomial_pmf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D case, 3 categories, scalar n
-    x = np.array([1, 2, 3], dtype=np.int32)
-    n = np.array(6, dtype=np.int32)
-    p = np.array([0.2, 0.3, 0.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
+    # Input 1: Basic 1D array with 3 categories, int32
+    x = np.array([2, 1, 1], dtype=np.int32)
+    n = np.array(4, dtype=np.int32)
+    p = np.array([0.5, 0.25, 0.25], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
 
-    # Input 2: 1D case, alternative counts, scalar n
-    x = np.array([0, 5, 0], dtype=np.int32)
+    # Input 2: 1D with some zeros in x
+    x = np.array([0, 0, 5], dtype=np.int32)
     n = np.array(5, dtype=np.int32)
-    p = np.array([0.1, 0.8, 0.1], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
+    p = np.array([0.2, 0.3, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
 
-    # Input 3: Batch of samples (2D x, scalar n, 1D p)
-    x = np.array([[1, 2], [2, 1]], dtype=np.int32)
+    # Input 3: 2D batched x with column vector n (2, 1)
+    x = np.array([[1, 2, 3], [2, 2, 2]], dtype=np.int32)
+    n = np.array([[6], [6]], dtype=np.int32)
+    p = np.array([0.2, 0.5, 0.3], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
+
+    # Input 4: 2D batched x with scalar n
+    x = np.array([[3, 0], [1, 2]], dtype=np.int32)
     n = np.array(3, dtype=np.int32)
     p = np.array([0.4, 0.6], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
 
-    # Input 4: Batch of samples (2D x, 2D n of shape (2, 1), 2D p)
-    x = np.array([[1, 2, 1], [0, 2, 2]], dtype=np.int32)
-    n = np.array([[4], [4]], dtype=np.int32)
-    p = np.array([[0.2, 0.5, 0.3], [0.1, 0.8, 0.1]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
+    # Input 5: int64 types for x and n, float64 for p
+    x = np.array([4, 6], dtype=np.int64)
+    n = np.array(10, dtype=np.int64)
+    p = np.array([0.4, 0.6], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
 
-    # Input 5: K=5 categories, 2D x, 2D n of shape (3, 1), 1D p
-    x = np.array([[2, 1, 0, 1, 1], [0, 0, 5, 0, 0], [1, 1, 1, 1, 1]], dtype=np.int32)
-    n = np.array([[5], [5], [5]], dtype=np.int32)
-    p = np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
+    # Input 6: Single category (k=1)
+    x = np.array([5], dtype=np.int32)
+    n = np.array(5, dtype=np.int32)
+    p = np.array([1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
 
-    # Input 6: 1D int64 counts and float32 probability, scalar n
-    x = np.array([1, 0, 0, 0], dtype=np.int64)
-    n = np.array(1, dtype=np.int64)
-    p = np.array([0.25, 0.25, 0.25, 0.25], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
-
-    # Input 7: High count integer array, scalar n
-    x = np.array([10, 20, 30], dtype=np.int32)
-    n = np.array(60, dtype=np.int32)
-    p = np.array([0.1, 0.3, 0.6], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
-
-    # Input 8: 3D input arrays, 3D n of shape (2, 2, 1)
-    x = np.array([[[1, 1, 1], [2, 1, 0]], [[0, 3, 0], [1, 1, 1]]], dtype=np.int32)
-    n = np.array([[[3], [3]], [[3], [3]]], dtype=np.int32)
-    p = np.array([[[0.3, 0.3, 0.4], [0.3, 0.3, 0.4]], [[0.3, 0.3, 0.4], [0.3, 0.3, 0.4]]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
-
-    # Input 9: 2D x, 2D n of shape (3, 1), 1D p
-    x = np.array([[2, 2], [1, 3], [4, 0]], dtype=np.int32)
-    n = np.array([[4], [4], [4]], dtype=np.int32)
+    # Input 7: 3D batched tensor with broadcastable column n
+    x = np.array([[[1, 1], [0, 2]], [[2, 0], [1, 1]]], dtype=np.int32)
+    n = np.array([[[2], [2]], [[2], [2]]], dtype=np.int32)
     p = np.array([0.5, 0.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
 
-    # Input 10: 10 categories, single row, 2D n of shape (1, 1)
-    x = np.array([[1, 0, 2, 0, 3, 0, 4, 0, 0, 0]], dtype=np.int32)
-    n = np.array([[10]], dtype=np.int32)
-    p = np.array([[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "n": n, "p": p})
+    # Input 8: Batched p matching 2D batched x
+    x = np.array([[2, 1], [1, 2]], dtype=np.int32)
+    n = np.array([[3], [3]], dtype=np.int32)
+    p = np.array([[0.7, 0.3], [0.4, 0.6]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
+
+    # Input 9: High-dimensional category vector (k=10)
+    x = np.ones(10, dtype=np.int32)
+    n = np.array(10, dtype=np.int32)
+    p = np.full(10, 0.1, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
+
+    # Input 10: Zero trials (n = 0)
+    x = np.array([0, 0], dtype=np.int32)
+    n = np.array(0, dtype=np.int32)
+    p = np.array([0.3, 0.7], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
+
+    # Input 11: int16 types with 4 categories
+    x = np.array([10, 20, 30, 40], dtype=np.int16)
+    n = np.array(100, dtype=np.int16)
+    p = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "n": n, "p": p}))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.multinomial.pmf_2"] = jax_scipy_stats_multinomial_pmf_inputs()
+
+generated_inputs["jax.scipy.stats.multinomial.pmf_2"] = multinomial_pmf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

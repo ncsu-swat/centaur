@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arctanh_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero
-    input_dict = {"x": 0.0}
+    # Input 1: zero
+    input_dict = {"x": float(0.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float
-    input_dict = {"x": 0.5}
+    # Input 2: standard positive float within domain
+    input_dict = {"x": float(0.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
-    input_dict = {"x": -0.5}
+    # Input 3: standard negative float within domain
+    input_dict = {"x": float(-0.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Float close to 1
-    input_dict = {"x": 0.99}
+    # Input 4: close to positive boundary
+    input_dict = {"x": float(0.999)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Float close to -1
-    input_dict = {"x": -0.99}
+    # Input 5: close to negative boundary
+    input_dict = {"x": float(-0.999)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small positive float
-    input_dict = {"x": 0.12345}
+    # Input 6: exact positive boundary
+    input_dict = {"x": float(1.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small negative float
-    input_dict = {"x": -0.12345}
+    # Input 7: exact negative boundary
+    input_dict = {"x": float(-1.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very small float
-    input_dict = {"x": 1e-5}
+    # Input 8: small positive float
+    input_dict = {"x": float(1e-6)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Another positive float
-    input_dict = {"x": 0.75}
+    # Input 9: small negative float
+    input_dict = {"x": float(-1e-6)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Another negative float
-    input_dict = {"x": -0.75}
+    # Input 10: float value outside [-1, 1] (returns nan)
+    input_dict = {"x": float(2.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Float near boundary
-    input_dict = {"x": 0.999}
+    # Input 11: negative float value outside [-1, 1]
+    input_dict = {"x": float(-3.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arctanh_2"] = arctanh_inputs()
 

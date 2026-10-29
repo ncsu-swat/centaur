@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor must have a valid number of dimensions (Rule 32)
+# 1-dimensional tensor input (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] >= 0) if n else
-          v["arg1_ndim"] >= 0)
+    s.add(Not(v["arg1_ndim"] == 1) if n else
+          v["arg1_ndim"] == 1)
 )
 
 def rule_32_func(arg1, solver=None, neg=False):

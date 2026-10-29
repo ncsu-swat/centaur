@@ -4,70 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax._src.numpy.util as jax_util
-import jax._src.numpy.ufuncs as jax_ufuncs
-import jax.numpy as jnp
+import numpy as np
 
-def patch_ensure_arraylike(original_fn):
-    def patched(fun_name, *args):
-        new_args = []
-        for arg in args:
-            if isinstance(arg, tuple):
-                new_args.append(jnp.array(arg))
-            else:
-                new_args.append(arg)
-        return original_fn(fun_name, *new_args)
-    return patched
-
-jax_util.ensure_arraylike = patch_ensure_arraylike(jax_util.ensure_arraylike)
-jax_ufuncs.ensure_arraylike = patch_ensure_arraylike(jax_ufuncs.ensure_arraylike)
 
 def isfinite_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple tuple of floats
-    x = (1.0, 2.5, -3.0, 4.2)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with finite, inf, and nan
+    input_dict = {"x": np.array([1.0, 2.0, np.inf, np.nan], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Tuple with infinity
-    x = (1.0, np.inf, -np.inf, 3.14)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D float64 array with infinities and zero
+    input_dict = {"x": np.array([-np.inf, 0.0, 1e5, np.inf], dtype=np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Tuple with NaN
-    x = (np.nan, 2.0, np.nan, -5.5)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 1D integer array
+    input_dict = {"x": np.array([-10, 0, 5, 42], dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Tuple of integers
-    x = (1, -5, 100, 0, 999999)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D boolean array
+    input_dict = {"x": np.array([True, False, True], dtype=bool)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Nested tuple (2D array-like)
-    x = ((1.0, 2.0, np.inf), (np.nan, 5.0, -6.0))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 2D float32 array with nan
+    input_dict = {"x": np.array([[1.0, 2.0], [np.nan, 4.0]], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Nested tuple (3D array-like)
-    x = (((1.0, 2.0), (3.0, np.nan)), ((np.inf, -np.inf), (0.0, 1.0)))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 2D float64 array with positive and negative infinities
+    input_dict = {
+        "x": np.array([[np.inf, 1.0, -1.0], [-np.inf, 0.0, np.nan]], dtype=np.float64)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Tuple of complex numbers
-    x = (complex(1.0, 2.0), complex(np.nan, 3.0), complex(4.0, np.inf), complex(-np.inf, 5.0))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 3D float32 array
+    input_dict = {
+        "x": np.array(
+            [[[1.0, 2.0], [3.0, 4.0]], [[5.0, np.nan], [7.0, np.inf]]],
+            dtype=np.float32,
+        )
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Long flat tuple
-    x = tuple(float(i) for i in range(50)) + (np.inf, np.nan)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D complex64 array
+    input_dict = {
+        "x": np.array(
+            [1.0 + 2.0j, np.nan + 1.0j, 3.0 + np.inf * 1j, 4.0 - 5.0j],
+            dtype=np.complex64,
+        )
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Single element tuple
-    x = (np.inf,)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 1D single-element array
+    input_dict = {"x": np.array([-np.inf], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Mixed tuple with numpy scalar types
-    x = (np.float32(1.5), np.float64(np.inf), np.int32(-10))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 1D int64 array with negative numbers
+    input_dict = {"x": np.array([-100, -1, 0, 1, 100], dtype=np.int64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D column vector
+    input_dict = {"x": np.array([[1.5], [-2.5], [np.nan]], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isfinite_5"] = isfinite_inputs()
 

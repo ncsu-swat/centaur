@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Both inputs are dtypes and must be valid dtype indices (Rule 1)
+# both arguments are dtypes within valid dtype indices (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), 0 <= v["arg2_value"]), v["arg2_value"] <= 10)) if n else
-          And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), 0 <= v["arg2_value"]), v["arg2_value"] <= 10))
+    s.add(Not(And(And(And(v["arg1_value"] >= 0, v["arg1_value"] <= 10), v["arg2_value"] >= 0), v["arg2_value"] <= 10)) if n else
+          And(And(And(v["arg1_value"] >= 0, v["arg1_value"] <= 10), v["arg2_value"] >= 0), v["arg2_value"] <= 10))
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):

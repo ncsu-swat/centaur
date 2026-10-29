@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if subtype is complex, supertype cannot be an integer or unsigned integer type (Rule 79)
+# int64 dtype cannot subtype narrower signed integer dtypes (Rule 79)
 
 rule_79 = lambda s, v, n=False: (
-    s.add(Not(If((And(9 <= v["arg1_value"], v["arg1_value"] <= 10)), (And([Implies(i < (5 + 1), v["arg2_value"] != i) for i in range(6)])), (And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 12), 0 <= v["arg2_value"]), v["arg2_value"] <= 12)))) if n else
-          If((And(9 <= v["arg1_value"], v["arg1_value"] <= 10)), (And([Implies(i < (5 + 1), v["arg2_value"] != i) for i in range(6)])), (And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 12), 0 <= v["arg2_value"]), v["arg2_value"] <= 12))))
+    s.add(Not(If(v["arg1_value"] == 4, Or(v["arg2_value"] < 1, v["arg2_value"] > 3), True)) if n else
+          If(v["arg1_value"] == 4, Or(v["arg2_value"] < 1, v["arg2_value"] > 3), True))
 )
 
 def rule_79_func(arg1, arg2, solver=None, neg=False):

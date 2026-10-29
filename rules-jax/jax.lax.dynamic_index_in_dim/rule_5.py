@@ -7,35 +7,39 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# operand must be at least 1-dimensional with positive dimensions (Rule 5)
+# operand must have at least rank 1 and index tensor must be a scalar (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]))) if n else
-          And(v["arg1_ndim"] >= 1, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])))
+    s.add(Not(And(And(And(v["arg1_ndim"] >= 1, v["arg2_ndim"] == 0), v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 5)) if n else
+          And(And(And(v["arg1_ndim"] >= 1, v["arg2_ndim"] == 0), v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 5))
 )
 
-def rule_5_func(arg1, solver=None, neg=False):
+def rule_5_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not isinstance(arg2, np.ndarray):
+            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_ndim = Int('arg2_ndim')
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        for i in range(arg1.ndim):
-            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 5
-        rule_5(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_5(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_5(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_5(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg2_dtype': arg2['dtype']}, neg)

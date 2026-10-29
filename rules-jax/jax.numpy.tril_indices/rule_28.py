@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# row and column dimensions must be non-negative with sub-diagonal k specified (Rule 28)
+# Diagonal offset k is bounded by the smaller dimension of the matrix (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, And(v["arg1_value"] >= 0, v["arg3_value"] >= 0), And(v["arg1_value"] >= 0, v["arg3_value"] >= 0))) if n else
-          If(v["arg2_value"] >= 0, And(v["arg1_value"] >= 0, v["arg3_value"] >= 0), And(v["arg1_value"] >= 0, v["arg3_value"] >= 0)))
+    s.add(Not(If(v["arg1_value"] < v["arg3_value"], v["arg2_value"] < v["arg1_value"], v["arg2_value"] < v["arg3_value"])) if n else
+          If(v["arg1_value"] < v["arg3_value"], v["arg2_value"] < v["arg1_value"], v["arg2_value"] < v["arg3_value"]))
 )
 
 def rule_28_func(arg1, arg2, arg3, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# a and x must not be complex-valued tensors, i.e., dtype is not complex64 or complex128 (Rule 32)
+# both input tensors use half-precision float16 (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10), v["arg2_dtype"] != 9), v["arg2_dtype"] != 10)) if n else
-          And(And(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10), v["arg2_dtype"] != 9), v["arg2_dtype"] != 10))
+    s.add(Not(And(v["arg1_dtype"] == 6, v["arg2_dtype"] == 6)) if n else
+          And(v["arg1_dtype"] == 6, v["arg2_dtype"] == 6))
 )
 
 def rule_32_func(arg1, arg2, solver=None, neg=False):

@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fmod_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32 array, positive float divisor
-    x1 = np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float32)
-    x2 = 2.0
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 2: 1D float32 array with negative values, positive float divisor
-    x1 = np.array([-1.5, -2.5, 3.5, -4.5], dtype=np.float32)
-    x2 = 1.5
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 3: 2D float64 array, negative float divisor
-    x1 = np.array([[5.0, -6.0], [7.0, -8.0]], dtype=np.float64)
-    x2 = -3.0
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 4: 1D int32 array, fractional float divisor
-    x1 = np.array([10, 20, 30], dtype=np.int32)
-    x2 = 3.5
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 5: 3D float32 array, fractional float divisor
-    x1 = np.random.uniform(-10, 10, (2, 2, 2)).astype(np.float32)
+    # Input 1: 1D float32 array, positive float divisor
+    x1 = np.array([3.0, -1.0, 4.0, 7.5], dtype=np.float32)
     x2 = 2.5
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: Large 1D array, large float divisor
-    x1 = np.linspace(-100, 100, 10).astype(np.float32)
-    x2 = 12.34
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: 2D float64 array, negative float divisor
+    x1 = np.array([[-5.5, 2.3], [7.1, -8.9]], dtype=np.float64)
+    x2 = -1.2
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: 4D float32 array, small float divisor
-    x1 = np.random.randn(2, 3, 2, 1).astype(np.float32)
+    # Input 3: 1D int32 array, integer-valued float divisor
+    x1 = np.array([10, -15, 20, -25], dtype=np.int32)
+    x2 = 3.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 4: 0D float32 array (scalar tensor), positive float divisor
+    x1 = np.array(9.75, dtype=np.float32)
+    x2 = 2.25
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 5: 3D float32 array with various ranges
+    x1 = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
     x2 = 0.5
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: int16 array with negative values, float divisor
-    x1 = np.array([[-10, 15], [-20, 25]], dtype=np.int16)
-    x2 = 4.2
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: 2D int64 array with zeros and negative values
+    x1 = np.array([[0, -8, 12], [15, -2, 7]], dtype=np.int64)
+    x2 = -4.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: float64 1D array, negative small divisor
-    x1 = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float64)
-    x2 = -0.15
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Input 10: 5D array, integer-like float divisor
-    x1 = np.ones((1, 2, 1, 2, 1), dtype=np.float32) * 5.5
+    # Input 7: 4D float64 array
+    x1 = np.random.randn(2, 2, 3, 3).astype(np.float64)
     x2 = 2.0
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 8: 1D float16 array
+    x1 = np.array([-3.5, -1.0, 0.0, 2.5, 6.0], dtype=np.float16)
+    x2 = 1.5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 9: 2D float32 array with larger magnitude values
+    x1 = np.array([[100.5, -250.75], [333.3, -412.1]], dtype=np.float32)
+    x2 = 7.3
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 3D int32 array
+    x1 = np.arange(-12, 12, dtype=np.int32).reshape(2, 3, 4)
+    x2 = 5.5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: 1D float64 array with special constant divisor
+    x1 = np.array([-10.0, -np.pi, 0.0, np.pi, 10.0], dtype=np.float64)
+    x2 = 3.141592653589793
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fmod_2"] = fmod_inputs()
 

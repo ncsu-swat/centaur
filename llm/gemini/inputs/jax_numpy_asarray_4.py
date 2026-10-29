@@ -4,93 +4,93 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asarray_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({
-        "a": 0,
-        "dtype": np.int32,
-        "order": "K",
-        "copy": True
-    })
+    # Input 1: zero integer with int32 dtype
+    input_dict = {"a": 0, "dtype": np.dtype(np.int32), "order": "K", "copy": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    list_of_inputs.append({
-        "a": 42,
-        "dtype": np.float32,
-        "order": "K",
-        "copy": False
-    })
+    # Input 2: positive integer with float32 dtype
+    input_dict = {"a": 1, "dtype": np.dtype(np.float32), "order": "K", "copy": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    list_of_inputs.append({
-        "a": -100,
-        "dtype": np.int64,
-        "order": "K",
-        "copy": True
-    })
+    # Input 3: negative integer with int64 dtype
+    input_dict = {"a": -5, "dtype": np.dtype(np.int64), "order": "K", "copy": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    list_of_inputs.append({
-        "a": 2024,
-        "dtype": np.float64,
-        "order": "K",
-        "copy": False
-    })
+    # Input 4: positive integer with float64 dtype
+    input_dict = {"a": 42, "dtype": np.dtype(np.float64), "order": "K", "copy": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    list_of_inputs.append({
-        "a": -1,
-        "dtype": np.int16,
-        "order": "K",
-        "copy": True
-    })
+    # Input 5: boundary unsigned 8-bit integer with uint8 dtype
+    input_dict = {"a": 255, "dtype": np.dtype(np.uint8), "order": "K", "copy": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    list_of_inputs.append({
-        "a": 100000,
-        "dtype": np.uint32,
+    # Input 6: negative 8-bit boundary integer with int8 dtype
+    input_dict = {
+        "a": -128,
+        "dtype": np.dtype(np.int8),
         "order": "K",
-        "copy": False
-    })
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    list_of_inputs.append({
-        "a": 5,
-        "dtype": np.bool_,
+    # Input 7: positive 16-bit integer with int16 dtype
+    input_dict = {
+        "a": 1000,
+        "dtype": np.dtype(np.int16),
         "order": "K",
-        "copy": True
-    })
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    list_of_inputs.append({
-        "a": -999,
-        "dtype": np.complex64,
-        "order": "K",
-        "copy": False
-    })
+    # Input 8: integer with bool dtype
+    input_dict = {"a": 1, "dtype": np.dtype(np.bool_), "order": "K", "copy": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    list_of_inputs.append({
-        "a": 123456,
-        "dtype": np.float16,
+    # Input 9: integer with complex64 dtype
+    input_dict = {
+        "a": 3,
+        "dtype": np.dtype(np.complex64),
         "order": "K",
-        "copy": True
-    })
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    list_of_inputs.append({
-        "a": 7,
-        "dtype": np.uint8,
+    # Input 10: negative integer with float16 dtype
+    input_dict = {
+        "a": -99,
+        "dtype": np.dtype(np.float16),
         "order": "K",
-        "copy": False
-    })
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: unsigned 16-bit integer with uint16 dtype
+    input_dict = {
+        "a": 65535,
+        "dtype": np.dtype(np.uint16),
+        "order": "K",
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: unsigned 32-bit integer with uint32 dtype
+    input_dict = {
+        "a": 1000000,
+        "dtype": np.dtype(np.uint32),
+        "order": "K",
+        "copy": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asarray_4"] = asarray_inputs()
 

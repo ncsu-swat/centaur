@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arctan_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with negative, zero, and positive values
+    # Input 1: 1D array of float32 with positive, negative, and zero values
     x = np.array([-10.0, -1.0, 0.0, 1.0, 10.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: 1D float64 array including infinities and NaN
-    x = np.array([-np.inf, -2.0, 0.0, 2.0, np.inf, np.nan], dtype=np.float64)
+    # Input 2: 0D scalar array (float64)
+    x = np.array(0.5, dtype=np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: 2D float32 array (matrix)
+    # Input 3: 2D array of float32
     x = np.random.randn(3, 4).astype(np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 3D int32 array (integers)
-    x = np.array([[[1, -2], [3, 0]], [[-5, 6], [7, -8]]], dtype=np.int32)
+    # Input 4: 1D array with special values (inf, -inf, nan)
+    x = np.array([-np.inf, -1.0, 0.0, 1.0, np.inf, np.nan], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: 1D complex64 array
-    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, 0.0 + 0.0j], dtype=np.complex64)
+    # Input 5: 3D array with integer types (promotes to inexact dtype)
+    x = np.arange(-12, 12, dtype=np.int32).reshape(2, 3, 4)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: 0D array (scalar equivalent)
-    x = np.array(0.5, dtype=np.float32)
+    # Input 6: 1D array with complex numbers (complex64)
+    x = np.array([2.0 + 7.0j, -1.0 - 1.0j, 0.0 + 0.0j, 3.0 - 2.0j], dtype=np.complex64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: Large 2D float32 array
-    x = np.random.uniform(-100, 100, size=(10, 10)).astype(np.float32)
+    # Input 7: 4D tensor with float16
+    x = np.random.uniform(-5.0, 5.0, size=(2, 2, 3, 3)).astype(np.float16)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: 4D float16 array
-    x = np.random.randn(2, 2, 3, 3).astype(np.float16)
+    # Input 8: Empty array
+    x = np.empty((0, 5), dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: 1D complex128 array
-    x = np.array([2.0 + 7.0j, -2.0 - 7.0j], dtype=np.complex128)
+    # Input 9: 2D array of complex128
+    x = np.array([[1.0 + 2.0j, -2.0 + 0.5j], [0.0 - 1.0j, 4.0 + 3.0j]], dtype=np.complex128)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: 2D int64 array with large values
-    x = np.array([[-1000, 0], [1000, 500]], dtype=np.int64)
+    # Input 10: 1D array of extreme values (very large and very small)
+    x = np.array([1e-15, -1e-15, 1e15, -1e15], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: 1D array of booleans
+    x = np.array([True, False, True], dtype=bool)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arctan_1"] = arctan_inputs()
 

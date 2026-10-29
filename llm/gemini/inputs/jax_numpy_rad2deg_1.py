@@ -4,53 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rad2deg_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D float32 array with common angles
-    x = np.array([0.0, np.pi/4, np.pi/2, np.pi, 2*np.pi], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D array of float32
+    x = np.array([0.0, np.pi / 4, np.pi / 2, np.pi], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array with negative angles
-    x = np.array([[-np.pi, -np.pi/2], [np.pi/3, -np.pi/4]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with negative values
+    x = np.array([-np.pi, -np.pi / 2, -np.pi / 3, -np.pi / 6], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: Scalar (0D array) float32
-    x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Scalar as 0D tensor
+    x = np.array(np.pi, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float32 array with random values
-    x = np.random.uniform(-2*np.pi, 2*np.pi, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 2D array of float32
+    x = np.random.uniform(-np.pi, np.pi, size=(3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D float16 array
-    x = np.array([-1.0, 0.0, 1.0], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D array of float64
+    x = np.random.uniform(-2 * np.pi, 2 * np.pi, size=(2, 4, 3)).astype(
+        np.float64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D int32 array
-    x = np.array([-3, -1, 0, 1, 3], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Integer tensor
+    x = np.array([-3, -2, -1, 0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D int64 array
-    x = np.array([[1, 2], [3, 4]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Float16 tensor
+    x = np.array([0.5, 1.0, 1.5, 2.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D float64 array with small random values
-    x = np.random.randn(2, 2, 2, 2).astype(np.float64) * 0.01
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D tensor
+    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Array with NaNs and Infs
-    x = np.array([np.nan, np.inf, -np.inf, 0.0, np.pi], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Array with special values (inf, -inf, nan)
+    x = np.array([-np.inf, -1.0, 0.0, np.nan, np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float32 array with a sequence of values
-    x = np.linspace(-10.0, 10.0, 100, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 1D array of large angles
+    x = np.array([10 * np.pi, -100 * np.pi, 1e5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 12: Int64 tensor with 2D shape
+    x = np.arange(-6, 6, dtype=np.int64).reshape((3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.rad2deg_1"] = rad2deg_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the first tensor should be of floating-point type and the second tensor of a real type (Rule 46)
+# integer and floating-point dtype compatibility across inputs (Rule 46)
 
 rule_46 = lambda s, v, n=False: (
-    s.add(Not(And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8)), v["arg2_dtype"] <= 8)) if n else
-          And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8)), v["arg2_dtype"] <= 8))
+    s.add(Not(If(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 8), v["arg2_dtype"] <= 8)) if n else
+          If(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 8), v["arg2_dtype"] <= 8))
 )
 
 def rule_46_func(arg1, arg2, solver=None, neg=False):

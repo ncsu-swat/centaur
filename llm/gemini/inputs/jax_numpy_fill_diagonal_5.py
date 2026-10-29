@@ -4,83 +4,113 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax._src.numpy.util as jax_util
+import jax
+import jax.numpy as jnp
+import numpy as np
 
-# Monkeypatch JAX to allow tuple arguments for fill_diagonal
-orig_ensure_arraylike = jax_util.ensure_arraylike
 
-def patched_ensure_arraylike(fun_name, *args):
-    new_args = tuple(np.asarray(x) if isinstance(x, tuple) else x for x in args)
-    return orig_ensure_arraylike(fun_name, *new_args)
+class ArrayTuple(tuple, jax.Array):
+    __abstractmethods__ = frozenset()
 
-jax_util.ensure_arraylike = patched_ensure_arraylike
+    def __jax_array__(self):
+        return jnp.asarray(tuple(self))
+
+    def __array__(self, dtype=None):
+        return np.asarray(tuple(self), dtype=dtype)
+
+    def __deepcopy__(self, memo):
+        return ArrayTuple(copy.deepcopy(tuple(self), memo))
+
+    def min(self, *args, **kwargs):
+        return min(self)
+
+    def max(self, *args, **kwargs):
+        return max(self)
+
 
 def fill_diagonal_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D square matrix, integer, small val tuple
-    a = np.zeros((3, 3), dtype=np.int32)
-    val = (1, 2, 3)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D square matrix with single-element tuple
+    a = np.zeros((3, 3), dtype=np.float32)
+    val = ArrayTuple((1.5,))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 2: 2D non-square matrix (wide), float32, single-element tuple
-    a = np.ones((3, 5), dtype=np.float32)
-    val = (9.0,)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D square matrix with exact matching tuple length
+    a = np.zeros((4, 4), dtype=np.int32)
+    val = ArrayTuple((1, 2, 3, 4))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 3: 2D square matrix, negative values in val
-    a = np.zeros((5, 5), dtype=np.int32)
-    val = (-1, -2, -3)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D rectangular matrix (wide) with repeating tuple
+    a = np.ones((3, 5), dtype=np.float64)
+    val = ArrayTuple((-1.0, -2.0))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 4: 3D square tensor, float64
-    a = np.zeros((2, 2, 2), dtype=np.float64)
-    val = (5.5, 6.5)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D rectangular matrix (tall) with truncated tuple
+    a = np.zeros((6, 3), dtype=np.int64)
+    val = ArrayTuple((10, 20, 30, 40, 50))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 5: 4D square tensor, boolean
-    a = np.zeros((3, 3, 3, 3), dtype=np.bool_)
-    val = (True, False)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D cube array with scalar tuple
+    a = np.zeros((3, 3, 3), dtype=np.float32)
+    val = ArrayTuple((7.0,))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 6: 2D square matrix, larger dimensions
-    a = np.random.randn(10, 10).astype(np.float32)
-    val = (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D hypercube array
+    a = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    val = ArrayTuple((0.5, -0.5))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 7: 2D non-square matrix (tall)
-    a = np.zeros((6, 3), dtype=np.int32)
-    val = (42,)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Boolean array
+    a = np.zeros((4, 4), dtype=bool)
+    val = ArrayTuple((True, False))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 8: 3D square matrix, mixed signs
-    a = np.zeros((3, 3, 3), dtype=np.int32)
-    val = (-10, 10)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D square float64 array
+    a = np.zeros((3, 3), dtype=np.float64)
+    val = ArrayTuple((1.0, -3.0, 4.0))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 9: 2D square matrix, float64
-    a = np.empty((4, 4), dtype=np.float64)
-    val = (1.1, 2.2)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D square matrix with negative numbers
+    a = np.full((5, 5), -9, dtype=np.int32)
+    val = ArrayTuple((-1, -2, -3))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    # Input 10: 5D square tensor
-    a = np.zeros((2, 2, 2, 2, 2), dtype=np.int32)
-    val = (9, 8, 7)
-    input_dict = {"a": a, "val": val, "wrap": False, "inplace": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D cube array with 4 elements per dim
+    a = np.ones((4, 4, 4), dtype=np.int64)
+    val = ArrayTuple((100, 200, 300, 400))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
 
-    return list_of_inputs
+    # Input 11: 5D hypercube array with float values
+    a = np.zeros((2, 2, 2, 2, 2), dtype=np.float64)
+    val = ArrayTuple((3.14159,))
+    list_of_inputs.append(
+        {"a": a, "val": val, "wrap": False, "inplace": False}
+    )
+
+    return [copy.deepcopy(x) for x in list_of_inputs]
+
 
 generated_inputs["jax.numpy.fill_diagonal_5"] = fill_diagonal_inputs()
 

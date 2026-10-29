@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# All elements in axis tuple must be within the valid range of tensor dimensions (Rule 25)
+# all axes in tuple must be within the valid dimension range of input tensor (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)]))
+    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), If(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"], Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0)) for i in range(6)])) if n else
+          And([Implies(i < (v["arg2_length"] - 1 + 1), If(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"], Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0)) for i in range(6)]))
 )
 
 def rule_25_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_25_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 25
-        rule_25(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_25(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_25(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_25(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

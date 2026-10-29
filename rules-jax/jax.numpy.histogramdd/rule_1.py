@@ -10,8 +10,8 @@ from z3 import *
 # sample must be a 2D tensor representing N points in D dimensions (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == 2) if n else
-          v["arg1_ndim"] == 2)
+    s.add(Not(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 1) > 0)) if n else
+          And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 1) > 0))
 )
 
 def rule_1_func(arg1, solver=None, neg=False):
@@ -25,14 +25,17 @@ def rule_1_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 1
-        rule_1(solver, {'arg1_ndim': arg1_ndim})
+        rule_1(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_1(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_1(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

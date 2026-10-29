@@ -1,243 +1,108 @@
 >>
-Rule 1 (tensors of the same dimension should have broadcast-compatible shapes)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
+Rule 1 (broadcast compatibility for tensor inputs)
+{v_1 : tensor, v_2 : tensor} |= ∀ i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) - 1 else ndim(v_2) - 1] : ndim(v_1) - i - 1 < 0 ∨ ndim(v_2) - i - 1 < 0 ∨ shape(v_1, ndim(v_1) - i - 1) = shape(v_2, ndim(v_2) - i - 1) ∨ shape(v_1, ndim(v_1) - i - 1) = 1 ∨ shape(v_2, ndim(v_2) - i - 1) = 1
 >>
-Rule 2 (both input tensors must have boolean or numeric dtypes)
-{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) ≤ 8 ∧ dtype_(v_2) ≤ 8
+Rule 2 (input tensor must have a boolean, integer, or floating-point data type)
+{v_1 : tensor} |= 0 ≤ dtype_(v_1) ∧ dtype_(v_1) ≤ 8
 >>
-Rule 5 (if the first tensor has a higher dimension than the second 1D tensor, the last dimension of the first tensor must match the size of the second tensor or the second tensor's size must be 1)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) > ndim(v_2) ∧ ndim(v_2) = 1 then shape(v_1, ndim(v_1) - 1) = shape(v_2, 0) ∨ shape(v_2, 0) = 1
+Rule 3 (both tensor inputs must have comparable numeric or boolean data types)
+{v_1 : tensor, v_2 : tensor} |= 0 ≤ dtype_(v_1) ∧ dtype_(v_1) ≤ 8 ∧ 0 ≤ dtype_(v_2) ∧ dtype_(v_2) ≤ 8
 >>
-Rule 9 (if the first input is a list or tuple of integers, its length must match the first dimension of the second input tensor, and the tensor must have a compatible boolean or numeric dtype)
-{v_1 : list(int) ⊎ tuple(int), v_2 : tensor} |= v_1.len = shape(v_2, 0) ∧ dtype_(v_2) ≤ 8
+Rule 6 (equal-rank tensors must have compatible dimensions along each axis)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1
 >>
-Rule 10 (if the first input tensor is not a scalar, its first dimension must be comparable with the integer value of the second parameter)
-{v_1 : tensor, v_2 : int} |= if ndim(v_1) > 0 then shape(v_1, 0) > v_2 ∨ shape(v_1, 0) ≤ v_2
+Rule 10 (data types of the two input tensors should match)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) = dtype_(v_2)
 >>
-Rule 11 (if the second input tensor is not a scalar, its first dimension must be comparable with the float value of the first parameter)
-{v_1 : float, v_2 : tensor} |= if ndim(v_2) > 0 then shape(v_2, 0) > v_1 ∨ shape(v_2, 0) ≤ v_1
+Rule 12 (inputs with same shape must have identical dimensions)
+{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∧ ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i)
 >>
-Rule 13 (both input tensors must be non-empty)
-{v_1 : tensor, v_2 : tensor} |= (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0) ∧ (∀j ∈ [0, ndim(v_2) - 1] : shape(v_2, j) > 0)
->>
-Rule 14 (when comparing a tensor with a float scalar, if the tensor is non-empty, its minimum value should be logically comparable to the float)
-{v_1 : tensor, v_2 : float} |= if ndim(v_1) > 0 ∧ (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0) then min(v_1) < v_2 ∨ min(v_1) ≥ v_2
->>
-Rule 15 (when comparing a float scalar with a tensor, if the tensor is non-empty, its maximum value should be logically comparable to the float)
-{v_1 : float, v_2 : tensor} |= if ndim(v_2) > 0 ∧ (∀i ∈ [0, ndim(v_2) - 1] : shape(v_2, i) > 0) then max(v_2) > v_1 ∨ max(v_2) ≤ v_1
->>
-Rule 16 (comparing a list or tuple of integers with an integer value)
-{v_1 : list(int) ⊎ tuple(int), v_2 : int} |= v_1.len > 0 ∧ (∀i ∈ [0, v_1.len - 1] : v_1[i] < v_2 ∨ v_1[i] ≥ v_2)
->>
-Rule 17 (comparing a list or tuple of floats with a float value)
-{v_1 : list(float) ⊎ tuple(float), v_2 : float} |= v_1.len > 0 ∧ (∀i ∈ [0, v_1.len - 1] : v_1[i] < v_2 ∨ v_1[i] ≥ v_2)
->>
-Rule 18 (broadcast compatibility of a 3D tensor and a 1D tensor along the last dimension)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = 3 ∧ ndim(v_2) = 1 ∧ (shape(v_1, 2) = shape(v_2, 0) ∨ shape(v_2, 0) = 1)
->>
-Rule 19 (list of integers matching the last dimension of a 2D tensor)
-{v_1 : list(int), v_2 : tensor} |= ndim(v_2) = 2 ∧ v_1.len = shape(v_2, 1)
->>
-Rule 20 (tuple of integers matching the first dimension of a tensor)
-{v_1 : tuple(int), v_2 : tensor} |= ndim(v_2) ≥ 1 ∧ v_1.len = shape(v_2, 0)
->>
-Rule 21 (comparing a 1D tensor with a list of floats requires matched lengths)
-{v_1 : tensor, v_2 : list(float)} |= ndim(v_1) = 1 ∧ shape(v_1, 0) = v_2.len
->>
-Rule 22 (a tensor's dimension must be reasonable, and the compared scalar should be within standard numeric bounds)
-{v_1 : tensor, v_2 : int ⊎ float} |= ndim(v_1) ≤ 8 ∧ v_2 > -1000000 ∧ v_2 < 1000000
->>
-Rule 23 (broadcast compatibility for tensors of the same rank)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) ∧ ndim(v_1) > 0 then (∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
->>
-Rule 24 (broadcast compatibility when first tensor has higher rank)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) > ndim(v_2) ∧ ndim(v_2) > 0 then (∀ i ∈ [0, ndim(v_2) - 1] : shape(v_2, i) = shape(v_1, ndim(v_1) - ndim(v_2) + i) ∨ shape(v_2, i) = 1 ∨ shape(v_1, ndim(v_1) - ndim(v_2) + i) = 1)
->>
-Rule 25 (broadcast compatibility when second tensor has higher rank)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_2) > ndim(v_1) ∧ ndim(v_1) > 0 then (∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, ndim(v_2) - ndim(v_1) + i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, ndim(v_2) - ndim(v_1) + i) = 1)
->>
-Rule 26 (all shape dimensions must be non-negative)
-{v_1 : tensor} |= if ndim(v_1) > 0 then (∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0)
->>
-Rule 34 (tensor must have comparable numeric or boolean dtype)
-{v_1 : tensor} |= dtype_(v_1) ≤ 8
->>
-Rule 35 (broadcast compatibility for 1-dimensional tensors)
+Rule 13 (1D tensors must have identical length or at least one must be of size 1 for broadcasting)
 {v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 0) = 1
 >>
-Rule 36 (broadcast compatibility for 2-dimensional tensors)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 2 then (shape(v_1, 0) = shape(v_2, 0) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 0) = 1) ∧ (shape(v_1, 1) = shape(v_2, 1) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 1) = 1)
+Rule 14 (trailing dimensions of both tensors must be broadcast compatible)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) > 0 ∧ ndim(v_2) > 0 then shape(v_1, ndim(v_1) - 1) = shape(v_2, ndim(v_2) - 1) ∨ shape(v_1, ndim(v_1) - 1) = 1 ∨ shape(v_2, ndim(v_2) - 1) = 1
 >>
-Rule 37 (broadcast compatibility between 2-dimensional and 1-dimensional tensors)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 1 then shape(v_1, 1) = shape(v_2, 0) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 0) = 1
->>
-Rule 38 (broadcast compatibility between 1-dimensional and 2-dimensional tensors)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 2 then shape(v_1, 0) = shape(v_2, 1) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 1) = 1
->>
-Rule 39 (tensor must have a comparable non-complex and non-string dtype)
-{v_1 : tensor} |= dtype_(v_1) < 9
->>
-Rule 40 (boolean tensor comparison with float should use float in range zero to one)
-{v_1 : tensor, v_2 : float} |= if dtype_(v_1) = 0 then v_2 ≥ 0.0 ∧ v_2 ≤ 1.0
->>
-Rule 41 (boolean tensor comparison with integer should use integer zero or one)
-{v_1 : tensor, v_2 : int} |= if dtype_(v_1) = 0 then v_2 = 0 ∨ v_2 = 1
->>
-Rule 42 (broadcasting compatibility for tensor shapes)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) > 0 ∧ ndim(v_2) > 0 ∧ ∀i ∈ [0, if ndim(v_1) ≥ ndim(v_2) then ndim(v_1) - 1 else ndim(v_2) - 1] : ndim(v_1) - i - 1 < 0 ∨ ndim(v_2) - i - 1 < 0 ∨ shape(v_1, ndim(v_1) - i - 1) = 1 ∨ shape(v_2, ndim(v_2) - i - 1) = 1 ∨ shape(v_1, ndim(v_1) - i - 1) = shape(v_2, ndim(v_2) - i - 1)
->>
-Rule 45 (comparable data types for tensor inputs excluding complex and string)
-{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) < 9 ∧ dtype_(v_2) < 9
->>
-Rule 50 (tensor input should not be empty)
-{v_1 : tensor} |= ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
->>
-Rule 54 (invalid dtypes for element-wise comparison)
-{v_1 : tensor} |= dtype_(v_1) ≠ 9 ∧ dtype_(v_1) ≠ 10 ∧ dtype_(v_1) ≠ 11
->>
-Rule 55 (dtype constraint for two tensor inputs)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) + ndim(v_2) ≥ 0 ∧ dtype_(v_1) ≤ 8 ∧ dtype_(v_2) ≤ 8
->>
-Rule 56 (dtype constraint for tensor and float inputs)
-{v_1 : tensor, v_2 : float} |= ndim(v_1) ≥ 0 ∧ v_2 - v_2 = 0 ∧ dtype_(v_1) ≤ 8
->>
-Rule 57 (dtype constraint for tensor and integer inputs)
-{v_1 : tensor, v_2 : int} |= ndim(v_1) ≥ 0 ∧ v_2 - v_2 = 0 ∧ dtype_(v_1) ≤ 8
->>
-Rule 59 (dtype constraint for float and tensor inputs)
-{v_1 : float, v_2 : tensor} |= ndim(v_2) ≥ 0 ∧ v_1 - v_1 = 0 ∧ dtype_(v_2) ≤ 8
->>
-Rule 60 (dtype constraint for integer and tensor inputs)
-{v_1 : int, v_2 : tensor} |= ndim(v_2) ≥ 0 ∧ v_1 - v_1 = 0 ∧ dtype_(v_2) ≤ 8
->>
-Rule 61 (broadcast compatibility for tensors of the same dimension)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
->>
-Rule 64 (dimensions of the tensors must be non-negative and less than 10)
-{v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) < 10
->>
-Rule 65 (broadcast compatibility when one tensor is 1D)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_2) = 1 ∧ ndim(v_1) ≥ 1 then shape(v_1, ndim(v_1) - 1) = shape(v_2, 0) ∨ shape(v_1, ndim(v_1) - 1) = 1 ∨ shape(v_2, 0) = 1
->>
-Rule 67 (broadcast compatibility of a 1D tensor with an ND tensor)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) ≥ 1 then shape(v_1, 0) = shape(v_2, ndim(v_2) - 1) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, ndim(v_2) - 1) = 1
->>
-Rule 68 (if the scalar float is negative, the tensor cannot be unsigned int)
-{v_1 : tensor, v_2 : float} |= if v_2 < 0 then dtype_(v_1) ≠ 5
->>
-Rule 69 (if the scalar float is negative, the compared tensor cannot be unsigned int)
-{v_1 : float, v_2 : tensor} |= if v_1 < 0 then dtype_(v_2) ≠ 5
->>
-Rule 71 (if the scalar integer is negative, the tensor cannot be unsigned int)
-{v_1 : tensor, v_2 : int} |= if v_2 < 0 then dtype_(v_1) ≠ 5
->>
-Rule 72 (if the scalar integer is negative, the compared tensor cannot be unsigned int)
-{v_1 : int, v_2 : tensor} |= if v_1 < 0 then dtype_(v_2) ≠ 5
->>
-Rule 73 (broadcast compatibility for 2D and 1D tensors)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 1 then shape(v_1, 1) = shape(v_2, 0) ∨ shape(v_2, 0) = 1
->>
-Rule 74 (broadcast compatibility for 1D and 2D tensors)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 2 then shape(v_1, 0) = shape(v_2, 1) ∨ shape(v_1, 0) = 1
->>
-Rule 75 (unsigned tensor compared with negative integer scalar)
-{v_1 : tensor, v_2 : int} |= if dtype_(v_1) = 5 then v_2 ≥ 0
->>
-Rule 76 (negative integer scalar compared with unsigned tensor)
-{v_1 : int, v_2 : tensor} |= if dtype_(v_2) = 5 then v_1 ≥ 0
->>
-Rule 77 (unsigned tensor compared with negative float scalar)
-{v_1 : tensor, v_2 : float} |= if dtype_(v_1) = 5 then v_2 ≥ 0
->>
-Rule 78 (negative float scalar compared with unsigned tensor)
-{v_1 : float, v_2 : tensor} |= if dtype_(v_2) = 5 then v_1 ≥ 0
->>
-Rule 79 (boolean scalar comparison requires boolean tensor)
-{v_1 : tensor, v_2 : bool} |= if v_2 = true ∨ v_2 = false then dtype_(v_1) = 0
->>
-Rule 86 (comparison operands must not be complex numbers)
-{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) ≠ 9 ∧ dtype_(v_1) ≠ 10 ∧ dtype_(v_2) ≠ 9 ∧ dtype_(v_2) ≠ 10
->>
-Rule 88 (comparing a boolean tensor with an integer scalar should use a value within the boolean range)
-{v_1 : tensor, v_2 : int} |= if dtype_(v_1) = 0 then v_2 ≥ 0 ∧ v_2 ≤ 1
->>
-Rule 89 (comparing a float scalar with a boolean tensor should use a value within the boolean range)
-{v_1 : float, v_2 : tensor} |= if dtype_(v_2) = 0 then v_1 ≥ 0.0 ∧ v_1 ≤ 1.0
->>
-Rule 90 (comparing an integer scalar with a boolean tensor should use a value within the boolean range)
-{v_1 : int, v_2 : tensor} |= if dtype_(v_2) = 0 then v_1 ≥ 0 ∧ v_1 ≤ 1
->>
-Rule 92 (comparing a uint8 tensor with a float scalar should not be trivial)
-{v_1 : tensor, v_2 : float} |= if dtype_(v_1) = 5 then v_2 > 0.0
->>
-Rule 93 (comparing a uint8 tensor with an integer scalar should not be trivial)
-{v_1 : tensor, v_2 : int} |= if dtype_(v_1) = 5 then v_2 > 0
->>
-Rule 94 (comparing a float scalar with a uint8 tensor should not be trivial)
-{v_1 : float, v_2 : tensor} |= if dtype_(v_2) = 5 then v_1 ≥ 0.0
->>
-Rule 95 (broadcast compatibility for same-dimension tensors)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then (∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1)
->>
-Rule 101 (broadcasting compatibility when v_1 has one more dimension than v_2)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) + 1 then (∀ i ∈ [0, ndim(v_2) - 1] : shape(v_1, i + 1) = shape(v_2, i) ∨ shape(v_1, i + 1) = 1 ∨ shape(v_2, i) = 1)
->>
-Rule 102 (broadcasting compatibility when v_2 has one more dimension than v_1)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_2) = ndim(v_1) + 1 then (∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i + 1) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i + 1) = 1)
->>
-Rule 104 (value constraint when comparing integer scalar with boolean tensor)
-{v_1 : int, v_2 : tensor} |= if dtype_(v_2) = 0 then v_1 = 0 ∨ v_1 = 1
->>
-Rule 105 (length compatibility when comparing a list of integers with a tensor)
-{v_1 : list(int), v_2 : tensor} |= v_1.len = shape(v_2, 0)
->>
-Rule 106 (length compatibility when comparing a tensor with a tuple of integers)
-{v_1 : tensor, v_2 : tuple(int)} |= shape(v_1, 0) = v_2.len
->>
-Rule 107 (dimension compatibility of inputs)
-{v_1 : tensor, v_2 : tensor} |= ndim(v_1) = ndim(v_2) ∨ ndim(v_1) = 0 ∨ ndim(v_2) = 0
->>
-Rule 109 (non-complex data type for second input)
-{v_2 : tensor} |= dtype_(v_2) ≤ 8
->>
-Rule 111 (same size for 1D tensors)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 1 then shape(v_1, 0) = shape(v_2, 0)
->>
-Rule 112 (list of ints matching 1D tensor shape)
-{v_1 : list(int), v_2 : tensor} |= if ndim(v_2) = 1 then v_1.len = shape(v_2, 0)
->>
-Rule 113 (tuple of floats matching 1D tensor shape)
-{v_1 : tensor, v_2 : tuple(float)} |= if ndim(v_1) = 1 then shape(v_1, 0) = v_2.len
->>
-Rule 118 (comparison of float lists requires compatible lengths)
-{v_1 : list(float), v_2 : list(float)} |= v_1.len = v_2.len ∨ v_1.len = 1 ∨ v_2.len = 1
->>
-Rule 119 (compatible lengths for tuple and list comparison)
-{v_1 : tuple(int), v_2 : list(int)} |= v_1.len = v_2.len ∨ v_1.len = 1 ∨ v_2.len = 1
->>
-Rule 120 (boolean lists must have equal lengths for comparison)
-{v_1 : list(bool), v_2 : list(bool)} |= v_1.len = v_2.len
->>
-Rule 121 (float tuples must have equal lengths for comparison)
-{v_1 : tuple(float), v_2 : tuple(float)} |= v_1.len = v_2.len
->>
-Rule 122 (Tensors of the same rank must be broadcast-compatible)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) then ∀i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) = shape(v_2, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, i) = 1
->>
-Rule 123 (If one tensor is 1D, its dimension must match the last dimension of the other tensor or be 1)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) > 1 ∧ ndim(v_2) = 1 then shape(v_1, ndim(v_1) - 1) = shape(v_2, 0) ∨ shape(v_2, 0) = 1 ∨ shape(v_1, ndim(v_1) - 1) = 1
->>
-Rule 125 (Tensors must not exceed a maximum dimension of 10)
-{v_1 : tensor} |= ndim(v_1) ≤ 10
->>
-Rule 126 (Scalar inputs should be within reasonable bounds to prevent overflow/underflow in comparison)
-{v_1 : int ⊎ float, v_2 : int ⊎ float} |= v_1 ≥ -1000000 ∧ v_1 ≤ 1000000 ∧ v_2 ≥ -1000000 ∧ v_2 ≤ 1000000
->>
-Rule 127 (Data types should be non-complex)
+Rule 15 (input tensor must not have a complex data type)
 {v_1 : tensor} |= dtype_(v_1) ≠ 9 ∧ dtype_(v_1) ≠ 10
 >>
-Rule 128 (Broadcast compatibility when first tensor has higher rank)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) > ndim(v_2) then ∀i ∈ [0, ndim(v_2) - 1] : shape(v_1, ndim(v_1) - ndim(v_2) + i) = shape(v_2, i) ∨ shape(v_2, i) = 1 ∨ shape(v_1, ndim(v_1) - ndim(v_2) + i) = 1
+Rule 16 (neither tensor input may have string or complex data types)
+{v_1 : tensor, v_2 : tensor} |= dtype_(v_1) < 9 ∧ dtype_(v_2) < 9
 >>
-Rule 129 (Broadcast compatibility when second tensor has higher rank)
-{v_1 : tensor, v_2 : tensor} |= if ndim(v_2) > ndim(v_1) then ∀i ∈ [0, ndim(v_1) - 1] : shape(v_2, ndim(v_2) - ndim(v_1) + i) = shape(v_1, i) ∨ shape(v_1, i) = 1 ∨ shape(v_2, ndim(v_2) - ndim(v_1) + i) = 1
+Rule 17 (leading dimensions must be broadcast compatible when tensors have the same rank)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = ndim(v_2) ∧ ndim(v_1) > 0 then shape(v_1, 0) = shape(v_2, 0) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 0) = 1
+>>
+Rule 18 (2D tensors must be broadcast compatible across both spatial dimensions)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 2 then (shape(v_1, 0) = shape(v_2, 0) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 0) = 1) ∧ (shape(v_1, 1) = shape(v_2, 1) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 1) = 1)
+>>
+Rule 19 (broadcast compatibility between a 2D tensor and a 1D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 1 then shape(v_1, 1) = shape(v_2, 0) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 0) = 1
+>>
+Rule 20 (broadcast compatibility between a higher-dimensional tensor and a 1D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) > 1 ∧ ndim(v_2) = 1 then shape(v_1, ndim(v_1) - 1) = shape(v_2, 0) ∨ shape(v_1, ndim(v_1) - 1) = 1 ∨ shape(v_2, 0) = 1
+>>
+Rule 21 (all dimensions of a non-empty tensor must be strictly positive)
+{v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) > 0
+>>
+Rule 22 (tensor data type must not be complex or string)
+{v_1 : tensor} |= dtype_(v_1) ≠ 9 ∧ dtype_(v_1) ≠ 10 ∧ dtype_(v_1) ≠ 11
+>>
+Rule 23 (trailing dimension compatibility for multi-dimensional tensors)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) ≥ 1 ∧ ndim(v_2) ≥ 1 then shape(v_1, ndim(v_1) - 1) = shape(v_2, ndim(v_2) - 1) ∨ shape(v_1, ndim(v_1) - 1) = 1 ∨ shape(v_2, ndim(v_2) - 1) = 1
+>>
+Rule 24 (3D tensors must be broadcast compatible across all corresponding axes)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 3 ∧ ndim(v_2) = 3 then (shape(v_1, 0) = shape(v_2, 0) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 0) = 1) ∧ (shape(v_1, 1) = shape(v_2, 1) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 1) = 1) ∧ (shape(v_1, 2) = shape(v_2, 2) ∨ shape(v_1, 2) = 1 ∨ shape(v_2, 2) = 1)
+>>
+Rule 25 (broadcast compatibility between a 3D tensor and a 1D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 3 ∧ ndim(v_2) = 1 then shape(v_1, 2) = shape(v_2, 0) ∨ shape(v_1, 2) = 1 ∨ shape(v_2, 0) = 1
+>>
+Rule 26 (broadcast compatibility between a 3D tensor and a 2D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 3 ∧ ndim(v_2) = 2 then (shape(v_1, 1) = shape(v_2, 0) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 0) = 1) ∧ (shape(v_1, 2) = shape(v_2, 1) ∨ shape(v_1, 2) = 1 ∨ shape(v_2, 1) = 1)
+>>
+Rule 27 (the minimum value of a tensor must not exceed its maximum value)
+{v_1 : tensor} |= min(v_1) ≤ max(v_1)
+>>
+Rule 28 (broadcast compatibility between two 4D tensors across all axes)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 4 ∧ ndim(v_2) = 4 then (shape(v_1, 0) = shape(v_2, 0) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 0) = 1) ∧ (shape(v_1, 1) = shape(v_2, 1) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 1) = 1) ∧ (shape(v_1, 2) = shape(v_2, 2) ∨ shape(v_1, 2) = 1 ∨ shape(v_2, 2) = 1) ∧ (shape(v_1, 3) = shape(v_2, 3) ∨ shape(v_1, 3) = 1 ∨ shape(v_2, 3) = 1)
+>>
+Rule 29 (penultimate dimension compatibility for tensors with rank at least 2)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) ≥ 2 ∧ ndim(v_2) ≥ 2 then shape(v_1, ndim(v_1) - 2) = shape(v_2, ndim(v_2) - 2) ∨ shape(v_1, ndim(v_1) - 2) = 1 ∨ shape(v_2, ndim(v_2) - 2) = 1
+>>
+Rule 30 (2D tensor must have positive dimensions along both axes)
+{v_1 : tensor} |= ndim(v_1) = 2 ∧ shape(v_1, 0) > 0 ∧ shape(v_1, 1) > 0
+>>
+Rule 31 (broadcast compatibility between a 1D tensor and a 2D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 2 then shape(v_1, 0) = shape(v_2, 1) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 1) = 1
+>>
+Rule 32 (broadcast compatibility between a 1D tensor and a 3D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 3 then shape(v_1, 0) = shape(v_2, 2) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 2) = 1
+>>
+Rule 33 (broadcast compatibility between a 2D tensor and a 3D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 3 then (shape(v_1, 0) = shape(v_2, 1) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 1) = 1) ∧ (shape(v_1, 1) = shape(v_2, 2) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 2) = 1)
+>>
+Rule 34 (compatibility of the third dimension from the end for rank 3 or higher tensors)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) ≥ 3 ∧ ndim(v_2) ≥ 3 then shape(v_1, ndim(v_1) - 3) = shape(v_2, ndim(v_2) - 3) ∨ shape(v_1, ndim(v_1) - 3) = 1 ∨ shape(v_2, ndim(v_2) - 3) = 1
+>>
+Rule 35 (broadcast compatibility holds trivially if either tensor is a 0D scalar tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 0 ∨ ndim(v_2) = 0 then true else shape(v_1, ndim(v_1) - 1) = shape(v_2, ndim(v_2) - 1) ∨ shape(v_1, ndim(v_1) - 1) = 1 ∨ shape(v_2, ndim(v_2) - 1) = 1
+>>
+Rule 36 (tensor rank must be within standard dimensional limits)
+{v_1 : tensor} |= ndim(v_1) ≥ 0 ∧ ndim(v_1) ≤ 8
+>>
+Rule 37 (broadcast compatibility between a 1D tensor and a 4D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 1 ∧ ndim(v_2) = 4 then shape(v_1, 0) = shape(v_2, 3) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 3) = 1
+>>
+Rule 38 (broadcast compatibility between a 2D tensor and a 4D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 2 ∧ ndim(v_2) = 4 then (shape(v_1, 0) = shape(v_2, 2) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 2) = 1) ∧ (shape(v_1, 1) = shape(v_2, 3) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 3) = 1)
+>>
+Rule 39 (broadcast compatibility between a 3D tensor and a 4D tensor)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) = 3 ∧ ndim(v_2) = 4 then (shape(v_1, 0) = shape(v_2, 1) ∨ shape(v_1, 0) = 1 ∨ shape(v_2, 1) = 1) ∧ (shape(v_1, 1) = shape(v_2, 2) ∨ shape(v_1, 1) = 1 ∨ shape(v_2, 2) = 1) ∧ (shape(v_1, 2) = shape(v_2, 3) ∨ shape(v_1, 2) = 1 ∨ shape(v_2, 3) = 1)
+>>
+Rule 40 (compatibility of the fourth dimension from the end for rank 4 or higher tensors)
+{v_1 : tensor, v_2 : tensor} |= if ndim(v_1) ≥ 4 ∧ ndim(v_2) ≥ 4 then shape(v_1, ndim(v_1) - 4) = shape(v_2, ndim(v_2) - 4) ∨ shape(v_1, ndim(v_1) - 4) = 1 ∨ shape(v_2, ndim(v_2) - 4) = 1
+>>
+Rule 41 (all dimension sizes of an input tensor must be non-negative)
+{v_1 : tensor} |= ∀ i ∈ [0, ndim(v_1) - 1] : shape(v_1, i) ≥ 0
+>>
+Rule 42 (tensor data type cannot be a dtype object)
+{v_1 : tensor} |= dtype_(v_1) ≠ 12

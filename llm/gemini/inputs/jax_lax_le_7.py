@@ -4,65 +4,87 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_le_inputs():
+
+def le_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32 array, x is 0.0
-    x = 0.0
-    y = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 1: 1D array with positive, negative, and zero values
+    input_dict = {
+        "x": 0.0,
+        "y": np.array([-1.0, 0.0, 1.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array with negative and positive values, x is -1.5
-    x = -1.5
-    y = np.array([[-2.0, -1.5, -1.0], [0.0, 1.5, 2.0]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 2: 2D array
+    input_dict = {
+        "x": 1.5,
+        "y": np.array([[0.0, 1.5], [2.0, -3.0]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 array, x is 2.5
-    x = 2.5
-    y = np.random.randn(2, 3, 4).astype(np.float64) * 5.0
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 3: 3D array with negative float
+    input_dict = {
+        "x": -2.5,
+        "y": np.random.randn(3, 4, 5).astype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 4D float32 array, x is 100.0
-    x = 100.0
-    y = np.random.uniform(50.0, 150.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 4: 1D array with larger numbers
+    input_dict = {
+        "x": 100.0,
+        "y": np.array([50.0, 100.0, 150.0, 200.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D float64 array, x is -0.0
-    x = -0.0
-    y = np.array([-0.0, 0.0, -1.0, 1.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 5: 0D scalar array
+    input_dict = {
+        "x": 0.5,
+        "y": np.array(0.5, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D float32 array, x is 3.14159 (pi)
-    x = 3.14159
-    y = np.array([[3.14, 3.15], [3.0, 4.0]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 6: 4D array of zeros with negative zero float
+    input_dict = {
+        "x": -0.0,
+        "y": np.zeros((2, 2, 2, 2), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float32 array with small values, x is 1e-5
-    x = 1e-5
-    y = np.array([1e-6, 1e-5, 1e-4, 0.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 7: Positive infinity float with inf/-inf array
+    input_dict = {
+        "x": float("inf"),
+        "y": np.array([-np.inf, 0.0, np.inf], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D float64 array with extreme values, x is 1e10
-    x = 1e10
-    y = np.array([[1e9, 1e10], [1e11, -1e12]], dtype=np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 8: Negative infinity float
+    input_dict = {
+        "x": float("-inf"),
+        "y": np.array([-np.inf, -1e10, 0.0, np.inf], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D float32 array, x is -10.0
-    x = -10.0
-    y = np.random.uniform(-20.0, 0.0, size=(2, 1, 3, 1, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 9: 3D array with broadcast-like dimension
+    input_dict = {
+        "x": 3.14159,
+        "y": np.ones((5, 1, 3), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D float32 array with values between 0 and 1, x is 0.5
-    x = 0.5
-    y = np.random.rand(3, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 10: 2D reshaped array with small scientific notation float
+    input_dict = {
+        "x": -1e-5,
+        "y": np.linspace(-1.0, 1.0, 10, dtype=np.float32).reshape(2, 5),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.le_7"] = jax_lax_le_inputs()
+
+generated_inputs["jax.lax.le_7"] = le_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

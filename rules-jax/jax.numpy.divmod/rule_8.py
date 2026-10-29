@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# divisor tensor elements should be strictly positive or strictly negative to avoid division by zero (Rule 8)
+# Tensor divisor must have all strictly positive elements to avoid division by zero (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
-    s.add(Not(Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0)) if n else
-          Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0))
+    s.add(Not(Select(v["arg1_range"], 0) > 0) if n else
+          Select(v["arg1_range"], 0) > 0)
 )
 
 def rule_8_func(arg1, solver=None, neg=False):

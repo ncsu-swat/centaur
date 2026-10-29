@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# To avoid division by zero, all elements of divisor tensor v_2 should be strictly positive or strictly negative (Rule 5)
+# divisor tensor must be strictly positive or strictly negative to avoid division by zero (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
     s.add(Not(Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0)) if n else

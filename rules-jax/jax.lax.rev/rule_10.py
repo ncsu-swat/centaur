@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# reversing dimensions requires operand to have at least 1 dimension if tuple is non-empty (Rule 10)
+# reversing along any axis requires operand to have at least rank one (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
     s.add(Not(If(v["arg2_length"] > 0, v["arg1_ndim"] >= 1, True)) if n else
@@ -22,7 +22,7 @@ def rule_10_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations

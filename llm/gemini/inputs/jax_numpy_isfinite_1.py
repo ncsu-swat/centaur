@@ -4,53 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isfinite_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with standard numbers
-    x = np.array([-1.0, 0.0, 1.0, 2.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with finite, inf, -inf, nan
+    x = np.array([-1.0, 0.0, 3.5, np.inf, -np.inf, np.nan], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D float32 array containing infinity and NaN
-    x = np.array([-np.inf, 3.0, np.inf, np.nan], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D float64 array with all finite values
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D float64 array with some negative values, inf and NaN
-    x = np.array([[1.0, -2.0, np.inf], [np.nan, -np.inf, 0.0]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar array (float32)
+    x = np.array(np.inf, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D array (scalar representation)
-    x = np.array(5.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar array with finite value
+    x = np.array(42.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D float32 array with random numbers
-    x = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D float16 array containing infinities and nans
+    x = np.array(
+        [[[np.nan, 1.0], [np.inf, -2.0]], [[-np.inf, 0.0], [5.0, np.nan]]],
+        dtype=np.float16,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D int32 array (integers are always finite)
-    x = np.array([-10, 0, 10, 20], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D integer array (always finite)
+    x = np.array([-10, -1, 0, 1, 10, 100], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D complex64 array containing finite and infinite components
-    x = np.array([[1+2j, np.inf+3j], [4-np.inf*1j, np.nan+1j]], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D int64 array
+    x = np.arange(12, dtype=np.int64).reshape((4, 3))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float16 array
-    x = np.array([0.1, -0.2, np.inf], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D complex64 array with finite and infinite components
+    x = np.array(
+        [1.0 + 2.0j, np.inf + 1.0j, 0.0 + np.nan * 1j, -np.inf - 1j],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 4D float32 array
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 2D complex128 array with purely finite values
+    x = np.array([[1.0 - 1.0j, 2.0 + 3.0j], [-4.0j, 5.0]], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float64 array containing only NaN values
-    x = np.array([np.nan, np.nan, np.nan], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 4D float32 array
+    x = np.ones((2, 2, 3, 2), dtype=np.float32)
+    x[0, 1, 2, 0] = np.inf
+    x[1, 0, 1, 1] = np.nan
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D boolean array (always finite)
+    x = np.array([True, False, True, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 12: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isfinite_1"] = isfinite_inputs()
 

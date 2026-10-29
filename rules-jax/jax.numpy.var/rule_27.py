@@ -7,32 +7,47 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Where tensor must be a boolean tensor (Rule 27)
+# mean tensor rank matches reduction over tuple axis when keepdims is false (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] == 0) if n else
-          v["arg1_dtype"] == 0)
+    s.add(Not(If(And(v["arg4_value"] == False, v["arg1_ndim"] >= v["arg2_length"]), v["arg3_ndim"] == v["arg1_ndim"] - v["arg2_length"], v["arg3_ndim"] == v["arg1_ndim"])) if n else
+          If(And(v["arg4_value"] == False, v["arg1_ndim"] >= v["arg2_length"]), v["arg3_ndim"] == v["arg1_ndim"] - v["arg2_length"], v["arg3_ndim"] == v["arg1_ndim"]))
 )
 
-def rule_27_func(arg1, solver=None, neg=False):
+def rule_27_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+            return False
+        if not isinstance(arg3, np.ndarray):
+            return False
+        if not isinstance(arg4, bool):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_length = Int('arg2_length')
+        arg3_ndim = Int('arg3_ndim')
+        arg4_value = Bool('arg4_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_length == len(arg2))
+        solver.add(arg3_ndim == arg3.ndim)
+        solver.add(arg4_value == arg4)
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_dtype': arg1_dtype})
+        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg3_ndim': arg3_ndim, 'arg4_value': arg4_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg3_ndim': arg3['ndim'], 'arg4_value': arg4['value']}, neg)

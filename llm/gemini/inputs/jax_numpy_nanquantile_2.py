@@ -10,137 +10,138 @@ import copy
 def nanquantile_inputs():
     list_of_inputs = []
 
-    def make_array_with_nans(shape, dtype=np.float32):
-        arr = np.random.randn(*shape).astype(dtype)
-        mask = np.random.rand(*shape) > 0.8
-        arr[mask] = np.nan
-        return arr
-
-    # Input 1
-    a = make_array_with_nans((5,))
-    q = np.array([0.25, 0.5, 0.75], dtype=np.float32)
+    # Input 1: 1D array with NaNs, single quantile
+    a = np.array([0.0, 1.0, np.nan, 3.0, 4.0, 5.0], dtype=np.float32)
+    q = np.array(0.5, dtype=np.float32)
     axis = (0,)
     overwrite_input = False
     method = "inverted_cdf"
     keepdims = False
-    weights = np.random.uniform(0.1, 1.0, size=(5,)).astype(np.float32)
+    weights = np.array([1.0, 2.0, 1.0, 1.0, 2.0, 1.0], dtype=np.float32)
     list_of_inputs.append({
         "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
         "method": method, "keepdims": keepdims, "weights": weights
     })
 
-    # Input 2
-    a = make_array_with_nans((3, 4))
-    q = np.array([0.5], dtype=np.float32)
+    # Input 2: 1D array with multiple quantiles, keepdims=True
+    a = np.array([-10.0, -5.0, 0.0, 5.0, np.nan, 15.0], dtype=np.float64)
+    q = np.array([0.25, 0.5, 0.75], dtype=np.float64)
     axis = (0,)
     overwrite_input = False
     method = "inverted_cdf"
     keepdims = True
-    weights = np.random.uniform(0.1, 1.0, size=(3, 4)).astype(np.float32)
+    weights = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
     list_of_inputs.append({
         "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
         "method": method, "keepdims": keepdims, "weights": weights
     })
 
-    # Input 3
-    a = make_array_with_nans((2, 3, 4))
-    q = np.array([0.1], dtype=np.float32)
-    axis = (1,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.random.uniform(0.1, 1.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
-
-    # Input 4
-    a = make_array_with_nans((10,))
-    q = np.array([0.1, 0.9], dtype=np.float32)
+    # Input 3: 2D array along axis 0
+    a = np.array([[1.0, 2.0, np.nan], [4.0, np.nan, 6.0], [7.0, 8.0, 9.0]], dtype=np.float32)
+    q = np.array([0.2, 0.8], dtype=np.float32)
     axis = (0,)
     overwrite_input = False
     method = "inverted_cdf"
-    keepdims = True
-    weights = np.random.uniform(0.1, 1.0, size=(10,)).astype(np.float32)
+    keepdims = False
+    weights = np.ones_like(a, dtype=np.float32)
     list_of_inputs.append({
         "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
         "method": method, "keepdims": keepdims, "weights": weights
     })
 
-    # Input 5
-    a = make_array_with_nans((5, 5), dtype=np.float64)
-    q = np.array([0.2, 0.5, 0.8], dtype=np.float64)
+    # Input 4: 2D array along axis 1 with keepdims=True
+    a = np.array([[-3.0, np.nan, -1.0, 0.0], [2.0, 4.0, 6.0, np.nan]], dtype=np.float32)
+    q = np.array(0.4, dtype=np.float32)
     axis = (1,)
     overwrite_input = False
     method = "inverted_cdf"
-    keepdims = False
-    weights = np.random.uniform(0.1, 1.0, size=(5, 5)).astype(np.float64)
+    keepdims = True
+    weights = np.array([[1.0, 2.0, 1.0, 3.0], [2.0, 1.0, 1.0, 1.0]], dtype=np.float32)
     list_of_inputs.append({
         "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
         "method": method, "keepdims": keepdims, "weights": weights
     })
 
-    # Input 6
-    a = make_array_with_nans((4, 4, 4))
-    q = np.array([0.0, 1.0], dtype=np.float32)
+    # Input 5: 2D array with negative axis index
+    a = np.array([[np.nan, 1.5, 2.5], [3.5, 4.5, np.nan]], dtype=np.float64)
+    q = np.array([0.1, 0.5, 0.9], dtype=np.float64)
+    axis = (-1,)
+    overwrite_input = False
+    method = "inverted_cdf"
+    keepdims = False
+    weights = np.array([[0.5, 1.0, 2.0], [1.0, 1.5, 0.5]], dtype=np.float64)
+    list_of_inputs.append({
+        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
+        "method": method, "keepdims": keepdims, "weights": weights
+    })
+
+    # Input 6: 3D array along axis 0
+    a = np.arange(24, dtype=np.float32).reshape(2, 3, 4)
+    a[0, 1, 2] = np.nan
+    a[1, 2, 0] = np.nan
+    q = np.array(0.0, dtype=np.float32)
+    axis = (0,)
+    overwrite_input = False
+    method = "inverted_cdf"
+    keepdims = False
+    weights = np.ones((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append({
+        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
+        "method": method, "keepdims": keepdims, "weights": weights
+    })
+
+    # Input 7: 3D array along axis 1 with keepdims=True
+    a = np.array([
+        [[np.nan, -2.0], [3.0, 4.0], [5.0, np.nan]],
+        [[1.0, 2.0], [np.nan, -4.0], [0.0, 6.0]]
+    ], dtype=np.float32)
+    q = np.array(1.0, dtype=np.float32)
+    axis = (1,)
+    overwrite_input = False
+    method = "inverted_cdf"
+    keepdims = True
+    weights = np.ones((2, 3, 2), dtype=np.float32) * 2.0
+    list_of_inputs.append({
+        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
+        "method": method, "keepdims": keepdims, "weights": weights
+    })
+
+    # Input 8: 3D array along axis 2
+    a = np.linspace(-10, 10, 30, dtype=np.float64).reshape(5, 2, 3)
+    a[2, 0, 1] = np.nan
+    q = np.array([0.33, 0.66], dtype=np.float64)
     axis = (2,)
     overwrite_input = False
     method = "inverted_cdf"
     keepdims = False
-    weights = np.random.uniform(0.1, 1.0, size=(4, 4, 4)).astype(np.float32)
+    weights = np.abs(a) + 0.1
     list_of_inputs.append({
         "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
         "method": method, "keepdims": keepdims, "weights": weights
     })
 
-    # Input 7
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    q = np.array([0.5], dtype=np.float32)
-    axis = (0,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.array([1.0, 2.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
-
-    # Input 8
-    a = make_array_with_nans((2, 10))
-    q = np.array([0.3, 0.7], dtype=np.float32)
-    axis = (1,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = True
-    weights = np.random.uniform(0.1, 1.0, size=(2, 10)).astype(np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
-
-    # Input 9
-    a = make_array_with_nans((2, 2, 2, 2))
-    q = np.array([0.5], dtype=np.float32)
+    # Input 9: 4D array along axis 3
+    a = np.ones((2, 2, 2, 3), dtype=np.float32)
+    a[0, 0, 0, 1] = np.nan
+    q = np.array(0.7, dtype=np.float32)
     axis = (3,)
     overwrite_input = False
     method = "inverted_cdf"
-    keepdims = False
-    weights = np.random.uniform(0.1, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
+    keepdims = True
+    weights = np.ones((2, 2, 2, 3), dtype=np.float32)
     list_of_inputs.append({
         "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
         "method": method, "keepdims": keepdims, "weights": weights
     })
 
-    # Input 10
-    a = make_array_with_nans((3, 2, 5))
-    q = np.array([0.25, 0.75], dtype=np.float32)
-    axis = (2,)
+    # Input 10: 1D array with all values present (no NaNs), non-uniform weights
+    a = np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float32)
+    q = np.array([0.0, 0.5, 1.0], dtype=np.float32)
+    axis = (0,)
     overwrite_input = False
     method = "inverted_cdf"
-    keepdims = True
-    weights = np.random.uniform(0.1, 1.0, size=(3, 2, 5)).astype(np.float32)
+    keepdims = False
+    weights = np.array([1.0, 5.0, 10.0, 2.0, 1.0], dtype=np.float32)
     list_of_inputs.append({
         "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
         "method": method, "keepdims": keepdims, "weights": weights

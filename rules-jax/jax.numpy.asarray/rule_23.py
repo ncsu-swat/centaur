@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Complex tensors should only be cast to complex target dtypes to prevent information loss (Rule 23)
+# converting a tuple of booleans with target dtype requires boolean dtype (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), Or(v["arg2_value"] == 9, v["arg2_value"] == 10), True)) if n else
-          If(Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), Or(v["arg2_value"] == 9, v["arg2_value"] == 10), True))
+    s.add(Not(And(v["arg1_length"] > 0, v["arg2_value"] == 0)) if n else
+          And(v["arg1_length"] > 0, v["arg2_value"] == 0))
 )
 
 def rule_23_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_23_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, bool) for e in arg1)):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_length = Int('arg1_length')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_length == len(arg1))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 23
-        rule_23(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_23(solver, {'arg1_length': arg1_length, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_23(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_23(solver, {'arg1_length': arg1['length'], 'arg2_value': arg2['value']}, neg)

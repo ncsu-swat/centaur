@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if first argument is a floating-point dtype, second must be a valid dtype (Rule 40)
+# bfloat16 string specifier promoted with boolean dtype (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(If((And(v["arg1_value"] >= 6, v["arg1_value"] <= 8)), (And(v["arg2_value"] >= 0, v["arg2_value"] <= 12)), True)) if n else
-          If((And(v["arg1_value"] >= 6, v["arg1_value"] <= 8)), (And(v["arg2_value"] >= 0, v["arg2_value"] <= 12)), True))
+    s.add(Not(And(v["arg1_value"] == 39, v["arg2_value"] == 0)) if n else
+          And(v["arg1_value"] == 39, v["arg2_value"] == 0))
 )
 
 def rule_40_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,18 @@ def rule_40_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, str):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 40

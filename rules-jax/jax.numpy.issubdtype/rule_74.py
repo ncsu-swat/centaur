@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# complex dtypes are not subdtypes of integer dtypes (Rule 74)
+# boolean source in union must target boolean or generic dtype (Rule 74)
 
 rule_74 = lambda s, v, n=False: (
-    s.add(Not(If((And(9 <= v["arg1_value"], v["arg1_value"] <= 10)), Or(v["arg2_value"] < 1, v["arg2_value"] > 5), True)) if n else
-          If((And(9 <= v["arg1_value"], v["arg1_value"] <= 10)), Or(v["arg2_value"] < 1, v["arg2_value"] > 5), True))
+    s.add(Not(If(v["arg1_value"] == 0, Or(v["arg2_value"] == 0, v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12))) if n else
+          If(v["arg1_value"] == 0, Or(v["arg2_value"] == 0, v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12)))
 )
 
 def rule_74_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,16 @@ def rule_74_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not ((isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)) or isinstance(arg1, str)):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 74

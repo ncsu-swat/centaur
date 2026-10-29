@@ -7,35 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# precision 2-tuple string elements must be valid options (Rule 28)
+# window strides and rhs dilation sequences must have identical lengths (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_length"] == 2, (Or(Or(Select(v["arg1_values"], 0) == 37, Select(v["arg1_values"], 0) == 5), Select(v["arg1_values"], 0) == 38))), (Or(Or(Select(v["arg1_values"], 1) == 37, Select(v["arg1_values"], 1) == 5), Select(v["arg1_values"], 1) == 38)))) if n else
-          And(And(v["arg1_length"] == 2, (Or(Or(Select(v["arg1_values"], 0) == 37, Select(v["arg1_values"], 0) == 5), Select(v["arg1_values"], 0) == 38))), (Or(Or(Select(v["arg1_values"], 1) == 37, Select(v["arg1_values"], 1) == 5), Select(v["arg1_values"], 1) == 38))))
+    s.add(Not(v["arg1_length"] == v["arg2_length"]) if n else
+          v["arg1_length"] == v["arg2_length"])
 )
 
-def rule_28_func(arg1, solver=None, neg=False):
+def rule_28_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, str) for e in arg1)):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+            return False
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), StringSort())
+        arg2_length = Int('arg2_length')
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 28
-        rule_28(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_28(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_28(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_28(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length']}, neg)

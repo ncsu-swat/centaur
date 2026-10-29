@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def iterable_inputs():
     list_of_inputs = []
@@ -14,47 +15,48 @@ def iterable_inputs():
     input_dict = {"y": ()}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Tuple of positive integers
+    # Input 2: Tuple with a single integer
+    input_dict = {"y": (0,)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Tuple of two positive integers
+    input_dict = {"y": (1, 2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Tuple of multiple integers
     input_dict = {"y": (1, 2, 3, 4, 5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Tuple of negative and positive integers
+    # Input 5: Tuple of integers with negative values and zero
     input_dict = {"y": (-10, -5, 0, 5, 10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Tuple of positive floats
-    input_dict = {"y": (1.1, 2.2, 3.3)}
+    # Input 6: Tuple of floats
+    input_dict = {"y": (1.0, 2.5, -3.7, 4.2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Tuple of negative and positive floats
-    input_dict = {"y": (-1.5, 0.0, 1.5)}
+    # Input 7: Tuple of large integers
+    input_dict = {"y": (100, 200, 300, 400)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Tuple of booleans
-    input_dict = {"y": (True, False, True)}
+    # Input 8: Tuple with a single negative float
+    input_dict = {"y": (-1.0,)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large range of integers
-    input_dict = {"y": tuple(range(-50, 50))}
+    # Input 9: Tuple of zeros
+    input_dict = {"y": (0.0, 0.0, 0.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Single element integer tuple
-    input_dict = {"y": (42,)}
+    # Input 10: Tuple of alternating sign integers
+    input_dict = {"y": (1, -1, 2, -2, 3, -3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Single element float tuple
-    input_dict = {"y": (-3.14,)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Tuple of small-scale floats
-    input_dict = {"y": (1e-5, 2e-5, 3e-5)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11: Tuple of large-scale integers
-    input_dict = {"y": (100000, 200000, 300000)}
+    # Input 11: Tuple of scientific notation floats
+    input_dict = {"y": (1e-5, 1e5, 0.5, -1e-2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.iterable_3"] = iterable_inputs()
 

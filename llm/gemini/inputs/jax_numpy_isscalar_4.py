@@ -4,53 +4,45 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isscalar_inputs():
     list_of_inputs = []
 
-    # Input 1: Python boolean True
-    input_dict = {"element": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Python True
+    list_of_inputs.append({"element": True})
 
-    # Input 2: Python boolean False
-    input_dict = {"element": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Python False
+    list_of_inputs.append({"element": False})
 
-    # Input 3: NumPy boolean True
-    input_dict = {"element": np.bool_(True)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: numpy bool True
+    list_of_inputs.append({"element": np.bool_(True)})
 
-    # Input 4: NumPy boolean False
-    input_dict = {"element": np.bool_(False)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: numpy bool False
+    list_of_inputs.append({"element": np.bool_(False)})
 
-    # Input 5: Zero-dimensional array with True
-    input_dict = {"element": np.array(True)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: numpy True_
+    list_of_inputs.append({"element": np.True_})
 
-    # Input 6: Zero-dimensional array with False
-    input_dict = {"element": np.array(False)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: numpy False_
+    list_of_inputs.append({"element": np.False_})
 
-    # Input 7: Zero-dimensional array with explicit bool dtype
-    input_dict = {"element": np.array(True, dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: numpy bool from integer 1
+    list_of_inputs.append({"element": np.bool_(1)})
 
-    # Input 8: Zero-dimensional array with explicit np.bool_ dtype
-    input_dict = {"element": np.array(False, dtype=np.bool_)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: numpy bool from integer 0
+    list_of_inputs.append({"element": np.bool_(0)})
 
-    # Input 9: NumPy boolean initialized with integer 1 (True)
-    input_dict = {"element": np.bool_(1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Python bool constructed from comparison (True)
+    list_of_inputs.append({"element": bool(1 < 2)})
 
-    # Input 10: NumPy boolean initialized with integer 0 (False)
-    input_dict = {"element": np.bool_(0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Python bool constructed from comparison (False)
+    list_of_inputs.append({"element": bool(1 > 2)})
 
-    return list_of_inputs
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
 
 generated_inputs["jax.numpy.isscalar_4"] = isscalar_inputs()
 

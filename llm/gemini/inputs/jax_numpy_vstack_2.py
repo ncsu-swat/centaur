@@ -10,54 +10,59 @@ import copy
 def vstack_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D integer array with float32 dtype conversion
+    # Input 1: 1D array, int32 -> float32
     tup = np.array([1, 2, 3, 4], dtype=np.int32)
     dtype = np.float32
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
-    # Input 2: 2D float array with float64 dtype conversion
-    tup = np.random.randn(3, 4).astype(np.float32)
+    # Input 2: 1D array with negative values
+    tup = np.array([-5.0, 0.0, 5.0, 10.5], dtype=np.float32)
     dtype = np.float64
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
-    # Input 3: 2D array with negative values and float32 dtype
-    tup = np.array([[-1.0, -2.0], [3.0, 4.0]], dtype=np.float32)
+    # Input 3: 2D array, float32 -> float32
+    tup = np.random.randn(3, 4).astype(np.float32)
     dtype = np.float32
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
-    # Input 4: 3D array with int32 conversion
-    tup = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 4: 2D array, int64 -> int32
+    tup = np.arange(12, dtype=np.int64).reshape(4, 3)
     dtype = np.int32
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
-    # Input 5: 1D float array with complex64 conversion
-    tup = np.array([1.5, 2.5, 3.5], dtype=np.float32)
-    dtype = np.complex64
+    # Input 5: 3D array, float64
+    tup = np.random.randn(2, 3, 5).astype(np.float64)
+    dtype = np.float64
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
-    # Input 6: 4D array with float16 conversion
-    tup = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    dtype = np.float16
+    # Input 6: 3D array, uint8 -> int32
+    tup = np.ones((4, 2, 2), dtype=np.uint8)
+    dtype = np.int32
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
-    # Input 7: Boolean array with bool dtype
-    tup = np.array([[True, False], [False, True]], dtype=np.bool_)
+    # Input 7: 4D array, float32
+    tup = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    dtype = np.float32
+    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+
+    # Input 8: 1D array of booleans -> bool
+    tup = np.array([True, False, True, True], dtype=np.bool_)
     dtype = np.bool_
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
-    # Input 8: 1D array with int64 conversion
-    tup = np.array([10, 20, 30], dtype=np.int32)
+    # Input 9: 2D complex numbers
+    tup = (np.random.randn(2, 3) + 1j * np.random.randn(2, 3)).astype(np.complex64)
+    dtype = np.complex64
+    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+
+    # Input 10: 5D array
+    tup = np.zeros((1, 2, 1, 3, 2), dtype=np.float32)
+    dtype = np.float32
+    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
+
+    # Input 11: 2D array, boolean -> int64
+    tup = np.array([[True, False], [False, True]], dtype=np.bool_)
     dtype = np.int64
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
-
-    # Input 9: Large 2D array with uint32 conversion
-    tup = np.random.randint(0, 100, size=(5, 5)).astype(np.int32)
-    dtype = np.uint32
-    list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
-
-    # Input 10: 3D float array with float64 conversion
-    tup = np.random.randn(4, 2, 2).astype(np.float32)
-    dtype = np.float64
     list_of_inputs.append({"tup": copy.deepcopy(tup), "dtype": dtype})
 
     return list_of_inputs

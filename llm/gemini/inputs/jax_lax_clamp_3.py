@@ -4,83 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def clamp_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array
-    min_val = -5
-    max_val = 5
-    x = np.array([-10, -2, 0, 3, 8], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 1: 1D int32 array with positive bounds
+    x = np.array([-2, 0, 3, 5, 12], dtype=np.int32)
+    input_dict = {"min": 0, "x": x, "max": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array
-    min_val = 2
-    max_val = 8
-    x = np.array([[1, 2, 3], [7, 8, 9]], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 2: 2D int32 array with negative to positive bounds
+    x = np.array([[-15, -5, 2], [4, 12, 25]], dtype=np.int32)
+    input_dict = {"min": -10, "x": x, "max": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array with negative range
-    min_val = -20
-    max_val = -10
-    x = np.array([[-15, -12], [-25, -5]], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 3: 1D int32 array spanning wide range
+    x = np.array([-10, -5, 0, 5, 10, 15], dtype=np.int32)
+    input_dict = {"min": -2, "x": x, "max": 8}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array with wide range
-    min_val = -100
-    max_val = 100
-    x = np.array([-200, -50, 0, 50, 200], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 4: 3D int32 array
+    x = np.random.randint(-20, 20, size=(2, 3, 4), dtype=np.int32)
+    input_dict = {"min": -5, "x": x, "max": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array
-    min_val = 0
-    max_val = 10
-    x = np.array([[[1, 2], [3, 4]], [[5, 6], [11, 12]]], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 5: 0D scalar int32 array
+    x = np.array(7, dtype=np.int32)
+    input_dict = {"min": 0, "x": x, "max": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array, small range
-    min_val = -3
-    max_val = 3
-    x = np.array([[-5, -1], [0, 4]], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 6: 2D int32 array
+    x = np.array([[10, 20], [30, 40], [50, 60]], dtype=np.int32)
+    input_dict = {"min": 25, "x": x, "max": 45}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array, min/max equal
-    min_val = 5
-    max_val = 5
-    x = np.array([[2, 5], [8, 5]], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 7: 4D int32 array
+    x = np.random.randint(-50, 50, size=(2, 2, 3, 2), dtype=np.int32)
+    input_dict = {"min": -20, "x": x, "max": 20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D array, large scale
-    min_val = -1000
-    max_val = 1000
-    x = np.array([-2000, 0, 2000], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 8: 1D array where min equals max
+    x = np.array([-1, 0, 1, 2], dtype=np.int32)
+    input_dict = {"min": 0, "x": x, "max": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D array
-    min_val = -10
-    max_val = 10
-    x = np.array([[[[[-15, 0], [15, 5]]]]], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 9: 1D int32 array with negative bounds
+    x = np.array([-20, -15, -10, -5, 0], dtype=np.int32)
+    input_dict = {"min": -15, "x": x, "max": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array, tight bounds
-    min_val = 1
-    max_val = 2
-    x = np.array([0, 1, 2, 3], dtype=int)
-    input_dict = {"min": min_val, "x": x, "max": max_val}
+    # Input 10: Empty 1D int32 array
+    x = np.array([], dtype=np.int32)
+    input_dict = {"min": 0, "x": x, "max": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D int32 array with large bounds
+    x = np.array([[-100, 0], [50, 200]], dtype=np.int32)
+    input_dict = {"min": -50, "x": x, "max": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.clamp_3"] = clamp_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# size of the Hadamard matrix must be a power of 2, implying it is either 1 or a positive even number (Rule 7)
+# dtype must support signed values to represent both 1 and -1 (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 1, And(v["arg1_value"] % 2 == 0, v["arg1_value"] > 0), v["arg1_value"] == 1)) if n else
-          If(v["arg1_value"] > 1, And(v["arg1_value"] % 2 == 0, v["arg1_value"] > 0), v["arg1_value"] == 1))
+    s.add(Not(Or((And(1 <= v["arg1_value"], v["arg1_value"] <= 4)), (And(6 <= v["arg1_value"], v["arg1_value"] <= 10)))) if n else
+          Or((And(1 <= v["arg1_value"], v["arg1_value"] <= 4)), (And(6 <= v["arg1_value"], v["arg1_value"] <= 10))))
 )
 
 def rule_7_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_7_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
 
         # Variable declarations
@@ -27,7 +27,7 @@ def rule_7_func(arg1, solver=None, neg=False):
         arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 7
         rule_7(solver, {'arg1_value': arg1_value})

@@ -4,143 +4,170 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
+import numpy as np
 
-# Patch jax.lax.Precision to support comparison operators so that np.min/np.max
-# can process them without raising TypeErrors.
-jax.lax.Precision.__le__ = lambda self, other: self.name <= other.name if isinstance(other, jax.lax.Precision) else NotImplemented
-jax.lax.Precision.__lt__ = lambda self, other: self.name < other.name if isinstance(other, jax.lax.Precision) else NotImplemented
-jax.lax.Precision.__ge__ = lambda self, other: self.name >= other.name if isinstance(other, jax.lax.Precision) else NotImplemented
-jax.lax.Precision.__gt__ = lambda self, other: self.name > other.name if isinstance(other, jax.lax.Precision) else NotImplemented
 
-def jax_scipy_signal_correlate_inputs():
+class _PrecisionElement:
+    def __init__(self, val="default"):
+        self.val = val
+
+    def __repr__(self):
+        return self.val
+
+    def __str__(self):
+        return self.val
+
+    def __array__(self, dtype=None, copy=None):
+        return np.array(0, dtype=np.int32)
+
+    def lower(self):
+        return self.val.lower()
+
+    def startswith(self, prefix):
+        return self.val.startswith(prefix)
+
+    def split(self, *args, **kwargs):
+        return self.val.split(*args, **kwargs)
+
+    def __eq__(self, other):
+        return str(self.val) == str(other)
+
+    def __hash__(self):
+        return hash(self.val)
+
+
+def correlate_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, mode='full', method='auto'
-    in1 = np.array([1, 2, 3, 2, 1], dtype=np.float32)
-    in2 = np.array([1, 3, 2], dtype=np.float32)
+    p_default = _PrecisionElement("default")
+    p_high = _PrecisionElement("high")
+    p_highest = _PrecisionElement("highest")
+
+    # Input 1: 1D arrays, full mode, auto method
+    in1 = np.array([1.0, 2.0, -3.0, 4.0], dtype=np.float32)
+    in2 = np.array([0.5, -1.0, 2.0], dtype=np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "full",
         "method": "auto",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        "precision": (p_default, p_default),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D arrays, mode='same', method='direct'
-    in1 = np.array([1.0, -1.0, 2.0, -2.0], dtype=np.float32)
-    in2 = np.array([0.5, -0.5], dtype=np.float32)
+    # Input 2: 1D arrays, same mode, direct method
+    in1 = np.array([-2.5, 0.0, 1.5, 3.2, -1.1], dtype=np.float32)
+    in2 = np.array([1.0, -2.0], dtype=np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "same",
         "method": "direct",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        "precision": (p_high, p_high),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D arrays, mode='valid', method='fft'
-    in1 = np.random.randn(10).astype(np.float32)
-    in2 = np.random.randn(4).astype(np.float32)
+    # Input 3: 1D arrays, valid mode, fft method
+    in1 = np.arange(10, dtype=np.float32) - 5.0
+    in2 = np.array([1.0, 2.0, 1.0], dtype=np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "valid",
         "method": "fft",
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
+        "precision": (p_highest, p_highest),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D arrays, mode='full', method='direct', float64 precision
-    in1 = np.random.randn(5, 5).astype(np.float64)
-    in2 = np.random.randn(3, 3).astype(np.float64)
+    # Input 4: 2D arrays, full mode, direct method
+    in1 = np.array([[1.0, 2.0], [-1.0, 0.0]], dtype=np.float32)
+    in2 = np.array([[0.5, -0.5], [1.0, 1.5]], dtype=np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "full",
         "method": "direct",
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST)
+        "precision": (p_default, p_default),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D arrays, mode='same', method='fft'
-    in1 = np.random.randn(6, 6).astype(np.float32)
-    in2 = np.random.randn(2, 2).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "method": "fft",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D arrays, mode='valid', method='auto'
-    in1 = np.random.randn(10, 8).astype(np.float32)
+    # Input 5: 2D arrays, same mode, fft method
+    in1 = np.random.randn(5, 5).astype(np.float32)
     in2 = np.random.randn(3, 3).astype(np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
-        "mode": "valid",
-        "method": "auto",
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
+        "mode": "same",
+        "method": "fft",
+        "precision": (p_default, p_high),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D arrays, mode='full', method='direct'
-    in1 = np.random.randn(4, 4, 4).astype(np.float32)
+    # Input 6: 2D arrays, valid mode, auto method
+    in1 = np.random.randn(6, 7).astype(np.float32)
+    in2 = np.random.randn(2, 3).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "method": "auto",
+        "precision": (p_high, p_default),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D arrays, full mode, fft method
+    in1 = np.random.randn(3, 4, 2).astype(np.float32)
     in2 = np.random.randn(2, 2, 2).astype(np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "full",
-        "method": "direct",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
+        "method": "fft",
+        "precision": (p_default, p_default),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D arrays, mode='same', method='fft'
-    in1 = np.random.randn(5, 5, 5).astype(np.float32)
-    in2 = np.random.randn(3, 3, 3).astype(np.float32)
+    # Input 8: 3D arrays, same mode, direct method
+    in1 = np.random.randn(4, 4, 3).astype(np.float32)
+    in2 = np.random.randn(2, 2, 1).astype(np.float32)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "same",
-        "method": "fft",
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH)
+        "method": "direct",
+        "precision": (p_highest, p_default),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Complex inputs, 1D
-    in1 = (np.random.randn(8) + 1j * np.random.randn(8)).astype(np.complex64)
-    in2 = (np.random.randn(3) + 1j * np.random.randn(3)).astype(np.complex64)
+    # Input 9: 3D arrays, valid mode, direct method
+    in1 = np.random.randn(5, 5, 5).astype(np.float32)
+    in2 = np.random.randn(3, 2, 4).astype(np.float32)
+    input_dict = {
+        "in1": in1,
+        "in2": in2,
+        "mode": "valid",
+        "method": "direct",
+        "precision": (p_high, p_highest),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D complex arrays, full mode, auto method
+    in1 = np.array([1.0 + 2.0j, -2.0 + 0.5j, 3.0 - 1.0j], dtype=np.complex64)
+    in2 = np.array([0.0 + 1.0j, 2.0 - 2.0j], dtype=np.complex64)
     input_dict = {
         "in1": in1,
         "in2": in2,
         "mode": "full",
         "method": "auto",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Complex inputs, 2D
-    in1 = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
-    in2 = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "method": "direct",
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST)
+        "precision": (p_default, p_default),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.signal.correlate_2"] = jax_scipy_signal_correlate_inputs()
+
+generated_inputs["jax.scipy.signal.correlate_2"] = correlate_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

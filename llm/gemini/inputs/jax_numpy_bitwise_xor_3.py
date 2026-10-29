@@ -4,63 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_xor_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D positive int32 array
-    x = 5
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 2: 2D array with negative values (int32)
-    x = -1
-    y = np.array([[-10, 20], [30, -40]], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 3: 3D array (int32)
-    x = 0
-    y = np.arange(8, dtype=np.int32).reshape(2, 2, 2)
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 4: 1D array (int32)
-    x = 42
-    y = np.array([100, 200, 300], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 5: 4D array (int64) with negative x
-    x = -10
-    y = np.ones((2, 2, 2, 2), dtype=np.int64) * 100
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 6: 2D array (int32) representing bit masks
-    x = 255
-    y = np.array([[0, 15], [240, 255]], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 7: 0D array (scalar tensor)
+    # Input 1: 1D int32 array with positive integer
     x = 1
-    y = np.array(42, dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    y = np.array([0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 2D array (int32) with negative values
-    x = -3
-    y = np.array([[-128, 127], [0, -1]], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 9: Large 1D array (int64)
-    x = 123456
-    y = np.linspace(0, 1000, 10, dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 10: 3D array of zeros and ones (int32)
+    # Input 2: 2D int64 array with zero
     x = 0
-    y = np.random.randint(0, 2, size=(3, 3, 3)).astype(np.int32)
-    list_of_inputs.append({"x": x, "y": y})
+    y = np.array([[1, 2], [3, 4]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 3: 1D int32 array with negative integer
+    x = -1
+    y = np.array([-5, 0, 5], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 3D int32 array with positive integer
+    x = 255
+    y = np.array([[[10, 20], [30, 40]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 5: 3D int64 array with positive integer
+    x = 15
+    y = np.zeros((2, 3, 4), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: 1D int32 array with negative integer
+    x = -128
+    y = np.array([127, -128, 0, 1], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: 2D int32 array with positive integer
+    x = 1024
+    y = np.arange(12, dtype=np.int32).reshape(3, 4)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: 0D int32 scalar array
+    x = 42
+    y = np.array(5, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: 4D int64 array with negative integer
+    x = -999
+    y = np.ones((2, 2, 2, 2), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 2D int64 array with large values
+    x = 123456
+    y = np.array([[-100, 200, -300], [400, -500, 600]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_xor_3"] = bitwise_xor_inputs()
 

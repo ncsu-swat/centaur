@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor's data type must be a valid numeric type (Rule 9)
+# input tensor has inexact data type, i.e., floating-point or complex (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10)) if n else
-          And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10))
+    s.add(Not(Or((And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)), (And(9 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)))) if n else
+          Or((And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)), (And(9 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension of tensor c must be between 1 and 6, and all shape dimensions must be greater than or equal to 1 (Rule 39)
+# the last dimension of input tensor c has at least size 3 (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 6), And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) >= 1) for i in range(6)]))) if n else
-          And(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 6), And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) >= 1) for i in range(6)])))
+    s.add(Not(And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) >= 3)) if n else
+          And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) >= 3))
 )
 
 def rule_39_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_39_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_39(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

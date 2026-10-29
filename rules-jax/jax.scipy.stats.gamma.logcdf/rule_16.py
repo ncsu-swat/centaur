@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# data type consistency across all four input parameters (Rule 16)
+# All four tensors `x`, `a`, `loc`, and `scale` share the same floating-point data type (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg2_dtype"] == v["arg3_dtype"]), v["arg3_dtype"] == v["arg4_dtype"])) if n else
-          And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg2_dtype"] == v["arg3_dtype"]), v["arg3_dtype"] == v["arg4_dtype"]))
+    s.add(Not(And(And(And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg2_dtype"] == v["arg3_dtype"]), v["arg3_dtype"] == v["arg4_dtype"]), v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8)) if n else
+          And(And(And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg2_dtype"] == v["arg3_dtype"]), v["arg3_dtype"] == v["arg4_dtype"]), v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8))
 )
 
 def rule_16_func(arg1, arg2, arg3, arg4, solver=None, neg=False):

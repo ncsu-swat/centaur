@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the requested dtype must not be a string dtype (Rule 43)
+# 2-element tuple of integers representing positive 2D shape dimensions (Rule 43)
 
 rule_43 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 11, False, True)) if n else
-          If(v["arg1_value"] == 11, False, True))
+    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) > 0), Select(v["arg1_values"], 1) > 0)) if n else
+          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) > 0), Select(v["arg1_values"], 1) > 0))
 )
 
 def rule_43_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_43_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 43
-        rule_43(solver, {'arg1_value': arg1_value})
+        rule_43(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_43(solver, {'arg1_value': arg1['value']}, neg)
+        rule_43(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

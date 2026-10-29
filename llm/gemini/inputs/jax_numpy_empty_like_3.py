@@ -4,83 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def empty_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 -> 1D float32
-    prototype = np.random.randn(5).astype(np.float32)
-    dtype = np.dtype(np.float32)
-    shape = [5]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 1: 1D float32 prototype, reshaped to 1D
+    prototype = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.float32),
+        "shape": [4],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 -> 2D int32
-    prototype = np.random.randn(2, 3).astype(np.float32)
-    dtype = np.dtype(np.int32)
-    shape = [3, 4]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 2: 2D int32 prototype, reshaped to 2D
+    prototype = np.arange(6, dtype=np.int32).reshape(2, 3)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.int32),
+        "shape": [3, 5],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 -> 3D complex64
-    prototype = np.random.randn(2, 2, 2).astype(np.float64)
-    dtype = np.dtype(np.complex64)
-    shape = [2, 3, 4]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 3: 3D float32 prototype, reshaped to 3D
+    prototype = np.ones((2, 3, 4), dtype=np.float32)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.float32),
+        "shape": [2, 2, 2],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 4D int32 -> 4D bool
-    prototype = np.random.randint(0, 10, size=(1, 2, 3, 4)).astype(np.int32)
-    dtype = np.dtype(np.bool_)
-    shape = [2, 2, 2, 2]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 4: 0D scalar array prototype, bool dtype, reshaped to 1D
+    prototype = np.array(True, dtype=np.bool_)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.bool_),
+        "shape": [1],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D bool -> 1D float64
+    # Input 5: 4D complex64 prototype, reshaped to 4D
+    prototype = np.zeros((1, 2, 2, 1), dtype=np.complex64)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.complex64),
+        "shape": [1, 2, 3, 4],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D int32 prototype, reshaped with zero dimension
+    prototype = np.array([[-10, 20], [30, -40]], dtype=np.int32)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.int32),
+        "shape": [0],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 1D bool prototype, reshaped to 2D
     prototype = np.array([True, False, True], dtype=np.bool_)
-    dtype = np.dtype(np.float64)
-    shape = [10]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.bool_),
+        "shape": [5, 5],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D complex64 -> 2D float32
-    prototype = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    dtype = np.dtype(np.float32)
-    shape = [5, 5]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 8: 2D float16 prototype, reshaped to 1D
+    prototype = np.array([[1.5, -2.5], [3.5, -4.5]], dtype=np.float16)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.float16),
+        "shape": [6],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D int64 -> 1D int8
-    prototype = np.random.randint(-100, 100, size=(10,)).astype(np.int64)
-    dtype = np.dtype(np.int8)
-    shape = [20]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 9: 3D int32 prototype, reshaped to 3D with zero dimension
+    prototype = np.ones((2, 3, 2), dtype=np.int32)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.int32),
+        "shape": [2, 0, 3],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D uint8 -> 3D uint32
-    prototype = np.random.randint(0, 255, size=(2, 2, 2)).astype(np.uint8)
-    dtype = np.dtype(np.uint32)
-    shape = [4, 4, 4]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 10: 1D complex64 prototype, reshaped to 3D
+    prototype = np.array([1.0 + 2.0j, -3.0 - 4.0j], dtype=np.complex64)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.complex64),
+        "shape": [2, 3, 4],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D int16 -> 2D complex128
-    prototype = np.random.randint(-10, 10, size=(4, 4)).astype(np.int16)
-    dtype = np.dtype(np.complex128)
-    shape = [1, 10]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D float64 -> 1D int64
-    prototype = np.random.randn(8).astype(np.float64)
-    dtype = np.dtype(np.int64)
-    shape = [100]
-    input_dict = {"prototype": prototype, "dtype": dtype, "shape": shape}
+    # Input 11: 2D float32 prototype, reshaped to 1D
+    prototype = np.zeros((3, 3), dtype=np.float32)
+    input_dict = {
+        "prototype": prototype,
+        "dtype": np.dtype(np.float32),
+        "shape": [9],
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.empty_like_3"] = empty_like_inputs()
 

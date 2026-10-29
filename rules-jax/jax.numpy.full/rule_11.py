@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the fill_value tensor must be broadcast-compatible with the target shape tuple (Rule 11)
+# Trailing dimension broadcast compatibility between tuple shape and tensor fill value (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_ndim"] <= v["arg1_length"], (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == Select(v["arg1_values"], v["arg1_length"] - 1 - i), Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == 1)) for i in range(6)])))) if n else
-          And(v["arg2_ndim"] <= v["arg1_length"], (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == Select(v["arg1_values"], v["arg1_length"] - 1 - i), Select(v["arg2_shape"], v["arg2_ndim"] - 1 - i) == 1)) for i in range(6)]))))
+    s.add(Not(If(And(v["arg1_length"] > 0, v["arg2_ndim"] > 0), Or(Select(v["arg2_shape"], v["arg2_ndim"] - 1) == 1, Select(v["arg2_shape"], v["arg2_ndim"] - 1) == Select(v["arg1_values"], v["arg1_length"] - 1)), True)) if n else
+          If(And(v["arg1_length"] > 0, v["arg2_ndim"] > 0), Or(Select(v["arg2_shape"], v["arg2_ndim"] - 1) == 1, Select(v["arg2_shape"], v["arg2_ndim"] - 1) == Select(v["arg1_values"], v["arg1_length"] - 1)), True))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_11_func(arg1, arg2, solver=None, neg=False):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 11
-        rule_11(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_11(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_11(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_11(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

@@ -4,26 +4,68 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.scipy.linalg
+import sys
+import numpy as np
 import scipy.linalg
+import jax.scipy.linalg
 
-# Monkeypatch missing JAX API to prevent failure in test harness lookup
-jax.scipy.linalg.invpascal = scipy.linalg.invpascal
+setattr(sys.modules["jax.scipy.linalg"], "invpascal", scipy.linalg.invpascal)
+
 
 def invpascal_inputs():
     list_of_inputs = []
 
-    kinds = ["symmetric", "lower", "upper"]
-    for i in range(1, 11):
-        kind = kinds[i % 3]
-        list_of_inputs.append({
-            "n": int(i),
-            "kind": str(kind)
-        })
+    # Input 1: size 1, symmetric
+    input_dict = {"n": 1, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: size 2, lower triangular
+    input_dict = {"n": 2, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: size 3, upper triangular
+    input_dict = {"n": 3, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: size 4, symmetric
+    input_dict = {"n": 4, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: size 5, lower triangular
+    input_dict = {"n": 5, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: size 6, upper triangular
+    input_dict = {"n": 6, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: size 7, symmetric
+    input_dict = {"n": 7, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: size 8, lower triangular
+    input_dict = {"n": 8, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: size 9, upper triangular
+    input_dict = {"n": 9, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: size 10, symmetric
+    input_dict = {"n": 10, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: size 12, lower triangular
+    input_dict = {"n": 12, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: size 15, upper triangular
+    input_dict = {"n": 15, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.invpascal"] = invpascal_inputs()
 

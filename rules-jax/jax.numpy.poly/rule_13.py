@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension of the input tensor representing roots must be less than 3 (Rule 13)
+# input tensor dimension must be less than 3 (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
     s.add(Not(v["arg1_ndim"] < 3) if n else

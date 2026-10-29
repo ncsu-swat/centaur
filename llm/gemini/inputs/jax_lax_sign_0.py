@@ -4,70 +4,64 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_sign_inputs():
+
+def lax_sign_inputs():
     list_of_inputs = []
 
-    # Input 1: float32, 1D
-    x = np.array([-2.5, -0.0, 0.0, 3.14], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array with negative, zero, positive, and NaN values
+    x = np.array([-5.0, -0.0, 0.0, 3.5, np.nan], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: float64, 2D
-    x = np.array([[-10.0, 20.0], [0.0, -5.0]], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float32 array
+    x = np.random.randn(3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: int32, 1D
-    x = np.array([-10, 0, 15], dtype=np.int32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D float64 scalar array
+    x = np.array(-42.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: int16, 3D
-    x = np.array([[[-1, 2], [0, -3]], [[4, -5], [6, 0]]], dtype=np.int16)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D int32 array with negative, zero, and positive values
+    x = np.array([-10, -1, 0, 1, 100], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: complex64, 1D
-    x = np.array([3 + 4j, -1 - 1j, 0 + 0j], dtype=np.complex64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D int64 array
+    x = np.array([[-3, 0, 5], [10, -20, 0]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: float32 with NaN, inf, -inf, -0.0
-    x = np.array([np.nan, np.inf, -np.inf, -0.0, +0.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D int16 array
+    x = np.random.randint(-50, 50, size=(2, 3, 4), dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: float16, 4D
-    x = np.random.uniform(-5.0, 5.0, size=(2, 2, 2, 2)).astype(np.float16)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D complex64 array
+    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, 0.0 + 0.0j, -1.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: int8, 2D
-    x = np.array([[-128, 0, 127], [-5, 5, 0]], dtype=np.int8)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D complex128 array
+    x = np.array(
+        [[2.5 - 1.5j, -4.0 + 0.0j], [0.0 - 3.0j, 1.0 + 1.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: complex128, 2D
-    x = np.array([[1j, -1j], [1 + 1j, -1 - 1j]], dtype=np.complex128)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D float32 array
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: float32 scalar (0D array)
-    x = np.array(-1.5, dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D int8 array
+    x = np.array([-128, -1, 0, 1, 127], dtype=np.int8)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: int64, 1D
-    x = np.array([-9223372036854775808, 0, 9223372036854775807], dtype=np.int64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 1D float16 array
+    x = np.array([-2.5, 0.0, 7.8, -0.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.sign"] = jax_lax_sign_inputs()
+
+generated_inputs["jax.lax.sign"] = lax_sign_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

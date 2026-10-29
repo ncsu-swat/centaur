@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# list of ints cannot be excessively large in length (Rule 25)
+# scalar numeric input value lies within a representable range (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] <= 1000) if n else
-          v["arg1_length"] <= 1000)
+    s.add(Not(And(v["arg1_value"] > -1000000, v["arg1_value"] < 1000000)) if n else
+          And(v["arg1_value"] > -1000000, v["arg1_value"] < 1000000))
 )
 
 def rule_25_func(arg1, solver=None, neg=False):
@@ -19,20 +19,18 @@ def rule_25_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 25
-        rule_25(solver, {'arg1_length': arg1_length})
+        rule_25(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_25(solver, {'arg1_length': arg1['length']}, neg)
+        rule_25(solver, {'arg1_value': arg1['value']}, neg)

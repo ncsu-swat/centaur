@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input scalar value is within a safe range to avoid underflow and overflow (Rule 58)
+# floating point scalar input bounded within non-negative double-precision range (Rule 58)
 
 rule_58 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -100, v["arg1_value"] < 100)) if n else
-          And(v["arg1_value"] > -100, v["arg1_value"] < 100))
+    s.add(Not(And(v["arg1_value"] >= 0, v["arg1_value"] <= 1024)) if n else
+          And(v["arg1_value"] >= 0, v["arg1_value"] <= 1024))
 )
 
 def rule_58_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_58_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Real('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 58
         rule_58(solver, {'arg1_value': arg1_value})

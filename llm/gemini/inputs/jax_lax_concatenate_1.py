@@ -4,97 +4,66 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-class TensorList(list):
-    @property
-    def shape(self):
-        return self[0].shape if len(self) > 0 else (0,)
-
-    @property
-    def dtype(self):
-        return self[0].dtype if len(self) > 0 else np.float32
-
-    @property
-    def ndim(self):
-        return self[0].ndim if len(self) > 0 else 1
 
 def concatenate_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 arrays
-    operands = TensorList([
-        np.random.randn(5).astype(np.float32),
-        np.random.randn(10).astype(np.float32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 1: 2D float32 array (unpacked to 1D arrays) along dimension 0
+    op1 = np.array([[1.0, -2.0, 3.5], [4.0, 5.5, -6.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"operands": op1, "dimension": 0}))
 
-    # Input 2: 2D float32 arrays along axis 0
-    operands = TensorList([
-        np.random.randn(2, 3).astype(np.float32),
-        np.random.randn(4, 3).astype(np.float32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 2: 2D int32 array along dimension 0
+    op2 = np.array(
+        [[1, 2, 3, 4], [-5, -6, 7, 8], [9, 10, -11, 12]], dtype=np.int32
+    )
+    list_of_inputs.append(copy.deepcopy({"operands": op2, "dimension": 0}))
 
-    # Input 3: 2D float32 arrays along axis 1
-    operands = TensorList([
-        np.random.randn(3, 2).astype(np.float32),
-        np.random.randn(3, 5).astype(np.float32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 1})
+    # Input 3: 3D float32 array along dimension 0
+    op3 = np.random.randn(2, 4, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"operands": op3, "dimension": 0}))
 
-    # Input 4: 3D float32 arrays along axis 2
-    operands = TensorList([
-        np.random.randn(2, 2, 1).astype(np.float32),
-        np.random.randn(2, 2, 3).astype(np.float32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 2})
+    # Input 4: 3D float32 array along dimension 1
+    op4 = np.random.randn(3, 4, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"operands": op4, "dimension": 1}))
 
-    # Input 5: 1D int32 arrays along axis 0
-    operands = TensorList([
-        np.arange(3).astype(np.int32),
-        np.arange(5).astype(np.int32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 5: 3D int64 array along dimension 0
+    op5 = np.random.randint(-100, 100, size=(4, 2, 3), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"operands": op5, "dimension": 0}))
 
-    # Input 6: 2D float64 arrays with dimension 1
-    operands = TensorList([
-        np.random.randn(4, 2).astype(np.float64),
-        np.random.randn(4, 4).astype(np.float64)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 1})
+    # Input 6: 4D float64 array along dimension 2
+    op6 = np.random.randn(2, 3, 2, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"operands": op6, "dimension": 2}))
 
-    # Input 7: Boolean arrays
-    operands = TensorList([
-        np.ones((2, 2), dtype=bool),
-        np.zeros((3, 2), dtype=bool)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 7: 4D float32 array along dimension 1
+    op7 = np.random.randn(3, 2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"operands": op7, "dimension": 1}))
 
-    # Input 8: 4D float32 arrays along axis 3
-    operands = TensorList([
-        np.random.randn(1, 2, 3, 4).astype(np.float32),
-        np.random.randn(1, 2, 3, 2).astype(np.float32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 3})
+    # Input 8: 2D bool array along dimension 0
+    op8 = np.array(
+        [[True, False, True, False, True], [False, True, False, True, False]],
+        dtype=np.bool_,
+    )
+    list_of_inputs.append(copy.deepcopy({"operands": op8, "dimension": 0}))
 
-    # Input 9: Multiple float32 operands
-    operands = TensorList([
-        np.random.randn(2, 2).astype(np.float32),
-        np.random.randn(3, 2).astype(np.float32),
-        np.random.randn(1, 2).astype(np.float32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 9: 3D complex64 array along dimension 1
+    op9 = (np.random.randn(2, 3, 3) + 1j * np.random.randn(2, 3, 3)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(copy.deepcopy({"operands": op9, "dimension": 1}))
 
-    # Input 10: 5D float32 arrays along axis 1
-    operands = TensorList([
-        np.random.randn(2, 1, 2, 2, 2).astype(np.float32),
-        np.random.randn(2, 3, 2, 2, 2).astype(np.float32)
-    ])
-    list_of_inputs.append({"operands": operands, "dimension": 1})
+    # Input 10: 5D int32 array along dimension 3
+    op10 = np.random.randint(-10, 10, size=(2, 2, 2, 2, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"operands": op10, "dimension": 3}))
+
+    # Input 11: 4D float16 array along dimension 0
+    op11 = np.random.randn(2, 3, 4, 5).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"operands": op11, "dimension": 0}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.concatenate_1"] = concatenate_inputs()
 

@@ -4,65 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_frexp_inputs():
+
+def frexp_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D float32 array with positive numbers
+    # Input 1: 1D array of positive float32 values
     x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D float32 array with negative numbers
-    x = np.array([-1.0, -2.5, -0.75, -10.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array of negative float32 values
+    x = np.array([-1.5, -2.5, -3.75, -8.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D float64 array
-    x = np.random.uniform(-100.0, 100.0, size=(3, 3)).astype(np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D scalar array (float32)
+    x = np.array(42.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float32 array
-    x = np.random.uniform(-10.0, 10.0, size=(2, 2, 2)).astype(np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array of float64 values with positive, negative, and zero
+    x = np.array([[-0.0, 0.0, 0.5], [1024.0, -1024.0, 2.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: Scalar (0D array) float32
-    x = np.array(3.14, dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array of float32 values
+    x = np.random.uniform(0.1, 100.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D float16 array
-    x = np.array([0.1, 0.2, 0.4, 0.8], dtype=np.float16)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D array of float16 values
+    x = np.array([0.125, 0.25, 0.5, 1.0, 2.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D float32 array with large values
-    x = np.array([[[[1e5, 2e10], [3e15, 4e20]]]], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D array of float32 values
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 2D float32 array with very small values
-    x = np.array([[1e-10, 2e-20], [3e-30, 4e-40]], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array with very small and large float64 numbers
+    x = np.array([1e-30, 1e-10, 1.0, 1e10, 1e30], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Array containing zeros
-    x = np.array([0.0, -0.0, 0.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array of powers of two (float32)
+    x = np.array([[0.25, 0.5], [1.0, 2.0], [4.0, 8.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Mixed positive, negative, and zero values in 1D array
-    x = np.array([-100.0, 0.0, 100.0, -0.001, 0.001], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D array with subnormal/tiny float32 values and zeros
+    x = np.array([0.0, -0.0, 1e-38, -1e-38], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D array of float64 values with mixed signs
+    x = np.random.randn(3, 1, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.frexp"] = jax_numpy_frexp_inputs()
+
+generated_inputs["jax.numpy.frexp"] = frexp_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

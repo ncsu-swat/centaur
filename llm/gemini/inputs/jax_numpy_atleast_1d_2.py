@@ -4,80 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
+import numpy as np
 
-# Monkeypatch to handle the harness not unpacking the list for VAR_POSITIONAL arguments
-_original_atleast_1d = jnp.atleast_1d
-
-def _patched_atleast_1d(*arys, **kwargs):
-    if len(arys) == 1 and isinstance(arys[0], list):
-        return _original_atleast_1d(*arys[0], **kwargs)
-    return _original_atleast_1d(*arys, **kwargs)
-
-jnp.atleast_1d = _patched_atleast_1d
-
-try:
-    import jax._src.numpy.lax_numpy as lax_numpy
-    lax_numpy.atleast_1d = _patched_atleast_1d
-except Exception:
-    pass
 
 def atleast_1d_inputs():
     list_of_inputs = []
 
-    # Input 1: Single scalar float
-    input_dict = {"arys": [np.float32(3.14)]}
+    # Input 1: 1D float32 array
+    input_dict = {"arys": np.array([1.0, 2.0, 3.5], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Single scalar negative int
-    input_dict = {"arys": [np.int32(-42)]}
+    # Input 2: 1D int32 array with negative values
+    input_dict = {"arys": np.array([-10, 0, 15, -20], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Multiple 1D float arrays of the same shape (homogeneous)
-    input_dict = {"arys": [np.array([1.0, 2.0]), np.array([3.0, 4.0])]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Single 2D array
-    input_dict = {"arys": [np.arange(6).reshape(2, 3).astype(np.int32)]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Single 3D array
-    input_dict = {"arys": [np.ones((2, 2, 2), dtype=np.float32)]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Multiple 2D arrays of the same shape (homogeneous)
+    # Input 3: 2D float64 array
     input_dict = {
-        "arys": [
-            np.array([[1, 2], [3, 4]]), 
-            np.array([[5, 6], [7, 8]])
-        ]
+        "arys": np.array([[1.0, -2.5], [3.2, 4.8]], dtype=np.float64)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Complex number input
-    input_dict = {"arys": [np.complex128(1.0 + 2.0j)]}
+    # Input 4: 2D int64 array
+    input_dict = {
+        "arys": np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int64)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Single-element 1D float array
-    input_dict = {"arys": [np.array([1.5], dtype=np.float32)]}
+    # Input 5: 1D empty float32 array
+    input_dict = {"arys": np.array([], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Multiple 1D boolean arrays of the same shape (homogeneous)
-    input_dict = {"arys": [np.array([True, False], dtype=bool), np.array([False, True], dtype=bool)]}
+    # Input 6: 1D boolean array
+    input_dict = {"arys": np.array([True, False, True], dtype=np.bool_)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: High-dimensional array (4D)
-    input_dict = {"arys": [np.zeros((1, 2, 3, 4), dtype=np.float32)]}
+    # Input 7: 1D float64 array
+    input_dict = {
+        "arys": np.array([0.5, -1.5, 2.25, -3.75], dtype=np.float64)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Multiple 0D float arrays (homogeneous)
-    input_dict = {"arys": [np.array(5.0), np.array(10.0)]}
+    # Input 8: 3D float32 array
+    input_dict = {
+        "arys": np.zeros((2, 3, 4), dtype=np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D int16 array spanning boundary values
+    input_dict = {
+        "arys": np.array([-32768, -1, 0, 1, 32767], dtype=np.int16)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D float32 array with wide range
+    input_dict = {
+        "arys": np.array([-1000.0, -50.0, 0.0, 50.0, 1000.0], dtype=np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D uint8 array
+    input_dict = {"arys": np.array([0, 127, 255], dtype=np.uint8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 1D single-element float64 array
+    input_dict = {"arys": np.array([42.0], dtype=np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.atleast_1d_2"] = atleast_1d_inputs()
 

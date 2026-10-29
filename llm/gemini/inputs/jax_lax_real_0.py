@@ -4,55 +4,86 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def real_inputs():
+
+def lax_real_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D complex64 array
-    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, 5.0 - 6.0j], dtype=np.complex64)
+    # Input 1: 0D scalar complex64
+    x = np.array(3.0 - 4.0j, dtype=np.complex64)
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D complex128 array
-    x = np.array([[1.5 - 1.5j, 2.5 + 3.5j], [-0.5 + 0.5j, 0.0 + 0.0j]], dtype=np.complex128)
+    # Input 2: 1D array complex64
+    x = np.array(
+        [-1.5 + 2.5j, 0.0 + 0.0j, 4.2 - 1.1j, -3.3 - 5.5j], dtype=np.complex64
+    )
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D complex64 array
-    x = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
+    # Input 3: 2D array complex128
+    x = np.array(
+        [[1.0 + 2.0j, -3.0 - 4.0j], [5.0 + 0.0j, 0.0 - 6.0j]],
+        dtype=np.complex128,
+    )
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D complex128 array (scalar-like)
-    x = np.array(3.14 - 2.71j, dtype=np.complex128)
+    # Input 4: 3D array complex64
+    x = (
+        np.random.randn(2, 3, 4).astype(np.float32)
+        + 1j * np.random.randn(2, 3, 4).astype(np.float32)
+    ).astype(np.complex64)
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 4D complex64 array
-    x = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex64)
+    # Input 5: 4D array complex128
+    x = (
+        np.random.randn(2, 2, 3, 2).astype(np.float64)
+        + 1j * np.random.randn(2, 2, 3, 2).astype(np.float64)
+    ).astype(np.complex128)
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D complex128 array with very small and large values
-    x = np.array([1e-15 + 1e15j, -1e15 - 1e-15j], dtype=np.complex128)
+    # Input 6: 1D array with special values (inf, nan) complex64
+    x = np.array(
+        [
+            complex(np.inf, 1.0),
+            complex(-np.inf, -2.0),
+            complex(np.nan, 3.0),
+            complex(4.0, np.nan),
+        ],
+        dtype=np.complex64,
+    )
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D complex64 array with purely imaginary numbers
-    x = np.array([[0.0 + 1.0j, 0.0 - 2.0j], [0.0 + 3.0j, 0.0 + 0.0j]], dtype=np.complex64)
+    # Input 7: Empty 1D array complex64
+    x = np.array([], dtype=np.complex64)
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D complex128 array containing NaNs and Infs
-    x = np.array([complex(np.nan, 1.0), complex(2.0, np.inf), complex(np.inf, np.nan)], dtype=np.complex128)
+    # Input 8: Empty 2D array complex128
+    x = np.empty((3, 0), dtype=np.complex128)
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 5D complex64 array
-    x = (np.random.randn(1, 2, 1, 3, 2) + 1j * np.random.randn(1, 2, 1, 3, 2)).astype(np.complex64)
+    # Input 9: Single-element 1D array complex128
+    x = np.array([7.5 - 8.2j], dtype=np.complex128)
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D complex128 array, larger size
-    x = (np.random.randn(50, 50) + 1j * np.random.randn(50, 50)).astype(np.complex128)
+    # Input 10: 2D array with pure imaginary and pure real numbers complex64
+    x = np.array(
+        [[0.0 + 5.0j, 2.0 + 0.0j], [-7.0 + 0.0j, 0.0 - 9.0j]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 5D array complex64
+    x = (
+        np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
+        + 1j * np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
+    ).astype(np.complex64)
     list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.real"] = real_inputs()
+
+generated_inputs["jax.lax.real"] = lax_real_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

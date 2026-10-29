@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Source tensor's data type is identical to the target data type (Rule 2)
+# destination dtype string specifier when casting from a tensor (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] == v["arg2_value"]) if n else
-          v["arg1_dtype"] == v["arg2_value"])
+    s.add(Not(And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39)))) if n else
+          And(v["arg1_ndim"] >= 0, (Or(v["arg2_value"] == 38, v["arg2_value"] == 39))))
 )
 
 def rule_2_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_2_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_value = Int('arg2_value')
+        arg1_ndim = Int('arg1_ndim')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 2
-        rule_2(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_2(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_2(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_2(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

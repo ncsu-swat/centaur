@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cumsum_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, axis 0, reverse=False
-    operand = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    input_dict = {'operand': operand, 'axis': 0, 'reverse': False}
+    # Input 1: 1D float32 array, axis 0, forward
+    operand = np.array([1.0, -2.0, 3.5, 4.0, -5.2], dtype=np.float32)
+    input_dict = {"operand": operand, "axis": 0, "reverse": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32 array with negative values, axis 0, reverse=True
-    operand = np.array([[-1, 2, -3], [4, -5, 6]], dtype=np.int32)
-    input_dict = {'operand': operand, 'axis': 0, 'reverse': True}
+    # Input 2: 1D int32 array, axis 0, reverse
+    operand = np.array([10, -20, 30, -40, 50], dtype=np.int32)
+    input_dict = {"operand": operand, "axis": 0, "reverse": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float64 array, axis 1, reverse=False
-    operand = np.random.randn(3, 4).astype(np.float64)
-    input_dict = {'operand': operand, 'axis': 1, 'reverse': False}
+    # Input 3: 2D float64 array, axis 0, forward
+    operand = np.random.randn(4, 5).astype(np.float64)
+    input_dict = {"operand": operand, "axis": 0, "reverse": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float32 array, axis 2, reverse=True
-    operand = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {'operand': operand, 'axis': 2, 'reverse': True}
+    # Input 4: 2D float32 array, axis 1, reverse
+    operand = np.random.randn(3, 6).astype(np.float32)
+    input_dict = {"operand": operand, "axis": 1, "reverse": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D int64 array, axis 0, reverse=False
-    operand = np.random.randint(-10, 10, size=(2, 2, 2)).astype(np.int64)
-    input_dict = {'operand': operand, 'axis': 0, 'reverse': False}
+    # Input 5: 3D int64 array, axis 2, forward
+    operand = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
+    input_dict = {"operand": operand, "axis": 2, "reverse": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float32 array, axis 1, reverse=True
-    operand = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    input_dict = {'operand': operand, 'axis': 1, 'reverse': True}
+    # Input 6: 3D float32 array, axis 1, reverse
+    operand = np.random.randn(3, 4, 5).astype(np.float32)
+    input_dict = {"operand": operand, "axis": 1, "reverse": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float16 array, axis 0, reverse=False
-    operand = np.array([-0.5, 1.5, -2.5, 3.5], dtype=np.float16)
-    input_dict = {'operand': operand, 'axis': 0, 'reverse': False}
+    # Input 7: 4D float32 array, axis 3, forward
+    operand = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    input_dict = {"operand": operand, "axis": 3, "reverse": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D int32 array, axis 0, reverse=True
-    operand = np.random.randint(-100, 100, size=(5, 5)).astype(np.int32)
-    input_dict = {'operand': operand, 'axis': 0, 'reverse': True}
+    # Input 8: 2D int32 array, axis 0, forward
+    operand = np.random.randint(-50, 50, size=(6, 2), dtype=np.int32)
+    input_dict = {"operand": operand, "axis": 0, "reverse": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D float64 array, axis 3, reverse=False
-    operand = np.random.randn(2, 2, 2, 3, 2).astype(np.float64)
-    input_dict = {'operand': operand, 'axis': 3, 'reverse': False}
+    # Input 9: 1D float64 array, axis 0, reverse
+    operand = np.array([-1.5, 2.3, -4.7, 0.0, 5.1], dtype=np.float64)
+    input_dict = {"operand": operand, "axis": 0, "reverse": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D int32 array, axis 1, reverse=True
-    operand = np.array([[10, 20], [30, 40], [50, 60]], dtype=np.int32)
-    input_dict = {'operand': operand, 'axis': 1, 'reverse': True}
+    # Input 10: 4D int64 array, axis 0, reverse
+    operand = np.random.randint(-10, 10, size=(2, 3, 2, 2), dtype=np.int64)
+    input_dict = {"operand": operand, "axis": 0, "reverse": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D float64 array, axis 0, reverse
+    operand = np.random.randn(2, 5, 3).astype(np.float64)
+    input_dict = {"operand": operand, "axis": 0, "reverse": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.cumsum"] = cumsum_inputs()
 

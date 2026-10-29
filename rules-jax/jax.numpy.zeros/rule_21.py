@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when shape is a tuple, dtype must be a valid numeric/boolean type under index 11 (Rule 21)
+# for 1D integer shape, out_sharding partition spec rank cannot exceed 1 (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] <= 10, v["arg2_value"] < 11)) if n else
-          And(v["arg1_length"] <= 10, v["arg2_value"] < 11))
+    s.add(Not(And(v["arg1_value"] >= 0, v["arg2_length"] <= 1)) if n else
+          And(v["arg1_value"] >= 0, v["arg2_length"] <= 1))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_21_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not (isinstance(arg2, tuple) and all(isinstance(e, str) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg2_value = Int('arg2_value')
+        arg1_value = Int('arg1_value')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg1_value == int(arg1))
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_length': arg1_length, 'arg2_value': arg2_value})
+        rule_21(solver, {'arg1_value': arg1_value, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_length': arg1['length'], 'arg2_value': arg2['value']}, neg)
+        rule_21(solver, {'arg1_value': arg1['value'], 'arg2_length': arg2['length']}, neg)

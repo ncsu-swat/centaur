@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# sub-diagonal offset k property for negative k (Rule 14)
+# sub-diagonal offset k must be within matrix bounds when M equals N (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg1_value"] + v["arg2_value"] < v["arg1_value"], True)) if n else
-          If(v["arg2_value"] < 0, v["arg1_value"] + v["arg2_value"] < v["arg1_value"], True))
+    s.add(Not(And(And(v["arg1_value"] > 0, v["arg2_value"] + v["arg1_value"] > 0), v["arg2_value"] < v["arg1_value"])) if n else
+          And(And(v["arg1_value"] > 0, v["arg2_value"] + v["arg1_value"] > 0), v["arg2_value"] < v["arg1_value"]))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):

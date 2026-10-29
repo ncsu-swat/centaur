@@ -4,74 +4,69 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import sys
-import jax
-import jax.numpy as jnp
-import numpy as np
 import copy
+import numpy as np
 
-# Mock the function in jax.scipy.special if it does not exist in this environment
-if not hasattr(jax.scipy.special, 'boxcox1p'):
-    def dummy_boxcox1p(x, l):
-        return jnp.where(l == 0, jnp.log1p(x), (jnp.power(1.0 + x, l) - 1.0) / l)
-    jax.scipy.special.boxcox1p = dummy_boxcox1p
-    if 'jax.scipy.special' in sys.modules:
-        sys.modules['jax.scipy.special'].boxcox1p = dummy_boxcox1p
 
 def boxcox1p_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32 arrays, x > -1
-    x = np.array([0.0, 1.0, 2.0, 3.0], dtype=np.float32)
-    l = np.array([0.0, 1.0, 2.0, 0.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 1: 1D positive float32 arrays
+    x = np.array([0.1, 0.5, 1.0, 2.0], dtype=np.float32)
+    l = np.array([0.5, 1.0, 1.5, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 2: 2D float64 arrays
-    x = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float64)
-    l = np.array([[1.0, -1.0], [0.5, 0.0]], dtype=np.float64)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 2: 2D float64 arrays, l = 0 (log1p case)
+    x = np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float64)
+    l = np.zeros((2, 2), dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 3: Negative x values (but > -1)
-    x = np.array([-0.5, -0.9, -0.1, 0.0], dtype=np.float32)
-    l = np.array([2.0, 1.5, 0.5, -0.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 3: Negative x values strictly within domain (x > -1)
+    x = np.array([-0.9, -0.5, -0.1, 0.0], dtype=np.float32)
+    l = np.array([1.0, 2.0, 0.5, 1.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 4: 0D arrays (scalars)
-    x = np.array(0.5, dtype=np.float32)
-    l = np.array(2.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 4: Negative l parameter values
+    x = np.array([0.5, 1.5, 2.5], dtype=np.float64)
+    l = np.array([-2.0, -1.0, -0.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 5: Broadcasting, x shape (3, 1), l shape (1, 4)
-    x = np.array([[0.1], [0.5], [2.0]], dtype=np.float32)
-    l = np.array([[0.0, 0.5, 1.0, 2.0]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 5: 0D scalar arrays
+    x = np.array(0.75, dtype=np.float32)
+    l = np.array(1.25, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 6: Higher dimension 3D float32
-    x = np.random.uniform(0.1, 10.0, size=(2, 3, 4)).astype(np.float32)
-    l = np.random.uniform(-2.0, 2.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 6: 3D arrays
+    x = np.array(
+        [[[0.1, 0.2], [0.3, 0.4]], [[0.5, 0.6], [0.7, 0.8]]], dtype=np.float32
+    )
+    l = np.array(
+        [[[1.0, 1.0], [2.0, 2.0]], [[0.5, 0.5], [1.5, 1.5]]], dtype=np.float32
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 7: Float64 3D arrays
-    x = np.random.uniform(-0.9, 5.0, size=(2, 2, 2)).astype(np.float64)
-    l = np.random.uniform(-1.0, 1.0, size=(2, 2, 2)).astype(np.float64)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 7: Broadcasting (1, 4) with (3, 1)
+    x = np.array([[0.1, 0.2, 0.3, 0.4]], dtype=np.float64)
+    l = np.array([[0.5], [1.0], [1.5]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 8: Broadcasting with a scalar x and 2D l
+    # Input 8: Broadcasting scalar array with 2D array
     x = np.array(1.5, dtype=np.float32)
-    l = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "l": l})
+    l = np.array([[-1.0, 0.0], [0.5, 2.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
-    # Input 9: x close to -1
-    x = np.array([-0.99, -0.999, -0.9999], dtype=np.float64)
-    l = np.array([0.1, 0.5, 2.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "l": l})
+    # Input 9: Small values near zero
+    x = np.array([1e-6, 1e-8, 1e-12], dtype=np.float64)
+    l = np.array([0.0, 0.5, 1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
     # Input 10: 4D arrays
-    x = np.random.uniform(0.0, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
-    l = np.random.uniform(1.0, 3.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x, "l": l})
+    x = np.full((2, 2, 2, 2), 0.5, dtype=np.float32)
+    l = np.full((2, 2, 2, 2), 1.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "l": l}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.boxcox1p"] = boxcox1p_inputs()
 

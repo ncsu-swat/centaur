@@ -4,77 +4,112 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax
+import numpy as np
 
-class MagicStr(str):
-    def __new__(cls, string_val, int_val):
-        return str.__new__(cls, string_val)
-    def __init__(self, string_val, int_val):
-        self.int_val = int_val
+
+class RoundingMethodStr(str):
+
+    def __new__(cls, name, val):
+        obj = super().__new__(cls, name)
+        obj._val = val
+        return obj
+
     def __hash__(self):
-        return hash(self.int_val)
-    def __eq__(self, other):
-        if isinstance(other, int):
-            return self.int_val == other
-        return super().__eq__(other)
+        return hash(self._val)
 
-def jax_lax_round_inputs():
+    def __eq__(self, other):
+        return self._val == other or super().__eq__(other)
+
+    def __deepcopy__(self, memo):
+        return self
+
+
+AWAY_FROM_ZERO = RoundingMethodStr(
+    "AWAY_FROM_ZERO", jax.lax.RoundingMethod.AWAY_FROM_ZERO.value
+)
+TO_NEAREST_EVEN = RoundingMethodStr(
+    "TO_NEAREST_EVEN", jax.lax.RoundingMethod.TO_NEAREST_EVEN.value
+)
+
+
+def round_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, AWAY_FROM_ZERO
-    x = np.array([-1.5, -0.5, 0.5, 1.5, 2.5], dtype=np.float32)
-    rounding_method = MagicStr("AWAY_FROM_ZERO", 0)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 1: 1D array with halfway values, float32, AWAY_FROM_ZERO
+    x = np.array([-2.5, -1.5, -0.5, 0.0, 0.5, 1.5, 2.5], dtype=np.float32)
+    input_dict = {"x": x, "rounding_method": AWAY_FROM_ZERO}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D float32 array, TO_NEAREST_EVEN
-    x = np.array([-1.5, -0.5, 0.5, 1.5, 2.5], dtype=np.float32)
-    rounding_method = MagicStr("TO_NEAREST_EVEN", 1)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 2: 1D array with halfway values, float32, TO_NEAREST_EVEN
+    x = np.array([-2.5, -1.5, -0.5, 0.0, 0.5, 1.5, 2.5], dtype=np.float32)
+    input_dict = {"x": x, "rounding_method": TO_NEAREST_EVEN}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float64 array, AWAY_FROM_ZERO
-    x = np.array([[-2.7, -1.2, 0.0], [1.2, 2.7, 3.5]], dtype=np.float64)
-    rounding_method = MagicStr("AWAY_FROM_ZERO", 0)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 3: 2D array (3x3), float64, AWAY_FROM_ZERO
+    x = np.array(
+        [
+            [-3.7, -2.5, -1.2],
+            [0.1, 0.5, 0.9],
+            [1.5, 2.5, 3.5],
+        ],
+        dtype=np.float64,
+    )
+    input_dict = {"x": x, "rounding_method": AWAY_FROM_ZERO}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D float32 array, TO_NEAREST_EVEN
-    x = np.array([[-2.5, -1.5], [0.5, 1.5]], dtype=np.float32)
-    rounding_method = MagicStr("TO_NEAREST_EVEN", 1)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 4: 0D scalar array, float32, TO_NEAREST_EVEN
+    x = np.array(4.5, dtype=np.float32)
+    input_dict = {"x": x, "rounding_method": TO_NEAREST_EVEN}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D float16 array, AWAY_FROM_ZERO
-    x = np.array([[[-0.1, 0.1], [0.9, -0.9]], [[1.5, -1.5], [2.1, -2.1]]], dtype=np.float16)
-    rounding_method = MagicStr("AWAY_FROM_ZERO", 0)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 5: 3D array (2x3x4), float32, AWAY_FROM_ZERO
+    x = np.linspace(-5.0, 5.0, 24, dtype=np.float32).reshape(2, 3, 4)
+    input_dict = {"x": x, "rounding_method": AWAY_FROM_ZERO}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float32 array, TO_NEAREST_EVEN
-    x = np.random.uniform(-10.0, 10.0, size=(2, 2, 3, 3)).astype(np.float32)
-    rounding_method = MagicStr("TO_NEAREST_EVEN", 1)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 6: 1D array with float16 dtype, TO_NEAREST_EVEN
+    x = np.array([-4.5, -3.5, -0.5, 0.5, 3.5, 4.5], dtype=np.float16)
+    input_dict = {"x": x, "rounding_method": TO_NEAREST_EVEN}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float64 array, AWAY_FROM_ZERO
-    x = np.array([0.4999, 0.5001, -0.4999, -0.5001], dtype=np.float64)
-    rounding_method = MagicStr("AWAY_FROM_ZERO", 0)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 7: 4D array (2x2x2x2), float64, AWAY_FROM_ZERO
+    x = np.random.uniform(-10.0, 10.0, size=(2, 2, 2, 2)).astype(np.float64)
+    input_dict = {"x": x, "rounding_method": AWAY_FROM_ZERO}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar-like 1D float32 array, TO_NEAREST_EVEN
-    x = np.array([3.5], dtype=np.float32)
-    rounding_method = MagicStr("TO_NEAREST_EVEN", 1)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 8: 1D array with special values (nan, inf, signed zero), float32, TO_NEAREST_EVEN
+    x = np.array([np.nan, np.inf, -np.inf, 0.0, -0.0, 1.0], dtype=np.float32)
+    input_dict = {"x": x, "rounding_method": TO_NEAREST_EVEN}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large values in 2D float32 array, AWAY_FROM_ZERO
-    x = np.array([[1000.5, -1000.5], [10001.5, -10001.5]], dtype=np.float32)
-    rounding_method = MagicStr("AWAY_FROM_ZERO", 0)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 9: Empty array of shape (0,), float32, AWAY_FROM_ZERO
+    x = np.array([], dtype=np.float32)
+    input_dict = {"x": x, "rounding_method": AWAY_FROM_ZERO}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D float32 array, TO_NEAREST_EVEN
-    x = np.random.uniform(-5.0, 5.0, size=(1, 5, 5)).astype(np.float32)
-    rounding_method = MagicStr("TO_NEAREST_EVEN", 1)
-    list_of_inputs.append({"x": copy.deepcopy(x), "rounding_method": rounding_method})
+    # Input 10: 1D array with large floating point values, float64, TO_NEAREST_EVEN
+    x = np.array(
+        [1e8 + 0.5, -1e8 - 0.5, 1e12 + 0.5, -1e12 - 0.5], dtype=np.float64
+    )
+    input_dict = {"x": x, "rounding_method": TO_NEAREST_EVEN}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D array (1x5) with negative fractional numbers, float32, AWAY_FROM_ZERO
+    x = np.array([[-0.1, -0.5, -0.9, -1.5, -2.5]], dtype=np.float32)
+    input_dict = {"x": x, "rounding_method": AWAY_FROM_ZERO}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 5D array (1, 2, 1, 3, 2), float32, TO_NEAREST_EVEN
+    x = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
+    input_dict = {"x": x, "rounding_method": TO_NEAREST_EVEN}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.round"] = jax_lax_round_inputs()
+
+generated_inputs["jax.lax.round"] = round_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

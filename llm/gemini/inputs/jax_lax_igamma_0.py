@@ -4,73 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def igamma_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 arrays
+    # Input 1: 1D float32 arrays
     a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     x = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 2: 2D float32 arrays
-    a = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
-    x = np.random.uniform(0.0, 10.0, size=(3, 3)).astype(np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D scalar float32 arrays
+    a = np.array(1.5, dtype=np.float32)
+    x = np.array(2.5, dtype=np.float32)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 3: 3D float64 arrays
-    a = np.random.uniform(0.5, 5.0, size=(2, 2, 2)).astype(np.float64)
-    x = np.random.uniform(0.0, 5.0, size=(2, 2, 2)).astype(np.float64)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float32 arrays of same shape
+    a = np.full((3, 3), 2.0, dtype=np.float32)
+    x = np.array([[0.1, 0.5, 1.0], [1.5, 2.0, 2.5], [3.0, 3.5, 4.0]], dtype=np.float32)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 4: 0D arrays (scalars as tensors)
-    a = np.array(2.5, dtype=np.float32)
-    x = np.array(1.2, dtype=np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D float64 arrays
+    a = np.array([[0.5, 1.0], [1.5, 2.0]], dtype=np.float64)
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 5: 1D float64 arrays with larger values
-    a = np.random.uniform(10.0, 100.0, size=(5,)).astype(np.float64)
-    x = np.random.uniform(10.0, 100.0, size=(5,)).astype(np.float64)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D float32 arrays
+    a = np.array([[1.0, 2.0, 3.0], [1.0, 2.0, 3.0]], dtype=np.float32)
+    x = np.array([[0.5, 1.0, 1.5], [2.0, 2.5, 3.0]], dtype=np.float32)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 6: x has zero values (valid for x >= 0)
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    x = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Boundary case with x = 0
+    a = np.array([0.5, 1.0, 2.0, 5.0], dtype=np.float32)
+    x = np.zeros(4, dtype=np.float32)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 7: 4D float32 arrays
-    a = np.random.uniform(0.1, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
-    x = np.random.uniform(0.1, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D float32 arrays
+    a = np.ones((2, 3, 4), dtype=np.float32) * 3.0
+    x = np.linspace(0.1, 5.0, 24, dtype=np.float32).reshape(2, 3, 4)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 8: Very small positive values
-    a = np.array([1e-5, 1e-4, 1e-3], dtype=np.float32)
-    x = np.array([1e-5, 1e-4, 1e-3], dtype=np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D float32 with small values
+    a = np.full((3, 4), 0.5, dtype=np.float32)
+    x = np.linspace(0.01, 1.0, 12, dtype=np.float32).reshape(3, 4)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 9: Broadcastable shapes
-    a = np.random.uniform(0.5, 5.0, size=(3, 1)).astype(np.float32)
-    x = np.random.uniform(0.5, 5.0, size=(1, 3)).astype(np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large values float64
+    a = np.array([10.0, 50.0, 100.0], dtype=np.float64)
+    x = np.array([15.0, 45.0, 110.0], dtype=np.float64)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
-    # Input 10: Higher dimensions and larger sizes
-    a = np.random.uniform(1.0, 5.0, size=(10, 10)).astype(np.float32)
-    x = np.random.uniform(1.0, 5.0, size=(10, 10)).astype(np.float32)
-    input_dict = {"a": a, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D float32 arrays
+    a = np.random.uniform(0.5, 5.0, size=(2, 2, 2, 2)).astype(np.float32)
+    x = np.random.uniform(0.1, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append({"a": copy.deepcopy(a), "x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.igamma"] = igamma_inputs()
 

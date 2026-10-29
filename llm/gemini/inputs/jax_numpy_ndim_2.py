@@ -4,26 +4,33 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def ndim_inputs():
     list_of_inputs = []
 
-    list_of_inputs.append({"a": 1})
-    list_of_inputs.append({"a": 0})
-    list_of_inputs.append({"a": -1})
-    list_of_inputs.append({"a": 100})
-    list_of_inputs.append({"a": -500})
-    list_of_inputs.append({"a": 123456})
-    list_of_inputs.append({"a": -987654})
-    list_of_inputs.append({"a": 10})
-    list_of_inputs.append({"a": -20})
-    list_of_inputs.append({"a": 2024})
-    list_of_inputs.append({"a": -32768})
-    list_of_inputs.append({"a": 65535})
+    integers = [
+        0,
+        1,
+        -1,
+        2,
+        -5,
+        10,
+        -42,
+        100,
+        -1000,
+        65536,
+        -2147483648,
+        1000000000,
+    ]
+
+    for val in integers:
+        input_dict = {"a": val}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ndim_2"] = ndim_inputs()
 

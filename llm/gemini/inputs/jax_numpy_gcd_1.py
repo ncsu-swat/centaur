@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gcd_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D arrays with int32
-    x1 = np.array([12, 18, 24], dtype=np.int32)
-    x2 = np.array([5, 10, 15], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 1: 1D int32 arrays of same shape
+    x1 = np.array([12, 18, 24, 0], dtype=np.int32)
+    x2 = np.array([5, 10, 15, 7], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 1D arrays containing negative numbers with int32
-    x1 = np.array([-12, 18, -24], dtype=np.int32)
-    x2 = np.array([5, -10, 15], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: 2D int64 arrays with negative values
+    x1 = np.array([[-12, 36], [48, -60]], dtype=np.int64)
+    x2 = np.array([[18, -24], [-16, 20]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: Broadcasting a 1D array with a single-element array
-    x1 = np.array([12, 18, 24], dtype=np.int32)
-    x2 = np.array([6], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 3: 0D arrays (scalars wrapped as arrays)
+    x1 = np.array(42, dtype=np.int32)
+    x2 = np.array(56, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: 2D arrays (matrices) with int64
-    x1 = np.array([[10, 20], [30, 40]], dtype=np.int64)
-    x2 = np.array([[5, 15], [25, 35]], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 4: Broadcasting (3, 1) and (1, 4)
+    x1 = np.array([[6], [15], [28]], dtype=np.int32)
+    x2 = np.array([[9, 12, 21, 35]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: Another 1D array with int64
-    x1 = np.array([8, 16, 32], dtype=np.int64)
-    x2 = np.array([4, 12, 20], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 5: 1D int32 arrays
+    x1 = np.array([10, 20, 30, 40], dtype=np.int32)
+    x2 = np.array([15, 25, 35, 45], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: Zero values (GCD with zero) with int32
-    x1 = np.array([0, 0, 15], dtype=np.int32)
-    x2 = np.array([5, 0, 0], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: 3D int32 arrays with zeros
+    x1 = np.zeros((2, 3, 4), dtype=np.int32)
+    x2 = np.arange(1, 25, dtype=np.int32).reshape((2, 3, 4))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: 3D arrays to test higher dimensions with int32
-    x1 = np.ones((2, 2, 2), dtype=np.int32) * 12
-    x2 = np.ones((2, 2, 2), dtype=np.int32) * 18
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: Broadcasting 1D to 2D with int32
+    x1 = np.array([4, 8, 12], dtype=np.int32)
+    x2 = np.array([[2, 4, 6], [8, 16, 24]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Broadcasting with shape (3, 1) and (1, 3) with int32
-    x1 = np.array([[12], [24], [36]], dtype=np.int32)
-    x2 = np.array([[8, 16, 20]], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: 1D int32 arrays with coprimes
+    x1 = np.array([7, 11, 13, 17, 19], dtype=np.int32)
+    x2 = np.array([23, 29, 31, 37, 41], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Large values with int64
-    x1 = np.array([1000000000, 2000000000], dtype=np.int64)
-    x2 = np.array([3000000000, 4000000000], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 9: Large int64 values
+    x1 = np.array([1000000007, 2147483648], dtype=np.int64)
+    x2 = np.array([1000000009, 1073741824], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Prime numbers (resulting in gcd of 1) with int32
-    x1 = np.array([13, 17, 19], dtype=np.int32)
-    x2 = np.array([23, 29, 31], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 10: 4D int32 array with 0D array broadcast
+    x1 = np.ones((2, 2, 2, 2), dtype=np.int32) * 30
+    x2 = np.array(45, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: 1D array and 0D array (scalar array) with int32
-    x1 = np.array([100, 200, 300], dtype=np.int32)
-    x2 = np.array(50, dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 11: 2D int64 arrays with zeros and negatives
+    x1 = np.array([[0, -10], [20, -30]], dtype=np.int64)
+    x2 = np.array([[5, 0], [-15, -45]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.gcd_1"] = gcd_inputs()
 

@@ -4,49 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def lgamma_inputs():
     list_of_inputs = []
 
-    # Input 1: Python float (positive)
-    list_of_inputs.append({"x": 1.5})
+    # Input 1: Standard positive float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python float (integer value represented as float)
-    list_of_inputs.append({"x": 3.0})
+    # Input 2: Non-integer positive float
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Python float (small positive value)
-    list_of_inputs.append({"x": 0.1})
+    # Input 3: Larger positive float
+    input_dict = {"x": 5.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Python float (larger positive value)
-    list_of_inputs.append({"x": 50.5})
+    # Input 4: Negative non-integer float
+    input_dict = {"x": -0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.float32 scalar
-    list_of_inputs.append({"x": np.float32(2.7)})
+    # Input 5: Another negative non-integer float
+    input_dict = {"x": -1.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.float64 scalar
-    list_of_inputs.append({"x": np.float64(10.2)})
+    # Input 6: Small positive float close to zero
+    input_dict = {"x": 0.001}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.float32 scalar (small value)
-    list_of_inputs.append({"x": np.float32(0.01)})
+    # Input 7: Small negative float close to zero
+    input_dict = {"x": -0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: np.float64 scalar (large value)
-    list_of_inputs.append({"x": np.float64(100.0)})
+    # Input 8: Larger integer-valued float
+    input_dict = {"x": 12.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Python float (negative non-integer value)
-    list_of_inputs.append({"x": -1.5})
+    # Input 9: Large positive float
+    input_dict = {"x": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Python float (negative non-integer value)
-    list_of_inputs.append({"x": -0.5})
+    # Input 10: Arbitrary negative non-integer float
+    input_dict = {"x": -4.3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: np.float32 scalar (negative non-integer value)
-    list_of_inputs.append({"x": np.float32(-2.5)})
-
-    # Input 12: Python float (very close to zero)
-    list_of_inputs.append({"x": 1e-4})
+    # Input 11: Very small positive float
+    input_dict = {"x": 1e-5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.lgamma_2"] = lgamma_inputs()
 

@@ -4,57 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_count_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array with positive values
+    # Input 1: 1D array of positive int32
     x = np.array([64, 32, 31, 20], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D int32 array with negative and positive values
+    # Input 2: 1D array with negative numbers (int32)
     x = np.array([-16, -7, 7, 0], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D int16 array
-    x = np.array([[2, -7], [-9, 7]], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array of int64
+    x = np.array([[2, -7], [-9, 7]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D int8 array
-    x = np.array([[[1, 2], [3, 4]], [[-5, -6], [-7, -8]]], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar array (int32)
+    x = np.array(-42, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 0D int64 array (scalar as tensor)
-    x = np.array(42, dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D array of powers of 2 (int64)
+    x = np.array([1, 2, 4, 8, 16, 32, 64, 128, 256], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: Another 1D int32 array with different values
-    x = np.array([1024, 2048, 4095, 0], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 3D array of int32
+    x = np.array(
+        [[[1, -2], [3, -4]], [[5, -6], [7, -8]], [[9, -10], [11, -12]]],
+        dtype=np.int32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Large 1D int64 array with positive and negative values
-    x = np.array([2**30 - 1, -(2**30 - 1), 0, -1], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D array of alternating bit patterns (int32)
+    x = np.array([1431655765, 0, -1, 1073741823], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D int8 array
-    x = np.array([0, 1, 2, 3, 4, 127], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D array of int32
+    x = np.ones((2, 2, 3, 2), dtype=np.int32) * 255
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 4D int32 array generated randomly
-    x = np.random.randint(-100, 100, size=(2, 2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 1D array of int64 with large values
+    x = np.array([2**30, 2**40, -(2**30), -(2**40)], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D int16 array
-    x = np.array([32767, 16384, 0], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 2D array of zeros and ones (int32)
+    x = np.zeros((3, 3), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: High-dimensional array of int64
-    x = np.random.randint(-1000, 1000, size=(1, 5, 5), dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: 2D array reshaped from range (int64)
+    x = np.arange(-6, 6, dtype=np.int64).reshape(3, 4)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_count"] = bitwise_count_inputs()
 

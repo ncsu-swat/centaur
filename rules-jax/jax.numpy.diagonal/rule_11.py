@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis1 must be within the valid range of dimensions (Rule 11)
+# axis index must be within valid bounds for a tensor of rank at least 2 (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(And(And(v["arg1_ndim"] >= 2, -1 * v["arg1_ndim"] <= v["arg2_value"]), v["arg2_value"] < v["arg1_ndim"])) if n else
+          And(And(v["arg1_ndim"] >= 2, -1 * v["arg1_ndim"] <= v["arg2_value"]), v["arg2_value"] < v["arg1_ndim"]))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):

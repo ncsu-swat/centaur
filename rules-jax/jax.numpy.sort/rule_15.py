@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For a 3D tensor, the sorting axis must be within the range [-3, 2] (Rule 15)
+# 1-D list input must have length of at least 2 and axis must be -1 or 0 (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True)) if n else
-          If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True))
+    s.add(Not(And(v["arg1_length"] >= 2, (Or(v["arg2_value"] == 0, v["arg2_value"] == -1)))) if n else
+          And(v["arg1_length"] >= 2, (Or(v["arg2_value"] == 0, v["arg2_value"] == -1))))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
         if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        arg1_length = Int('arg1_length')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_length == len(arg1))
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_15(solver, {'arg1_length': arg1_length, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_15(solver, {'arg1_length': arg1['length'], 'arg2_value': arg2['value']}, neg)

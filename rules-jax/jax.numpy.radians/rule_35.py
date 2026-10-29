@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor must have a floating-point or standard integer data type (Rule 35)
+# tensor dtype must be boolean or floating-point (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4)) if n else
-          Or(Or(Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4))
+    s.add(Not(Or(v["arg1_dtype"] == 0, (And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)))) if n else
+          Or(v["arg1_dtype"] == 0, (And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8))))
 )
 
 def rule_35_func(arg1, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Tuple of integers represents valid length and bounded elements (Rule 40)
+# input tensor is 5-dimensional with non-empty dimensions (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_length"] > 0, v["arg1_length"] <= 50), (And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -1000, Select(v["arg1_values"], i) <= 1000)) for i in range(6)])))) if n else
-          And(And(v["arg1_length"] > 0, v["arg1_length"] <= 50), (And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -1000, Select(v["arg1_values"], i) <= 1000)) for i in range(6)]))))
+    s.add(Not(And(v["arg1_ndim"] == 5, And([Implies(i < (4 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]))) if n else
+          And(v["arg1_ndim"] == 5, And([Implies(i < (4 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)])))
 )
 
 def rule_40_func(arg1, solver=None, neg=False):
@@ -19,23 +19,23 @@ def rule_40_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 40
-        rule_40(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_40(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_40(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_40(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

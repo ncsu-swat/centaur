@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def expn_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays, integer n and float32 x
-    n = np.array([1, 2, 3], dtype=np.int32)
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({"n": n, "x": x})
-
-    # Input 2: Scalar values (0-D arrays)
+    # Input 1: 0D scalars
     n = np.array(1, dtype=np.int32)
-    x = np.array(0.5, dtype=np.float32)
+    x = np.array(2.0, dtype=np.float32)
     list_of_inputs.append({"n": n, "x": x})
 
-    # Input 3: n as float, x as float32
-    n = np.array([1.5, 2.5], dtype=np.float32)
-    x = np.array([0.1, 2.0], dtype=np.float32)
+    # Input 2: 1D arrays of matching shape
+    n = np.array([0, 1, 2, 3], dtype=np.int32)
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     list_of_inputs.append({"n": n, "x": x})
 
-    # Input 4: float64 values
-    n = np.array([0, 1, 2, 3], dtype=np.float64)
-    x = np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float64)
+    # Input 3: 2D arrays float64
+    n = np.array([[1, 2], [3, 4]], dtype=np.int64)
+    x = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float64)
     list_of_inputs.append({"n": n, "x": x})
 
-    # Input 5: 2D arrays with matching shapes
-    n = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    x = np.array([[1.0, 1.5], [2.0, 2.5]], dtype=np.float32)
-    list_of_inputs.append({"n": n, "x": x})
-
-    # Input 6: Broadcasting shapes (3, 1) and (1, 4)
+    # Input 4: Broadcasting 2D with 1D
     n = np.array([[1], [2], [3]], dtype=np.int32)
-    x = np.array([[0.5, 1.0, 1.5, 2.0]], dtype=np.float32)
+    x = np.array([0.1, 1.0, 5.0], dtype=np.float32)
     list_of_inputs.append({"n": n, "x": x})
 
-    # Input 7: Large x values
-    n = np.array([1, 2], dtype=np.int32)
-    x = np.array([10.0, 20.0], dtype=np.float32)
+    # Input 5: 3D arrays
+    n = np.zeros((2, 3, 4), dtype=np.int32)
+    x = np.ones((2, 3, 4), dtype=np.float32)
     list_of_inputs.append({"n": n, "x": x})
 
-    # Input 8: Negative/zero n values with positive x
-    n = np.array([-1, 0, 1], dtype=np.int32)
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    # Input 6: Floating point n
+    n = np.array([0.0, 1.0, 2.0], dtype=np.float32)
+    x = np.array([0.5, 1.2, 2.3], dtype=np.float32)
     list_of_inputs.append({"n": n, "x": x})
 
-    # Input 9: Small x values close to zero
-    n = np.array([1, 1], dtype=np.int32)
-    x = np.array([1e-3, 1e-2], dtype=np.float32)
+    # Input 7: Large x values with float64
+    n = np.array([1, 2, 3], dtype=np.int32)
+    x = np.array([10.0, 25.0, 50.0], dtype=np.float64)
     list_of_inputs.append({"n": n, "x": x})
 
-    # Input 10: 3D arrays
-    n = np.ones((2, 2, 2), dtype=np.int32) * 2
-    x = np.random.uniform(0.5, 5.0, size=(2, 2, 2)).astype(np.float32)
+    # Input 8: Small positive x values
+    n = np.array([2, 3, 4], dtype=np.int32)
+    x = np.array([1e-3, 1e-2, 1e-1], dtype=np.float32)
     list_of_inputs.append({"n": n, "x": x})
 
-    return list_of_inputs
+    # Input 9: 4D arrays
+    n = np.ones((2, 1, 3, 2), dtype=np.int32)
+    x = np.full((2, 2, 3, 2), 2.5, dtype=np.float32)
+    list_of_inputs.append({"n": n, "x": x})
+
+    # Input 10: High order n
+    n = np.array([5, 10, 20, 50], dtype=np.int32)
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    list_of_inputs.append({"n": n, "x": x})
+
+    # Input 11: Scalar n broadcasting with 1D array x
+    n = np.array(2, dtype=np.int32)
+    x = np.linspace(0.1, 10.0, 8, dtype=np.float64)
+    list_of_inputs.append({"n": n, "x": x})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
 
 generated_inputs["jax.scipy.special.expn"] = expn_inputs()
 

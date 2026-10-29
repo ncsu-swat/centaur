@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isscalar_inputs():
     list_of_inputs = []
@@ -14,47 +15,48 @@ def isscalar_inputs():
     input_dict = {"element": []}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: List with one integer
-    input_dict = {"element": [42]}
+    # Input 2: Single-element list with integer
+    input_dict = {"element": [0]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: List with one negative float
-    input_dict = {"element": [-3.14]}
+    # Input 3: Single-element list with negative integer
+    input_dict = {"element": [-42]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: List with multiple integers
-    input_dict = {"element": [1, 2, 3]}
+    # Input 4: List of floats
+    input_dict = {"element": [1.5, -2.5, 3.14]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: List with multiple floats
-    input_dict = {"element": [1.1, 2.2, 3.3]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D Nested list (matrix-like)
+    # Input 5: Nested 2D list of integers
     input_dict = {"element": [[1, 2], [3, 4]]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: List with a boolean
-    input_dict = {"element": [True]}
+    # Input 6: Nested 2D list of floats with negative values
+    input_dict = {"element": [[-1.0, 0.0], [0.5, -2.5]]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: List with a complex number
-    input_dict = {"element": [1 + 2j]}
+    # Input 7: 3D nested list
+    input_dict = {"element": [[[1, 2]], [[3, 4]]]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: List with numpy scalar type
-    input_dict = {"element": [np.int32(10)]}
+    # Input 8: List of booleans
+    input_dict = {"element": [True, False, True]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: List with numpy float scalar
-    input_dict = {"element": [np.float64(-0.001)]}
+    # Input 9: List of complex numbers
+    input_dict = {"element": [1 + 2j, -3 - 4j]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 3D Nested list
-    input_dict = {"element": [[[1]]]}
+    # Input 10: Nested list with a single element
+    input_dict = {"element": [[1]]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: List containing numpy scalar types
+    input_dict = {"element": [np.float32(1.0), np.float32(-2.0)]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isscalar_6"] = isscalar_inputs()
 

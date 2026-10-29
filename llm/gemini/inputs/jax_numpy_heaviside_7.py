@@ -4,41 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def heaviside_inputs():
     list_of_inputs = []
 
-    # Input 1: Positive float and positive integer
-    list_of_inputs.append(copy.deepcopy({"x1": 1.5, "x2": 2}))
+    # Input 1: x1 is zero, x2 is positive integer
+    input_dict = {"x1": 0.0, "x2": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Zero float and zero integer
-    list_of_inputs.append(copy.deepcopy({"x1": 0.0, "x2": 0}))
+    # Input 2: x1 is negative, x2 is zero
+    input_dict = {"x1": -2.5, "x2": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float and positive integer
-    list_of_inputs.append(copy.deepcopy({"x1": -2.5, "x2": 1}))
+    # Input 3: x1 is positive, x2 is negative integer
+    input_dict = {"x1": 3.14159, "x2": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Positive float and negative integer
-    list_of_inputs.append(copy.deepcopy({"x1": 0.5, "x2": -1}))
+    # Input 4: x1 is zero, x2 is zero
+    input_dict = {"x1": 0.0, "x2": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive float and large integer
-    list_of_inputs.append(copy.deepcopy({"x1": 1000.0, "x2": 42}))
+    # Input 5: x1 is negative zero, x2 is positive integer
+    input_dict = {"x1": -0.0, "x2": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large negative float and large negative integer
-    list_of_inputs.append(copy.deepcopy({"x1": -1000.0, "x2": -42}))
+    # Input 6: x1 is a large positive float, x2 is positive integer
+    input_dict = {"x1": 1e6, "x2": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Float zero and positive integer
-    list_of_inputs.append(copy.deepcopy({"x1": 0.0, "x2": 5}))
+    # Input 7: x1 is a small negative float, x2 is a large integer
+    input_dict = {"x1": -1e-5, "x2": 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative float and negative integer
-    list_of_inputs.append(copy.deepcopy({"x1": -3.14, "x2": -2}))
+    # Input 8: x1 is a small positive float, x2 is negative integer
+    input_dict = {"x1": 1e-7, "x2": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small positive float and zero integer
-    list_of_inputs.append(copy.deepcopy({"x1": 1e-5, "x2": 0}))
+    # Input 9: x1 is positive infinity, x2 is integer
+    input_dict = {"x1": float("inf"), "x2": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Small negative float and positive integer
-    list_of_inputs.append(copy.deepcopy({"x1": -1e-5, "x2": 10}))
+    # Input 10: x1 is negative infinity, x2 is integer
+    input_dict = {"x1": float("-inf"), "x2": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: x1 is NaN, x2 is integer
+    input_dict = {"x1": float("nan"), "x2": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: x1 is large negative float, x2 is positive integer
+    input_dict = {"x1": -9999.99, "x2": 8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

@@ -4,103 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def vander_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple integers, decreasing powers
+    # Input 1: Basic 1D float array with N equal to length, increasing=False
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    N = int(4)
+    increasing = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
+
+    # Input 2: 1D int array with increasing=True
     x = np.array([1, 2, 3, 4], dtype=np.int32)
-    input_dict = {
-        "x": x,
-        "N": 4,
-        "increasing": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    N = int(4)
+    increasing = True
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 2: Floating point values, increasing powers
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "N": 3,
-        "increasing": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Float64 array with N smaller than len(x)
+    x = np.array([-2.5, -0.5, 0.0, 1.5, 3.0], dtype=np.float64)
+    N = int(3)
+    increasing = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 3: Negative and zero values, int64 dtype, N smaller than length of x
-    x = np.array([-1, 0, 1], dtype=np.int64)
-    input_dict = {
-        "x": x,
-        "N": 2,
-        "increasing": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Float32 array with N larger than len(x)
+    x = np.array([0.5, 2.0], dtype=np.float32)
+    N = int(5)
+    increasing = True
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 4: float64 dtype, N larger than length of x, increasing powers
-    x = np.array([0.5, 1.5, -2.5, 3.5], dtype=np.float64)
-    input_dict = {
-        "x": x,
-        "N": 5,
-        "increasing": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: N = 1 (constant column)
+    x = np.array([10.0, -20.0, 30.0], dtype=np.float32)
+    N = int(1)
+    increasing = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 5: Single element array, N = 1
-    x = np.array([10], dtype=np.int32)
-    input_dict = {
-        "x": x,
-        "N": 1,
-        "increasing": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: N = 0 (empty second dimension)
+    x = np.array([1, 2, 3], dtype=np.int64)
+    N = int(0)
+    increasing = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 6: Alternating signs, larger N, increasing powers
-    x = np.array([2, -2, 3, -3, 4, -4], dtype=np.int32)
-    input_dict = {
-        "x": x,
-        "N": 6,
-        "increasing": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Empty 1D input array
+    x = np.array([], dtype=np.float32)
+    N = int(3)
+    increasing = True
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 7: Float32 values with decimal parts, decreasing powers
-    x = np.array([1.1, 2.2, 3.3, 4.4, 5.5], dtype=np.float32)
-    input_dict = {
-        "x": x,
-        "N": 3,
-        "increasing": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Complex-valued 1D array
+    x = np.array([1.0 + 2.0j, -0.5 + 1.0j, 3.0 - 1.0j], dtype=np.complex64)
+    N = int(3)
+    increasing = True
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 8: Negative integers only, increasing powers
-    x = np.array([-5, -4, -3, -2, -1], dtype=np.int64)
-    input_dict = {
-        "x": x,
-        "N": 4,
-        "increasing": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Single-element array
+    x = np.array([5.0], dtype=np.float64)
+    N = int(4)
+    increasing = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 9: All zero inputs, decreasing powers
-    x = np.array([0, 0, 0], dtype=np.int32)
-    input_dict = {
-        "x": x,
-        "N": 3,
-        "increasing": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Negative integers
+    x = np.array([-5, -3, -1], dtype=np.int64)
+    N = int(2)
+    increasing = True
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
-    # Input 10: Larger range array, float64 dtype, N=2 (linear/constant terms)
-    x = np.arange(1, 11, dtype=np.float64)
-    input_dict = {
-        "x": x,
-        "N": 2,
-        "increasing": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Larger array of floats
+    x = np.linspace(-1.0, 1.0, 10, dtype=np.float32)
+    N = int(6)
+    increasing = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "N": N, "increasing": increasing})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.vander"] = vander_inputs()
 

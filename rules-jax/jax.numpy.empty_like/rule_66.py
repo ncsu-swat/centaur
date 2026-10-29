@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if shape is a list, its length must not exceed 8 dimensions (Rule 66)
+# scalar empty array represented by an empty shape tuple (Rule 66)
 
 rule_66 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] <= 8) if n else
-          v["arg1_length"] <= 8)
+    s.add(Not(v["arg1_length"] == 0) if n else
+          v["arg1_length"] == 0)
 )
 
 def rule_66_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_66_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations

@@ -4,50 +4,50 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def isreal_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar boolean
+    # Input 1: True
+    input_dict = {"x": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: False
+    input_dict = {"x": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: numpy boolean True
     input_dict = {"x": np.bool_(True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D boolean array
-    input_dict = {"x": np.array([True, False, True], dtype=bool)}
+    # Input 4: numpy boolean False
+    input_dict = {"x": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D boolean array
-    input_dict = {"x": np.array([[True, False], [False, True]], dtype=bool)}
+    # Input 5: python bool from int 1
+    input_dict = {"x": bool(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D boolean array
-    input_dict = {"x": np.random.choice([True, False], size=(3, 3, 3)).astype(bool)}
+    # Input 6: python bool from int 0
+    input_dict = {"x": bool(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: All True 1D array
-    input_dict = {"x": np.ones((10,), dtype=bool)}
+    # Input 7: python bool from float comparison
+    input_dict = {"x": bool(1.0 > 0.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: All False 2D array
-    input_dict = {"x": np.zeros((4, 4), dtype=bool)}
+    # Input 8: python bool from float comparison
+    input_dict = {"x": bool(-1.0 > 0.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Empty boolean array
-    input_dict = {"x": np.array([], dtype=bool)}
+    # Input 9: True literal
+    input_dict = {"x": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D boolean array (single element)
-    input_dict = {"x": np.array([False], dtype=bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 4D boolean array
-    input_dict = {"x": np.random.choice([True, False], size=(2, 2, 2, 2)).astype(bool)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D boolean array with specific pattern (identity matrix)
-    input_dict = {"x": np.eye(5, dtype=bool)}
+    # Input 10: False literal
+    input_dict = {"x": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

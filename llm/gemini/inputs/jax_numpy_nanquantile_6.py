@@ -4,166 +4,191 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-# Monkeypatch JAX to allow lists of Tracers during tracing
-try:
-    import jax._src.numpy.util as jax_util
-    import jax.numpy as jnp
-    
-    # Bypass the check_arraylike validation
-    jax_util.check_arraylike = lambda *args, **kwargs: None
-    
-    # Override _arraylike_asarray to support converting Python lists (even with tracers)
-    def custom_arraylike_asarray(x):
-        if isinstance(x, list):
-            return jnp.array(x)
-        return jnp.asarray(x)
-        
-    jax_util._arraylike_asarray = custom_arraylike_asarray
-except Exception:
-    pass
 
 def nanquantile_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array
-    a = np.array([1.0, 2.0, np.nan, 4.0, 5.0], dtype=np.float32)
-    q = [0.5]
-    axis = (0,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.array([1.0, 2.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    # Input 1: 1D float32 array with NaNs, median
+    a = np.array([1.0, 2.0, np.nan, 4.0, 5.0, 6.0], dtype=np.float32)
+    weights = np.array([1.0, 2.0, 1.0, 1.0, 2.0, 1.0], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.5], dtype=np.float32),
+        "axis": (0,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array with multiple quantiles, keepdims=True
-    a = np.array([[1.0, np.nan, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    q = [0.25, 0.75]
-    axis = (1,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = True
-    weights = np.array([[1.0, 1.0, 2.0], [1.0, 3.0, 1.0]], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    # Input 2: 1D float64 array with negative values and NaNs, multiple quantiles, keepdims=True
+    a = np.array([-10.0, np.nan, -2.5, 0.0, 3.5, np.nan, 12.0], dtype=np.float64)
+    weights = np.ones(a.shape, dtype=np.float64)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.25, 0.75], dtype=np.float64),
+        "axis": (0,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": True,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Float64 2D array, axis=(0,)
-    a = np.array([[np.nan, 2.0], [3.0, np.nan], [5.0, 6.0]], dtype=np.float64)
-    q = [0.5]
-    axis = (0,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.array([[1.0, 2.0], [2.0, 1.0], [1.0, 1.0]], dtype=np.float64)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    # Input 3: 2D float32 array, quantile along axis 0
+    a = np.array(
+        [
+            [1.0, np.nan, 3.0],
+            [np.nan, 5.0, 6.0],
+            [7.0, 8.0, np.nan],
+            [10.0, 11.0, 12.0],
+        ],
+        dtype=np.float32,
+    )
+    weights = np.ones(a.shape, dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.5], dtype=np.float32),
+        "axis": (0,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array
-    a = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 4: 2D float64 array, quantiles along axis 1, keepdims=True
+    a = np.array(
+        [
+            [-5.0, -1.0, np.nan, 4.0],
+            [np.nan, 2.0, 3.0, 5.0],
+            [0.0, 1.0, 2.0, np.nan],
+        ],
+        dtype=np.float64,
+    )
+    weights = np.array(
+        [
+            [1.0, 0.5, 1.0, 2.0],
+            [1.0, 1.5, 0.5, 1.0],
+            [2.0, 1.0, 1.0, 0.5],
+        ],
+        dtype=np.float64,
+    )
+    input_dict = {
+        "a": a,
+        "q": np.array([0.1, 0.9], dtype=np.float64),
+        "axis": (1,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": True,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D float32 array, quantile along axis 2
+    a = np.arange(24, dtype=np.float32).reshape(2, 3, 4)
     a[0, 1, 2] = np.nan
     a[1, 2, 0] = np.nan
-    q = [0.1, 0.5, 0.9]
-    axis = (1, 2)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = True
-    weights = np.abs(np.random.randn(2, 3, 4)).astype(np.float32) + 0.1
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    weights = np.ones(a.shape, dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.5], dtype=np.float32),
+        "axis": (2,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: negative values, 1D array
-    a = np.array([-10.0, -5.0, np.nan, -1.0, 0.0], dtype=np.float32)
-    q = [0.3]
-    axis = (0,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.array([2.0, 1.0, 1.0, 5.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
-
-    # Input 6: Large 2D array
-    a = np.random.randn(10, 10).astype(np.float32)
+    # Input 6: 3D float32 array, negative axis index with multiple quantiles, keepdims=True
+    a = np.random.default_rng(42).normal(size=(3, 4, 5)).astype(np.float32)
     a[a < -1.0] = np.nan
-    q = [0.5]
-    axis = (0, 1)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.ones((10, 10), dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    weights = np.random.default_rng(42).uniform(0.1, 2.0, size=(3, 4, 5)).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.25, 0.5, 0.75], dtype=np.float32),
+        "axis": (-1,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": True,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D array with keepdims=False
-    a = np.random.randn(3, 2, 2).astype(np.float32)
-    a[0, 0, 0] = np.nan
-    q = [0.25, 0.5, 0.75]
-    axis = (0, 2)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.abs(np.random.randn(3, 2, 2)).astype(np.float32) + 0.5
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    # Input 7: 2D float32 array, axis=-2
+    a = np.array(
+        [
+            [-12.0, 0.0, np.nan],
+            [3.0, np.nan, -1.0],
+            [np.nan, 4.0, 2.0],
+        ],
+        dtype=np.float32,
+    )
+    weights = np.ones(a.shape, dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.3], dtype=np.float32),
+        "axis": (-2,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D array, almost all nan
-    a = np.array([np.nan, np.nan, 5.0], dtype=np.float32)
-    q = [0.5]
-    axis = (0,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = True
-    weights = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    # Input 8: 4D float32 array, axis=1
+    a = np.ones((2, 3, 2, 2), dtype=np.float32) * 5.0
+    a[0, 0, 0, 0] = np.nan
+    a[1, 2, 1, 1] = 10.0
+    weights = np.ones(a.shape, dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.5], dtype=np.float32),
+        "axis": (1,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D array with 0.0 quantile (min)
-    a = np.array([[5.0, np.nan, 2.0], [1.0, 10.0, np.nan]], dtype=np.float32)
-    q = [0.0]
-    axis = (1,)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = True
-    weights = np.array([[1.0, 1.0, 1.0], [2.0, 1.0, 1.0]], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    # Input 9: 1D float32 array, minimum quantile q=0.0
+    a = np.array([np.nan, 10.0, 2.0, 50.0, np.nan, -3.0], dtype=np.float32)
+    weights = np.array([1.0, 3.0, 2.0, 1.0, 1.0, 5.0], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": np.array([0.0], dtype=np.float32),
+        "axis": (-1,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D array, axis=(1, 3)
-    a = np.random.randn(2, 3, 2, 4).astype(np.float32)
-    a[a > 1.0] = np.nan
-    q = [0.5]
-    axis = (1, 3)
-    overwrite_input = False
-    method = "inverted_cdf"
-    keepdims = False
-    weights = np.ones((2, 3, 2, 4), dtype=np.float32)
-    list_of_inputs.append({
-        "a": a, "q": q, "axis": axis, "overwrite_input": overwrite_input,
-        "method": method, "keepdims": keepdims, "weights": weights
-    })
+    # Input 10: 3D float64 array, maximum quantile q=1.0, axis=(0,), keepdims=True
+    a = np.random.default_rng(123).uniform(-10.0, 10.0, size=(4, 3, 2)).astype(np.float64)
+    a[0, 1, 0] = np.nan
+    a[2, 0, 1] = np.nan
+    weights = np.random.default_rng(123).uniform(0.5, 1.5, size=(4, 3, 2)).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "q": np.array([1.0], dtype=np.float64),
+        "axis": (0,),
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": True,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.nanquantile_6"] = nanquantile_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input tensor x is 1-dimensional, its length must be greater than 1 (Rule 80)
+# for a 2D or higher tensor, the first dimension must not exceed the second (Rule 80)
 
 rule_80 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 1, True)) if n else
-          If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 1, True))
+    s.add(Not(And(v["arg1_ndim"] >= 2, Select(v["arg1_shape"], 0) <= Select(v["arg1_shape"], 1))) if n else
+          And(v["arg1_ndim"] >= 2, Select(v["arg1_shape"], 0) <= Select(v["arg1_shape"], 1)))
 )
 
 def rule_80_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_80_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 80
-        rule_80(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_80(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_80(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_80(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

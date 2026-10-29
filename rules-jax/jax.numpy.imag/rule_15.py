@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# A primitive scalar input must be equivalent to itself (Rule 15)
+# scalar numeric input conditionally bounded (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == v["arg1_value"]) if n else
-          v["arg1_value"] == v["arg1_value"])
+    s.add(Not(If(v["arg1_value"] > 0, v["arg1_value"] <= 1000000, v["arg1_value"] >= -1000000)) if n else
+          If(v["arg1_value"] > 0, v["arg1_value"] <= 1000000, v["arg1_value"] >= -1000000))
 )
 
 def rule_15_func(arg1, solver=None, neg=False):

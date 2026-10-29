@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if tuple is non-empty, its first element is equal to itself (Rule 17)
+# tensor with valid encoded data type (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_length"] > 0, Select(v["arg1_values"], 0) == Select(v["arg1_values"], 0), True)) if n else
-          If(v["arg1_length"] > 0, Select(v["arg1_values"], 0) == Select(v["arg1_values"], 0), True))
+    s.add(Not(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 12)) if n else
+          And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 12))
 )
 
 def rule_17_func(arg1, solver=None, neg=False):
@@ -19,23 +19,20 @@ def rule_17_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_17(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_17(solver, {'arg1_dtype': arg1['dtype']}, neg)

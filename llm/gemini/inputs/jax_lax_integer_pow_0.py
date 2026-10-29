@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def integer_pow_inputs():
     list_of_inputs = []
@@ -13,54 +14,60 @@ def integer_pow_inputs():
     # Input 1: 1D float32 array, positive power
     x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     y = 2
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D float32 array, power of 3
-    x = np.random.randn(3, 3).astype(np.float32)
+    # Input 2: 2D float32 array, cube
+    x = np.random.randn(3, 4).astype(np.float32)
     y = 3
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D float64 array, power of 0
-    x = np.random.randn(2, 2, 2).astype(np.float64)
+    # Input 3: 0D scalar float32 array, power of 0
+    x = np.array(5.5, dtype=np.float32)
     y = 0
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 1D int32 array, positive power
-    x = np.array([-2, -1, 1, 2], dtype=np.int32)
+    # Input 4: 3D int32 array, positive power
+    x = np.random.randint(1, 10, size=(2, 3, 4)).astype(np.int32)
     y = 4
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 2D int64 array, power of 2
-    x = np.random.randint(-5, 5, size=(4, 2)).astype(np.int64)
-    y = 2
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: 2D float64 array, negative power
+    x = np.random.uniform(1.0, 5.0, size=(4, 4)).astype(np.float64)
+    y = -1
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 0D (scalar) float32 array, power of 5
-    x = np.array(1.5, dtype=np.float32)
-    y = 5
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 7: 1D float32 array with positive values, negative power
-    x = np.array([0.5, 1.0, 2.0, 4.0], dtype=np.float32)
-    y = -2
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 8: 2D complex64 array, positive power
-    x = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
-    y = 3
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 9: 4D float32 array, power of 1
+    # Input 6: 4D float32 array, power of 5
     x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    y = 1
-    list_of_inputs.append({"x": x, "y": y})
+    y = 5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 1D float64 array, large positive power
-    x = np.array([1.01, 0.99, -1.01], dtype=np.float64)
-    y = 10
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: 2D int64 array, identity power
+    x = np.random.randint(-10, 10, size=(5, 5)).astype(np.int64)
+    y = 1
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: 1D float32 array with negative values, odd power
+    x = np.array([-2.5, -1.0, 0.5, 3.2], dtype=np.float32)
+    y = 3
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: 3D float32 array, negative power
+    x = np.random.uniform(0.5, 2.0, size=(2, 3, 2)).astype(np.float32)
+    y = -2
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 1D int32 array, power of 2
+    x = np.array([2, -3, 4, -5], dtype=np.int32)
+    y = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 2D float64 array, power of 4
+    x = np.random.randn(3, 3).astype(np.float64)
+    y = 4
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.integer_pow"] = integer_pow_inputs()
 

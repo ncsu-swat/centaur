@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Index tensor dimension and bounds check (Rule 11)
+# all index values in a tuple must be within valid bounds along the specified axis (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(And((v["arg1_ndim"] > 0), (And(v["arg3_value"] >= -1 * v["arg1_ndim"], v["arg3_value"] < v["arg1_ndim"]))), (If(v["arg2_dtype"] == 0, And(v["arg2_ndim"] == 1, Select(v["arg2_shape"], 0) == Select(v["arg1_shape"], If(v["arg3_value"] >= 0, v["arg3_value"], v["arg1_ndim"] + v["arg3_value"]))), And(And(v["arg2_ndim"] <= 1, Select(v["arg2_range"], 0) >= -1 * (Select(v["arg1_shape"], If(v["arg3_value"] >= 0, v["arg3_value"], v["arg1_ndim"] + v["arg3_value"])))), Select(v["arg2_range"], 1) < Select(v["arg1_shape"], If(v["arg3_value"] >= 0, v["arg3_value"], v["arg1_ndim"] + v["arg3_value"]))))))) if n else
-          And(And((v["arg1_ndim"] > 0), (And(v["arg3_value"] >= -1 * v["arg1_ndim"], v["arg3_value"] < v["arg1_ndim"]))), (If(v["arg2_dtype"] == 0, And(v["arg2_ndim"] == 1, Select(v["arg2_shape"], 0) == Select(v["arg1_shape"], If(v["arg3_value"] >= 0, v["arg3_value"], v["arg1_ndim"] + v["arg3_value"]))), And(And(v["arg2_ndim"] <= 1, Select(v["arg2_range"], 0) >= -1 * (Select(v["arg1_shape"], If(v["arg3_value"] >= 0, v["arg3_value"], v["arg1_ndim"] + v["arg3_value"])))), Select(v["arg2_range"], 1) < Select(v["arg1_shape"], If(v["arg3_value"] >= 0, v["arg3_value"], v["arg1_ndim"] + v["arg3_value"])))))))
+    s.add(Not(And(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) < Select(v["arg1_shape"], v["arg3_value"]))) for i in range(6)]))) if n else
+          And(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) < Select(v["arg1_shape"], v["arg3_value"]))) for i in range(6)])))
 )
 
 def rule_11_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -23,7 +23,7 @@ def rule_11_func(arg1, arg2, arg3, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
         if not (isinstance(arg3, (int, np.integer)) and not isinstance(arg3, bool)):
             return False
@@ -32,28 +32,23 @@ def rule_11_func(arg1, arg2, arg3, solver=None, neg=False):
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
-        arg2_ndim = Int('arg2_ndim')
-        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
-        arg2_dtype = Int('arg2_dtype')
-        arg2_range = Array('arg2_range', IntSort(), IntSort())
+        arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
         arg3_value = Int('arg3_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         for i in range(arg1.ndim):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
-        solver.add(arg2_ndim == arg2.ndim)
-        for i in range(arg2.ndim):
-            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
-        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
-        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
+        solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
         solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 11
-        rule_11(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_dtype': arg2_dtype, 'arg2_range': arg2_range, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim, 'arg3_value': arg3_value})
+        rule_11(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_11(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_dtype': arg2['dtype'], 'arg2_range': arg2['range'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim'], 'arg3_value': arg3['value']}, neg)
+        rule_11(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values'], 'arg3_value': arg3['value']}, neg)

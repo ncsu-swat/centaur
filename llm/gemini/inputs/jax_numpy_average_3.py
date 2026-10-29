@@ -4,143 +4,195 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def average_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D array
+    # Input 1: 1D array, single axis list, matching weights shape, returned=False, keepdims=False
     a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
     axis = [0]
-    weights = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": False,
-        "keepdims": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    weights = np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float32)
+    returned = False
+    keepdims = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
 
-    # Input 2: 2D array, returned=True
-    a = np.random.randn(4, 3).astype(np.float32)
+    # Input 2: 2D array, axis=[0], weights shape matching a.shape, returned=True, keepdims=True
+    a = np.arange(6, dtype=np.float32).reshape(2, 3)
+    axis = [0]
+    weights = np.ones((2, 3), dtype=np.float32)
+    returned = True
+    keepdims = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
+
+    # Input 3: 2D array, axis=[1], 1D weights along axis 1, returned=False, keepdims=True
+    a = np.random.randn(3, 4).astype(np.float64)
     axis = [1]
-    weights = np.array([0.1, 0.2, 0.7], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": True,
-        "keepdims": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    weights = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
+    returned = False
+    keepdims = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
 
-    # Input 3: 3D array, keepdims=True, multi-axis
-    a = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 4: 2D array with negative values, axis=[0, 1], full weights shape, returned=True, keepdims=False
+    a = np.array([[-2.5, 3.5], [1.0, -4.0]], dtype=np.float32)
+    axis = [0, 1]
+    weights = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    returned = True
+    keepdims = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
+
+    # Input 5: 3D array, axis=[-1], weights shape matching a.shape, returned=False, keepdims=False
+    a = np.arange(24, dtype=np.float32).reshape(2, 3, 4)
+    axis = [-1]
+    weights = np.ones((2, 3, 4), dtype=np.float32)
+    returned = False
+    keepdims = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
+
+    # Input 6: 3D array, axis=[0, 2], weights matching shape of reduced axes (2, 4), returned=True, keepdims=True
+    a = np.random.uniform(1.0, 10.0, size=(2, 3, 4)).astype(np.float32)
     axis = [0, 2]
     weights = np.ones((2, 4), dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": False,
-        "keepdims": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    returned = True
+    keepdims = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
 
-    # Input 4: float64 with negative values
-    a = np.array([[-1.0, -2.0], [3.0, 4.0]], dtype=np.float64)
+    # Input 7: 1D integer array, axis=[0], weights integer, returned=True, keepdims=False
+    a = np.array([10, 20, 30, 40], dtype=np.int32)
     axis = [0]
-    weights = np.array([1.5, 2.5], dtype=np.float64)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": True,
-        "keepdims": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    weights = np.array([1, 2, 3, 4], dtype=np.int32)
+    returned = True
+    keepdims = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
 
-    # Input 5: int32 array for average, float32 weights
-    a = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    axis = [0]
-    weights = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": False,
-        "keepdims": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array, axis=[1, 3], weights matching full shape, returned=False, keepdims=True
+    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    axis = [1, 3]
+    weights = np.ones((2, 2, 2, 2), dtype=np.float32)
+    returned = False
+    keepdims = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
 
-    # Input 6: 3D array with reduction over multiple axes
-    a = np.random.randn(2, 2, 2).astype(np.float32)
-    axis = [1, 2]
-    weights = np.ones((2, 2), dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": True,
-        "keepdims": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array, negative axis=[-2], weights shape matching a.shape, returned=True, keepdims=False
+    a = np.array([[0.5, 1.5], [2.5, 3.5], [4.5, 5.5]], dtype=np.float64)
+    axis = [-2]
+    weights = np.array([[1.0, 2.0], [1.0, 1.0], [2.0, 1.0]], dtype=np.float64)
+    returned = True
+    keepdims = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
 
-    # Input 7: 3D array, single axis reduction
-    a = np.random.randn(4, 5, 6).astype(np.float32)
+    # Input 10: 3D array, axis=[1], weights 1D matching dimension along axis 1, returned=False, keepdims=False
+    a = np.ones((3, 5, 2), dtype=np.float32)
     axis = [1]
-    weights = np.arange(1, 6).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": False,
-        "keepdims": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D array, full reduction using axis, returned=True
-    a = np.random.randn(3, 4).astype(np.float32)
-    axis = [0, 1]
-    weights = np.random.rand(3, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": True,
-        "keepdims": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: float64 array, keepdims=True
-    a = np.random.randn(6, 2).astype(np.float64)
-    axis = [0]
-    weights = np.ones((6,), dtype=np.float64)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": False,
-        "keepdims": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 3D array with complete reduction and keepdims=True
-    a = np.random.randn(3, 3, 3).astype(np.float32)
-    axis = [0, 1, 2]
-    weights = np.random.rand(3, 3, 3).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": axis,
-        "weights": weights,
-        "returned": True,
-        "keepdims": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    weights = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    returned = False
+    keepdims = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "weights": weights,
+                "returned": returned,
+                "keepdims": keepdims,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.average_3"] = average_inputs()
 

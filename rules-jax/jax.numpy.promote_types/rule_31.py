@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Valid range of numpy dtypes for promotion (Rule 31)
+# both arguments are complex dtypes (Rule 31)
 
 rule_31 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg1_value"] < 0, v["arg1_value"] > 10), False, And(v["arg2_value"] >= 0, v["arg2_value"] <= 10))) if n else
-          If(Or(v["arg1_value"] < 0, v["arg1_value"] > 10), False, And(v["arg2_value"] >= 0, v["arg2_value"] <= 10)))
+    s.add(Not(And(And(And(v["arg1_value"] >= 9, v["arg1_value"] <= 10), v["arg2_value"] >= 9), v["arg2_value"] <= 10)) if n else
+          And(And(And(v["arg1_value"] >= 9, v["arg1_value"] <= 10), v["arg2_value"] >= 9), v["arg2_value"] <= 10))
 )
 
 def rule_31_func(arg1, arg2, solver=None, neg=False):

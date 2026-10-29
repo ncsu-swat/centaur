@@ -4,63 +4,68 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def qr_inputs():
     list_of_inputs = []
 
-    # Input 1: Square matrix, reduced mode
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {"a": a, "mode": "reduced"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D square matrix, float32, mode="reduced"
+    a = np.array(
+        [[1.0, 2.0, 3.0], [-4.0, 5.0, -6.0], [7.0, -8.0, 9.0]],
+        dtype=np.float32,
+    )
+    list_of_inputs.append({"a": a, "mode": "reduced"})
 
-    # Input 2: Tall matrix, complete mode
-    a = np.random.randn(6, 4).astype(np.float32)
-    input_dict = {"a": a, "mode": "complete"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D tall matrix (M > N), float64, mode="complete"
+    a = np.random.randn(6, 3).astype(np.float64)
+    list_of_inputs.append({"a": a, "mode": "complete"})
 
-    # Input 3: Wide matrix, 'r' mode, float64
-    a = np.random.randn(3, 7).astype(np.float64)
-    input_dict = {"a": a, "mode": "r"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D fat matrix (M < N), float32, mode="r"
+    a = np.random.randn(3, 5).astype(np.float32)
+    list_of_inputs.append({"a": a, "mode": "r"})
 
-    # Input 4: Complex matrix, raw mode
-    a = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
-    input_dict = {"a": a, "mode": "raw"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D matrix, float32, mode="raw"
+    a = np.random.randn(5, 4).astype(np.float32)
+    list_of_inputs.append({"a": a, "mode": "raw"})
 
-    # Input 5: Batched square matrix, reduced mode
-    a = np.random.randn(2, 5, 5).astype(np.float32)
-    input_dict = {"a": a, "mode": "reduced"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D batched square matrix, float32, mode="reduced"
+    a = np.random.randn(2, 4, 4).astype(np.float32)
+    list_of_inputs.append({"a": a, "mode": "reduced"})
 
-    # Input 6: Multi-batch tall matrix, complete mode, float64
-    a = np.random.randn(3, 2, 6, 4).astype(np.float64)
-    input_dict = {"a": a, "mode": "complete"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D batched tall matrix, complex64, mode="complete"
+    real_part = np.random.randn(3, 5, 2).astype(np.float32)
+    imag_part = np.random.randn(3, 5, 2).astype(np.float32)
+    a = real_part + 1j * imag_part
+    list_of_inputs.append({"a": a, "mode": "complete"})
 
-    # Input 7: Small matrix with negative values, 'r' mode
-    a = np.array([[-1.0, 2.0], [-3.0, -4.0], [5.0, -6.0]], dtype=np.float32)
-    input_dict = {"a": a, "mode": "r"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D batched matrix, float64, mode="r"
+    a = np.random.randn(2, 2, 4, 3).astype(np.float64)
+    list_of_inputs.append({"a": a, "mode": "r"})
 
-    # Input 8: Complex128 matrix, reduced mode
-    a = (np.random.randn(5, 3) + 1j * np.random.randn(5, 3)).astype(np.complex128)
-    input_dict = {"a": a, "mode": "reduced"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D complex128 matrix, mode="reduced"
+    real_part = np.random.randn(4, 4).astype(np.float64)
+    imag_part = np.random.randn(4, 4).astype(np.float64)
+    a = real_part + 1j * imag_part
+    list_of_inputs.append({"a": a, "mode": "reduced"})
 
-    # Input 9: Large square matrix, raw mode
-    a = np.random.randn(16, 16).astype(np.float32)
-    input_dict = {"a": a, "mode": "raw"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D batched matrix, float32, mode="raw"
+    a = np.random.randn(4, 3, 2).astype(np.float32)
+    list_of_inputs.append({"a": a, "mode": "raw"})
 
-    # Input 10: Batched tall matrix, complete mode
-    a = np.random.randn(4, 8, 5).astype(np.float32)
-    input_dict = {"a": a, "mode": "complete"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D tall matrix with negative and zero values, float32, mode="reduced"
+    a = np.array(
+        [[0.0, -1.5], [-2.0, 3.5], [4.0, 0.0], [-5.5, -6.0]], dtype=np.float32
+    )
+    list_of_inputs.append({"a": a, "mode": "reduced"})
 
-    return list_of_inputs
+    # Input 11: 3D batched fat matrix, float64, mode="complete"
+    a = np.random.randn(2, 3, 6).astype(np.float64)
+    list_of_inputs.append({"a": a, "mode": "complete"})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
 
 generated_inputs["jax.numpy.linalg.qr"] = qr_inputs()
 

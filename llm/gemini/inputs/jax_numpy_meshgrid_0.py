@@ -4,103 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def meshgrid_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, default options
+    # Input 1: 1D float32 array, default cartesian indexing, non-sparse
     input_dict = {
         "xi": np.array([1.0, 2.0, 3.0], dtype=np.float32),
         "copy": True,
         "sparse": False,
-        "indexing": "xy"
+        "indexing": "xy",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D int32 array with negative values, sparse=True, indexing='ij'
+    # Input 2: 1D float64 array with negative numbers, matrix indexing, sparse
     input_dict = {
-        "xi": np.array([-5, 0, 5, 10], dtype=np.int32),
+        "xi": np.array([-5.0, -2.5, 0.0, 2.5, 5.0], dtype=np.float64),
         "copy": True,
         "sparse": True,
-        "indexing": "ij"
+        "indexing": "ij",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D float64 array, sparse=True, indexing='xy'
+    # Input 3: 1D int32 array, cartesian indexing, sparse
     input_dict = {
-        "xi": np.array([0.1, 0.2, 0.3], dtype=np.float64),
+        "xi": np.array([0, 1, 2, 3, 4], dtype=np.int32),
         "copy": True,
         "sparse": True,
-        "indexing": "xy"
+        "indexing": "xy",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D int64 array, indexing='ij'
+    # Input 4: 1D int64 array with negative values, matrix indexing, non-sparse
     input_dict = {
-        "xi": np.array([100, 200], dtype=np.int64),
+        "xi": np.array([-10, -5, 0, 5, 10], dtype=np.int64),
         "copy": True,
         "sparse": False,
-        "indexing": "ij"
+        "indexing": "ij",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D boolean array
-    input_dict = {
-        "xi": np.array([True, False], dtype=bool),
-        "copy": True,
-        "sparse": False,
-        "indexing": "xy"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Large 1D float32 array
-    input_dict = {
-        "xi": np.linspace(-10.0, 10.0, 100, dtype=np.float32),
-        "copy": True,
-        "sparse": True,
-        "indexing": "ij"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 1D uint8 array
-    input_dict = {
-        "xi": np.array([0, 128, 255], dtype=np.uint8),
-        "copy": True,
-        "sparse": False,
-        "indexing": "xy"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Single element 1D array
+    # Input 5: Single element 1D float32 array
     input_dict = {
         "xi": np.array([42.0], dtype=np.float32),
         "copy": True,
-        "sparse": True,
-        "indexing": "xy"
+        "sparse": False,
+        "indexing": "xy",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D float16 array
+    # Input 6: Single element 1D int32 array, sparse, matrix indexing
     input_dict = {
-        "xi": np.array([-1.5, 1.5], dtype=np.float16),
+        "xi": np.array([-1], dtype=np.int32),
+        "copy": True,
+        "sparse": True,
+        "indexing": "ij",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 1D float32 array with zeros and ones, matrix indexing
+    input_dict = {
+        "xi": np.array([0.0, 1.0, 0.0, 1.0], dtype=np.float32),
         "copy": True,
         "sparse": False,
-        "indexing": "ij"
+        "indexing": "ij",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D int16 array with sequential values
+    # Input 8: 1D float64 array, sparse, cartesian indexing
     input_dict = {
-        "xi": np.arange(-10, 10, 2, dtype=np.int16),
+        "xi": np.array([100.5, 200.75, 300.125], dtype=np.float64),
         "copy": True,
         "sparse": True,
-        "indexing": "ij"
+        "indexing": "xy",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D int64 array with positive values, matrix indexing, sparse
+    input_dict = {
+        "xi": np.array([10, 20, 30, 40], dtype=np.int64),
+        "copy": True,
+        "sparse": True,
+        "indexing": "ij",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Larger 1D float32 array
+    input_dict = {
+        "xi": np.linspace(-1.0, 1.0, 50, dtype=np.float32),
+        "copy": True,
+        "sparse": False,
+        "indexing": "xy",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.meshgrid"] = meshgrid_inputs()
 

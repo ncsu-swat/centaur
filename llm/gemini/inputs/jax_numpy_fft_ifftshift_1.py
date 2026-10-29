@@ -10,54 +10,59 @@ import copy
 def ifftshift_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, even length, float32, axes=0
-    x = np.arange(10, dtype=np.float32)
-    input_dict = {"x": x, "axes": 0}
+    # Input 1: 1D float32 array, odd length, axis 0
+    x = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    input_dict = {"x": x, "axes": int(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array, odd length, int32, axes=0
-    x = np.arange(9, dtype=np.int32)
-    input_dict = {"x": x, "axes": 0}
+    # Input 2: 1D float64 array, even length, axis 0
+    x = np.array([-3.0, -2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float64)
+    input_dict = {"x": x, "axes": int(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, float32, axes=0
-    x = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {"x": x, "axes": 0}
+    # Input 3: 1D complex64 array, negative axis -1
+    x = np.array([1.0 + 2.0j, -2.0 + 0.5j, 3.0 - 1.0j], dtype=np.complex64)
+    input_dict = {"x": x, "axes": int(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array, float64, axes=1
-    x = np.random.randn(5, 5).astype(np.float64)
-    input_dict = {"x": x, "axes": 1}
+    # Input 4: 2D float32 array, axis 0
+    x = np.arange(12, dtype=np.float32).reshape(3, 4)
+    input_dict = {"x": x, "axes": int(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array, complex64, axes=2
-    x = (np.random.randn(3, 3, 3) + 1j * np.random.randn(3, 3, 3)).astype(np.complex64)
-    input_dict = {"x": x, "axes": 2}
+    # Input 5: 2D float32 array, axis 1
+    x = np.arange(12, dtype=np.float32).reshape(3, 4)
+    input_dict = {"x": x, "axes": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D array, float32, axes=-1 (negative axis)
-    x = np.random.randn(2, 4, 6).astype(np.float32)
-    input_dict = {"x": x, "axes": -1}
+    # Input 6: 2D complex128 array, negative axis -2
+    x = np.random.randn(4, 6).astype(np.complex128)
+    input_dict = {"x": x, "axes": int(-2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D array, int16, axes=2
-    x = np.random.randint(-10, 10, size=(2, 3, 4, 5)).astype(np.int16)
-    input_dict = {"x": x, "axes": 2}
+    # Input 7: 3D int32 array, axis 2
+    x = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
+    input_dict = {"x": x, "axes": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array, boolean, axes=0
-    x = np.random.choice([True, False], size=(6, 6))
-    input_dict = {"x": x, "axes": 0}
+    # Input 8: 3D float64 array, axis -1
+    x = np.random.randn(5, 5, 5).astype(np.float64)
+    input_dict = {"x": x, "axes": int(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D array, complex128, axes=-1
-    x = (np.random.randn(11) + 1j * np.random.randn(11)).astype(np.complex128)
-    input_dict = {"x": x, "axes": -1}
+    # Input 9: 4D float32 array, axis 3
+    x = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    input_dict = {"x": x, "axes": int(3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D array, float32, axes=3
-    x = np.random.randn(2, 2, 3, 3, 4).astype(np.float32)
-    input_dict = {"x": x, "axes": 3}
+    # Input 10: 4D complex64 array, negative axis -4
+    x = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex64)
+    input_dict = {"x": x, "axes": int(-4)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D int64 array, axis -1
+    x = np.array([[-10, 20, -30], [40, -50, 60]], dtype=np.int64)
+    input_dict = {"x": x, "axes": int(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

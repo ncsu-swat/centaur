@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dtype of the identity matrix must not be string (Rule 4)
+# offset tensor must be a scalar with an integer data type (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] != 11) if n else
-          v["arg1_value"] != 11)
+    s.add(Not(And(And(v["arg1_ndim"] == 0, v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 5)) if n else
+          And(And(v["arg1_ndim"] == 0, v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 5))
 )
 
 def rule_4_func(arg1, solver=None, neg=False):
@@ -19,20 +19,22 @@ def rule_4_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 4
-        rule_4(solver, {'arg1_value': arg1_value})
+        rule_4(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_4(solver, {'arg1_value': arg1['value']}, neg)
+        rule_4(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype']}, neg)

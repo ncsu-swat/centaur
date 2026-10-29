@@ -4,61 +4,90 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def block_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D concatenation (homogeneous shape)
-    arrays = [np.array([1, 2]), np.array([3, 4])]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    # Input 1: 1D list of 1D float32 arrays of identical shape (2,)
+    a1 = np.array([1.0, 2.0], dtype=np.float32)
+    b1 = np.array([3.0, 4.0], dtype=np.float32)
+    c1 = np.array([-1.0, -2.0], dtype=np.float32)
+    list_of_inputs.append({"arrays": [a1, b1, c1]})
 
-    # Input 2: 2D Block of square matrices (homogeneous shape)
-    arrays = [
-        [np.zeros((2, 2), dtype=np.float32), np.ones((2, 2), dtype=np.float32)],
-        [np.full((2, 2), 2.0, dtype=np.float32), np.full((2, 2), 3.0, dtype=np.float32)]
+    # Input 2: 1D list of 1D int32 arrays of shape (3,)
+    a2 = np.array([10, -20, 30], dtype=np.int32)
+    b2 = np.array([-40, 50, -60], dtype=np.int32)
+    list_of_inputs.append({"arrays": [a2, b2]})
+
+    # Input 3: 2D nested list (2x2) of 2D float32 arrays of shape (2, 2)
+    zeros = np.zeros((2, 2), dtype=np.float32)
+    ones = np.ones((2, 2), dtype=np.float32)
+    twos = np.full((2, 2), 2.0, dtype=np.float32)
+    threes = np.full((2, 2), -3.0, dtype=np.float32)
+    list_of_inputs.append({"arrays": [[zeros, ones], [twos, threes]]})
+
+    # Input 4: 2D nested list (2x2) of 2D float64 arrays of shape (3, 3)
+    a4 = np.full((3, 3), 1.5, dtype=np.float64)
+    b4 = np.full((3, 3), -2.5, dtype=np.float64)
+    c4 = np.full((3, 3), 3.5, dtype=np.float64)
+    d4 = np.full((3, 3), -4.5, dtype=np.float64)
+    list_of_inputs.append({"arrays": [[a4, b4], [c4, d4]]})
+
+    # Input 5: 2D nested list (2x3) of 2D int64 arrays of shape (2, 2)
+    row1 = [
+        np.full((2, 2), 1, dtype=np.int64),
+        np.full((2, 2), 2, dtype=np.int64),
+        np.full((2, 2), 3, dtype=np.int64),
     ]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
-
-    # Input 3: 2D block with 3x3 matrices (homogeneous shape)
-    arrays = [
-        [np.zeros((3, 3), dtype=np.float32), np.ones((3, 3), dtype=np.float32)],
-        [np.ones((3, 3), dtype=np.float32), np.zeros((3, 3), dtype=np.float32)]
+    row2 = [
+        np.full((2, 2), -1, dtype=np.int64),
+        np.full((2, 2), -2, dtype=np.int64),
+        np.full((2, 2), -3, dtype=np.int64),
     ]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    list_of_inputs.append({"arrays": [row1, row2]})
 
-    # Input 4: Nested list with int32 (homogeneous shape)
-    x = np.arange(4).reshape((2, 2)).astype(np.int32)
-    arrays = [[x, x], [x, x]]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    # Input 6: 1D list of 2D float32 arrays of shape (4, 4)
+    a6 = np.ones((4, 4), dtype=np.float32)
+    b6 = np.zeros((4, 4), dtype=np.float32)
+    list_of_inputs.append({"arrays": [a6, b6]})
 
-    # Input 5: float64 elements in a 2D block structure (homogeneous shape)
-    arrays = [[np.array([[1.0, 2.0]], dtype=np.float64), np.array([[3.0, 4.0]], dtype=np.float64)]]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    # Input 7: 3D nested list (2x2x2) of 1D float32 arrays of shape (2,)
+    elem = np.array([0.5, -0.5], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "arrays": [
+                [[elem, elem], [elem, elem]],
+                [[elem, elem], [elem, elem]],
+            ]
+        }
+    )
 
-    # Input 6: boolean blocks (homogeneous shape)
-    arrays = [[np.array([[True]], dtype=bool)], [np.array([[False]], dtype=bool)]]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    # Input 8: 2D nested list (2x2) of boolean arrays of shape (2, 2)
+    b_t = np.ones((2, 2), dtype=bool)
+    b_f = np.zeros((2, 2), dtype=bool)
+    list_of_inputs.append({"arrays": [[b_t, b_f], [b_f, b_t]]})
 
-    # Input 7: 1D int64 blocks (homogeneous shape)
-    arrays = [np.array([-1, -2], dtype=np.int64), np.array([-4, -5], dtype=np.int64)]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    # Input 9: 2D nested list (1x2) of 3D float32 arrays of shape (2, 2, 2)
+    blk_a = np.ones((2, 2, 2), dtype=np.float32)
+    blk_b = np.zeros((2, 2, 2), dtype=np.float32)
+    list_of_inputs.append({"arrays": [[blk_a, blk_b]]})
 
-    # Input 8: Complex blocks (homogeneous shape)
-    arrays = [[np.array([[1+1j]], dtype=np.complex64), np.array([[2-2j]], dtype=np.complex64)]]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    # Input 10: 1D list of 1D float16 arrays of shape (1,)
+    a10 = np.array([1.5], dtype=np.float16)
+    b10 = np.array([-2.5], dtype=np.float16)
+    c10 = np.array([0.0], dtype=np.float16)
+    list_of_inputs.append({"arrays": [a10, b10, c10]})
 
-    # Input 9: Multi-nested block with uint8 (homogeneous shape)
-    arrays = [[np.array([[10]], dtype=np.uint8)], [np.array([[20]], dtype=np.uint8)]]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
-
-    # Input 10: Larger inputs with random values (homogeneous shape)
-    a = np.random.randn(5, 5).astype(np.float32)
-    arrays = [[a, a], [a, a]]
-    list_of_inputs.append({"arrays": copy.deepcopy(arrays)})
+    # Input 11: 2D nested list (2x1) of 2D int16 arrays of shape (3, 2)
+    a11 = np.full((3, 2), 7, dtype=np.int16)
+    b11 = np.full((3, 2), -7, dtype=np.int16)
+    list_of_inputs.append({"arrays": [[a11], [b11]]})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.block_3"] = block_inputs()
 

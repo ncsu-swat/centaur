@@ -4,53 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def matrix_transpose_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 2D float32 matrix
-    x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 2D float32 square matrix
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 matrix with negative/positive elements
-    x = np.random.uniform(-10.0, 10.0, size=(5, 5)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D int32 rectangular matrix with negative values
+    x = np.array([[-1, -2, -3], [4, 5, -6]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D int32 array (stack of matrices)
-    x = np.random.randint(-100, 100, size=(2, 3, 4)).astype(np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 3D float64 batch of matrices
+    x = np.random.randn(4, 3, 5).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 4D int64 array
-    x = np.random.randint(0, 10, size=(2, 2, 4, 3)).astype(np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 4D int64 stack of matrices
+    x = np.arange(24, dtype=np.int64).reshape((2, 3, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 5: 2D complex64 matrix
-    x = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.array([[1 + 2j, 3 - 4j], [-5j, 6 + 0j]], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 3D boolean array
-    x = np.random.choice([True, False], size=(3, 2, 2)).astype(bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 2D boolean matrix
+    x = np.array([[True, False, True], [False, False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 5D float32 array (deep stack of matrices)
-    x = np.random.randn(2, 2, 2, 5, 2).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 5D float32 tensor
+    x = np.random.uniform(-10.0, 10.0, size=(2, 1, 3, 4, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 2D float32 matrix with a single row
-    x = np.random.randn(1, 5).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 2D row matrix (1, N)
+    x = np.array([[10, 20, 30, 40]], dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D float32 matrix with a single column
-    x = np.random.randn(5, 1).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 2D column matrix (M, 1)
+    x = np.array([[-1.5], [2.5], [-3.5]], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Large 2D float32 matrix
-    x = np.random.randn(100, 200).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 3D complex128 stack of matrices
+    x = (np.random.randn(3, 2, 3) + 1j * np.random.randn(3, 2, 3)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D with empty dimensions
+    x = np.zeros((2, 0, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.matrix_transpose"] = matrix_transpose_inputs()
 

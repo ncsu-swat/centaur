@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# numeric scalar input must be either negative or non-negative (Rule 36)
+# Scalar floating-point input satisfies multiplicative identity (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] < 0, v["arg1_value"] >= 0)) if n else
-          Or(v["arg1_value"] < 0, v["arg1_value"] >= 0))
+    s.add(Not(v["arg1_value"] * 1 == v["arg1_value"]) if n else
+          v["arg1_value"] * 1 == v["arg1_value"])
 )
 
 def rule_36_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_36_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Real('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 36
         rule_36(solver, {'arg1_value': arg1_value})

@@ -4,43 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def identity_inputs():
     list_of_inputs = []
 
-    # Input 1: 3x3 float32 identity matrix
-    list_of_inputs.append({"n": 3, "dtype": np.float32})
+    # Input 1
+    input_dict = {"n": 1, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2x2 int32 identity matrix
-    list_of_inputs.append({"n": 2, "dtype": np.int32})
+    # Input 2
+    input_dict = {"n": 2, "dtype": np.dtype(np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 5x5 float64 identity matrix
-    list_of_inputs.append({"n": 5, "dtype": np.float64})
+    # Input 3
+    input_dict = {"n": 3, "dtype": np.dtype(np.bool_)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 10x10 int64 identity matrix
-    list_of_inputs.append({"n": 10, "dtype": np.int64})
+    # Input 4
+    input_dict = {"n": 0, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1x1 complex128 identity matrix
-    list_of_inputs.append({"n": 1, "dtype": np.complex128})
+    # Input 5
+    input_dict = {"n": 4, "dtype": np.dtype(np.complex64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 0x0 float32 empty identity matrix
-    list_of_inputs.append({"n": 0, "dtype": np.float32})
+    # Input 6
+    input_dict = {"n": 5, "dtype": np.dtype(np.uint8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4x4 boolean identity matrix
-    list_of_inputs.append({"n": 4, "dtype": np.bool_})
+    # Input 7
+    input_dict = {"n": 8, "dtype": np.dtype(np.int16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 8x8 uint8 identity matrix
-    list_of_inputs.append({"n": 8, "dtype": np.uint8})
+    # Input 8
+    input_dict = {"n": 10, "dtype": np.dtype(np.float16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 15x15 float16 identity matrix
-    list_of_inputs.append({"n": 15, "dtype": np.float16})
+    # Input 9
+    input_dict = {"n": 16, "dtype": np.dtype(np.int64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 100x100 int16 identity matrix
-    list_of_inputs.append({"n": 100, "dtype": np.int16})
+    # Input 10
+    input_dict = {"n": 6, "dtype": np.dtype(np.complex128)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.identity"] = identity_inputs()
 

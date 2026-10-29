@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor of at least one dimension repeated with a non-negative integer number of repetitions (Rule 24)
+# 1D tensor tiled with a positive integer repetition count (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg2_value"] >= 0)) if n else
-          And(v["arg1_ndim"] >= 1, v["arg2_value"] >= 0))
+    s.add(Not(And(v["arg1_ndim"] == 1, v["arg2_value"] > 0)) if n else
+          And(v["arg1_ndim"] == 1, v["arg2_value"] > 0))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):

@@ -7,142 +7,152 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def jax_numpy_quantile_inputs():
+def quantile_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float array, median
+    # Input 1: 1D float32 array, median (q=0.5), axis 0
     a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
     weights = np.array([1.0, 1.0, 2.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({
+    input_dict = {
         "a": a,
         "q": 0.5,
         "axis": 0,
         "overwrite_input": False,
         "method": "inverted_cdf",
         "keepdims": False,
-        "weights": weights
-    })
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, 25th percentile along axis 1, keepdims=True
-    a = np.random.randn(3, 4).astype(np.float32)
-    weights = np.random.uniform(0.5, 1.5, size=(3, 4)).astype(np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "q": 0.25,
-        "axis": 1,
-        "overwrite_input": False,
-        "method": "inverted_cdf",
-        "keepdims": True,
-        "weights": weights
-    })
-
-    # Input 3: 3D float64 array, 75th percentile along last axis
-    a = np.random.randn(2, 3, 2).astype(np.float64)
-    weights = np.random.uniform(0.1, 2.0, size=(2, 3, 2)).astype(np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "q": 0.75,
-        "axis": -1,
-        "overwrite_input": False,
-        "method": "inverted_cdf",
-        "keepdims": False,
-        "weights": weights
-    })
-
-    # Input 4: 1D array with negative values, 10th percentile
-    a = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
-    weights = np.array([0.5, 1.5, 1.0, 1.0, 0.5], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "q": 0.1,
-        "axis": 0,
-        "overwrite_input": False,
-        "method": "inverted_cdf",
-        "keepdims": True,
-        "weights": weights
-    })
-
-    # Input 5: 2D array, 90th percentile along axis 0
-    a = np.random.randint(0, 100, size=(5, 5)).astype(np.float32)
-    weights = np.random.uniform(1.0, 5.0, size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "q": 0.9,
-        "axis": 0,
-        "overwrite_input": False,
-        "method": "inverted_cdf",
-        "keepdims": False,
-        "weights": weights
-    })
-
-    # Input 6: 4D array, median along axis 2, keepdims=True
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    weights = np.random.uniform(0.1, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "q": 0.5,
-        "axis": 2,
-        "overwrite_input": False,
-        "method": "inverted_cdf",
-        "keepdims": True,
-        "weights": weights
-    })
-
-    # Input 7: Single element array, 0th percentile
-    a = np.array([42.0], dtype=np.float32)
-    weights = np.array([1.0], dtype=np.float32)
-    list_of_inputs.append({
+    # Input 2: 1D int32 array, q=0.0 (min), keepdims=True
+    a = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
+    weights = np.array([1.0, 2.0, 1.0, 3.0, 1.0], dtype=np.float32)
+    input_dict = {
         "a": a,
         "q": 0.0,
         "axis": 0,
         "overwrite_input": False,
         "method": "inverted_cdf",
-        "keepdims": False,
-        "weights": weights
-    })
+        "keepdims": True,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array with large values, 100th percentile
-    a = np.random.randn(4, 3).astype(np.float32) * 100.0
-    weights = np.random.uniform(0.5, 2.0, size=(4, 3)).astype(np.float32)
-    list_of_inputs.append({
+    # Input 3: 1D float64 array, q=1.0 (max), axis=-1
+    a = np.linspace(-100.0, 100.0, 21, dtype=np.float64)
+    weights = np.ones(21, dtype=np.float64)
+    input_dict = {
         "a": a,
         "q": 1.0,
+        "axis": -1,
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D float32 array, axis 0, q=0.25
+    a = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], dtype=np.float32)
+    weights = np.ones((3, 3), dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": 0.25,
+        "axis": 0,
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D float32 array, axis 1, q=0.75, keepdims=True
+    a = np.array([[-3.0, 0.0, 3.0, 6.0], [1.0, 4.0, 7.0, 10.0]], dtype=np.float32)
+    weights = np.array([[1.0, 2.0, 1.0, 1.0], [2.0, 1.0, 3.0, 1.0]], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": 0.75,
+        "axis": 1,
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": True,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 2D int64 array with negative axis, q=0.5
+    a = np.arange(-12, 12, dtype=np.int64).reshape(4, 6)
+    weights = np.ones((4, 6), dtype=np.float64)
+    input_dict = {
+        "a": a,
+        "q": 0.5,
+        "axis": -1,
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D float32 array, axis 0, q=0.1
+    a = np.random.uniform(-5.0, 5.0, size=(4, 3, 2)).astype(np.float32)
+    weights = np.random.uniform(0.5, 2.0, size=(4, 3, 2)).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "q": 0.1,
+        "axis": 0,
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 3D float64 array, axis 1, q=0.9, keepdims=True
+    a = np.random.randn(2, 5, 3).astype(np.float64)
+    weights = np.ones((2, 5, 3), dtype=np.float64)
+    input_dict = {
+        "a": a,
+        "q": 0.9,
+        "axis": 1,
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": True,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D float32 array, axis 2, q=0.33
+    a = np.linspace(0.0, 1.0, 24, dtype=np.float32).reshape(2, 3, 4)
+    weights = np.full((2, 3, 4), 2.0, dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": 0.33,
+        "axis": 2,
+        "overwrite_input": False,
+        "method": "inverted_cdf",
+        "keepdims": False,
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D float32 array, axis -2, q=0.6, keepdims=True
+    a = np.random.randn(2, 3, 4, 2).astype(np.float32)
+    weights = np.ones((2, 3, 4, 2), dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "q": 0.6,
         "axis": -2,
         "overwrite_input": False,
         "method": "inverted_cdf",
         "keepdims": True,
-        "weights": weights
-    })
-
-    # Input 9: 3D float64 array, 33rd percentile along axis 1
-    a = np.random.uniform(-1.0, 1.0, size=(3, 2, 3)).astype(np.float64)
-    weights = np.ones((3, 2, 3), dtype=np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "q": 0.33,
-        "axis": 1,
-        "overwrite_input": False,
-        "method": "inverted_cdf",
-        "keepdims": False,
-        "weights": weights
-    })
-
-    # Input 10: 1D binary-like array, median with custom weights
-    a = np.array([0, 1, 0, 1, 1, 0], dtype=np.float32)
-    weights = np.array([1, 2, 1, 2, 1, 2], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "q": 0.5,
-        "axis": 0,
-        "overwrite_input": False,
-        "method": "inverted_cdf",
-        "keepdims": True,
-        "weights": weights
-    })
+        "weights": weights,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.quantile_3"] = jax_numpy_quantile_inputs()
+generated_inputs["jax.numpy.quantile_3"] = quantile_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -4,70 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_le_inputs():
+
+def le_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar-like 0D arrays
-    x = np.array(True, dtype=np.bool_)
-    y = np.array(False, dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 1: python bool (True, True)
+    input_dict = {"x": True, "y": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D boolean arrays of same size
-    x = np.array([True, False, True], dtype=np.bool_)
-    y = np.array([False, True, True], dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 2: python bool (True, False)
+    input_dict = {"x": True, "y": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D boolean arrays of same size
-    x = np.array([[True, False], [False, True]], dtype=np.bool_)
-    y = np.array([[False, True], [True, False]], dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 3: python bool (False, True)
+    input_dict = {"x": False, "y": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Scalar 0D array and 1D array
-    x = np.array(False, dtype=np.bool_)
-    y = np.array([True, False, True], dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 4: python bool (False, False)
+    input_dict = {"x": False, "y": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Scalar 0D array and 2D array
-    x = np.array(True, dtype=np.bool_)
-    y = np.array([[False, True], [True, False]], dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: numpy bool_ (True, True)
+    input_dict = {"x": np.bool_(True), "y": np.bool_(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D boolean arrays of same shape
-    x = np.ones((2, 3, 2), dtype=np.bool_)
-    y = np.zeros((2, 3, 2), dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 6: numpy bool_ (True, False)
+    input_dict = {"x": np.bool_(True), "y": np.bool_(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Broadcasting same number of dimensions (3D)
-    x = np.array([[[True, False]], [[False, True]]], dtype=np.bool_)  # shape (2, 1, 2)
-    y = np.ones((2, 3, 2), dtype=np.bool_)  # shape (2, 3, 2)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: numpy bool_ (False, True)
+    input_dict = {"x": np.bool_(False), "y": np.bool_(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Random 1D booleans of same shape
-    x = np.random.choice([True, False], size=10).astype(np.bool_)
-    y = np.random.choice([True, False], size=10).astype(np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: numpy bool_ (False, False)
+    input_dict = {"x": np.bool_(False), "y": np.bool_(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Random 2D booleans of same shape
-    x = np.random.choice([True, False], size=(3, 3)).astype(np.bool_)
-    y = np.random.choice([True, False], size=(3, 3)).astype(np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 9: mixed bool and numpy bool_ (True, np.bool_(False))
+    input_dict = {"x": True, "y": np.bool_(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D boolean arrays of same shape
-    x = np.random.choice([True, False], size=(2, 2, 2, 2)).astype(np.bool_)
-    y = np.random.choice([True, False], size=(2, 2, 2, 2)).astype(np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 10: mixed bool and numpy bool_ (np.bool_(True), False)
+    input_dict = {"x": np.bool_(True), "y": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 3D boolean array and 0D array scalar
-    x = np.ones((2, 2, 2), dtype=np.bool_)
-    y = np.array(True, dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 11: mixed bool and numpy bool_ (False, np.bool_(True))
+    input_dict = {"x": False, "y": np.bool_(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: mixed bool and numpy bool_ (np.bool_(False), True)
+    input_dict = {"x": np.bool_(False), "y": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.le_4"] = jax_lax_le_inputs()
+
+generated_inputs["jax.lax.le_4"] = le_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

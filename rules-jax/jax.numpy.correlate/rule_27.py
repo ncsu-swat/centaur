@@ -7,37 +7,35 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensors must have matching dimensions (Rule 27)
+# precision tuple must have length 2 with valid precision specification (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == v["arg2_ndim"]) if n else
-          v["arg1_ndim"] == v["arg2_ndim"])
+    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 37), Select(v["arg1_values"], 1) == 37)) if n else
+          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) == 37), Select(v["arg1_values"], 1) == 37))
 )
 
-def rule_27_func(arg1, arg2, solver=None, neg=False):
+def rule_27_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
-            return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, str) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), StringSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_27(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_27(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if static output size is specified and positive, the grid capacity must be at least that size (Rule 8)
+# offset k should be within the bounds of dimension n (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] > 0, v["arg1_value"] * v["arg1_value"] >= v["arg2_value"], True)) if n else
-          If(v["arg2_value"] > 0, v["arg1_value"] * v["arg1_value"] >= v["arg2_value"], True))
+    s.add(Not(And(0 - v["arg1_value"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"])) if n else
+          And(0 - v["arg1_value"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"]))
 )
 
 def rule_8_func(arg1, arg2, solver=None, neg=False):

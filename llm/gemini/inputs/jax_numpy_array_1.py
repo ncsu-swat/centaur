@@ -4,125 +4,121 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def array_inputs():
+
+def jax_numpy_array_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array
-    object_1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    # Input 1: 1D float32 array, ndmin=0
     input_dict = {
-        "object": object_1,
-        "dtype": np.float32,
+        "object": np.array([1.0, -2.5, 3.2], dtype=np.float32),
+        "dtype": np.dtype("float32"),
         "copy": True,
         "order": "K",
-        "ndmin": 0
+        "ndmin": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32 array, minimum 2 dimensions
-    object_2 = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    # Input 2: 2D int32 array with negative values, ndmin=2
     input_dict = {
-        "object": object_2,
-        "dtype": np.int32,
+        "object": np.array([[-10, 20], [30, -40]], dtype=np.int32),
+        "dtype": np.dtype("int32"),
         "copy": False,
         "order": "K",
-        "ndmin": 2
+        "ndmin": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 array
-    object_3 = np.random.randn(2, 3, 4).astype(np.float64)
+    # Input 3: 0D scalar array expanded to 2D using ndmin
     input_dict = {
-        "object": object_3,
-        "dtype": np.float64,
+        "object": np.array(42, dtype=np.int32),
+        "dtype": np.dtype("int32"),
         "copy": True,
         "order": "K",
-        "ndmin": 1
+        "ndmin": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 0D int64 array, expanded to 3D
-    object_4 = np.array(42, dtype=np.int64)
+    # Input 4: 3D float32 array, ndmin=3
     input_dict = {
-        "object": object_4,
-        "dtype": np.int64,
-        "copy": True,
-        "order": "K",
-        "ndmin": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 4D complex64 array
-    object_5 = np.random.randn(2, 2, 2, 2).astype(np.complex64)
-    input_dict = {
-        "object": object_5,
-        "dtype": np.complex64,
+        "object": np.ones((2, 3, 4), dtype=np.float32),
+        "dtype": np.dtype("float32"),
         "copy": False,
         "order": "K",
-        "ndmin": 4
+        "ndmin": 3,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D boolean array
-    object_6 = np.array([True, False, True], dtype=np.bool_)
+    # Input 5: 1D boolean array, converted to bool dtype, ndmin=1
     input_dict = {
-        "object": object_6,
-        "dtype": np.bool_,
+        "object": np.array([True, False, True, True], dtype=np.bool_),
+        "dtype": np.dtype("bool"),
         "copy": True,
         "order": "K",
-        "ndmin": 1
+        "ndmin": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D uint8 array
-    object_7 = np.random.randint(0, 255, size=(3, 3), dtype=np.uint8)
+    # Input 6: 2D complex64 array, ndmin=2
     input_dict = {
-        "object": object_7,
-        "dtype": np.uint8,
+        "object": np.array(
+            [[1.0 - 2.0j, 3.5j], [-0.5 + 1.2j, 0.0]], dtype=np.complex64
+        ),
+        "dtype": np.dtype("complex64"),
         "copy": True,
         "order": "K",
-        "ndmin": 2
+        "ndmin": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D float16 array
-    object_8 = np.random.randn(2, 3, 2).astype(np.float16)
+    # Input 7: 4D uint8 array, ndmin=4
     input_dict = {
-        "object": object_8,
-        "dtype": np.float16,
+        "object": np.zeros((1, 2, 2, 3), dtype=np.uint8),
+        "dtype": np.dtype("uint8"),
         "copy": False,
         "order": "K",
-        "ndmin": 0
+        "ndmin": 4,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D int16 array with negative values, expanded to 2D
-    object_9 = np.array([-10, 0, 10], dtype=np.int16)
+    # Input 8: 1D int16 array with large ndmin promotion
     input_dict = {
-        "object": object_9,
-        "dtype": np.int16,
+        "object": np.array([-32768, 0, 32767], dtype=np.int16),
+        "dtype": np.dtype("int16"),
         "copy": True,
         "order": "K",
-        "ndmin": 2
+        "ndmin": 3,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D float32 array
-    object_10 = np.random.randn(1, 2, 1, 3, 1).astype(np.float32)
+    # Input 9: 2D float16 array converted to float32
     input_dict = {
-        "object": object_10,
-        "dtype": np.float32,
+        "object": np.array(
+            [[-1.5, 0.25], [3.125, -4.75]], dtype=np.float16
+        ),
+        "dtype": np.dtype("float32"),
+        "copy": False,
+        "order": "K",
+        "ndmin": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D int8 array with ndmin=1
+    input_dict = {
+        "object": np.array([-128, 0, 127], dtype=np.int8),
+        "dtype": np.dtype("int8"),
         "copy": True,
         "order": "K",
-        "ndmin": 5
+        "ndmin": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.array_1"] = array_inputs()
+
+generated_inputs["jax.numpy.array_1"] = jax_numpy_array_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

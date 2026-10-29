@@ -4,143 +4,159 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def correlate2d_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic full correlation, float32
+    # Input 1: Basic float32, mode='full', default precision
+    in1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    in2 = np.array([[0.5, -1.0], [2.0, 0.0]], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "full",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "default",
+        }
+    )
+
+    # Input 2: Different shapes, mode='same', high precision
     in1 = np.random.randn(5, 5).astype(np.float32)
     in2 = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "default"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "same",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "high",
+        }
+    )
 
-    # Input 2: "same" mode with negative values
-    in1 = np.random.uniform(-10.0, 10.0, (4, 4)).astype(np.float32)
-    in2 = np.random.uniform(-5.0, 5.0, (2, 2)).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "high"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Valid mode with rectangular inputs, highest precision
+    in1 = np.random.randn(6, 4).astype(np.float32)
+    in2 = np.random.randn(2, 3).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "valid",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "highest",
+        }
+    )
 
-    # Input 3: "valid" mode with float64 arrays
-    in1 = np.random.randn(10, 10).astype(np.float64)
-    in2 = np.random.randn(5, 5).astype(np.float64)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "valid",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "highest"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Float64 inputs, mode='full'
+    in1 = np.arange(9, dtype=np.float64).reshape((3, 3)) - 4.0
+    in2 = np.ones((2, 2), dtype=np.float64)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "full",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "high",
+        }
+    )
 
-    # Input 4: Small shapes, different aspect ratios
-    in1 = np.random.randn(8, 4).astype(np.float32)
-    in2 = np.random.randn(3, 2).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "default"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1xN and Nx1 vectors as 2D arrays, mode='same'
+    in1 = np.random.randn(1, 8).astype(np.float32)
+    in2 = np.random.randn(1, 3).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "same",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "default",
+        }
+    )
 
-    # Input 5: Same size in1 and in2, "same" mode
-    in1 = np.random.randn(6, 6).astype(np.float32)
-    in2 = np.random.randn(6, 6).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "high"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Column vectors as 2D arrays, mode='valid'
+    in1 = np.random.randn(7, 1).astype(np.float32)
+    in2 = np.random.randn(3, 1).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "valid",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "highest",
+        }
+    )
 
-    # Input 6: Large inputs, "valid" mode
-    in1 = np.random.randn(50, 50).astype(np.float32)
-    in2 = np.random.randn(10, 10).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "valid",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "default"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Complex numbers, mode='full'
+    in1 = (
+        np.random.randn(4, 4) + 1j * np.random.randn(4, 4)
+    ).astype(np.complex64)
+    in2 = (
+        np.random.randn(2, 2) + 1j * np.random.randn(2, 2)
+    ).astype(np.complex64)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "full",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "default",
+        }
+    )
 
-    # Input 7: 1x1 kernel
-    in1 = np.random.randn(7, 7).astype(np.float32)
-    in2 = np.random.randn(1, 1).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "highest"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Integer types promoted, mode='same'
+    in1 = np.array([[1, -2, 3], [-4, 5, -6]], dtype=np.int32)
+    in2 = np.array([[1, 0], [0, 1]], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "same",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "default",
+        }
+    )
 
-    # Input 8: Highly asymmetric kernel, "same" mode
-    in1 = np.random.randn(12, 12).astype(np.float32)
-    in2 = np.random.randn(1, 5).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "default"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Single-element kernel, mode='valid'
+    in1 = np.random.randn(5, 5).astype(np.float32)
+    in2 = np.array([[2.5]], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "valid",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "high",
+        }
+    )
 
-    # Input 9: Integer-like floats
-    in1 = np.arange(16).reshape((4, 4)).astype(np.float32)
-    in2 = np.ones((2, 2)).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "high"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Standard size with highest precision
-    in1 = np.random.randn(9, 9).astype(np.float32)
-    in2 = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "valid",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "precision": "highest"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Larger inputs with uppercase precision string, mode='full'
+    in1 = np.random.uniform(-10.0, 10.0, size=(12, 10)).astype(np.float32)
+    in2 = np.random.uniform(-5.0, 5.0, size=(4, 5)).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "in1": in1,
+            "in2": in2,
+            "mode": "full",
+            "boundary": "fill",
+            "fillvalue": 0.0,
+            "precision": "DEFAULT",
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.signal.correlate2d_1"] = correlate2d_inputs()
 

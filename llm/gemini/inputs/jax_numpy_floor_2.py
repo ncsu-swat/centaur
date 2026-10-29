@@ -4,53 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def floor_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar positive integer
-    input_dict = {"x": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Scalar negative integer
-    input_dict = {"x": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Scalar zero
+    # Input 1: Zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D numpy array of int32 with positive, negative, and zero values
-    input_dict = {"x": np.array([1, -2, 3, -4, 0], dtype=np.int32)}
+    # Input 2: Small positive integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D numpy array of int64
-    input_dict = {"x": np.array([[10, -20], [30, -40]], dtype=np.int64)}
+    # Input 3: Small negative integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D numpy array of int16
-    input_dict = {"x": np.array([[[1, -2], [3, -4]], [[5, -6], [7, -8]]], dtype=np.int16)}
+    # Input 4: Moderate positive integer
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D numpy array of uint32 (unsigned integer)
-    input_dict = {"x": np.array([10, 20, 30, 40], dtype=np.uint32)}
+    # Input 5: Moderate negative integer
+    input_dict = {"x": -42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D numpy array of int8 containing boundary values
-    input_dict = {"x": np.array([-128, 0, 127], dtype=np.int8)}
+    # Input 6: Larger positive integer
+    input_dict = {"x": 1000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large scalar integer
-    input_dict = {"x": 1234567890}
+    # Input 7: Larger negative integer
+    input_dict = {"x": -1000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D numpy array of integers
-    input_dict = {"x": np.arange(-8, 8).reshape(2, 2, 2, 2).astype(np.int32)}
+    # Input 8: Power of two integer
+    input_dict = {"x": 256}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Negative power of two integer
+    input_dict = {"x": -512}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Big positive integer
+    input_dict = {"x": 100000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Big negative integer
+    input_dict = {"x": -100000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.floor_2"] = floor_inputs()
 

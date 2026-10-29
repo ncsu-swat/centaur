@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input is a list of integers, its first element should be within standard 32-bit signed integer range if the list is non-empty (Rule 54)
+# list of four positive integers representing 4D coordinates or values (Rule 54)
 
 rule_54 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_length"] > 0, And(Select(v["arg1_values"], 0) >= -2147483648, Select(v["arg1_values"], 0) <= 2147483647), True)) if n else
-          If(v["arg1_length"] > 0, And(Select(v["arg1_values"], 0) >= -2147483648, Select(v["arg1_values"], 0) <= 2147483647), True))
+    s.add(Not(And(v["arg1_length"] == 4, And([Implies(i < (3 + 1), Select(v["arg1_values"], i) > 0) for i in range(6)]))) if n else
+          And(v["arg1_length"] == 4, And([Implies(i < (3 + 1), Select(v["arg1_values"], i) > 0) for i in range(6)])))
 )
 
 def rule_54_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_54_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 54
-        rule_54(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_54(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_54(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_54(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The first dtype is less than or equal to the second, and the second is non-complex (Rule 12)
+# promotion between signed integers with ascending bitwidth (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(And(0 <= v["arg1_value"], v["arg1_value"] <= v["arg2_value"]), v["arg2_value"] <= 8)) if n else
-          And(And(0 <= v["arg1_value"], v["arg1_value"] <= v["arg2_value"]), v["arg2_value"] <= 8))
+    s.add(Not(And(And(And(And(v["arg1_value"] >= 1, v["arg1_value"] <= 4), v["arg2_value"] >= 1), v["arg2_value"] <= 4), v["arg1_value"] <= v["arg2_value"])) if n else
+          And(And(And(And(v["arg1_value"] >= 1, v["arg1_value"] <= 4), v["arg2_value"] >= 1), v["arg2_value"] <= 4), v["arg1_value"] <= v["arg2_value"]))
 )
 
 def rule_12_func(arg1, arg2, solver=None, neg=False):

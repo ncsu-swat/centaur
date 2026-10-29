@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if input is a tuple of floats, its length must be positive and elements must reside within typical analytical bounds (Rule 16)
+# 2D input tensor must have non-empty dimensions (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -1000, Select(v["arg1_values"], i) <= 1000)) for i in range(6)]))) if n else
-          And(v["arg1_length"] >= 1, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -1000, Select(v["arg1_values"], i) <= 1000)) for i in range(6)])))
+    s.add(Not(And(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) >= 1), Select(v["arg1_shape"], 1) >= 1)) if n else
+          And(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) >= 1), Select(v["arg1_shape"], 1) >= 1))
 )
 
 def rule_16_func(arg1, solver=None, neg=False):
@@ -19,23 +19,23 @@ def rule_16_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 16
-        rule_16(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_16(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_16(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_16(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

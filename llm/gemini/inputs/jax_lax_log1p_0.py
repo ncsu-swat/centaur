@@ -4,63 +4,83 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.lax
+import numpy as np
+
 
 def log1p_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with positive values, accuracy=None
-    x = np.array([0.1, 1.0, 10.0, 100.0], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalar float32 near zero
+    x = np.array(1e-5, dtype=np.float32)
+    accuracy = jax.lax.AccuracyMode.DEFAULT
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 2: 2D float64 array with mixed positive and negative values (>-1), accuracy=None
-    x = np.array([[-0.5, 0.0], [0.5, 2.0]], dtype=np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array float32 with negative values > -1
+    x = np.array([-0.9, -0.5, -0.1, 0.0, 0.1, 0.5, 1.0], dtype=np.float32)
+    accuracy = jax.lax.AccuracyMode.HIGHEST
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 3: 3D float32 array with very small values (near zero), accuracy=None
-    x = np.array([[[1e-15, 1e-10], [1e-8, 1e-5]]], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array float64 with very small values
+    x = np.array(
+        [[1e-15, -1e-15], [1e-10, -1e-10], [1e-5, -1e-5]], dtype=np.float64
+    )
+    accuracy = jax.lax.AccuracyMode.DEFAULT
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 4: Scalar float32, accuracy=None
-    x = np.array(0.5, dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D array float32 with shape (2, 3, 4)
+    x = np.random.uniform(low=-0.8, high=5.0, size=(2, 3, 4)).astype(np.float32)
+    accuracy = jax.lax.AccuracyMode.HIGHEST
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 5: 4D float64 array with large values, accuracy=None
-    x = np.ones((2, 2, 2, 2), dtype=np.float64) * 1000.0
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D array float16
+    x = np.array([-0.75, -0.25, 0.0, 0.25, 0.75, 2.0], dtype=np.float16)
+    accuracy = jax.lax.AccuracyMode.DEFAULT
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 6: 1D complex64 array, accuracy=None
-    x = np.array([0.5 + 0.5j, -0.2 + 0.1j], dtype=np.complex64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D array complex64
+    x = np.array(
+        [[0.1 + 0.2j, -0.3 + 0.4j], [0.5 - 0.1j, -0.8 + 0.0j]],
+        dtype=np.complex64,
+    )
+    accuracy = jax.lax.AccuracyMode.HIGHEST
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 7: 2D complex128 array, accuracy=None
-    x = np.array([[1.0 + 2.0j, -0.5 - 0.5j], [0.0 + 0.0j, 10.0 + 0.0j]], dtype=np.complex128)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D array complex128
+    x = np.array(
+        [-0.5 + 1.0j, 0.0 + 0.0j, 1.5 - 2.0j, -0.99 + 0.01j],
+        dtype=np.complex128,
+    )
+    accuracy = jax.lax.AccuracyMode.DEFAULT
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 8: 3D float32 array containing all zeros, accuracy=None
-    x = np.zeros((2, 3, 4), dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array float32
+    x = np.random.uniform(low=0.0, high=10.0, size=(2, 2, 3, 3)).astype(
+        np.float32
+    )
+    accuracy = jax.lax.AccuracyMode.HIGHEST
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 9: 2D float32 array with values close to -1, accuracy=None
-    x = np.array([[-0.9, -0.99], [-0.999, -0.9999]], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array float64 strictly negative in (-0.99, -0.01)
+    x = np.linspace(-0.99, -0.01, num=12, dtype=np.float64).reshape((3, 4))
+    accuracy = jax.lax.AccuracyMode.DEFAULT
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 10: 1D float64 array with extremely small values, accuracy=None
-    x = np.array([1e-30, 1e-20, 1e-16], dtype=np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D array float32 with large positive values
+    x = np.array([10.0, 100.0, 1000.0, 10000.0, 1e6], dtype=np.float32)
+    accuracy = jax.lax.AccuracyMode.HIGHEST
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
+
+    # Input 11: 3D array complex64
+    real_part = np.random.uniform(-0.5, 0.5, size=(2, 2, 2)).astype(np.float32)
+    imag_part = np.random.uniform(-0.5, 0.5, size=(2, 2, 2)).astype(np.float32)
+    x = real_part + 1j * imag_part
+    accuracy = jax.lax.AccuracyMode.DEFAULT
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.log1p"] = log1p_inputs()
 

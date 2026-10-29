@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# mode must be a valid quantization configuration mode (Rule 37)
+# global_scale must not have int8 or int16 data types (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 34), v["arg1_value"] == 35), v["arg1_value"] == 37)) if n else
-          Or(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 34), v["arg1_value"] == 35), v["arg1_value"] == 37))
+    s.add(Not(And(v["arg1_dtype"] != 1, v["arg1_dtype"] != 2)) if n else
+          And(v["arg1_dtype"] != 1, v["arg1_dtype"] != 2))
 )
 
 def rule_37_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_37_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 37
-        rule_37(solver, {'arg1_value': arg1_value})
+        rule_37(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_37(solver, {'arg1_value': arg1['value']}, neg)
+        rule_37(solver, {'arg1_dtype': arg1['dtype']}, neg)

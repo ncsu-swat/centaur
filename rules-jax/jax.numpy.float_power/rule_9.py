@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for scalar integer inputs, if base is zero, the exponent must be non-negative (Rule 9)
+# Zero base requires a strictly positive exponent for integer inputs (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 0, v["arg2_value"] >= 0, True)) if n else
-          If(v["arg1_value"] == 0, v["arg2_value"] >= 0, True))
+    s.add(Not(If(v["arg1_value"] == 0, v["arg2_value"] > 0, True)) if n else
+          If(v["arg1_value"] == 0, v["arg2_value"] > 0, True))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input is a list of floats, its length must be bounded and elements must be within safe limits (Rule 52)
+# tensor data type is boolean or complex (Rule 52)
 
 rule_52 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] <= 5000, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -1000000.0, Select(v["arg1_values"], i) <= 1000000.0)) for i in range(6)]))) if n else
-          And(v["arg1_length"] <= 5000, And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -1000000.0, Select(v["arg1_values"], i) <= 1000000.0)) for i in range(6)])))
+    s.add(Not(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] >= 9)) if n else
+          Or(v["arg1_dtype"] == 0, v["arg1_dtype"] >= 9))
 )
 
 def rule_52_func(arg1, solver=None, neg=False):
@@ -19,23 +19,20 @@ def rule_52_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 52
-        rule_52(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_52(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_52(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_52(solver, {'arg1_dtype': arg1['dtype']}, neg)

@@ -4,57 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asin_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D tensor (scalar array), float32
+    # Input 1: 0D scalar float32 within [-1, 1]
     x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D tensor, float32, positive values
-    x = np.array([0.1, 0.5, 0.9], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array float32
+    x = np.linspace(-1.0, 1.0, num=10, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D tensor, float64, negative values
-    x = np.array([-0.1, -0.5, -0.9], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array float64
+    x = np.random.uniform(-1.0, 1.0, size=(3, 4)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 2D tensor, float32, mix of values including 0 and boundaries
-    x = np.array([[-1.0, -0.5, 0.0], [0.0, 0.5, 1.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array float16
+    x = np.random.uniform(-0.9, 0.9, size=(2, 3, 2)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D tensor, float64, random values in [-1, 1]
-    x = np.random.uniform(-1.0, 1.0, size=(2, 3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 4D array float32
+    x = np.random.uniform(-0.5, 0.5, size=(2, 2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D tensor, int32 (containing -1, 0, 1)
+    # Input 6: 1D integer array with valid boundary values
     x = np.array([-1, 0, 1], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D tensor, complex64, testing complex support
-    x = (np.random.uniform(-1, 1, size=(2, 2)) + 1j * np.random.uniform(-1, 1, size=(2, 2))).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D complex64 array
+    x = (
+        np.random.uniform(-1.0, 1.0, size=(2, 3))
+        + 1j * np.random.uniform(-1.0, 1.0, size=(2, 3))
+    ).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D tensor, float32, small values
-    x = np.random.uniform(-0.1, 0.1, size=(1, 2, 2, 3)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D complex128 array
+    x = np.array([-0.5 + 0.5j, 0.0 + 0.0j, 0.5 - 0.5j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D tensor, float16
-    x = np.array([-0.75, 0.25, 0.75], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D tensor, complex128
-    x = (np.random.uniform(-2, 2, size=(3, 3)) + 1j * np.random.uniform(-2, 2, size=(3, 3))).astype(np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 2D array strictly negative values in [-1, 0]
+    x = np.random.uniform(-1.0, 0.0, size=(4, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: 1D tensor with dense grid
-    x = np.linspace(-1.0, 1.0, 20, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: 1D boolean array (casts naturally)
+    x = np.array([True, False, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asin"] = asin_inputs()
 

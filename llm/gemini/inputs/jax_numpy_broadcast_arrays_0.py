@@ -4,63 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def broadcast_arrays_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D integer array
-    a = np.array([1, 2, -3], dtype=np.int32)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalar float32
+    a = np.array(3.14, dtype=np.float32)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
-    # Input 2: 2D float32 array
-    a = np.random.randn(2, 3).astype(np.float32)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D int32 array with positive and negative values
+    a = np.array([-5, 0, 10, -20], dtype=np.int32)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
-    # Input 3: 3D float64 array
-    a = np.random.randn(3, 1, 4).astype(np.float64)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float64 array
+    a = np.array([[1.0, -2.5], [3.5, 4.0]], dtype=np.float64)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
-    # Input 4: Boolean array
-    a = np.array([[True, False], [False, True]], dtype=np.bool_)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D int64 array
+    a = np.ones((2, 3, 4), dtype=np.int64)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
-    # Input 5: Scalar
-    a = np.array(5, dtype=np.int32)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 4D float32 array
+    a = np.random.randn(2, 1, 3, 4).astype(np.float32)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
-    # Input 6: 1D complex array
-    a = np.array([1 + 2j, -3 - 4j], dtype=np.complex64)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D boolean array
+    a = np.array([True, False, True, False], dtype=bool)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
-    # Input 7: Empty/zero-sized 2D array
+    # Input 7: 2D complex64 array
+    a = np.array([[1 + 2j, -3j], [4 + 0j, 5 - 1j]], dtype=np.complex64)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
+
+    # Input 8: 0D int16 scalar with negative value
+    a = np.array(-42, dtype=np.int16)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
+
+    # Input 9: 5D uint8 array
+    a = np.zeros((1, 2, 1, 3, 1), dtype=np.uint8)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
+
+    # Input 10: 2D empty array (zero dimension)
     a = np.empty((0, 5), dtype=np.float32)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
-    # Input 8: High-dimensional float32 array
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Large 2D integer array with negative values
-    a = np.array([[-10, 20, -30], [40, -50, 60]], dtype=np.int32)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D float32 array
-    a = np.array([-1.5, 2.5, -3.5], dtype=np.float32)
-    input_dict = {"args": a}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 1D float16 array
+    a = np.array([-1.5, 2.5, -3.5], dtype=np.float16)
+    list_of_inputs.append({"args": copy.deepcopy(a)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.broadcast_arrays"] = broadcast_arrays_inputs()
 

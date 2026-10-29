@@ -4,57 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def log1p_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero
+    # Input 1: zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Small positive float
-    input_dict = {"x": 1e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Standard positive float
+    # Input 2: positive unit
     input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative float greater than -1
+    # Input 3: small positive value
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: very small positive value
+    input_dict = {"x": 1e-15}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: negative value in valid range (-1, 0)
     input_dict = {"x": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Float very close to -1
+    # Input 6: negative value close to -1
     input_dict = {"x": -0.9999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large float
-    input_dict = {"x": 1000.0}
+    # Input 7: small negative value
+    input_dict = {"x": -1e-5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Very small positive float
-    input_dict = {"x": 1e-20}
+    # Input 8: moderate positive value
+    input_dict = {"x": 10.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Float representation of e - 1
-    input_dict = {"x": 1.718281828459045}
+    # Input 9: large positive value
+    input_dict = {"x": 1e8}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Extremely large float
-    input_dict = {"x": 1e15}
+    # Input 10: value yielding 1 (e - 1)
+    input_dict = {"x": float(np.e - 1.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Another negative float
-    input_dict = {"x": -0.123456}
+    # Input 11: fractional float
+    input_dict = {"x": 0.25}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: A standard float value
-    input_dict = {"x": 2.5}
+    # Input 12: another positive float
+    input_dict = {"x": 3.141592653589793}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.log1p_2"] = log1p_inputs()
 

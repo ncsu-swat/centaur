@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# valid axis dimension based on input tensor rank (Rule 23)
+# for a 4-dimensional tensor, the reduction axis must be between -4 and 3 (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], v["arg1_ndim"] >= 0 - v["arg2_value"])) if n else
-          If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], v["arg1_ndim"] >= 0 - v["arg2_value"]))
+    s.add(Not(If(v["arg1_ndim"] == 4, And(-4 <= v["arg2_value"], v["arg2_value"] <= 3), True)) if n else
+          If(v["arg1_ndim"] == 4, And(-4 <= v["arg2_value"], v["arg2_value"] <= 3), True))
 )
 
 def rule_23_func(arg1, arg2, solver=None, neg=False):

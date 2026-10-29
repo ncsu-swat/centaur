@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def imag_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive float
-    input_dict = {"val": 3.14}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Simple negative float
-    input_dict = {"val": -2.718}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero float
+    # Input 1: Zero
     input_dict = {"val": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero float
-    input_dict = {"val": -0.0}
+    # Input 2: Positive standard float
+    input_dict = {"val": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large float
-    input_dict = {"val": 1.23e9}
+    # Input 3: Negative float
+    input_dict = {"val": -1.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small float
-    input_dict = {"val": 4.56e-9}
+    # Input 4: Small positive float
+    input_dict = {"val": 1e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Infinity
-    input_dict = {"val": float('inf')}
+    # Input 5: Small negative float
+    input_dict = {"val": -1e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative Infinity
-    input_dict = {"val": float('-inf')}
+    # Input 6: Large float
+    input_dict = {"val": 1e12}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: NaN
-    input_dict = {"val": float('nan')}
+    # Input 7: Pi float
+    input_dict = {"val": 3.141592653589793}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy float32 scalar
-    input_dict = {"val": np.float32(5.5)}
+    # Input 8: Negative large float
+    input_dict = {"val": -1e12}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: numpy float64 scalar
-    input_dict = {"val": np.float64(-10.123)}
+    # Input 9: Positive infinity
+    input_dict = {"val": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Negative infinity
+    input_dict = {"val": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: NaN
+    input_dict = {"val": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.imag_3"] = imag_inputs()
 

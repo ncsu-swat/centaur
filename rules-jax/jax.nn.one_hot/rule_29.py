@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the output dtype should be a standard float or complex type (Rule 29)
+# output dtype restricted to standard IEEE floating-point types float16, float32, or float64 (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(And(6 <= v["arg1_value"], v["arg1_value"] <= 10)) if n else
-          And(6 <= v["arg1_value"], v["arg1_value"] <= 10))
+    s.add(Not(Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8)) if n else
+          Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8))
 )
 
 def rule_29_func(arg1, solver=None, neg=False):

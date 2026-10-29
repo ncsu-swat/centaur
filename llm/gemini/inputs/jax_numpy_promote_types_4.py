@@ -4,83 +4,34 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def promote_types_inputs():
     list_of_inputs = []
 
-    # Input 1: int32 string and float32 dtype
-    input_dict = {
-        "a": "int32",
-        "b": np.dtype("float32")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    test_cases = [
+        ("int32", np.dtype(np.float32)),
+        ("float16", np.dtype(np.float32)),
+        ("bool", np.dtype(np.int8)),
+        ("uint8", np.dtype(np.int32)),
+        ("int64", np.dtype(np.float64)),
+        ("float32", np.dtype(np.complex64)),
+        ("complex64", np.dtype(np.float64)),
+        ("uint16", np.dtype(np.uint32)),
+        ("int16", np.dtype(np.float16)),
+        ("bool", np.dtype(np.bool_)),
+        ("int8", np.dtype(np.uint8)),
+        ("float64", np.dtype(np.complex128)),
+    ]
 
-    # Input 2: float16 string and float64 dtype
-    input_dict = {
-        "a": "float16",
-        "b": np.dtype("float64")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: uint8 string and int16 dtype
-    input_dict = {
-        "a": "uint8",
-        "b": np.dtype("int16")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: bool string and int32 dtype
-    input_dict = {
-        "a": "bool",
-        "b": np.dtype("int32")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: complex64 string and float32 dtype
-    input_dict = {
-        "a": "complex64",
-        "b": np.dtype("float32")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: float32 string and complex128 dtype
-    input_dict = {
-        "a": "float32",
-        "b": np.dtype("complex128")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: int64 string and uint32 dtype
-    input_dict = {
-        "a": "int64",
-        "b": np.dtype("uint32")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: uint16 string and float16 dtype
-    input_dict = {
-        "a": "uint16",
-        "b": np.dtype("float16")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: int8 string and bool dtype
-    input_dict = {
-        "a": "int8",
-        "b": np.dtype("bool")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: float64 string and int8 dtype
-    input_dict = {
-        "a": "float64",
-        "b": np.dtype("int8")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    for a, b in test_cases:
+        input_dict = {"a": a, "b": b}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.promote_types_4"] = promote_types_inputs()
 

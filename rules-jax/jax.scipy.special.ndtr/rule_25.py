@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor must be of floating-point type: float16, float32, or float64 (Rule 25)
+# tensor x dtype must be float32 or float64 (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)) if n else
-          And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8))
+    s.add(Not((v["arg1_dtype"] - 7) * (v["arg1_dtype"] - 8) == 0) if n else
+          (v["arg1_dtype"] - 7) * (v["arg1_dtype"] - 8) == 0)
 )
 
 def rule_25_func(arg1, solver=None, neg=False):

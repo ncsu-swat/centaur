@@ -4,53 +4,60 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def erf_inv_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D tensor (scalar), positive float32
+    # Input 1: 1D array with values in (-1, 1) float32
+    x = np.array([-0.8, -0.5, 0.0, 0.5, 0.8], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 2: 2D array float64
+    x = np.array([[-0.9, -0.1], [0.1, 0.9]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 3: Scalar (0D array) float32
     x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D tensor, mixed values in (-1, 1), float32
-    x = np.array([-0.8, -0.3, 0.0, 0.3, 0.8], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array float32 with zeros and small values
+    x = np.zeros((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D tensor, float64, random values in (-1, 1)
-    x = np.random.uniform(-0.99, 0.99, size=(3, 3)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D array float16
+    x = np.array([-0.75, -0.25, 0.25, 0.75], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D tensor, float32, positive values
-    x = np.random.uniform(0.1, 0.9, size=(2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Random uniform in (-1, 1) 4D array float32
+    x = np.random.uniform(-0.99, 0.99, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D tensor, float64, values close to boundary
-    x = np.array([-0.999, -0.99, 0.99, 0.999], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Single element 1D array with negative value
+    x = np.array([-0.999], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D tensor, float32, values close to 0
-    x = np.random.uniform(-0.1, 0.1, size=(2, 1, 3, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 2D array with boundary values -1.0 and 1.0
+    x = np.array([[-1.0, 0.0], [0.0, 1.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D tensor, shape (1, 5), float32
-    x = np.array([[-0.5, -0.25, 0.0, 0.25, 0.5]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 5D tensor, float32, shape (2, 2, 1, 2, 2)
-    x = np.random.uniform(-0.7, 0.7, size=(2, 2, 1, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Non-contiguous slice of array float64
+    full_arr = np.linspace(-0.9, 0.9, 20, dtype=np.float64)
+    x = full_arr[::2]
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D tensor, single element, negative float32
-    x = np.array([-0.75], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 10: 2D tensor, float32, random values
-    x = np.random.uniform(-0.95, 0.95, size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: 5D array float32
+    x = np.full((1, 2, 1, 3, 1), 0.3, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.erf_inv_1"] = erf_inv_inputs()
 

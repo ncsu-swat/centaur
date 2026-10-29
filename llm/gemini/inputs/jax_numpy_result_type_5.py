@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def result_type_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
-    input_dict = {"args": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: negative float
-    input_dict = {"args": -2.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero
+    # Input 1: zero float
     input_dict = {"args": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: large float
-    input_dict = {"args": 1e10}
+    # Input 2: positive unit float
+    input_dict = {"args": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: small negative float
-    input_dict = {"args": -1e-10}
+    # Input 3: negative float
+    input_dict = {"args": -1.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: pi approximation
-    input_dict = {"args": 3.14159}
+    # Input 4: positive floating point constant (pi)
+    input_dict = {"args": 3.141592653589793}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: infinity
-    input_dict = {"args": float('inf')}
+    # Input 5: negative floating point constant (e)
+    input_dict = {"args": -2.718281828459045}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: NaN
-    input_dict = {"args": float('nan')}
+    # Input 6: small positive magnitude float
+    input_dict = {"args": 1e-12}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: negative zero
+    # Input 7: large positive magnitude float
+    input_dict = {"args": 1e15}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: negative large float
+    input_dict = {"args": -1e20}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: positive infinity
+    input_dict = {"args": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: negative infinity
+    input_dict = {"args": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: NaN value
+    input_dict = {"args": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: negative zero
     input_dict = {"args": -0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: small scientific notation float
-    input_dict = {"args": 1.234567e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.result_type_5"] = result_type_inputs()
 

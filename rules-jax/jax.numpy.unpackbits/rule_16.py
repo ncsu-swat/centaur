@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If axis is non-negative, the tensor must have dimensions greater than the axis value (Rule 16)
+# axis for a 2-dimensional tensor must be within valid index set (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], True)) if n else
-          If(v["arg2_value"] >= 0, v["arg1_ndim"] > v["arg2_value"], True))
+    s.add(Not(If(v["arg1_ndim"] == 2, Or(Or(Or(v["arg2_value"] == 0, v["arg2_value"] == 1), v["arg2_value"] == -1), v["arg2_value"] == -2), True)) if n else
+          If(v["arg1_ndim"] == 2, Or(Or(Or(v["arg2_value"] == 0, v["arg2_value"] == 1), v["arg2_value"] == -1), v["arg2_value"] == -2), True))
 )
 
 def rule_16_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the specified output dtype cannot be a string (Rule 40)
+# output dtype is a standard 32-bit data type (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] <= 10) if n else
-          v["arg1_value"] <= 10)
+    s.add(Not(Or(Or(v["arg1_value"] == 3, v["arg1_value"] == 7), v["arg1_value"] == 9)) if n else
+          Or(Or(v["arg1_value"] == 3, v["arg1_value"] == 7), v["arg1_value"] == 9))
 )
 
 def rule_40_func(arg1, solver=None, neg=False):

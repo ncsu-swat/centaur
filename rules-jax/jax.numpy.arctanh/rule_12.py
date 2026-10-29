@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The first element of a tuple of floats must be within the open interval (-1, 1 (Rule 12)
+# real-valued tensor elements strictly within (-1, 1 (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_length"] > 0, Select(v["arg1_values"], 0) > -1), Select(v["arg1_values"], 0) < 1)) if n else
-          And(And(v["arg1_length"] > 0, Select(v["arg1_values"], 0) > -1), Select(v["arg1_values"], 0) < 1))
+    s.add(Not(And(Select(v["arg1_range"], 0) > -1, Select(v["arg1_range"], 1) < 1)) if n else
+          And(Select(v["arg1_range"], 0) > -1, Select(v["arg1_range"], 1) < 1))
 )
 
 def rule_12_func(arg1, solver=None, neg=False):
@@ -19,23 +19,21 @@ def rule_12_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 12
-        rule_12(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_12(solver, {'arg1_range': arg1_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_12(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_12(solver, {'arg1_range': arg1['range']}, neg)

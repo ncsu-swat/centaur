@@ -4,84 +4,57 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
+import numpy as np
 
-# Monkeypatch JAX to allow tuple inputs in both eager and traced modes
-for module_name in ['jax._src.numpy.util', 'jax._src.numpy.lax_numpy']:
-    try:
-        import sys
-        __import__(module_name)
-        module = sys.modules[module_name]
-        if hasattr(module, 'check_arraylike'):
-            original_check = module.check_arraylike
-            def make_patched(orig):
-                def patched(fun_name, *args):
-                    args_to_check = [arg for arg in args if not isinstance(arg, tuple)]
-                    if args_to_check:
-                        orig(fun_name, *args_to_check)
-                return patched
-            module.check_arraylike = make_patched(original_check)
-    except Exception:
-        pass
-
-try:
-    import jax._src.numpy.util as jax_util
-    original_arraylike_asarray = jax_util._arraylike_asarray
-    def patched_arraylike_asarray(x):
-        if isinstance(x, tuple):
-            return jnp.array(x)
-        return original_arraylike_asarray(x)
-    jax_util._arraylike_asarray = patched_arraylike_asarray
-except Exception:
-    pass
 
 def square_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D tuple of integers
-    input_dict = {"x": (1, 2, 3, 4)}
+    # Input 1: 1D array of integers
+    input_dict = {"x": np.array([1, -2, 3, -4, 5], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Tuple with negative integers
-    input_dict = {"x": (-5, -10, 0, -2)}
+    # Input 2: 1D array of floats
+    input_dict = {"x": np.array([-2.5, 0.0, 3.5, -1.2], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Tuple of floats
-    input_dict = {"x": (1.5, -2.3, 0.0, 4.7)}
+    # Input 3: 2D array of integers
+    input_dict = {"x": np.array([[1, -2], [3, -4]], dtype=np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D nested tuple
-    input_dict = {"x": ((1, 2), (3, 4))}
+    # Input 4: 1D array of complex numbers
+    input_dict = {"x": np.array([1 + 2j, 3 - 4j, -1j, 0 + 0j], dtype=np.complex64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Tuple of complex numbers
-    input_dict = {"x": (1 + 2j, -3j, 2 - 1j)}
+    # Input 5: 1D array of booleans
+    input_dict = {"x": np.array([True, False, True, False], dtype=np.bool_)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Single-element tuple
-    input_dict = {"x": (42,)}
+    # Input 6: 1D single-element array
+    input_dict = {"x": np.array([42.0], dtype=np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Tuple of booleans
-    input_dict = {"x": (True, False, True)}
+    # Input 7: Empty 1D array
+    input_dict = {"x": np.array([], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D nested tuple
-    input_dict = {"x": (((1, 2), (3, 4)), ((5, 6), (7, 8)))}
+    # Input 8: 3D array of floats
+    input_dict = {"x": np.ones((2, 3, 4), dtype=np.float32) * -1.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Tuple with larger float values
-    input_dict = {"x": (1e2, -5e3, 2.5e-1)}
+    # Input 9: Large magnitude integers
+    input_dict = {"x": np.array([-1000, 2000, -3000, 4000], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Nested 2D tuple with mixed types
-    input_dict = {"x": ((1.0, 2), (3.5, -4))}
+    # Input 10: Special float values (inf, -inf, nan)
+    input_dict = {
+        "x": np.array([np.inf, -np.inf, np.nan, 1e10], dtype=np.float32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.square_5"] = square_inputs()
 

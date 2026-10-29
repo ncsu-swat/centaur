@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# elements of a list of integers must be in a safe range to prevent overflow (Rule 15)
+# single-precision tensor values should stay within overflow bounds (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -700, Select(v["arg1_values"], i) <= 700)) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -700, Select(v["arg1_values"], i) <= 700)) for i in range(6)]))
+    s.add(Not(If(v["arg1_dtype"] == 7, And(Select(v["arg1_range"], 0) >= -88, Select(v["arg1_range"], 1) <= 88), True)) if n else
+          If(v["arg1_dtype"] == 7, And(Select(v["arg1_range"], 0) >= -88, Select(v["arg1_range"], 1) <= 88), True))
 )
 
 def rule_15_func(arg1, solver=None, neg=False):
@@ -19,23 +19,23 @@ def rule_15_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_dtype = Int('arg1_dtype')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_15(solver, {'arg1_range': arg1_range, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_15(solver, {'arg1_range': arg1['range'], 'arg1_dtype': arg1['dtype']}, neg)

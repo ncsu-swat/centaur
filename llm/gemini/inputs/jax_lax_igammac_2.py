@@ -4,83 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def igammac_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive floats, float32
-    input_dict = {
-        "a": np.float32(1.0),
-        "x": np.float32(1.0)
-    }
+    # Input 1
+    input_dict = {"a": 1.0, "x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Non-integer floats, float32
-    input_dict = {
-        "a": np.float32(0.5),
-        "x": np.float32(1.5)
-    }
+    # Input 2
+    input_dict = {"a": 0.5, "x": 2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Larger a, smaller x, float64
-    input_dict = {
-        "a": np.float64(5.0),
-        "x": np.float64(2.0)
-    }
+    # Input 3
+    input_dict = {"a": 2.0, "x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Small values, float32
-    input_dict = {
-        "a": np.float32(0.1),
-        "x": np.float32(0.1)
-    }
+    # Input 4
+    input_dict = {"a": 5.0, "x": 3.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: x is zero, float64
-    input_dict = {
-        "a": np.float64(2.5),
-        "x": np.float64(0.0)
-    }
+    # Input 5
+    input_dict = {"a": 10.0, "x": 12.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large values, float64
-    input_dict = {
-        "a": np.float64(10.0),
-        "x": np.float64(15.0)
-    }
+    # Input 6
+    input_dict = {"a": 0.1, "x": 0.1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Very small a, float32
-    input_dict = {
-        "a": np.float32(0.01),
-        "x": np.float32(2.0)
-    }
+    # Input 7
+    input_dict = {"a": 100.0, "x": 90.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: High precision large float64
-    input_dict = {
-        "a": np.float64(50.0),
-        "x": np.float64(50.0)
-    }
+    # Input 8
+    input_dict = {"a": 3.0, "x": 1.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large x, float32
-    input_dict = {
-        "a": np.float32(1.5),
-        "x": np.float32(100.0)
-    }
+    # Input 9
+    input_dict = {"a": 0.01, "x": 5.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Typical distribution parameters, float64
-    input_dict = {
-        "a": np.float64(3.3),
-        "x": np.float64(4.4)
-    }
+    # Input 10
+    input_dict = {"a": 2.5, "x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11
+    input_dict = {"a": 15.2, "x": 14.8}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.igammac_2"] = igammac_inputs()
 

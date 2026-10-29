@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input integer x must be within the standard 32-bit signed integer range (Rule 52)
+# scalar float angle is strictly within two full periods (Rule 52)
 
 rule_52 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -2147483648, v["arg1_value"] <= 2147483647)) if n else
-          And(v["arg1_value"] >= -2147483648, v["arg1_value"] <= 2147483647))
+    s.add(Not(And(v["arg1_value"] > -6.28, v["arg1_value"] < 6.28)) if n else
+          And(v["arg1_value"] > -6.28, v["arg1_value"] < 6.28))
 )
 
 def rule_52_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_52_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 52
         rule_52(solver, {'arg1_value': arg1_value})

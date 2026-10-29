@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the function is an activation function, the input tensor must have a floating-point data type (Rule 34)
+# integer arrays support discrete reduction functions (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(If(Or(Or(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 11), v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14), Or(Or(v["arg2_dtype"] == 6, v["arg2_dtype"] == 7), v["arg2_dtype"] == 8), True)) if n else
-          If(Or(Or(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 11), v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14), Or(Or(v["arg2_dtype"] == 6, v["arg2_dtype"] == 7), v["arg2_dtype"] == 8), True))
+    s.add(Not(If(And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), True)) if n else
+          If(And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), Or(Or(v["arg1_value"] == 6, v["arg1_value"] == 7), v["arg1_value"] == 8), True))
 )
 
 def rule_34_func(arg1, arg2, solver=None, neg=False):

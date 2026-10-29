@@ -4,61 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def floor_inputs():
     list_of_inputs = []
 
     # Input 1: Standard positive float
-    input_dict = {"x": 3.5}
+    input_dict = {"x": 3.7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard negative float
-    input_dict = {"x": -3.5}
+    # Input 2: Negative float
+    input_dict = {"x": -2.3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero
+    # Input 3: Zero float
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero
+    # Input 4: Negative zero float
     input_dict = {"x": -0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive float
-    input_dict = {"x": 123456.789}
+    # Input 5: Exact integer as float
+    input_dict = {"x": 5.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large negative float
+    # Input 6: Exact negative integer as float
+    input_dict = {"x": -4.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Small positive float
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Small negative float
+    input_dict = {"x": -1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large positive float
+    input_dict = {"x": 1234567.89}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Large negative float
     input_dict = {"x": -987654.321}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small positive float close to zero
-    input_dict = {"x": 1e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Small negative float close to zero
-    input_dict = {"x": -1e-5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Integer-valued float
-    input_dict = {"x": 42.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Negative integer-valued float
-    input_dict = {"x": -100.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
     # Input 11: Positive infinity
-    input_dict = {"x": float('inf')}
+    input_dict = {"x": float("inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 12: Negative infinity
-    input_dict = {"x": float('-inf')}
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 13: NaN
+    input_dict = {"x": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.floor_3"] = floor_inputs()
 

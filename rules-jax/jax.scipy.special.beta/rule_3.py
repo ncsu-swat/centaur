@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensors must have the same data type (Rule 3)
+# inputs must have floating-point dtypes (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] == v["arg2_dtype"]) if n else
-          v["arg1_dtype"] == v["arg2_dtype"])
+    s.add(Not(And(And(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), v["arg2_dtype"] >= 6), v["arg2_dtype"] <= 8)) if n else
+          And(And(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), v["arg2_dtype"] >= 6), v["arg2_dtype"] <= 8))
 )
 
 def rule_3_func(arg1, arg2, solver=None, neg=False):

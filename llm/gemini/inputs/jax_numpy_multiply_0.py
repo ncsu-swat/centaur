@@ -4,68 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def multiply_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 arrays of same size
-    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    y = np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 1: 1D float32 arrays, identical shape, with negative values
+    x = np.array([-2.5, 0.0, 3.1, -4.8], dtype=np.float32)
+    y = np.array([1.5, -2.0, 4.0, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D float32 arrays of same shape with negative values
-    x = np.array([[-1.0, 2.0], [-3.0, 4.0]], dtype=np.float32)
-    y = np.array([[5.0, -6.0], [7.0, -8.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 2: 2D integer arrays
+    x = np.array([[1, -2, 3], [4, 5, -6]], dtype=np.int32)
+    y = np.array([[10, 20, 30], [-1, -2, -3]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: Broadcasting 1D array to 2D array
-    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    y = np.array([10.0, 20.0, 30.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 3: Broadcasting 2D (4, 1) and (1, 5)
+    x = np.arange(4, dtype=np.float64).reshape(4, 1)
+    y = np.arange(5, dtype=np.float64).reshape(1, 5)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: Broadcasting with compatible shapes (1, 3) and (3, 1)
-    x = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
-    y = np.array([[10.0], [20.0], [30.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 4: 0D scalar arrays
+    x = np.array(7.5, dtype=np.float32)
+    y = np.array(-3.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: High dimensional arrays (4D and 4D)
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    y = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 5: 0D scalar array and 3D array (broadcasting)
+    x = np.array(-2, dtype=np.int64)
+    y = np.ones((2, 3, 4), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: Integer arrays (int32)
-    x = np.array([1, -2, 3, -4], dtype=np.int32)
-    y = np.array([10, 10, 10, 10], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 6: 3D float arrays with broadcasting (2, 1, 4) and (1, 3, 4)
+    x = np.random.randn(2, 1, 4).astype(np.float32)
+    y = np.random.randn(1, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: Float64 arrays for precision
-    x = np.random.randn(5, 5).astype(np.float64)
-    y = np.random.randn(5, 5).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 7: Complex arrays
+    x = np.array([1.0 + 2.0j, -3.0 - 4.0j], dtype=np.complex64)
+    y = np.array([2.0 - 1.0j, 0.5 + 1.5j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: Boolean arrays (logical element-wise multiplication)
-    x = np.array([True, False, True, False], dtype=np.bool_)
-    y = np.array([True, True, False, False], dtype=np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 8: Boolean arrays
+    x = np.array([[True, False], [True, True]], dtype=np.bool_)
+    y = np.array([[False, True], [True, False]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Scalar-like 0D arrays (represented as 0D numpy arrays)
-    x = np.array(5.5, dtype=np.float32)
-    y = np.array(-2.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 9: 4D array and 1D array broadcasting
+    x = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    y = np.random.randn(5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: Complex numbers multiplication
-    x = np.array([1 + 2j, 3 + 4j], dtype=np.complex64)
-    y = np.array([5 + 6j, 7 + 8j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 10: Unsigned integers with 2D shapes
+    x = np.array([[10, 20], [30, 40]], dtype=np.uint8)
+    y = np.array([[2, 3], [4, 5]], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 11: Large dimensions with broadcasting
-    x = np.random.randn(1, 100, 100).astype(np.float32)
-    y = np.random.randn(5, 1, 100).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 11: Empty array with matching broadcastable shape
+    x = np.empty((0, 5), dtype=np.float32)
+    y = np.empty((1, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 12: Float64 array with special values (inf, nan)
+    x = np.array([np.nan, np.inf, -np.inf, 1.0], dtype=np.float64)
+    y = np.array([0.0, 2.0, -1.0, 5.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.multiply"] = multiply_inputs()
 

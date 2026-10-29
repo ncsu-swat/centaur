@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The window size M must be non-negative when beta is a float or integer (Rule 24)
+# window size M must be positive and beta as union of float or int must be non-negative (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 0, v["arg2_value"] + 1 > v["arg2_value"])) if n else
-          And(v["arg1_value"] >= 0, v["arg2_value"] + 1 > v["arg2_value"]))
+    s.add(Not(And(v["arg1_value"] >= 1, v["arg2_value"] >= 0)) if n else
+          And(v["arg1_value"] >= 1, v["arg2_value"] >= 0))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
-        if not (isinstance(arg2, (float, np.floating)) or (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool))):
+        if not ((isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)) or isinstance(arg2, (float, np.floating))):
             return False
 
         # Variable declarations

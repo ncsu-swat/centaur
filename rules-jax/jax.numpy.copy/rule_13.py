@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Min value of the tensor is less than or equal to its max value (Rule 13)
+# tensor rank must be non-negative and within standard dimensional limits (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1)) if n else
-          Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1))
+    s.add(Not(And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 32)) if n else
+          And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 32))
 )
 
 def rule_13_func(arg1, solver=None, neg=False):
@@ -24,16 +24,15 @@ def rule_13_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 13
-        rule_13(solver, {'arg1_range': arg1_range})
+        rule_13(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_13(solver, {'arg1_range': arg1['range']}, neg)
+        rule_13(solver, {'arg1_ndim': arg1['ndim']}, neg)

@@ -4,57 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def sign_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    input_dict = {"x": 5.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Standard negative float
-    input_dict = {"x": -3.14}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero float
+    # Input 1: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero float
+    # Input 2: Positive float
+    input_dict = {"x": 3.14159}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Negative float
+    input_dict = {"x": -2.71828}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Negative zero
     input_dict = {"x": -0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Very large positive float
-    input_dict = {"x": 1e15}
+    # Input 5: Very small positive float
+    input_dict = {"x": 1e-12}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 6: Very large negative float
-    input_dict = {"x": -1e15}
+    input_dict = {"x": -1e20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Very small positive float
-    input_dict = {"x": 1e-15}
+    # Input 7: Positive infinity
+    input_dict = {"x": float("inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very small negative float
-    input_dict = {"x": -1e-15}
+    # Input 8: Negative infinity
+    input_dict = {"x": float("-inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Positive infinity
-    input_dict = {"x": float('inf')}
+    # Input 9: NaN
+    input_dict = {"x": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative infinity
-    input_dict = {"x": float('-inf')}
+    # Input 10: Positive integer-like float
+    input_dict = {"x": 42.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: NaN
-    input_dict = {"x": float('nan')}
+    # Input 11: Negative integer-like float
+    input_dict = {"x": -100.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sign_3"] = sign_inputs()
 

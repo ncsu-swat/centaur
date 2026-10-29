@@ -4,105 +4,119 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_gradient_inputs():
+
+def gradient_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, small positive spacing
+    # Input 1: 1D array, axis (0,), float32
+    f = np.array([1.0, 2.0, 4.0, 7.0, 11.0], dtype=np.float32)
     input_dict = {
-        'f': np.linspace(-5.0, 5.0, 10, dtype=np.float32),
-        'varargs': 1.0,
-        'axis': (0,),
-        'edge_order': None
+        "f": f,
+        "varargs": 1.0,
+        "axis": (0,),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, float32, fractional spacing
+    # Input 2: 2D array, axis (0,), float64
+    f = np.array(
+        [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], dtype=np.float64
+    )
     input_dict = {
-        'f': np.random.randn(5, 5).astype(np.float32),
-        'varargs': 0.5,
-        'axis': (0,),
-        'edge_order': None
+        "f": f,
+        "varargs": 0.5,
+        "axis": (0,),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, float64, larger spacing, different axis
+    # Input 3: 2D array, axis (1,), float32
+    f = np.random.randn(4, 5).astype(np.float32)
     input_dict = {
-        'f': np.random.randn(4, 4).astype(np.float64),
-        'varargs': 2.0,
-        'axis': (1,),
-        'edge_order': None
+        "f": f,
+        "varargs": 2.0,
+        "axis": (1,),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, float32, multiple axes
+    # Input 4: 2D array, multiple axes (0, 1), float64
+    f = np.random.randn(6, 6).astype(np.float64)
     input_dict = {
-        'f': np.random.randn(3, 3, 3).astype(np.float32),
-        'varargs': 1.5,
-        'axis': (0, 1),
-        'edge_order': None
+        "f": f,
+        "varargs": 1.0,
+        "axis": (0, 1),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D array, float64, fine-grained spacing
+    # Input 5: 3D array, non-consecutive axes (0, 2), float32
+    f = np.random.randn(4, 3, 5).astype(np.float32)
     input_dict = {
-        'f': np.linspace(0.0, 1.0, 20, dtype=np.float64),
-        'varargs': 0.1,
-        'axis': (0,),
-        'edge_order': None
+        "f": f,
+        "varargs": 0.25,
+        "axis": (0, 2),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array, float32, multiple axes
+    # Input 6: 3D array, axis (2,), float64
+    f = np.random.randn(3, 4, 6).astype(np.float64)
     input_dict = {
-        'f': np.random.randn(6, 6).astype(np.float32),
-        'varargs': 1.0,
-        'axis': (0, 1),
-        'edge_order': None
+        "f": f,
+        "varargs": 1.5,
+        "axis": (2,),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D array, float64, specific axis
+    # Input 7: 3D array, negative values, float32
+    f = -np.abs(np.random.randn(5, 5, 5)).astype(np.float32)
     input_dict = {
-        'f': np.random.randn(4, 4, 4).astype(np.float64),
-        'varargs': 0.25,
-        'axis': (2,),
-        'edge_order': None
+        "f": f,
+        "varargs": 0.1,
+        "axis": (1,),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D array, float32, high-dimensional gradient
+    # Input 8: 4D array, axes (0, 1, 2), float32
+    f = np.random.randn(3, 4, 3, 4).astype(np.float32)
     input_dict = {
-        'f': np.random.randn(2, 3, 4, 5).astype(np.float32),
-        'varargs': 1.0,
-        'axis': (1, 3),
-        'edge_order': None
+        "f": f,
+        "varargs": 1.0,
+        "axis": (0, 1, 2),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D array, float32, large spacing
+    # Input 9: 4D array, axes (2, 3), float64
+    f = np.random.randn(2, 3, 5, 5).astype(np.float64)
     input_dict = {
-        'f': np.random.randn(3, 10).astype(np.float32),
-        'varargs': 3.0,
-        'axis': (1,),
-        'edge_order': None
+        "f": f,
+        "varargs": 3.0,
+        "axis": (2, 3),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array, float32, very fine spacing
+    # Input 10: 1D array with linear values and small spacing, float64
+    f = np.linspace(-10.0, 10.0, 20, dtype=np.float64)
     input_dict = {
-        'f': np.arange(8, dtype=np.float32),
-        'varargs': 0.01,
-        'axis': (0,),
-        'edge_order': None
+        "f": f,
+        "varargs": 0.05,
+        "axis": (0,),
+        "edge_order": None,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.gradient_6"] = jax_numpy_gradient_inputs()
+
+generated_inputs["jax.numpy.gradient_6"] = gradient_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

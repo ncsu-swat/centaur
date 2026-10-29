@@ -4,46 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def hilbert_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({"n": 1})
+    # Input 1: order 0
+    input_dict = {"n": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    list_of_inputs.append({"n": 2})
+    # Input 2: order 1
+    input_dict = {"n": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    list_of_inputs.append({"n": 3})
+    # Input 3: order 2
+    input_dict = {"n": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    list_of_inputs.append({"n": 4})
+    # Input 4: order 3
+    input_dict = {"n": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    list_of_inputs.append({"n": 5})
+    # Input 5: order 4
+    input_dict = {"n": int(4)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    list_of_inputs.append({"n": 8})
+    # Input 6: order 5 using np.int32
+    input_dict = {"n": int(np.int32(5))}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    list_of_inputs.append({"n": 10})
+    # Input 7: order 8 using np.int64
+    input_dict = {"n": int(np.int64(8))}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    list_of_inputs.append({"n": 16})
+    # Input 8: order 10
+    input_dict = {"n": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    list_of_inputs.append({"n": 32})
+    # Input 9: order 16
+    input_dict = {"n": 16}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    list_of_inputs.append({"n": 64})
+    # Input 10: order 32
+    input_dict = {"n": 32}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11
-    list_of_inputs.append({"n": 128})
+    # Input 11: order 64
+    input_dict = {"n": 64}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.hilbert"] = hilbert_inputs()
 

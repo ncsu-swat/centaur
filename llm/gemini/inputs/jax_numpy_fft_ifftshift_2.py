@@ -4,68 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ifftshift_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32, single axis list
-    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    # Input 1: 1D float32 array, shifting axis 0
+    x = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     axes = [0]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 2: 1D int32, negative elements
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
-    axes = [0]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    # Input 2: 1D complex64 array with even length, negative axis
+    x = np.array([1 + 2j, 3 - 1j, -2 + 0j, 0 - 4j], dtype=np.complex64)
+    axes = [-1]
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 3: 2D float32, shift along first axis
-    x = np.random.randn(4, 4).astype(np.float32)
-    axes = [0]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
-
-    # Input 4: 2D float64, shift along second axis
-    x = np.random.randn(5, 5).astype(np.float64)
-    axes = [1]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
-
-    # Input 5: 2D complex64, shift along both axes
-    x = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
+    # Input 3: 2D float64 array, shifting both axes
+    x = np.arange(12, dtype=np.float64).reshape((3, 4))
     axes = [0, 1]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 6: 3D float32, shift along specific axes
+    # Input 4: 2D int32 array, shifting only axis 1
+    x = np.arange(9, dtype=np.int32).reshape((3, 3))
+    axes = [1]
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 5: 2D complex128 array, shifting only axis 0
+    x = (np.random.randn(4, 5) + 1j * np.random.randn(4, 5)).astype(
+        np.complex128
+    )
+    axes = [0]
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 6: 3D float32 array, shifting non-adjacent axes
     x = np.random.randn(2, 3, 4).astype(np.float32)
     axes = [0, 2]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 7: 3D int16
-    x = np.random.randint(-100, 100, size=(3, 3, 3)).astype(np.int16)
+    # Input 7: 3D float64 array, using negative axes
+    x = np.random.randn(5, 5, 5).astype(np.float64)
+    axes = [-2, -1]
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
+
+    # Input 8: 3D complex64 array, shifting middle axis
+    x = (np.random.randn(3, 4, 2) + 1j * np.random.randn(3, 4, 2)).astype(
+        np.complex64
+    )
     axes = [1]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 8: 4D float32, shift negative axes
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    axes = [-4, -1]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    # Input 9: 4D float32 array, shifting multiple axes
+    x = np.random.randn(2, 4, 3, 5).astype(np.float32)
+    axes = [1, 3]
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 9: 1D bool array
-    x = np.array([True, False, True, False, True], dtype=np.bool_)
-    axes = [0]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    # Input 10: 4D complex128 array, shifting all axes explicitly
+    x = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(
+        np.complex128
+    )
+    axes = [0, 1, 2, 3]
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 10: 2D float32 with negative axis
-    x = np.random.randn(6, 6).astype(np.float32)
-    axes = [-1]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    # Input 11: 5D int64 array, shifting negative axes
+    x = np.random.randint(-10, 10, size=(2, 3, 2, 3, 2), dtype=np.int64)
+    axes = [-3, -1]
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
-    # Input 11: 3D float64, all axes listed
-    x = np.random.randn(3, 4, 5).astype(np.float64)
-    axes = [0, 1, 2]
-    list_of_inputs.append({"x": copy.deepcopy(x), "axes": copy.deepcopy(axes)})
+    # Input 12: 1D array with an empty axes list (no-op shift)
+    x = np.linspace(-5.0, 5.0, 11, dtype=np.float32)
+    axes = []
+    list_of_inputs.append(copy.deepcopy({"x": x, "axes": axes}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.ifftshift_2"] = ifftshift_inputs()
 

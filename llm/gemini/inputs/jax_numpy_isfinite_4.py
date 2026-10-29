@@ -4,53 +4,66 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isfinite_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of float32
-    input_dict = {"x": np.array([1.0, -2.5, 0.0, 3.14], dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array of floats with positive, negative, inf, and nan
+    x = np.array([1.0, -2.5, np.inf, -np.inf, np.nan, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array with inf and nan values
-    input_dict = {"x": np.array([1.0, np.inf, -np.inf, np.nan], dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array of integers
+    x = np.array([0, 1, -5, 100, -9999], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D array of integers
-    input_dict = {"x": np.array([-100, -1, 0, 1, 100], dtype=np.int32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array of floats with inf
+    x = np.array([[1.5, 2.5], [np.inf, 4.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 2D array of float64 with inf and nan
-    input_dict = {"x": np.array([[1.0, 2.0, np.inf], [-1.0, np.nan, 0.0]], dtype=np.float64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D array of float32
-    input_dict = {"x": np.array([[[1.0, 2.0], [3.0, 4.0]], [[np.inf, -np.inf], [0.0, np.nan]]], dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array of regular floats
+    x = np.array([[1.0, -2.0], [3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D array of complex numbers
-    input_dict = {"x": np.array([3 - 4j, 1 + 2j, np.inf + 0j, np.nan * 1j], dtype=np.complex64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array of floats with nan and -inf
+    x = np.array(
+        [[[1.0, 2.0], [np.nan, 4.0]], [[5.0, 6.0], [7.0, -np.inf]]],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D array of booleans
-    input_dict = {"x": np.array([True, False, True, False], dtype=np.bool_)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D boolean array
+    x = np.array([True, False, True, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Large 1D array of random float32
-    input_dict = {"x": np.random.randn(50).astype(np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array with extreme finite float values
+    x = np.array([1e30, -1e30, 0.0, 1e-30, -1e-30], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Extremely small and large finite floats
-    input_dict = {"x": np.array([1e-30, -1e-30, 1e30, -1e30], dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array of integers
+    x = np.array([[1, -2, 3], [4, 5, -6]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D array of complex128
-    input_dict = {"x": np.array([[1j, np.inf * 1j], [np.nan + 2j, 0j]], dtype=np.complex128)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Single-element array with finite value
+    x = np.array([42.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Single-element array with nan
+    x = np.array([np.nan], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 12: 4D array of floats
+    x = np.ones((2, 2, 2, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isfinite_4"] = isfinite_inputs()
 

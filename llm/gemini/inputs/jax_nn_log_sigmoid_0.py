@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def log_sigmoid_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with range [-5, 5]
-    x = np.linspace(-5.0, 5.0, num=10, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with positive and negative values
+    x = np.array([-3.0, -1.0, 0.0, 1.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 2: 2D float32 array
     x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 3: 3D float64 array
-    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.random.randn(2, 3, 5).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D array (scalar) float32
-    x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar array
+    x = np.array(0.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 4D float32 array
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: Large positive values (testing saturation behavior)
+    x = np.array([10.0, 50.0, 100.0, 1000.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D float32 array with extreme values
-    x = np.array([-100.0, -50.0, 0.0, 50.0, 100.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Large negative values (testing saturation behavior)
+    x = np.array([-10.0, -50.0, -100.0, -1000.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 5D float32 array
-    x = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Float16 array
+    x = np.random.randn(4, 4).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D array of zeros
-    x = np.zeros((10,), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Integer array (int32)
+    x = np.array([-5, -2, 0, 1, 4], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Large 2D float32 array
-    x = np.random.randn(128, 128).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 4D array
+    x = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float16 array
-    x = np.random.randn(8).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Array with inf and -inf
+    x = np.array([-np.inf, -1.0, 0.0, 1.0, np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.log_sigmoid"] = log_sigmoid_inputs()
 

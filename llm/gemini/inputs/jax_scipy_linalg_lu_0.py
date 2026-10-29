@@ -4,113 +4,125 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def lu_inputs():
     list_of_inputs = []
 
-    # Input 1: Square matrix, float32, default boolean values
-    a = np.random.randn(5, 5).astype(np.float32)
+    # Input 1: Basic 2D square matrix (float32)
+    a = np.array([[1.0, 2.0, 3.0], [5.0, 4.0, 2.0], [3.0, 2.0, 1.0]], dtype=np.float32)
     input_dict = {
         "a": a,
         "permute_l": False,
         "overwrite_a": False,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Tall rectangular matrix, float32, permute_l=True
-    a = np.random.randn(6, 4).astype(np.float32)
+    # Input 2: Tall rectangular matrix (float64) with permute_l=True
+    a = np.random.randn(5, 3).astype(np.float64)
     input_dict = {
         "a": a,
         "permute_l": True,
         "overwrite_a": False,
-        "check_finite": False
+        "check_finite": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Wide rectangular matrix, float64, overwrite_a=True
-    a = np.random.randn(3, 7).astype(np.float64)
+    # Input 3: Wide rectangular matrix (float32)
+    a = np.random.randn(3, 6).astype(np.float32)
     input_dict = {
         "a": a,
         "permute_l": False,
         "overwrite_a": True,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Square matrix, float32, permute_l=True, overwrite_a=True, check_finite=False
-    a = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "permute_l": True,
-        "overwrite_a": True,
-        "check_finite": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Square matrix, float64, check_finite=True
-    a = np.random.randn(8, 8).astype(np.float64)
+    # Input 4: 2x2 matrix with negative numbers (float64)
+    a = np.array([[-4.5, 2.3], [1.1, -9.8]], dtype=np.float64)
     input_dict = {
         "a": a,
         "permute_l": False,
-        "overwrite_a": False,
-        "check_finite": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Small 2x2 matrix, float32, all parameters True
-    a = np.array([[1.0, 2.0], [-3.0, 4.0]], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "permute_l": True,
         "overwrite_a": True,
-        "check_finite": True
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large matrix, float32
-    a = np.random.randn(50, 50).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "permute_l": False,
-        "overwrite_a": False,
-        "check_finite": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Tall rectangular matrix, float64
-    a = np.random.randn(8, 5).astype(np.float64)
+    # Input 5: 1x1 matrix (float32)
+    a = np.array([[7.0]], dtype=np.float32)
     input_dict = {
         "a": a,
         "permute_l": True,
         "overwrite_a": False,
-        "check_finite": True
+        "check_finite": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Wide rectangular matrix, float32
-    a = np.random.randn(4, 8).astype(np.float32)
+    # Input 6: Single row matrix (1x5)
+    a = np.random.randn(1, 5).astype(np.float32)
     input_dict = {
         "a": a,
         "permute_l": False,
-        "overwrite_a": True,
-        "check_finite": False
+        "overwrite_a": False,
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Matrix with negative and zero values, float64
-    a = np.array([[-1.0, 0.0, 3.0], [4.0, -5.0, 0.0], [0.0, 7.0, -9.0]], dtype=np.float64)
+    # Input 7: Single column matrix (5x1)
+    a = np.random.randn(5, 1).astype(np.float64)
     input_dict = {
         "a": a,
         "permute_l": True,
         "overwrite_a": True,
-        "check_finite": True
+        "check_finite": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Complex64 square matrix
+    a = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
+    input_dict = {
+        "a": a,
+        "permute_l": False,
+        "overwrite_a": False,
+        "check_finite": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Complex128 rectangular matrix (permute_l=True)
+    a = (np.random.randn(4, 3) + 1j * np.random.randn(4, 3)).astype(np.complex128)
+    input_dict = {
+        "a": a,
+        "permute_l": True,
+        "overwrite_a": False,
+        "check_finite": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Larger square matrix (8x8 float32)
+    a = np.random.randn(8, 8).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "permute_l": False,
+        "overwrite_a": False,
+        "check_finite": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Rectangular matrix with positive and negative floats
+    a = (np.random.randn(6, 4) * 10).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "permute_l": True,
+        "overwrite_a": False,
+        "check_finite": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.lu"] = lu_inputs()
 

@@ -4,113 +4,127 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def trace_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 2D float32 square matrix, main diagonal
+    # Input 1: Basic 2D float32 array
     input_dict = {
-        "a": np.random.randn(4, 4).astype(np.float32),
+        "a": np.arange(9, dtype=np.float32).reshape(3, 3),
         "offset": 0,
         "axis1": 0,
         "axis2": 1,
-        "dtype": np.float32
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float64 square matrix, positive offset
+    # Input 2: 2D rectangular matrix with positive offset
     input_dict = {
-        "a": np.random.randn(5, 5).astype(np.float64),
+        "a": np.random.randn(4, 6).astype(np.float64),
         "offset": 1,
         "axis1": 0,
         "axis2": 1,
-        "dtype": np.float64
+        "dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D int32 matrix, negative offset
+    # Input 3: 2D matrix with negative offset
     input_dict = {
-        "a": np.random.randint(-10, 10, size=(4, 6)).astype(np.int32),
+        "a": np.random.randint(-10, 10, size=(5, 5)).astype(np.int32),
         "offset": -2,
         "axis1": 0,
         "axis2": 1,
-        "dtype": np.int32
+        "dtype": np.dtype(np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float32 array, trace along axis1=1, axis2=2
+    # Input 4: 3D tensor with axis permutation
     input_dict = {
-        "a": np.random.randn(2, 3, 3).astype(np.float32),
+        "a": np.random.randn(2, 3, 4).astype(np.float32),
         "offset": 0,
         "axis1": 1,
         "axis2": 2,
-        "dtype": np.float32
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D int32 array, trace along axis1=0, axis2=2 with offset
+    # Input 5: 3D tensor with negative axis indexing
     input_dict = {
-        "a": np.random.randint(-5, 5, size=(3, 4, 3)).astype(np.int32),
-        "offset": 1,
+        "a": np.random.randn(4, 5, 6).astype(np.float64),
+        "offset": -1,
+        "axis1": -2,
+        "axis2": -1,
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 4D tensor with different axes
+    input_dict = {
+        "a": np.random.randn(2, 3, 4, 5).astype(np.float32),
+        "offset": 0,
         "axis1": 0,
         "axis2": 2,
-        "dtype": np.int32
+        "dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float32 array, trace along last two dimensions
+    # Input 7: Complex data type
     input_dict = {
-        "a": np.random.randn(2, 2, 4, 4).astype(np.float32),
-        "offset": -1,
+        "a": (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+            np.complex64
+        ),
+        "offset": 0,
+        "axis1": 0,
+        "axis2": 1,
+        "dtype": np.dtype(np.complex64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Integer type with positive offset
+    input_dict = {
+        "a": np.ones((6, 6), dtype=np.int64),
+        "offset": 3,
+        "axis1": 1,
+        "axis2": 0,
+        "dtype": np.dtype(np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D tensor
+    input_dict = {
+        "a": np.random.randn(2, 2, 3, 3, 2).astype(np.float32),
+        "offset": 1,
         "axis1": 2,
         "axis2": 3,
-        "dtype": np.float32
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D float32 matrix with offset
+    # Input 10: Boolean array casting to int32 dtype
     input_dict = {
-        "a": np.random.randn(6, 6).astype(np.float32),
-        "offset": 2,
-        "axis1": 0,
-        "axis2": 1,
-        "dtype": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 3D float32 array, trace along axis1=0, axis2=1
-    input_dict = {
-        "a": np.random.randn(4, 4, 2).astype(np.float32),
-        "offset": -1,
-        "axis1": 0,
-        "axis2": 1,
-        "dtype": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D int32 matrix
-    input_dict = {
-        "a": np.random.randint(-10, 10, size=(5, 5)).astype(np.int32),
+        "a": np.eye(4, dtype=np.bool_),
         "offset": 0,
         "axis1": 0,
         "axis2": 1,
-        "dtype": np.int32
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D float64 array, trace along axis1=0, axis2=3
+    # Input 11: 3D array with axis1 > axis2
     input_dict = {
-        "a": np.random.randn(3, 2, 2, 3).astype(np.float64),
+        "a": np.random.randn(3, 4, 3).astype(np.float32),
         "offset": 0,
-        "axis1": 0,
-        "axis2": 3,
-        "dtype": np.float64
+        "axis1": 2,
+        "axis2": 0,
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.trace_1"] = trace_inputs()
 

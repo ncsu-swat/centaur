@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The size of the axes permutation tuple matches the tensor's dimensions, handling the 0-D case explicitly (Rule 31)
+# tensor rank and axes length bounded within maximum supported dimensionality (Rule 31)
 
 rule_31 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 0, v["arg2_length"] == 0, v["arg2_length"] == v["arg1_ndim"])) if n else
-          If(v["arg1_ndim"] == 0, v["arg2_length"] == 0, v["arg2_length"] == v["arg1_ndim"]))
+    s.add(Not(And(And(v["arg1_ndim"] <= 6, v["arg2_length"] <= 6), v["arg2_length"] == v["arg1_ndim"])) if n else
+          And(And(v["arg1_ndim"] <= 6, v["arg2_length"] <= 6), v["arg2_length"] == v["arg1_ndim"]))
 )
 
 def rule_31_func(arg1, arg2, solver=None, neg=False):

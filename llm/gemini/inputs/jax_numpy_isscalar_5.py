@@ -4,53 +4,33 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def isscalar_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic alphabetic string
-    input_dict = {"element": "hello"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    strings = [
+        "",
+        "hello",
+        "123",
+        "-45.67",
+        "a",
+        "True",
+        "False",
+        "None",
+        "complex(1, 2)",
+        "special_chars!@#$%^&*()",
+        "multi\nline\nstring",
+        "unicode_chars_π_θ_λ",
+    ]
 
-    # Input 2: Empty string
-    input_dict = {"element": ""}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Numeric string representing an integer
-    input_dict = {"element": "12345"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Numeric string representing a float
-    input_dict = {"element": "-3.14159"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Boolean representation string
-    input_dict = {"element": "False"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Single character string
-    input_dict = {"element": "z"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: String with special characters and spaces
-    input_dict = {"element": "hello world! @2023"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Multi-line string
-    input_dict = {"element": "line one\nline two"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: String containing unicode characters
-    input_dict = {"element": "π_value_3.14"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: String consisting only of whitespace
-    input_dict = {"element": "   "}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    for s in strings:
+        input_dict = {"element": s}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isscalar_5"] = isscalar_inputs()
 

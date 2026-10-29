@@ -4,63 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def angle_inputs():
     list_of_inputs = []
 
-    # Input 1: Float32 scalar, deg=False
-    z = np.array(1.5, dtype=np.float32)
-    deg = False
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 1: positive float, deg=False
+    input_dict = {"z": 1.0, "deg": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Float32 scalar negative, deg=True
-    z = np.array(-2.5, dtype=np.float32)
-    deg = True
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 2: negative float, deg=True
+    input_dict = {"z": -1.0, "deg": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D Float32 array, deg=False
-    z = np.array([1.0, -2.0, 0.0], dtype=np.float32)
-    deg = False
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 3: positive zero, deg=False
+    input_dict = {"z": 0.0, "deg": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D Float64 array, deg=True
-    z = np.array([[0.5, -1.5], [2.5, -3.5]], dtype=np.float64)
-    deg = True
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 4: negative zero, deg=True
+    input_dict = {"z": -0.0, "deg": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Float32 scalar zero, deg=False
-    z = np.array(0.0, dtype=np.float32)
-    deg = False
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 5: positive arbitrary float, deg=False
+    input_dict = {"z": 3.141592653589793, "deg": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D Float64 array, deg=True
-    z = np.array([-0.001, 0.002, -3.14], dtype=np.float64)
-    deg = True
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 6: negative arbitrary float, deg=True
+    input_dict = {"z": -2.718281828459045, "deg": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D Float32 array, deg=False
-    z = np.array([[[1.1, -2.2]], [[3.3, -4.4]]], dtype=np.float32)
-    deg = False
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 7: very small positive float, deg=True
+    input_dict = {"z": 1e-12, "deg": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy float32 scalar, deg=True
-    z = np.float32(10.0)
-    deg = True
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 8: very large negative float, deg=False
+    input_dict = {"z": -1e12, "deg": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy float64 scalar, deg=False
-    z = np.float64(-100.0)
-    deg = False
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 9: positive infinity, deg=False
+    input_dict = {"z": float("inf"), "deg": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D Float32 array with negative/positive zeros, deg=True
-    z = np.array([-0.0, 0.0], dtype=np.float32)
-    deg = True
-    list_of_inputs.append({"z": z, "deg": deg})
+    # Input 10: negative infinity, deg=True
+    input_dict = {"z": float("-inf"), "deg": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: fractional positive float, deg=True
+    input_dict = {"z": 42.5, "deg": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: fractional negative float, deg=False
+    input_dict = {"z": -100.25, "deg": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.angle_2"] = angle_inputs()
 

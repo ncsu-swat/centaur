@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor should have a non-boolean data type to avoid unexpected negation behavior (Rule 57)
+# integer scalar input must be a multiple of 5 (Rule 57)
 
 rule_57 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] != 0) if n else
-          v["arg1_dtype"] != 0)
+    s.add(Not(v["arg1_value"] % 5 == 0) if n else
+          v["arg1_value"] % 5 == 0)
 )
 
 def rule_57_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_57_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 57
-        rule_57(solver, {'arg1_dtype': arg1_dtype})
+        rule_57(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_57(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_57(solver, {'arg1_value': arg1['value']}, neg)

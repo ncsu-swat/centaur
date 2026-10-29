@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def blackman_inputs():
     list_of_inputs = []
 
-    # Input 1: Size 1 window
+    # Input 1: Zero window size
+    input_dict = {"M": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Single element window
     input_dict = {"M": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Size 2 window
+    # Input 3: Two elements window
     input_dict = {"M": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Small window size (4)
+    # Input 4: Small even window size
     input_dict = {"M": 4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Medium window size (10)
-    input_dict = {"M": 10}
+    # Input 5: Small odd window size
+    input_dict = {"M": 7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Odd window size (51)
-    input_dict = {"M": 51}
+    # Input 6: Medium even window size
+    input_dict = {"M": 16}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger window size (128)
+    # Input 7: Medium odd window size
+    input_dict = {"M": 25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Standard power-of-two size
+    input_dict = {"M": 64}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large window size
     input_dict = {"M": 128}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Power of two size (512)
-    input_dict = {"M": 512}
+    # Input 10: numpy int32 type
+    input_dict = {"M": np.int32(32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very large size (1024)
+    # Input 11: numpy int64 type
+    input_dict = {"M": np.int64(256)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Large power-of-two size
     input_dict = {"M": 1024}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Another common size (256)
-    input_dict = {"M": 256}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Using numpy integer type (64)
-    input_dict = {"M": np.int32(64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.blackman"] = blackman_inputs()
 

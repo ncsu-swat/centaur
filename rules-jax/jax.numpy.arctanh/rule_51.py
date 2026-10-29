@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# To avoid division by zero and infinite values, the float input must not be exactly 1.0 or -1.0 (Rule 51)
+# real tensor elements bounded within [-0.8, 0.8] (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] != 1.0, v["arg1_value"] != -1.0)) if n else
-          And(v["arg1_value"] != 1.0, v["arg1_value"] != -1.0))
+    s.add(Not(And(Select(v["arg1_range"], 0) >= -0.8, Select(v["arg1_range"], 1) <= 0.8)) if n else
+          And(Select(v["arg1_range"], 0) >= -0.8, Select(v["arg1_range"], 1) <= 0.8))
 )
 
 def rule_51_func(arg1, solver=None, neg=False):
@@ -19,20 +19,21 @@ def rule_51_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 51
-        rule_51(solver, {'arg1_value': arg1_value})
+        rule_51(solver, {'arg1_range': arg1_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_51(solver, {'arg1_value': arg1['value']}, neg)
+        rule_51(solver, {'arg1_range': arg1['range']}, neg)

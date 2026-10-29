@@ -4,73 +4,89 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def log_softmax_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32
+    # Input 1: 1D float32 array, default axis -1
     x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
     axis = -1
     where = np.array([True, True, True, True, True], dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
 
-    # Input 2: 2D float32, axis 0, with custom where mask
-    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    # Input 2: 2D float32 array, axis 0, with partial masking
+    x = np.random.randn(3, 4).astype(np.float32)
     axis = 0
-    where = np.array([[True, False, True], [True, True, False]], dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
+    where = np.array(
+        [
+            [True, False, True, True],
+            [True, True, False, True],
+            [False, True, True, True],
+        ],
+        dtype=bool,
+    )
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
 
-    # Input 3: 2D float64, axis 1
-    x = np.random.randn(4, 4).astype(np.float64)
+    # Input 3: 2D float64 array, axis 1
+    x = np.random.randn(5, 5).astype(np.float64)
     axis = 1
-    where = np.ones((4, 4), dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
+    where = np.ones((5, 5), dtype=bool)
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
 
-    # Input 4: 3D float32, axis 2
-    x = np.random.randn(2, 3, 4).astype(np.float32)
-    axis = 2
-    where = np.ones((2, 3, 4), dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
-
-    # Input 5: 1D float16, axis 0
-    x = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float16)
-    axis = 0
-    where = np.array([True, True, True, True], dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
-
-    # Input 6: 4D float32, negative axis
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    # Input 4: 3D float32 array, axis -2
+    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
     axis = -2
-    where = np.ones((2, 2, 3, 3), dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
+    where = np.ones((2, 3, 4), dtype=bool)
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
 
-    # Input 7: 2D float32 with negative values, axis 1, custom mask
-    x = np.array([[-10.0, -20.0, -30.0], [10.0, 20.0, 30.0]], dtype=np.float32)
+    # Input 5: 3D float32 array, broadcastable where mask
+    x = np.random.randn(4, 3, 2).astype(np.float32)
     axis = 1
-    where = np.array([[True, True, False], [False, True, True]], dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
+    where = np.array([[[True], [True], [False]]], dtype=bool)
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
 
-    # Input 8: 3D float64, axis 0
-    x = np.random.uniform(-5.0, 5.0, (3, 2, 2)).astype(np.float64)
+    # Input 6: 4D float32 array, axis 2
+    x = np.random.randn(2, 2, 4, 3).astype(np.float32)
+    axis = 2
+    where = np.ones((2, 2, 4, 3), dtype=bool)
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
+
+    # Input 7: 1D array with negative values
+    x = np.array([-100.0, -50.0, -20.0, -10.0], dtype=np.float32)
+    axis = 0
+    where = np.array([True, True, True, False], dtype=bool)
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
+
+    # Input 8: 2D float16 array, axis -1
+    x = np.random.randn(4, 6).astype(np.float16)
+    axis = -1
+    where = np.ones((4, 6), dtype=bool)
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
+
+    # Input 9: 4D float64 array, axis 3
+    x = np.random.randn(1, 3, 2, 5).astype(np.float64)
+    axis = 3
+    where = np.random.choice([True, False], size=(1, 3, 2, 5), p=[0.8, 0.2])
+    where[:, :, :, 0] = True
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
+
+    # Input 10: 2D array with large dynamic range
+    x = np.array([[1000.0, -1000.0], [0.0, 500.0]], dtype=np.float32)
+    axis = 1
+    where = np.array([[True, True], [True, True]], dtype=bool)
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
+
+    # Input 11: 3D float32 array, axis 0
+    x = np.random.randn(3, 2, 2).astype(np.float32)
     axis = 0
     where = np.ones((3, 2, 2), dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
-
-    # Input 9: 1D float32, axis 0, with single active element
-    x = np.array([100.0, -100.0, 0.0], dtype=np.float32)
-    axis = 0
-    where = np.array([True, False, False], dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
-
-    # Input 10: 2D float32, larger scale, axis -1
-    x = np.random.randn(10, 10).astype(np.float32)
-    axis = -1
-    where = np.ones((10, 10), dtype=bool)
-    list_of_inputs.append({"x": x, "axis": axis, "where": where})
+    list_of_inputs.append({"x": x, "axis": axis, "where": copy.deepcopy(where)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.log_softmax_1"] = log_softmax_inputs()
 

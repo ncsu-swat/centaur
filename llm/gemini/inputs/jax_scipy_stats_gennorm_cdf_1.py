@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gennorm_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays, float32, positive x and beta
-    x = np.array([0.0, 1.0, 2.0], dtype=np.float32)
-    beta = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalar arrays, float32
+    x = np.array(0.5, dtype=np.float32)
+    beta = np.array(2.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 2: 1D arrays with negative values for x, float64
-    x = np.array([-1.5, -0.5, 0.5, 1.5], dtype=np.float64)
-    beta = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float64)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D arrays with standard normal equivalent beta=2.0
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    beta = np.array([2.0, 2.0, 2.0, 2.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 3: Scalar beta (0D array), 2D array for x
-    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    beta = np.array(1.5, dtype=np.float32)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array with Laplace equivalent beta=1.0, float64
+    x = np.array([-3.5, -0.5, 0.0, 1.2, 4.8], dtype=np.float64)
+    beta = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 4: 2D arrays for both, same shape
-    x = np.random.randn(3, 3).astype(np.float32)
-    beta = np.random.uniform(0.1, 5.0, size=(3, 3)).astype(np.float32)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D arrays, same shape
+    x = np.array([[-1.5, 0.2], [1.1, -0.8]], dtype=np.float32)
+    beta = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 5: Broadcasting, 2D x and 1D beta
-    x = np.random.randn(2, 4).astype(np.float64)
-    beta = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Broadcasting 2D with 1D
+    x = np.random.randn(3, 4).astype(np.float32)
+    beta = np.array([0.5, 1.0, 2.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 6: Large dimensions (3D arrays), float32
+    # Input 6: Broadcasting (4, 1) and (1, 3)
+    x = np.array([[-2.0], [-0.5], [0.5], [2.0]], dtype=np.float64)
+    beta = np.array([[1.0, 2.0, 3.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
+
+    # Input 7: 3D arrays
     x = np.random.randn(2, 3, 4).astype(np.float32)
-    beta = np.random.uniform(0.5, 2.0, size=(2, 3, 4)).astype(np.float32)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    beta = np.full((2, 3, 4), 1.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 7: Very small beta values (approaching laplace-like)
-    x = np.array([-10.0, 0.0, 10.0], dtype=np.float32)
-    beta = np.array([0.1, 0.1, 0.1], dtype=np.float32)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Extreme tail values
+    x = np.array([-50.0, -10.0, 0.0, 10.0, 50.0], dtype=np.float32)
+    beta = np.array([2.0, 2.0, 2.0, 2.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 8: Very large beta values (approaching uniform-like)
-    x = np.array([-0.5, 0.0, 0.5, 1.5], dtype=np.float32)
-    beta = np.array([10.0, 10.0, 10.0, 10.0], dtype=np.float32)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Small beta values (heavy-tailed)
+    x = np.array([-1.0, 0.0, 1.0], dtype=np.float32)
+    beta = np.array([0.2, 0.3, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 9: Single element 1D arrays
-    x = np.array([0.0], dtype=np.float64)
-    beta = np.array([2.0], dtype=np.float64)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Large beta values (approaching uniform)
+    x = np.linspace(-2.0, 2.0, 6, dtype=np.float64)
+    beta = np.full(6, 10.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 10: Broadcasting x (1D) with beta (2D)
-    x = np.array([-1.0, 1.0], dtype=np.float32)
-    beta = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    input_dict = {"x": x, "beta": beta}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 4D tensor inputs
+    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    beta = (np.random.rand(2, 2, 2, 2) + 0.5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.gennorm.cdf_1"] = gennorm_cdf_inputs()
 

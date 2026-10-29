@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# operand must have boolean or integer dtype, which corresponds to type index less than 6 (Rule 13)
+# operand must be of boolean or integer type (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
     s.add(Not(v["arg1_dtype"] < 6) if n else

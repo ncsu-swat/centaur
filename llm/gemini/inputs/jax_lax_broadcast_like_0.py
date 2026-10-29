@@ -4,83 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def broadcast_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D to 2D
-    input_dict = {
-        "arr": np.array([1, 2, 3], dtype=np.int32),
-        "like_arr": np.zeros((2, 3), dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D to 2D int32
+    arr = np.array([1, 2, 3], dtype=np.int32)
+    like_arr = np.zeros((2, 3), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 2: Scalar to 3D
-    input_dict = {
-        "arr": np.array(4.5, dtype=np.float32),
-        "like_arr": np.ones((2, 3, 4), dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D scalar array to 3D float32 with negative values
+    arr = np.array(-5.5, dtype=np.float32)
+    like_arr = np.zeros((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 3: (1, 4) to (3, 4)
-    input_dict = {
-        "arr": np.array([[1, 2, 3, 4]], dtype=np.int32),
-        "like_arr": np.zeros((3, 4), dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D with singleton dimension to 2D float64
+    arr = np.array([[-1.2, 0.5, 3.1, -4.0]], dtype=np.float64)
+    like_arr = np.ones((5, 4), dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 4: (3, 1) to (3, 4)
-    input_dict = {
-        "arr": np.array([[1], [2], [3]], dtype=np.float32),
-        "like_arr": np.zeros((3, 4), dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D with singleton dimension to 3D int64
+    arr = np.array([[10], [-20], [30]], dtype=np.int64)
+    like_arr = np.empty((2, 3, 5), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 5: Same shape 1D
-    input_dict = {
-        "arr": np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64),
-        "like_arr": np.ones((5,), dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D boolean array to 2D boolean
+    arr = np.array([True, False, True], dtype=np.bool_)
+    like_arr = np.zeros((4, 3), dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 6: (3, 4) to (2, 3, 4)
-    input_dict = {
-        "arr": np.random.randn(3, 4).astype(np.float32),
-        "like_arr": np.zeros((2, 3, 4), dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D singleton array to 3D complex64
+    arr = np.array([[[1.0 + 2.0j]]], dtype=np.complex64)
+    like_arr = np.zeros((4, 3, 2), dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 7: (1, 1) to (5, 5) float64
-    input_dict = {
-        "arr": np.array([[3.14]], dtype=np.float64),
-        "like_arr": np.zeros((5, 5), dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Same shape broadcasting float32
+    arr = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+    like_arr = np.zeros((3, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 8: boolean array
-    input_dict = {
-        "arr": np.array([True], dtype=np.bool_),
-        "like_arr": np.zeros((2, 2), dtype=np.bool_)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 0D uint8 to 1D uint8
+    arr = np.array(255, dtype=np.uint8)
+    like_arr = np.zeros((10,), dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 9: negative values in int32
-    input_dict = {
-        "arr": np.array([-1, -2, -3], dtype=np.int32),
-        "like_arr": np.zeros((4, 3), dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D float32 to 4D float32
+    arr = np.array([-1.0, 0.0, 1.0, 2.0, 3.0], dtype=np.float32)
+    like_arr = np.zeros((2, 2, 2, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
-    # Input 10: high dimensional (1, 5, 1) to (2, 5, 3)
-    input_dict = {
-        "arr": np.random.randn(1, 5, 1).astype(np.float32),
-        "like_arr": np.zeros((2, 5, 3), dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D int16 with singleton dimension to 2D int16
+    arr = np.array([[-3], [0], [7], [-12]], dtype=np.int16)
+    like_arr = np.zeros((4, 6), dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
+
+    # Input 11: 3D array broadcasting across middle dimension
+    arr = np.arange(8, dtype=np.float32).reshape(2, 1, 4)
+    like_arr = np.zeros((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "like_arr": like_arr}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.broadcast_like"] = broadcast_like_inputs()
 

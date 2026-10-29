@@ -4,143 +4,155 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def searchsorted_inputs():
     list_of_inputs = []
 
-    # Input 1 — Standard float32 1D arrays, left search
-    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    v = np.array([0.5, 2.0, 2.5, 5.5], dtype=np.float32)
+    # Input 1: Basic 1D arrays, left side, scan method
+    a = np.array([1.0, 3.0, 5.0, 7.0], dtype=np.float32)
+    sorter = np.argsort(a)
+    v = np.array([0.0, 2.0, 5.0, 8.0], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "left",
+            "sorter": sorter,
+            "method": "scan",
+        }
+    )
+
+    # Input 2: Right side, scan_unrolled method, integer array
+    a = np.array([10, 20, 20, 30, 40], dtype=np.int32)
     sorter = np.arange(len(a), dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "left",
-        "sorter": sorter,
-        "method": "scan"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    v = np.array([20, 25], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "right",
+            "sorter": sorter,
+            "method": "scan_unrolled",
+        }
+    )
 
-    # Input 2 — Unsorted int32 with 2D query values, right search
-    a = np.array([5, 3, 1, 4, 2, 6], dtype=np.int32)
-    v = np.array([[2, 4], [1, 5]], dtype=np.int32)
+    # Input 3: 2D v array, sort method
+    a = np.array([-5.0, -2.0, 0.0, 3.0, 9.0], dtype=np.float64)
+    sorter = np.argsort(a)
+    v = np.array([[-3.0, 0.0], [4.0, 10.0]], dtype=np.float64)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "left",
+            "sorter": sorter,
+            "method": "sort",
+        }
+    )
+
+    # Input 4: compare_all method, small array
+    a = np.array([1, 4, 9, 16], dtype=np.int64)
+    sorter = np.array([0, 1, 2, 3], dtype=np.int64)
+    v = np.array([0, 1, 5, 9, 20], dtype=np.int64)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "right",
+            "sorter": sorter,
+            "method": "compare_all",
+        }
+    )
+
+    # Input 5: Unsorted `a` handled by non-trivial `sorter`
+    a = np.array([50, 10, 40, 20, 30], dtype=np.int32)
     sorter = np.argsort(a).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "right",
-        "sorter": sorter,
-        "method": "scan_unrolled"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    v = np.array([15, 35, 55], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "left",
+            "sorter": sorter,
+            "method": "scan",
+        }
+    )
 
-    # Input 3 — float64 3D query values, left search
-    a = np.linspace(-10.0, 10.0, 10, dtype=np.float64)
-    v = np.random.uniform(-15.0, 15.0, (2, 2, 2)).astype(np.float64)
-    sorter = np.arange(len(a), dtype=np.int64)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "left",
-        "sorter": sorter,
-        "method": "sort"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Scalar/0D query value
+    a = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
+    sorter = np.argsort(a)
+    v = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "right",
+            "sorter": sorter,
+            "method": "scan",
+        }
+    )
 
-    # Input 4 — Unsorted float32 with negative values, compare_all method
-    a = np.array([10, -5, 3, -1, 0, 8, -12, 4], dtype=np.float32)
-    v = np.array([-15.0, 0.0, 5.0], dtype=np.float32)
-    sorter = np.argsort(a).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "right",
-        "sorter": sorter,
-        "method": "compare_all"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5 — Large int64 arrays, scan method
-    a = np.arange(100, dtype=np.int64)
-    v = np.random.randint(-10, 110, (5, 5), dtype=np.int64)
-    sorter = np.arange(len(a), dtype=np.int64)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "left",
-        "sorter": sorter,
-        "method": "scan"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6 — Very small array, compare_all method
-    a = np.array([-1.5, 0.0, 1.5], dtype=np.float32)
-    v = np.array([-2.0, -1.5, 0.5, 2.0], dtype=np.float32)
+    # Input 7: 3D query values
+    a = np.linspace(-1.0, 1.0, 50, dtype=np.float32)
     sorter = np.arange(len(a), dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "right",
-        "sorter": sorter,
-        "method": "compare_all"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    v = np.zeros((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "left",
+            "sorter": sorter,
+            "method": "scan_unrolled",
+        }
+    )
 
-    # Input 7 — Unsorted float64, 3D query values, sort method
-    a = np.random.randn(15).astype(np.float64)
-    v = np.random.randn(2, 3, 2).astype(np.float64)
+    # Input 8: Repeated elements in a with right side
+    a = np.array([2, 2, 2, 2, 2], dtype=np.int32)
+    sorter = np.arange(len(a), dtype=np.int32)
+    v = np.array([1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "right",
+            "sorter": sorter,
+            "method": "sort",
+        }
+    )
+
+    # Input 9: Repeated elements in a with left side
+    a = np.array([2, 2, 2, 2, 2], dtype=np.int32)
+    sorter = np.arange(len(a), dtype=np.int32)
+    v = np.array([1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "left",
+            "sorter": sorter,
+            "method": "compare_all",
+        }
+    )
+
+    # Input 10: Float64 precision with unsorted a and large 1D query
+    a = np.array([3.14, 2.71, -1.0, 0.0, 1.41], dtype=np.float64)
     sorter = np.argsort(a).astype(np.int64)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "left",
-        "sorter": sorter,
-        "method": "sort"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8 — Sorted int32 array with spacing, scan_unrolled method
-    a = np.arange(0, 40, 2, dtype=np.int32)
-    v = np.array([5, 10, 15, 20, 25], dtype=np.int32)
-    sorter = np.arange(len(a), dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "right",
-        "sorter": sorter,
-        "method": "scan_unrolled"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9 — Unsorted float32 with larger search target shape
-    a = np.array([9.5, 2.3, -1.1, 4.4, 0.0, -5.5, 8.8, 12.1, -10.0, 3.3, 1.1, -2.2], dtype=np.float32)
-    v = np.random.uniform(-12, 15, (3, 4)).astype(np.float32)
-    sorter = np.argsort(a).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "left",
-        "sorter": sorter,
-        "method": "scan"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10 — Large float64 space, sort method
-    a = np.linspace(100, 200, 50, dtype=np.float64)
-    v = np.random.uniform(90, 210, (2, 2, 2)).astype(np.float64)
-    sorter = np.arange(len(a), dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "side": "right",
-        "sorter": sorter,
-        "method": "sort"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    v = np.linspace(-2.0, 4.0, 20, dtype=np.float64)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "v": v,
+            "side": "left",
+            "sorter": sorter,
+            "method": "scan",
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.searchsorted"] = searchsorted_inputs()
 

@@ -4,73 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def polyval_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 coefficients with standard float x and default unroll
+    # Input 1: Basic float32 coefficients with standard unroll
     p = np.array([2.0, 5.0, 1.0], dtype=np.float32)
     x = 3.0
     unroll = 16
     list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
 
-    # Input 2: Negative and float64 coefficients, negative float x, smaller unroll
-    p = np.array([-1.5, 2.5, 0.0, -3.2], dtype=np.float64)
-    x = -1.5
-    unroll = 8
-    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
-
-    # Input 3: Integer coefficients, float x, unroll=4
-    p = np.array([1, -2, 3, -4], dtype=np.int32)
-    x = 2.0
-    unroll = 4
-    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
-
-    # Input 4: Float64 coefficients, large float x, larger unroll
-    p = np.array([0.5, -0.5], dtype=np.float64)
-    x = 10.5
-    unroll = 32
-    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
-
-    # Input 5: Small float32 coefficients, zero float x, unroll=64
-    p = np.array([1e-3, 1e-2, 1e-1, 1.0], dtype=np.float32)
-    x = 0.0
-    unroll = 64
-    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
-
-    # Input 6: Single-element coefficient, arbitrary float x, default unroll
-    p = np.array([42.0], dtype=np.float32)
-    x = 123.45
-    unroll = 16
-    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
-
-    # Input 7: High-degree random float64 polynomial coefficients, fractional float x, unroll=128
-    p = np.random.randn(10).astype(np.float64)
-    x = 0.5
-    unroll = 128
-    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
-
-    # Input 8: All-zeros float32 coefficients, negative float x, default unroll
-    p = np.zeros(5, dtype=np.float32)
-    x = -0.1
-    unroll = 16
-    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
-
-    # Input 9: Int64 coefficients, float x, minimal unroll of 1
-    p = np.array([3, 2, 1], dtype=np.int64)
-    x = 4.5
+    # Input 2: Linear polynomial with float64
+    p = np.array([-1.5, 4.2], dtype=np.float64)
+    x = -2.5
     unroll = 1
     list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
 
-    # Input 10: Higher-order float32 coefficients, x = 1.0, unroll = 256
-    p = np.array([1.5, -2.5, 3.5, -4.5, 5.5], dtype=np.float32)
-    x = 1.0
-    unroll = 256
+    # Input 3: Constant polynomial (single coefficient)
+    p = np.array([7.0], dtype=np.float32)
+    x = 100.0
+    unroll = 4
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 4: Higher-degree polynomial with negative and positive coefficients
+    p = np.array([1.0, -2.0, 3.0, -4.0, 5.0], dtype=np.float32)
+    x = 0.5
+    unroll = 8
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 5: Zero evaluation point
+    p = np.array([3.0, -1.0, 4.0, 2.0], dtype=np.float64)
+    x = 0.0
+    unroll = 16
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 6: Integer coefficients with float x
+    p = np.array([1, 0, -5, 6], dtype=np.int32)
+    x = 2.0
+    unroll = 2
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 7: Higher-degree polynomial with large unroll
+    p = np.linspace(-1.0, 1.0, 20, dtype=np.float64)
+    x = 1.1
+    unroll = 32
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 8: Polynomial with all zeros
+    p = np.zeros(10, dtype=np.float32)
+    x = -10.0
+    unroll = 16
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 9: Polynomial with small coefficients
+    p = np.array([1e-5, -2e-4, 3e-3, -4e-2], dtype=np.float64)
+    x = 10.0
+    unroll = 4
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 10: Higher-order polynomial with unroll=64
+    p = np.random.RandomState(42).randn(50).astype(np.float32)
+    x = 0.99
+    unroll = 64
+    list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
+
+    # Input 11: Negative evaluation point with unroll=128
+    p = np.array([0.5, -0.25, 0.125, -0.0625, 0.03125], dtype=np.float64)
+    x = -3.14159
+    unroll = 128
     list_of_inputs.append({"p": p, "x": x, "unroll": unroll})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.polyval_2"] = polyval_inputs()
 

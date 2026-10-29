@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both input tensors must have the same data type (Rule 15)
+# both inputs are complex tensors of the same precision (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] == v["arg2_dtype"]) if n else
-          v["arg1_dtype"] == v["arg2_dtype"])
+    s.add(Not(And(And(v["arg1_dtype"] >= 9, v["arg1_dtype"] <= 10), v["arg1_dtype"] == v["arg2_dtype"])) if n else
+          And(And(v["arg1_dtype"] >= 9, v["arg1_dtype"] <= 10), v["arg1_dtype"] == v["arg2_dtype"]))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):

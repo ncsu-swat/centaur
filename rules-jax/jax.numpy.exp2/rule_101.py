@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# integer input should be within the exponent range of double-precision float types (Rule 101)
+# scalar input strictly bounded within single precision limits (Rule 101)
 
 rule_101 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -1022, v["arg1_value"] <= 1023)) if n else
-          And(v["arg1_value"] >= -1022, v["arg1_value"] <= 1023))
+    s.add(Not(And(v["arg1_value"] > -127, v["arg1_value"] < 128)) if n else
+          And(v["arg1_value"] > -127, v["arg1_value"] < 128))
 )
 
 def rule_101_func(arg1, solver=None, neg=False):
@@ -19,15 +19,13 @@ def rule_101_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 101
         rule_101(solver, {'arg1_value': arg1_value})

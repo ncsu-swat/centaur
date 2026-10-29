@@ -4,58 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def eigvals_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 2x2 float32 matrix
-    a = np.array([[1.0, -2.0], [3.0, 4.0]], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 1: 2x2 float32 matrix
+    a = np.array([[1.0, 2.0], [2.0, 1.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 2: 3x3 float64 matrix with random values
-    a = np.random.randn(3, 3).astype(np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 2: 3x3 float32 matrix with negative values
+    a = np.array(
+        [[-2.0, 1.0, 0.0], [1.0, -2.0, 1.0], [0.0, 1.0, -2.0]],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 3: Batched 2x2 matrices, shape (3, 2, 2) float32
-    a = np.random.randn(3, 2, 2).astype(np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 3: 4x4 float64 random matrix
+    np.random.seed(42)
+    a = np.random.randn(4, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 4: Batched 3x3 matrices, shape (2, 4, 3, 3) float64
-    a = np.random.randn(2, 4, 3, 3).astype(np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 5: Edge case - 1x1 matrix float32
+    # Input 4: 1x1 float32 scalar-like matrix
     a = np.array([[42.0]], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 6: 3x3 Complex64 matrix
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 5: Batch of matrices (3D), shape (2, 3, 3), float32
+    a = np.random.randn(2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 7: 4x4 Complex128 matrix
-    a = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex128)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 6: Batch of matrices (3D), shape (5, 2, 2), float64
+    a = np.random.randn(5, 2, 2).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 8: 5x5 Identity matrix float32
-    a = np.eye(5, dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 7: Multi-batch matrices (4D), shape (2, 3, 4, 4), float32
+    a = np.random.randn(2, 3, 4, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 9: 6x6 upper triangular matrix float32
-    a = np.triu(np.random.randn(6, 6)).astype(np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 8: 2x2 complex64 matrix
+    a = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 10: 10x10 random symmetric matrix float64
-    base = np.random.randn(10, 10).astype(np.float64)
-    a = base + base.T
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 9: 3x3 complex128 matrix
+    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 11: 8x8 zero matrix float32
-    a = np.zeros((8, 8), dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 10: Batch of complex64 matrices (3D), shape (4, 2, 2)
+    a = (np.random.randn(4, 2, 2) + 1j * np.random.randn(4, 2, 2)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 11: 5x5 diagonal matrix with negative and positive values
+    a = np.diag([-5.0, -1.0, 0.0, 2.0, 7.0]).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.eigvals"] = eigvals_inputs()
 

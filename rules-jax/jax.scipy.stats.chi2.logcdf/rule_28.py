@@ -7,37 +7,35 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# df must be at least 1D if x is at least 1D (Rule 28)
+# degrees of freedom parameter df has valid numeric dtype and all values at least 1 (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, v["arg2_ndim"] > 0, True)) if n else
-          If(v["arg1_ndim"] > 0, v["arg2_ndim"] > 0, True))
+    s.add(Not(And(And(Select(v["arg1_range"], 0) >= 1, v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 8)) if n else
+          And(And(Select(v["arg1_range"], 0) >= 1, v["arg1_dtype"] >= 1), v["arg1_dtype"] <= 8))
 )
 
-def rule_28_func(arg1, arg2, solver=None, neg=False):
+def rule_28_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
-            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_dtype = Int('arg1_dtype')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 28
-        rule_28(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_28(solver, {'arg1_range': arg1_range, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_28(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_28(solver, {'arg1_range': arg1['range'], 'arg1_dtype': arg1['dtype']}, neg)

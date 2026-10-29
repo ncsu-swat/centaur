@@ -4,53 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def shape_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D integer array
-    a = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 1: 0-D scalar array (float32)
+    a = np.array(3.14, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 2: 2D float32 array
-    a = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 2: 1-D array with negative values (int32)
+    a = np.array([-5, -2, 0, 3, 7], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 3: 3D float64 array
-    a = np.random.randn(2, 2, 2).astype(np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 3: 2-D matrix (float64)
+    a = np.random.randn(4, 5).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 4: 4D int64 array
-    a = np.arange(24).reshape(2, 3, 2, 2).astype(np.int64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 4: 3-D tensor (complex64)
+    a = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 5: 5D uint8 array
-    a = np.ones((1, 2, 1, 3, 1), dtype=np.uint8)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 5: 4-D tensor (uint8)
+    a = np.random.randint(0, 256, size=(2, 8, 8, 3), dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 6: 0D array (scalar)
-    a = np.array(42.0, dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 6: 5-D tensor (float16)
+    a = np.zeros((1, 2, 3, 4, 5), dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 7: 1D boolean array
-    a = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 7: Empty 1-D array
+    a = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 8: 2D complex array
-    a = np.array([[1+2j, 3+4j], [5+6j, 7+8j]], dtype=np.complex64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 8: Empty 2-D array with zero dimension
+    a = np.empty((0, 10), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 9: 3D array with negative values
-    a = np.array([[[-1, -2], [-3, -4]], [[-5, -6], [-7, -8]]], dtype=np.int16)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 9: Boolean array
+    a = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 10: High-dimensional empty-like array (10D)
-    a = np.empty((1, 1, 1, 1, 1, 1, 1, 1, 1, 1), dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 10: 1-D array with a single element
+    a = np.array([42], dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
+
+    # Input 11: Non-contiguous / transposed array
+    a = np.random.randn(10, 20).T
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.shape_1"] = shape_inputs()
 

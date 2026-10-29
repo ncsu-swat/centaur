@@ -4,63 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def copy_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of integers
-    a = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    # Input 1: 1D int32 array with order 'K'
+    a = np.array([1, -2, 3, -4, 5], dtype=np.int32)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 2: 2D array of floats
-    a = np.random.randn(3, 4).astype(np.float32)
+    # Input 2: 2D float32 array with order 'K'
+    a = np.array([[-1.5, 2.3], [0.0, -4.7]], dtype=np.float32)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 3: 3D array of booleans
-    a = np.array([[[True, False], [False, True]], [[True, True], [False, False]]], dtype=bool)
+    # Input 3: 3D float64 array with order 'K'
+    a = np.random.randn(2, 3, 4).astype(np.float64)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 4: 4D array of complex numbers
-    a = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex64)
+    # Input 4: 0D scalar float32 array with order 'K'
+    a = np.array(-3.14, dtype=np.float32)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 5: 0D array (scalar)
-    a = np.array(3.14, dtype=np.float32)
+    # Input 5: 2D int64 array with order 'K'
+    a = np.arange(-6, 6, dtype=np.int64).reshape((3, 4))
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 6: 2D array of int16 zeros
-    a = np.zeros((5, 5), dtype=np.int16)
+    # Input 6: 4D float32 array with order 'K'
+    a = np.random.uniform(-10.0, 10.0, size=(2, 2, 3, 3)).astype(np.float32)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 7: 1D array of float64
-    a = np.array([-1.5, 0.0, 2.5, 9.9], dtype=np.float64)
+    # Input 7: 1D boolean array with order 'K'
+    a = np.array([True, False, True, True, False], dtype=np.bool_)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 8: 5D array of uint8
-    a = np.random.randint(0, 255, size=(2, 2, 2, 2, 2), dtype=np.uint8)
+    # Input 8: 2D complex64 array with order 'K'
+    a = np.array([[1.0 + 2.0j, -3.0 + 0.5j], [-0.5 - 1.0j, 4.0 - 2.0j]], dtype=np.complex64)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 9: 3D array of float16
-    a = np.random.randn(2, 3, 4).astype(np.float16)
+    # Input 9: 3D uint8 array with order 'K'
+    a = np.arange(24, dtype=np.uint8).reshape((2, 3, 4))
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 10: 2D array of int64 with negative values
-    a = np.random.randint(-100, 100, size=(4, 2), dtype=np.int64)
+    # Input 10: 1D float32 array containing inf and nan values with order 'K'
+    a = np.array([np.nan, -np.inf, 0.0, np.inf], dtype=np.float32)
     order = "K"
-    list_of_inputs.append({"a": a, "order": order})
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
+
+    # Input 11: 2D empty float32 array with order 'K'
+    a = np.empty((0, 5), dtype=np.float32)
+    order = "K"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
+
+    # Input 12: 5D int16 array with order 'K'
+    a = np.ones((2, 1, 2, 1, 3), dtype=np.int16)
+    order = "K"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.copy"] = copy_inputs()
 

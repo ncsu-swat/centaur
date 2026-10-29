@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# decimals must be non-negative and input tensor must have numeric or boolean dtype (Rule 7)
+# decimals must be non-negative and input tensor must be of floating-point type (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] <= 10, v["arg2_value"] >= 0)) if n else
-          And(v["arg1_dtype"] <= 10, v["arg2_value"] >= 0))
+    s.add(Not(And(And(v["arg2_value"] >= 0, v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8)) if n else
+          And(And(v["arg2_value"] >= 0, v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8))
 )
 
 def rule_7_func(arg1, arg2, solver=None, neg=False):

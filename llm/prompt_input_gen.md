@@ -11,6 +11,7 @@ For the api {api}, give me at least 10 valid inputs. These are the criteria:
     - Do your best to cover as many valid cases as you can, exceed the 5 input limit if you need to
 - **IMPORTANT** Assign the input to the key `"{key}"` in a dictionary named `generated_inputs` by calling the function. Assume the dictionary was already initialized before, do not initialize the dictionary.
 - **IMPORTANT** DO NOT include any main function or any code block that checks `if __name__ == '__main__':`.
+- **IMPORTANT** DO NOT modify, patch, or monkeypatch the library. Never import from `jax._src` and never assign to a `jax`/`jnp` attribute (e.g. `jnp.cosh = ...`, `jax_util.ensure_arraylike = ...`). If an input causes an error, FIX THE INPUT so it is valid against the unmodified library — do not change the library to make the error go away.
 
 Here is an example:
 

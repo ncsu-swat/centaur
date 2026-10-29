@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# accuracy mode parameter must select from valid configuration strings (Rule 21)
+# accuracy mode string must be recognized for floating or complex input arrays (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10)), (Or(v["arg2_value"] == 37, v["arg2_value"] == 5)))) if n else
-          And((And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10)), (Or(v["arg2_value"] == 37, v["arg2_value"] == 5))))
+    s.add(Not(If(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), Or(v["arg2_value"] == 37, v["arg2_value"] == 5), False)) if n else
+          If(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), Or(v["arg2_value"] == 37, v["arg2_value"] == 5), False))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):

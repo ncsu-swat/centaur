@@ -4,123 +4,135 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def repeat_inputs():
     list_of_inputs = []
 
-    # Case 1: 1D float array, normal repeat
-    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    repeats = np.array([2, 1, 3, 0, 2], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 0,
-        "total_repeat_length": 8
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array, axis 0, exact total_repeat_length
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    repeats = np.array([2, 1, 3], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 0,
+            "total_repeat_length": 6,
+        }
+    )
 
-    # Case 2: 2D int array, repeat along axis 0
-    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    repeats = np.array([2, 3], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 0,
-        "total_repeat_length": 5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D int32 array, axis 0
+    a = np.arange(6, dtype=np.int32).reshape(2, 3)
+    repeats = np.array([3, 2], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 0,
+            "total_repeat_length": 5,
+        }
+    )
 
-    # Case 3: 2D int array, repeat along axis 1
-    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    repeats = np.array([1, 2, 1], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 1,
-        "total_repeat_length": 4
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float64 array, axis 1
+    a = np.array([[1.5, -2.5], [3.0, 4.0]], dtype=np.float64)
+    repeats = np.array([2, 4], dtype=np.int64)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 1,
+            "total_repeat_length": 6,
+        }
+    )
 
-    # Case 4: 2D float array with negative values, axis 0
-    a = np.array([[-1.5, -2.5], [3.5, 4.5], [-5.5, -6.5]], dtype=np.float32)
-    repeats = np.array([2, 2, 2], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 0,
-        "total_repeat_length": 6
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 5: 3D float array, axis 1
-    a = np.random.randn(2, 2, 2).astype(np.float32)
-    repeats = np.array([3, 1], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 1,
-        "total_repeat_length": 4
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 6: Negative axis
+    # Input 4: Truncated output (total_repeat_length < sum(repeats)), negative axis
     a = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int64)
+    repeats = np.array([2, 2, 2], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": -1,
+            "total_repeat_length": 4,
+        }
+    )
+
+    # Input 5: Extended output (total_repeat_length > sum(repeats))
+    a = np.array([0.1, -0.5, 2.3, -4.1], dtype=np.float32)
+    repeats = np.array([1, 1, 1, 1], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 0,
+            "total_repeat_length": 7,
+        }
+    )
+
+    # Input 6: 3D float32 array, axis 1
+    a = np.ones((2, 3, 4), dtype=np.float32)
     repeats = np.array([1, 2, 1], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": -1,
-        "total_repeat_length": 4
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 1,
+            "total_repeat_length": 4,
+        }
+    )
 
-    # Case 7: Truncated output (total_repeat_length < sum(repeats))
-    a = np.array([1.1, 2.2, 3.3], dtype=np.float64)
-    repeats = np.array([3, 3, 3], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 0,
-        "total_repeat_length": 5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D int16 array with negative axis
+    a = np.arange(24, dtype=np.int16).reshape(3, 2, 4)
+    repeats = np.array([2, 1, 3], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": -3,
+            "total_repeat_length": 6,
+        }
+    )
 
-    # Case 8: Padded output (total_repeat_length > sum(repeats))
-    a = np.array([1.1, 2.2, 3.3], dtype=np.float64)
-    repeats = np.array([1, 1, 1], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 0,
-        "total_repeat_length": 5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Boolean array
+    a = np.array([[True, False], [False, True]], dtype=bool)
+    repeats = np.array([3, 1], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 0,
+            "total_repeat_length": 4,
+        }
+    )
 
-    # Case 9: 4D array, axis of size 1
-    a = np.random.randn(2, 1, 2, 2).astype(np.float32)
-    repeats = np.array([3], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 1,
-        "total_repeat_length": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Complex64 array
+    a = np.array([1 + 2j, -3 + 4j, 5 - 6j], dtype=np.complex64)
+    repeats = np.array([1, 3, 2], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 0,
+            "total_repeat_length": 6,
+        }
+    )
 
-    # Case 10: 3D float64 array, axis 2
-    a = np.random.randn(3, 1, 3).astype(np.float64)
-    repeats = np.array([1, 2, 3], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "repeats": repeats,
-        "axis": 2,
-        "total_repeat_length": 6
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D float32 array, axis 2
+    a = np.zeros((2, 2, 3, 2), dtype=np.float32)
+    repeats = np.array([2, 1, 2], dtype=np.int32)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "repeats": repeats,
+            "axis": 2,
+            "total_repeat_length": 5,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.repeat_1"] = repeat_inputs()
 

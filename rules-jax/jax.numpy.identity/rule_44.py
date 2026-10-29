@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the data type of the identity matrix must not be string (Rule 44)
+# identity matrix dtype is int32 or float32 as demonstrated in examples (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] != 11) if n else
-          v["arg1_value"] != 11)
+    s.add(Not(Or(v["arg1_value"] == 3, v["arg1_value"] == 7)) if n else
+          Or(v["arg1_value"] == 3, v["arg1_value"] == 7))
 )
 
 def rule_44_func(arg1, solver=None, neg=False):

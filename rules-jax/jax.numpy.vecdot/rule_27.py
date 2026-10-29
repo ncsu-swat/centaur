@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# broadcasting compatibility of non-contracted dimensions for equal-rank tensors (Rule 27)
+# contracted dimension size must match between x1 and x2 given axis (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(If(And(And(v["arg1_ndim"] == v["arg2_ndim"], v["arg3_value"] >= 0), v["arg3_value"] < v["arg1_ndim"]), (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Or(Or(Or(i == v["arg3_value"], Select(v["arg1_shape"], i) == 1), Select(v["arg2_shape"], i) == 1), Select(v["arg1_shape"], i) == Select(v["arg2_shape"], i))) for i in range(6)])), True)) if n else
-          If(And(And(v["arg1_ndim"] == v["arg2_ndim"], v["arg3_value"] >= 0), v["arg3_value"] < v["arg1_ndim"]), (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Or(Or(Or(i == v["arg3_value"], Select(v["arg1_shape"], i) == 1), Select(v["arg2_shape"], i) == 1), Select(v["arg1_shape"], i) == Select(v["arg2_shape"], i))) for i in range(6)])), True))
+    s.add(Not(Or((And(v["arg3_value"] == -1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg2_shape"], v["arg2_ndim"] - 1))), (And(And(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), v["arg3_value"] < v["arg2_ndim"]), Select(v["arg1_shape"], v["arg3_value"]) == Select(v["arg2_shape"], v["arg3_value"]))))) if n else
+          Or((And(v["arg3_value"] == -1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg2_shape"], v["arg2_ndim"] - 1))), (And(And(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), v["arg3_value"] < v["arg2_ndim"]), Select(v["arg1_shape"], v["arg3_value"]) == Select(v["arg2_shape"], v["arg3_value"])))))
 )
 
 def rule_27_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -46,9 +46,9 @@ def rule_27_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim, 'arg3_value': arg3_value})
+        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim'], 'arg3_value': arg3['value']}, neg)
+        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_value': arg3['value']}, neg)

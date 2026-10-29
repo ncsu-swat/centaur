@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# operand tensors must not have string or np.dtype data types (Rule 36)
+# concatenation supports boolean and integer data types (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] < 11) if n else
-          v["arg1_dtype"] < 11)
+    s.add(Not(And(0 <= v["arg1_dtype"], v["arg1_dtype"] <= 5)) if n else
+          And(0 <= v["arg1_dtype"], v["arg1_dtype"] <= 5))
 )
 
 def rule_36_func(arg1, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tuple of axes must specify valid positions relative to the expanded dimension count (Rule 14)
+# expanded tensor rank must not exceed maximum dimensions when expanding via tuple (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_length"] > 0, And([Implies(i < (v["arg2_length"] - 1 + 1), (If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"] - v["arg2_length"], Select(v["arg2_values"], i) < v["arg1_ndim"] + v["arg2_length"]))) for i in range(6)]))) if n else
-          And(v["arg2_length"] > 0, And([Implies(i < (v["arg2_length"] - 1 + 1), (If(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"] - v["arg2_length"], Select(v["arg2_values"], i) < v["arg1_ndim"] + v["arg2_length"]))) for i in range(6)])))
+    s.add(Not(And(v["arg2_length"] > 0, v["arg1_ndim"] + v["arg2_length"] <= 32)) if n else
+          And(v["arg2_length"] > 0, v["arg1_ndim"] + v["arg2_length"] <= 32))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):
@@ -29,18 +29,15 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_14(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_14(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

@@ -4,85 +4,129 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def histogram_bin_edges_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D array
-    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    # Input 1: 1D float32 array, standard positive range
+    a = np.array([1.0, 2.5, 3.2, 4.8, 5.0], dtype=np.float32)
     bins = 5
-    range_val = [0.0, 6.0]
+    range_param = [0.0, 10.0]
     weights = np.ones_like(a, dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
-    # Input 2: Negative values
-    a = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
+    # Input 2: 2D int32 array, symmetric negative to positive range
+    a = np.array([[-5, 2], [3, -1], [0, 4]], dtype=np.int32)
     bins = 10
-    range_val = [-15.0, 15.0]
+    range_param = [-10.0, 10.0]
     weights = np.ones_like(a, dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
-    # Input 3: Int32 array, 2D
-    a = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    bins = 3
-    range_val = [0, 5]
-    weights = np.ones_like(a, dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
-
-    # Input 4: Float64 array, 1D
-    a = np.random.uniform(-1.0, 1.0, size=(100,)).astype(np.float64)
+    # Input 3: 3D float64 array
+    a = np.linspace(1.0, 100.0, 24, dtype=np.float64).reshape((2, 3, 4))
     bins = 20
-    range_val = [-2.0, 2.0]
-    weights = np.random.uniform(0.1, 1.0, size=(100,)).astype(np.float64)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    range_param = [1.0, 100.0]
+    weights = np.ones_like(a, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
-    # Input 5: 3D array, JAX histogram flattens it
-    a = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 4: 1D int64 array with all negative values
+    a = np.array([-50, -40, -30, -20, -10], dtype=np.int64)
+    bins = 3
+    range_param = [-50.0, 0.0]
+    weights = np.array([1, 2, 1, 1, 2], dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
+
+    # Input 5: Single element 1D array with single bin
+    a = np.array([0.5], dtype=np.float32)
+    bins = 1
+    range_param = [0.0, 1.0]
+    weights = np.array([1.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
+
+    # Input 6: 4D float32 array
+    a = np.random.uniform(-1.0, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
     bins = 8
-    range_val = [-3.0, 3.0]
+    range_param = [-1.0, 1.0]
     weights = np.ones_like(a, dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
-    # Input 6: Zero range variation
-    a = np.zeros(10, dtype=np.float32)
-    bins = 5
-    range_val = [0.0, 1.0]
-    weights = np.ones_like(a, dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    # Input 7: 2D uint8 array
+    a = np.array([[0, 128], [200, 255]], dtype=np.uint8)
+    bins = 16
+    range_param = [0, 256]
+    weights = np.ones_like(a, dtype=np.uint8)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
-    # Input 7: Small bins size
-    a = np.array([10.0, 20.0, 30.0], dtype=np.float32)
-    bins = 2
-    range_val = [10.0, 30.0]
-    weights = np.array([1.0, 2.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
-
-    # Input 8: Uniform integers
-    a = np.arange(10, dtype=np.int64)
+    # Input 8: 1D float16 array
+    a = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float16)
     bins = 4
-    range_val = [0, 10]
-    weights = np.ones_like(a, dtype=np.int64)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    range_param = [-2.5, 2.5]
+    weights = np.ones_like(a, dtype=np.float16)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
-    # Input 9: Large number of bins
-    a = np.random.exponential(scale=1.0, size=(50,)).astype(np.float32)
-    bins = 100
-    range_val = [0.0, 10.0]
-    weights = np.ones_like(a, dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    # Input 9: Large values float64 array with many bins
+    a = np.array([1200.0, 2500.0, 3100.0, 4800.0], dtype=np.float64)
+    bins = 50
+    range_param = [1000.0, 5000.0]
+    weights = np.ones_like(a, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
-    # Input 10: Mixed positive and negative float range
-    a = np.linspace(-100.0, 100.0, num=50, dtype=np.float32)
-    bins = 15
-    range_val = [-120.0, 120.0]
-    weights = np.ones_like(a, dtype=np.float32)
-    list_of_inputs.append({"a": a, "bins": bins, "range": range_val, "weights": weights})
+    # Input 10: 1D float32 array with fractional range
+    a = np.array([1.2, 2.3, 3.4, 4.5, 5.6, 6.7], dtype=np.float32)
+    bins = 7
+    range_param = [0.5, 9.5]
+    weights = np.array([0.5, 1.0, 1.5, 2.0, 1.0, 0.5], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"a": a, "bins": bins, "range": range_param, "weights": weights}
+        )
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.histogram_bin_edges_3"] = histogram_bin_edges_inputs()
+
+generated_inputs["jax.numpy.histogram_bin_edges_3"] = (
+    histogram_bin_edges_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

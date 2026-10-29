@@ -4,83 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def where_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, float32, basic matching shapes
-    condition = np.array([True, False, True])
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    y = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D boolean condition, 1D float32 arrays of same shape
+    condition = np.array([True, False, True, False, True], dtype=np.bool_)
+    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    y = np.array([-1.0, -2.0, -3.0, -4.0, -5.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 2: 2D arrays, float32, random values
-    condition = np.random.rand(3, 4) > 0.5
-    x = np.random.randn(3, 4).astype(np.float32)
-    y = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D arrays with integers (including negative values)
+    condition = np.array(
+        [[True, False], [False, True], [True, True]], dtype=np.bool_
+    )
+    x = np.array([[10, -20], [30, -40], [50, 60]], dtype=np.int32)
+    y = np.array([[-1, 2], [-3, 4], [-5, -6]], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 3: 3D arrays, int32, matching shapes
-    condition = np.random.rand(2, 2, 2) > 0.5
-    x = np.random.randint(-10, 10, size=(2, 2, 2)).astype(np.int32)
-    y = np.random.randint(-10, 10, size=(2, 2, 2)).astype(np.int32)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D scalar arrays
+    condition = np.array(True, dtype=np.bool_)
+    x = np.array(42.5, dtype=np.float64)
+    y = np.array(-10.2, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 4: Broadcasting condition (1D) to x and y (2D)
-    condition = np.array([True, False, True])
-    x = np.random.randn(2, 3).astype(np.float32)
-    y = np.random.randn(2, 3).astype(np.float32)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Broadcasting condition (1D) across 2D arrays
+    condition = np.array([True, False, True], dtype=np.bool_)
+    x = np.ones((4, 3), dtype=np.float32) * 5.0
+    y = np.zeros((4, 3), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 5: Broadcasting condition (2, 1) to x and y (2, 3)
-    condition = np.array([[True], [False]])
-    x = np.random.randn(2, 3).astype(np.float32)
-    y = np.random.randn(2, 3).astype(np.float32)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Broadcasting x and y with a 2D condition
+    condition = np.array([[True, False, True], [False, True, False]])
+    x = np.array([[1.0]], dtype=np.float64)
+    y = np.array([[-1.0, -2.0, -3.0]], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 6: Broadcasting x (1, 3) and y (2, 1) with condition (2, 3)
-    condition = np.random.rand(2, 3) > 0.5
-    x = np.random.randn(1, 3).astype(np.float32)
-    y = np.random.randn(2, 1).astype(np.float32)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D tensors with float32
+    condition = np.random.rand(2, 3, 4) > 0.5
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    y = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 7: float64 arrays with negative and large values
-    condition = np.array([False, True, False])
-    x = np.array([1e10, -2e10, 3e10], dtype=np.float64)
-    y = np.array([-1e10, 2e10, -3e10], dtype=np.float64)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D tensors with int64
+    condition = np.random.choice([True, False], size=(2, 2, 2, 2))
+    x = np.random.randint(-100, 100, size=(2, 2, 2, 2), dtype=np.int64)
+    y = np.random.randint(-100, 100, size=(2, 2, 2, 2), dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 8: 4D arrays, float32
-    condition = np.random.rand(2, 2, 2, 2) > 0.5
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    y = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Complex numbers
+    condition = np.array([True, False, True], dtype=np.bool_)
+    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, 5.0 - 6.0j], dtype=np.complex64)
+    y = np.array([0.0 - 1.0j, 2.0 + 0.0j, -4.0 - 5.0j], dtype=np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 9: int64 arrays, matching shapes
-    condition = np.array([True, True, False])
-    x = np.array([100, 200, 300], dtype=np.int64)
-    y = np.array([-100, -200, -300], dtype=np.int64)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Mixed typecasting (int32 and float32)
+    condition = np.array([[True, False], [True, True]], dtype=np.bool_)
+    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    y = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
-    # Input 10: boolean arrays for x and y
-    condition = np.array([True, False, True])
-    x = np.array([False, False, False], dtype=bool)
-    y = np.array([True, True, True], dtype=bool)
-    input_dict = {"condition": condition, "x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Special values (inf, -inf, nan)
+    condition = np.array([True, False, True, False], dtype=np.bool_)
+    x = np.array([np.inf, -np.inf, np.nan, 0.0], dtype=np.float32)
+    y = np.array([0.0, 1.0, 2.0, -np.inf], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
+
+    # Input 11: Boolean x and y (logic operation via where)
+    condition = np.array([True, False, True, False], dtype=np.bool_)
+    x = np.array([False, False, True, True], dtype=np.bool_)
+    y = np.array([True, True, False, False], dtype=np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"condition": condition, "x": x, "y": y})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.where_1"] = where_inputs()
 

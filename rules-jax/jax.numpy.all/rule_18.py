@@ -7,40 +7,47 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis list elements must be within the valid dimension range of the input tensor (Rule 18)
+# all parameters combined: where must be boolean, integer axis valid, and keepdims consistent (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), (And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) < v["arg1_ndim"]))) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), (And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) < v["arg1_ndim"]))) for i in range(6)]))
+    s.add(Not(And(And(And(v["arg4_dtype"] == 0, 0 - v["arg1_ndim"] <= v["arg2_value"]), v["arg2_value"] < v["arg1_ndim"]), If(v["arg3_value"] == True, v["arg1_ndim"] >= 1, v["arg1_ndim"] >= 0))) if n else
+          And(And(And(v["arg4_dtype"] == 0, 0 - v["arg1_ndim"] <= v["arg2_value"]), v["arg2_value"] < v["arg1_ndim"]), If(v["arg3_value"] == True, v["arg1_ndim"] >= 1, v["arg1_ndim"] >= 0)))
 )
 
-def rule_18_func(arg1, arg2, solver=None, neg=False):
+def rule_18_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+            return False
+        if not isinstance(arg3, bool):
+            return False
+        if not isinstance(arg4, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
+        arg3_value = Bool('arg3_value')
+        arg4_dtype = Int('arg4_dtype')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg2_value == int(arg2))
+        solver.add(arg3_value == arg3)
+        solver.add(arg4_dtype == list_of_available_dtypes.index(arg4.dtype))
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_18(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_value': arg3_value, 'arg4_dtype': arg4_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_18(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value'], 'arg4_dtype': arg4['dtype']}, neg)

@@ -7,37 +7,32 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if ord is a float, the axis tuple must be of length 1 since float ord is only for vector norms (Rule 7)
+# tuple axis must specify either 1 axis for vector norm or 2 axes for matrix norm (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == v["arg1_value"], v["arg2_length"] == 1, False)) if n else
-          If(v["arg1_value"] == v["arg1_value"], v["arg2_length"] == 1, False))
+    s.add(Not(Or(v["arg1_length"] == 1, v["arg1_length"] == 2)) if n else
+          Or(v["arg1_length"] == 1, v["arg1_length"] == 2))
 )
 
-def rule_7_func(arg1, arg2, solver=None, neg=False):
+def rule_7_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
-            return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
-        arg2_length = Int('arg2_length')
+        arg1_length = Int('arg1_length')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
-        solver.add(arg2_length == len(arg2))
+        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 7
-        rule_7(solver, {'arg1_value': arg1_value, 'arg2_length': arg2_length})
+        rule_7(solver, {'arg1_length': arg1_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_7(solver, {'arg1_value': arg1['value'], 'arg2_length': arg2['length']}, neg)
+        rule_7(solver, {'arg1_length': arg1['length']}, neg)

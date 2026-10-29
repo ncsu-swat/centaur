@@ -4,113 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fill_diagonal_inputs():
     list_of_inputs = []
 
-    # Input 1: Square 2D float32 array
-    a = np.zeros((3, 3), dtype=np.float32)
+    # Input 1: 2D square float32 matrix, positive float val
     input_dict = {
-        "a": a,
-        "val": 1.0,
+        "a": np.zeros((4, 4), dtype=np.float32),
+        "val": 1.5,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Square 2D int32 array, negative float fill value
-    a = np.zeros((4, 4), dtype=np.int32)
+    # Input 2: 2D square float64 matrix, negative float val
     input_dict = {
-        "a": a,
-        "val": -2.5,
+        "a": np.ones((5, 5), dtype=np.float64),
+        "val": -3.14159,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Non-square 2D float64 array (more columns)
-    a = np.zeros((2, 5), dtype=np.float64)
+    # Input 3: 2D rectangular matrix with more columns than rows
     input_dict = {
-        "a": a,
+        "a": np.zeros((3, 7), dtype=np.float32),
+        "val": 2.0,
+        "wrap": False,
+        "inplace": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D rectangular matrix with more rows than columns
+    input_dict = {
+        "a": np.zeros((6, 2), dtype=np.float32),
         "val": 0.0,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Non-square 2D float32 array (more rows)
-    a = np.zeros((5, 2), dtype=np.float32)
+    # Input 5: 3D cube array (all dims must be equal for ndim >= 3)
     input_dict = {
-        "a": a,
-        "val": 99.9,
+        "a": np.zeros((3, 3, 3), dtype=np.float32),
+        "val": 7.5,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array (all dimensions must be same size)
-    a = np.zeros((3, 3, 3), dtype=np.float32)
+    # Input 6: 4D hypercube array
     input_dict = {
-        "a": a,
-        "val": 3.14,
+        "a": np.zeros((2, 2, 2, 2), dtype=np.float64),
+        "val": -0.5,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D array (all dimensions must be same size)
-    a = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    # Input 7: 2D int32 array filled with float
     input_dict = {
-        "a": a,
-        "val": -1.0,
-        "wrap": False,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Square 2D int64 array
-    a = np.zeros((5, 5), dtype=np.int64)
-    input_dict = {
-        "a": a,
+        "a": np.arange(9, dtype=np.int32).reshape((3, 3)),
         "val": 42.0,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Larger square 2D float32 array
-    a = np.zeros((10, 10), dtype=np.float32)
+    # Input 8: 2D int64 rectangular array
     input_dict = {
-        "a": a,
-        "val": -0.001,
+        "a": np.ones((4, 5), dtype=np.int64),
+        "val": -10.0,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large non-square 2D float64 array
-    a = np.zeros((4, 10), dtype=np.float64)
+    # Input 9: 2D boolean array
     input_dict = {
-        "a": a,
-        "val": 123.456,
+        "a": np.zeros((3, 3), dtype=bool),
+        "val": 1.0,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D float32 array with dimension 4
-    a = np.zeros((4, 4, 4), dtype=np.float32)
+    # Input 10: 2D complex64 array
     input_dict = {
-        "a": a,
-        "val": 0.5,
+        "a": np.zeros((4, 4), dtype=np.complex64),
+        "val": 5.0,
         "wrap": False,
-        "inplace": False
+        "inplace": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D cube with larger size
+    input_dict = {
+        "a": np.random.randn(4, 4, 4).astype(np.float32),
+        "val": -99.9,
+        "wrap": False,
+        "inplace": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fill_diagonal_3"] = fill_diagonal_inputs()
 

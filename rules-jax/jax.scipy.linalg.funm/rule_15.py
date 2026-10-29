@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input matrix A is 2-dimensional, its dimensions must be equal (Rule 15)
+# matrix A must be 2D with all dimensions having size at least 1 (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1), True)) if n else
-          If(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1), True))
+    s.add(Not(And(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1)), And([Implies(i < (1 + 1), Select(v["arg1_shape"], i) >= 1) for i in range(6)]))) if n else
+          And(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1)), And([Implies(i < (1 + 1), Select(v["arg1_shape"], i) >= 1) for i in range(6)])))
 )
 
 def rule_15_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_15_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

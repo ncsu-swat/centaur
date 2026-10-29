@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# all parameters must have floating-point dtypes (Rule 12)
+# inputs p, loc, and scale must have matching data types (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8), 6 <= v["arg3_dtype"]), v["arg3_dtype"] <= 8)) if n else
-          And(And(And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8), 6 <= v["arg3_dtype"]), v["arg3_dtype"] <= 8))
+    s.add(Not(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg2_dtype"] == v["arg3_dtype"])) if n else
+          And(v["arg1_dtype"] == v["arg2_dtype"], v["arg2_dtype"] == v["arg3_dtype"]))
 )
 
 def rule_12_func(arg1, arg2, arg3, solver=None, neg=False):

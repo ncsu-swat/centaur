@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if keepdims is enabled, the input tensor should be at least 1-dimensional (Rule 26)
+# for a 3D tensor, axis must be within -3 and 2 (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] == True, v["arg1_ndim"] >= 1, True)) if n else
-          If(v["arg2_value"] == True, v["arg1_ndim"] >= 1, True))
+    s.add(Not(If(v["arg1_ndim"] == 3, And(-3 <= v["arg2_value"], v["arg2_value"] <= 2), v["arg1_ndim"] != 3)) if n else
+          If(v["arg1_ndim"] == 3, And(-3 <= v["arg2_value"], v["arg2_value"] <= 2), v["arg1_ndim"] != 3))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):
@@ -22,17 +22,17 @@ def rule_26_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, bool):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_value = Bool('arg2_value')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == arg2)
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 26
         rule_26(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})

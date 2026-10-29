@@ -4,46 +4,48 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def power_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive floats
+    # Input 1: Basic positive floats
     list_of_inputs.append({"x1": 2.0, "x2": 3.0})
 
-    # Input 2: Square root (fractional power)
-    list_of_inputs.append({"x1": 9.0, "x2": 0.5})
+    # Input 2: Fractional exponent (square root)
+    list_of_inputs.append({"x1": 16.0, "x2": 0.5})
 
     # Input 3: Negative exponent
-    list_of_inputs.append({"x1": 5.0, "x2": -2.0})
+    list_of_inputs.append({"x1": 4.0, "x2": -2.0})
 
-    # Input 4: Negative base, odd integer-valued exponent
-    list_of_inputs.append({"x1": -3.0, "x2": 3.0})
+    # Input 4: Exponent zero
+    list_of_inputs.append({"x1": 5.5, "x2": 0.0})
 
-    # Input 5: Zero base, positive exponent
-    list_of_inputs.append({"x1": 0.0, "x2": 5.0})
+    # Input 5: Zero base with positive exponent
+    list_of_inputs.append({"x1": 0.0, "x2": 2.5})
 
-    # Input 6: Non-integer base and exponent
-    list_of_inputs.append({"x1": 1.5, "x2": 2.5})
+    # Input 6: Negative base with odd integer-valued float exponent
+    list_of_inputs.append({"x1": -2.0, "x2": 3.0})
 
-    # Input 7: Positive base, negative fractional exponent
-    list_of_inputs.append({"x1": 10.0, "x2": -1.5})
+    # Input 7: Negative base with even integer-valued float exponent
+    list_of_inputs.append({"x1": -3.0, "x2": 2.0})
 
-    # Input 8: Negative base, even integer-valued exponent
-    list_of_inputs.append({"x1": -2.5, "x2": 2.0})
+    # Input 8: Base less than 1 with positive exponent
+    list_of_inputs.append({"x1": 0.5, "x2": 4.0})
 
-    # Input 9: Fractional base, zero exponent
-    list_of_inputs.append({"x1": 0.5, "x2": 0.0})
+    # Input 9: Fractional base with negative exponent
+    list_of_inputs.append({"x1": 0.25, "x2": -1.5})
 
-    # Input 10: Large base, small exponent
-    list_of_inputs.append({"x1": 100.0, "x2": 0.1})
+    # Input 10: Both base and exponent fractional
+    list_of_inputs.append({"x1": 2.5, "x2": 1.5})
 
-    # Input 11: Negative base, negative integer-valued exponent
-    list_of_inputs.append({"x1": -2.0, "x2": -3.0})
+    # Input 11: Base 1.0 with large exponent
+    list_of_inputs.append({"x1": 1.0, "x2": 100.0})
 
-    return list_of_inputs
+    # Input 12: Negative base with negative integer-valued float exponent
+    list_of_inputs.append({"x1": -2.0, "x2": -2.0})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
 generated_inputs["jax.numpy.power_7"] = power_inputs()
 

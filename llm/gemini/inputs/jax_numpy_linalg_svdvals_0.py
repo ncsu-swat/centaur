@@ -4,61 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def svdvals_inputs():
     list_of_inputs = []
 
-    # Input 1: Square matrix (float32)
-    x = np.random.randn(5, 5).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 2D square matrix (float32)
+    x = np.random.randn(3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: Wide matrix (float32)
-    x = np.random.randn(4, 8).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D rectangular matrix with M < N (float32)
+    x = np.random.randn(2, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: Tall matrix (float32)
-    x = np.random.randn(8, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D rectangular matrix with M > N (float64)
+    x = np.random.randn(6, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: Matrix with negative values (float64)
-    x = (np.random.randn(6, 6) - 5.0).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D batched square matrices (float32)
+    x = np.random.randn(4, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: Float64 precision square matrix
-    x = np.random.randn(10, 10).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D batched rectangular matrices (float64)
+    x = np.random.randn(2, 5, 2).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 3D batched matrices (shape: 2, 4, 4)
-    x = np.random.randn(2, 4, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D batched matrices (float32)
+    x = np.random.randn(2, 3, 4, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D batched matrices (shape: 2, 3, 5, 3)
-    x = np.random.randn(2, 3, 5, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Complex matrix 2D (complex64)
+    real_part = np.random.randn(4, 4).astype(np.float32)
+    imag_part = np.random.randn(4, 4).astype(np.float32)
+    x = (real_part + 1j * imag_part).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Complex64 matrix
-    real = np.random.randn(4, 4).astype(np.float32)
-    imag = np.random.randn(4, 4).astype(np.float32)
-    x = real + 1j * imag
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Complex batched matrix 3D (complex128)
+    real_part = np.random.randn(3, 4, 2).astype(np.float64)
+    imag_part = np.random.randn(3, 4, 2).astype(np.float64)
+    x = (real_part + 1j * imag_part).astype(np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Complex128 batched matrix
-    real = np.random.randn(2, 3, 3).astype(np.float64)
-    imag = np.random.randn(2, 3, 3).astype(np.float64)
-    x = real + 1j * imag
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Integer matrix (int32)
+    x = np.random.randint(-10, 10, size=(4, 3)).astype(np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Identity matrix (float32)
-    x = np.eye(6, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Matrix with negative values (float32)
+    x = -np.abs(np.random.randn(5, 5)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: Matrix with large scale values
-    x = (np.random.randn(5, 7) * 100.0).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: 1x1 matrix (float32)
+    x = np.array([[3.14]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.svdvals"] = svdvals_inputs()
 

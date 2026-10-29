@@ -4,53 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isinf_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D array (scalar True)
-    x = np.array(True, dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: boolean True
+    input_dict = {"x": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 0D array (scalar False)
-    x = np.array(False, dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: boolean False
+    input_dict = {"x": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D boolean array
-    x = np.array([True, False, True, False], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: boolean True from comparison
+    input_dict = {"x": bool(1 == 1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D boolean array
-    x = np.array([[True, False], [False, True]], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: boolean False from comparison
+    input_dict = {"x": bool(1 == 0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D boolean array of ones
-    x = np.ones((2, 3, 2), dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: boolean True
+    input_dict = {"x": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D boolean array of zeros
-    x = np.zeros((2, 2, 2, 2), dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: boolean False
+    input_dict = {"x": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Random boolean array
-    x = np.random.choice([True, False], size=(5, 5)).astype(bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: boolean True cast from non-zero int
+    input_dict = {"x": bool(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D boolean array of size 100
-    x = np.repeat([True, False], 50).astype(bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: boolean False cast from zero int
+    input_dict = {"x": bool(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Empty boolean array
-    x = np.empty((0, 4), dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: boolean True
+    input_dict = {"x": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D boolean array
-    x = np.ones((1, 2, 1, 2, 1), dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: boolean False
+    input_dict = {"x": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isinf_4"] = isinf_inputs()
 

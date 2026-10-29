@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def multigammaln_inputs():
     list_of_inputs = []
 
-    # Input 1: d=1, a is a 1D float32 array (a > 0)
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    d = np.array(1, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
-
-    # Input 2: d=2, a is a 1D float32 array where values > 0.5
-    a = np.array([0.6, 1.5, 2.3], dtype=np.float32)
-    d = np.array(2, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
-
-    # Input 3: d=3, a is a 2D float64 array where values > 1.0
-    a = np.array([[1.1, 2.5], [3.2, 4.8]], dtype=np.float64)
-    d = np.array(3, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
-
-    # Input 4: d=4, a is a scalar float32 where value > 1.5
+    # Input 1: 0D float32 scalar tensor, d=1
     a = np.array(2.0, dtype=np.float32)
-    d = np.array(4, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
-
-    # Input 5: d=1, a has larger dimensions, float64
-    a = np.random.uniform(0.1, 10.0, size=(2, 3, 4)).astype(np.float64)
     d = np.array(1, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 6: d=5, a where values > 2.0
-    a = np.random.uniform(2.1, 10.0, size=(3,)).astype(np.float32)
-    d = np.array(5, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
-
-    # Input 7: d=2, a is a large 2D float32 array
-    a = np.random.uniform(0.6, 5.0, size=(10, 10)).astype(np.float32)
+    # Input 2: 1D float32 tensor, d=2
+    a = np.array([1.5, 2.0, 3.5], dtype=np.float32)
     d = np.array(2, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 8: d=3, high-precision float64 array
-    a = np.random.uniform(1.1, 100.0, size=(5, 5)).astype(np.float64)
+    # Input 3: 2D float64 tensor, d=3
+    a = np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float64)
     d = np.array(3, dtype=np.int64)
-    list_of_inputs.append({"a": a, "d": d})
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 9: d=10, a where values > 4.5
-    a = np.random.uniform(4.6, 20.0, size=(2, 2)).astype(np.float32)
-    d = np.array(10, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
+    # Input 4: 1D float64 tensor, d=1
+    a = np.array([0.5, 1.0, 5.0, 10.0], dtype=np.float64)
+    d = np.array(1, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 10: d=2, high magnitude inputs
-    a = np.array([100.0, 500.0, 1000.0], dtype=np.float64)
+    # Input 5: 3D float32 tensor, d=2
+    a = np.array([[[2.0, 2.5], [3.0, 3.5]]], dtype=np.float32)
     d = np.array(2, dtype=np.int32)
-    list_of_inputs.append({"a": a, "d": d})
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 6: 0D float64 scalar tensor, d=4
+    a = np.array(6.0, dtype=np.float64)
+    d = np.array(4, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 7: 2D float32 tensor, d=4
+    a = np.array([[3.0, 4.0], [5.0, 6.0]], dtype=np.float32)
+    d = np.array(4, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 8: 3D float32 tensor, d=3
+    a = np.full((2, 3, 4), 4.5, dtype=np.float32)
+    d = np.array(3, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 9: 1D float32 tensor with larger dimension d=5
+    a = np.array([3.0, 4.0, 7.0, 12.0], dtype=np.float32)
+    d = np.array(5, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 10: 4D float64 tensor, d=2
+    a = np.ones((2, 1, 3, 2), dtype=np.float64) * 3.5
+    d = np.array(2, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 11: 1D float64 tensor with large values, d=6
+    a = np.linspace(5.0, 20.0, 8, dtype=np.float64)
+    d = np.array(6, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.multigammaln_2"] = multigammaln_inputs()
 

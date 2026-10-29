@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The element and test_elements tensors must have compatible types, either both integer or both floating-point (Rule 15)
+# both element and test_elements are 1-dimensional with non-empty test_elements (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(Or((And(And(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5)), (And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8)))) if n else
-          Or((And(And(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5)), (And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8))))
+    s.add(Not(And(And(v["arg1_ndim"] == 1, v["arg2_ndim"] == 1), Select(v["arg2_shape"], 0) > 0)) if n else
+          And(And(v["arg1_ndim"] == 1, v["arg2_ndim"] == 1), Select(v["arg2_shape"], 0) > 0))
 )
 
 def rule_15_func(arg1, arg2, solver=None, neg=False):
@@ -27,17 +27,20 @@ def rule_15_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_dtype = Int('arg2_dtype')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
+        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

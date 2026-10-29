@@ -4,68 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def size_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array, axis = 0
-    a = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    # Input 1: 1D array, axis=0
+    a = np.arange(10, dtype=np.float32)
     axis = 0
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 2: 2D float32 array, axis = 1
-    a = np.random.randn(3, 4).astype(np.float32)
-    axis = 1
-    list_of_inputs.append({"a": a, "axis": axis})
-
-    # Input 3: 2D int64 array, negative axis
-    a = np.arange(10).reshape(2, 5).astype(np.int64)
+    # Input 2: 1D array, negative axis=-1
+    a = np.array([1, 2, 3, 4], dtype=np.int32)
     axis = -1
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 4: 3D float64 array, axis = 2
-    a = np.random.randn(2, 3, 4).astype(np.float64)
+    # Input 3: 2D array, axis=0
+    a = np.ones((4, 5), dtype=np.float64)
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 4: 2D array, axis=1
+    a = np.zeros((3, 7), dtype=bool)
+    axis = 1
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 5: 2D array, negative axis=-2
+    a = np.empty((6, 2), dtype=np.complex64)
+    axis = -2
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 6: 3D array, axis=2
+    a = np.random.randn(2, 3, 4).astype(np.float32)
     axis = 2
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 5: 3D bool array, negative axis
-    a = np.random.choice([True, False], size=(4, 3, 2)).astype(np.bool_)
+    # Input 7: 3D array, negative axis=-3
+    a = np.arange(24, dtype=np.int64).reshape((2, 3, 4))
     axis = -3
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 6: 4D float32 array, axis = 1
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    # Input 8: 4D array, axis=1
+    a = np.ones((2, 4, 3, 5), dtype=np.uint8)
     axis = 1
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 7: 5D float64 array, negative axis
-    a = np.random.randn(1, 2, 3, 4, 5).astype(np.float64)
-    axis = -1
-    list_of_inputs.append({"a": a, "axis": axis})
+    # Input 9: 4D array, negative axis=-4
+    a = np.zeros((5, 1, 2, 3), dtype=np.float32)
+    axis = -4
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 8: 1D int32 array, axis = 0
-    a = np.arange(8, dtype=np.int32)
+    # Input 10: 5D array, axis=4
+    a = np.ones((1, 2, 3, 4, 5), dtype=np.int16)
+    axis = 4
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
+
+    # Input 11: 2D empty dimension array, axis=0
+    a = np.empty((0, 8), dtype=np.float32)
     axis = 0
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
-    # Input 9: 2D int64 array with 0 dimension (empty), axis = 0
-    a = np.empty((0, 5), dtype=np.int64)
-    axis = 0
-    list_of_inputs.append({"a": a, "axis": axis})
-
-    # Input 10: 3D float32 array, axis = 0
-    a = np.random.randn(5, 5, 5).astype(np.float32)
-    axis = 0
-    list_of_inputs.append({"a": a, "axis": axis})
-
-    # Input 11: 2D int32 array, axis = 1
-    a = np.random.randint(0, 100, size=(10, 20)).astype(np.int32)
+    # Input 12: 2D empty dimension array, axis=1
+    a = np.empty((0, 8), dtype=np.float32)
     axis = 1
-    list_of_inputs.append({"a": a, "axis": axis})
+    list_of_inputs.append(copy.deepcopy({"a": a, "axis": axis}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.size_1"] = size_inputs()
 

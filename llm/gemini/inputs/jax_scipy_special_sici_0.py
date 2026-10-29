@@ -4,63 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def sici_inputs():
     list_of_inputs = []
 
-    # Input 1: 0-D tensor (scalar) with positive float32
-    x = np.array(1.5, dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalar float32
+    x = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: 1-D tensor with positive float32
-    x = np.array([0.5, 1.0, 2.0, 5.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array with positive floats
+    x = np.array([0.1, 0.5, 1.0, 2.5, 5.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: 2-D tensor of shape (2, 3) with positive float32
-    x = np.array([[1.0, 2.5, 3.2], [4.1, 0.8, 1.5]], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array with negative floats
+    x = np.array([-5.0, -2.5, -1.0, -0.5, -0.1], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 3-D tensor of shape (2, 2, 2) with positive float64
-    x = np.array([[[1.2, 2.3], [3.4, 4.5]], [[5.6, 6.7], [7.8, 8.9]]], dtype=np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D array including zero, positive, and negative values
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: 1-D tensor with large positive values
-    x = np.array([10.0, 50.0, 100.0, 500.0], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array of float64 values
+    x = np.array([[0.5, 1.5, 3.0], [4.5, 6.0, 7.5]], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: 1-D tensor with small positive values close to zero
-    x = np.array([1e-5, 1e-3, 0.01, 0.1], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D array with large values
+    x = np.array([[10.0, 50.0], [100.0, 500.0]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: 4-D tensor with positive values in float32
-    x = np.random.uniform(0.1, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array
+    x = np.linspace(0.01, 10.0, 24, dtype=np.float32).reshape(2, 3, 4)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: 2-D tensor with float64
-    x = np.random.uniform(1.0, 20.0, size=(3, 4)).astype(np.float64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array
+    x = np.random.uniform(0.1, 5.0, size=(2, 2, 2, 2)).astype(np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: 1-D tensor with a single positive element
-    x = np.array([3.14159], dtype=np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Small values near zero
+    x = np.array([1e-5, 1e-4, 1e-3, 1e-2], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: 5-D tensor with positive values in float32
-    x = np.random.uniform(0.5, 5.0, size=(2, 1, 3, 1, 2)).astype(np.float32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: Non-contiguous slice array
+    x = np.linspace(-5.0, 5.0, 20, dtype=np.float64)[::2]
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.sici"] = sici_inputs()
 

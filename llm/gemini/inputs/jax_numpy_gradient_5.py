@@ -7,10 +7,10 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def jax_numpy_gradient_inputs():
+def gradient_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D array with unit-like spacing
+    # Input 1: 1D array, default step 1.0, axis (0,)
     f = np.array([1.0, 2.0, 4.0, 7.0, 11.0, 16.0], dtype=np.float32)
     input_dict = {
         "f": f,
@@ -20,99 +20,99 @@ def jax_numpy_gradient_inputs():
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, gradient along both axes
-    f = np.random.randn(5, 5).astype(np.float32)
+    # Input 2: 1D array with negative values and custom spacing
+    f = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float64)
+    input_dict = {
+        "f": f,
+        "varargs": 0.5,
+        "axis": (0,),
+        "edge_order": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D array along axis 0
+    f = np.arange(12, dtype=np.float32).reshape(3, 4)
     input_dict = {
         "f": f,
         "varargs": 2.0,
+        "axis": (0,),
+        "edge_order": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D array along axis 1
+    f = np.random.randn(5, 6).astype(np.float32)
+    input_dict = {
+        "f": f,
+        "varargs": 1.5,
+        "axis": (1,),
+        "edge_order": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D array along both axes (0, 1)
+    f = np.random.uniform(-5.0, 5.0, size=(4, 5)).astype(np.float64)
+    input_dict = {
+        "f": f,
+        "varargs": 0.1,
         "axis": (0, 1),
         "edge_order": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D array with custom positive float spacing
+    # Input 6: 2D array using negative axis index (-1,)
+    f = np.cos(np.linspace(0, np.pi, 20)).reshape(4, 5).astype(np.float32)
+    input_dict = {
+        "f": f,
+        "varargs": 3.0,
+        "axis": (-1,),
+        "edge_order": None
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D array along axes (0, 2)
     f = np.random.randn(3, 4, 5).astype(np.float32)
     input_dict = {
         "f": f,
-        "varargs": 0.5,
-        "axis": (1, 2),
+        "varargs": 0.25,
+        "axis": (0, 2),
         "edge_order": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array over a linear space
-    f = np.linspace(-10, 10, 50).astype(np.float32)
+    # Input 8: 3D array along all axes (0, 1, 2)
+    f = np.ones((4, 4, 4), dtype=np.float64)
     input_dict = {
         "f": f,
-        "varargs": 0.2,
-        "axis": (0,),
-        "edge_order": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 2D array with float64 precision
-    f = np.random.randn(10, 10).astype(np.float64)
-    input_dict = {
-        "f": f,
-        "varargs": 1.5,
-        "axis": (0,),
-        "edge_order": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 3D flat/constant array with large spacing
-    f = np.ones((4, 4, 4), dtype=np.float32)
-    input_dict = {
-        "f": f,
-        "varargs": 10.0,
+        "varargs": 1.0,
         "axis": (0, 1, 2),
         "edge_order": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array with negative spacing
-    f = np.random.randn(8, 6).astype(np.float32)
+    # Input 9: 3D array using negative axis index (-2,)
+    f = np.sin(np.arange(24, dtype=np.float32)).reshape(2, 3, 4)
     input_dict = {
         "f": f,
-        "varargs": -1.0,
-        "axis": (1,),
+        "varargs": 2.5,
+        "axis": (-2,),
         "edge_order": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: High-dimensional 4D array
+    # Input 10: 4D array along subset of axes (1, 3)
     f = np.random.randn(2, 3, 4, 5).astype(np.float32)
     input_dict = {
         "f": f,
-        "varargs": 1.0,
-        "axis": (2, 3),
-        "edge_order": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Simple range 1D array with small spacing
-    f = np.arange(10).astype(np.float32)
-    input_dict = {
-        "f": f,
-        "varargs": 0.1,
-        "axis": (0,),
-        "edge_order": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D array, computing gradient along axis 1 only
-    f = np.random.randn(6, 6).astype(np.float32)
-    input_dict = {
-        "f": f,
-        "varargs": 5.5,
-        "axis": (1,),
+        "varargs": 0.5,
+        "axis": (1, 3),
         "edge_order": None
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.gradient_5"] = jax_numpy_gradient_inputs()
+generated_inputs["jax.numpy.gradient_5"] = gradient_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def signbit_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with mixed values
+    # Input 1: 1D float32 with positive, negative, and signed zero
     x = np.array([-1.5, -0.0, 0.0, 1.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D boolean array
-    x = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D int32 array
+    x = np.array([-10, -1, 0, 1, 10], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D int32 array with negative and positive values
-    x = np.array([[-10, 20], [30, -40]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D float64 with special values (NaNs and infinities)
+    x = np.array([[np.nan, -np.nan], [np.inf, -np.inf]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D float64 array with signed zeros
-    x = np.array([-0.0, 0.0, -0.0, 0.0], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar float32 negative zero
+    x = np.array(-0.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: Float32 array with special values (NaN, Inf)
-    x = np.array([np.nan, -np.nan, np.inf, -np.inf], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 0D scalar int64
+    x = np.array(42, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 3D int16 array
-    x = np.random.randint(-100, 100, size=(2, 3, 4)).astype(np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D boolean array
+    x = np.array([True, False, True, False], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 0D (scalar) float32 array
-    x = np.array(-5.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 3D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Large 2D float32 array
-    x = np.random.randn(10, 10).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 2D int64 array with boundary and negative values
+    x = np.array([[-9223372036854775808, 0], [1, -1]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 9: 4D float64 array
-    x = (np.ones((2, 2, 2, 2), dtype=np.float64) * -1.0)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.random.randn(1, 2, 2, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D int64 array with boundary values
-    x = np.array([-9223372036854775808, 9223372036854775807, 0], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 2D float32 array with zeros and ones
+    x = np.array([[-0.0, 0.0], [-1.0, 1.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: 1D uint8 array (all values should return False since they are non-negative)
-    x = np.array([0, 1, 128, 255], dtype=np.uint8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: 1D int64 array with strictly negative integers
+    x = np.array([-100, -50, -1], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.signbit"] = signbit_inputs()
 

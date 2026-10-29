@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The primitive numeric input should represent a value bounded within [-360, 360] (Rule 75)
+# primitive numeric input bounded within one radian of zero (Rule 75)
 
 rule_75 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -360, v["arg1_value"] <= 360)) if n else
-          And(v["arg1_value"] >= -360, v["arg1_value"] <= 360))
+    s.add(Not(And(v["arg1_value"] > -1.0, v["arg1_value"] < 1.0)) if n else
+          And(v["arg1_value"] > -1.0, v["arg1_value"] < 1.0))
 )
 
 def rule_75_func(arg1, solver=None, neg=False):

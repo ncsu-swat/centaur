@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Shape tuple dimension count must be within JAX limits (Rule 11)
+# shape tuple rank must be within a valid range (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] <= 32) if n else
-          v["arg1_length"] <= 32)
+    s.add(Not(And(1 <= v["arg1_length"], v["arg1_length"] <= 8)) if n else
+          And(1 <= v["arg1_length"], v["arg1_length"] <= 8))
 )
 
 def rule_11_func(arg1, solver=None, neg=False):

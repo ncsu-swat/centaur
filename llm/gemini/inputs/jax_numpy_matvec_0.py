@@ -4,79 +4,74 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def matvec_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 2D matrix and 1D vector (float32)
-    x1 = np.random.randn(4, 5).astype(np.float32)
-    x2 = np.random.randn(5).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic 2D matrix and 1D vector with float32
+    x1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    x2 = np.array([7.0, 8.0, 9.0], dtype=np.float32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 2: Complex values
-    x1 = (np.random.randn(3, 4) + 1j * np.random.randn(3, 4)).astype(np.complex64)
-    x2 = (np.random.randn(4) + 1j * np.random.randn(4)).astype(np.complex64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Integer types with negative values
+    x1 = np.array([[-1, 2, -3], [4, -5, 6]], dtype=np.int32)
+    x2 = np.array([-2, 0, 3], dtype=np.int32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 3: Integer values (with negatives)
-    x1 = np.random.randint(-10, 10, size=(2, 3)).astype(np.int32)
-    x2 = np.random.randint(-10, 10, size=(3,)).astype(np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Batched matrix-vector multiplication (matching batch dim)
+    x1 = np.random.randn(4, 3, 5).astype(np.float64)
+    x2 = np.random.randn(4, 5).astype(np.float64)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 4: Batched matrix-vector product (same leading dimensions)
-    x1 = np.random.randn(2, 3, 4).astype(np.float32)
-    x2 = np.random.randn(2, 4).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Broadcasting in batch dimensions (x1 has batch dim, x2 is unbatched)
+    x1 = np.random.randn(5, 2, 4).astype(np.float32)
+    x2 = np.random.randn(4).astype(np.float32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 5: Batched with broadcasting (x2 is 1D vector broadcasted)
-    x1 = np.random.randn(3, 5, 2).astype(np.float64)
-    x2 = np.random.randn(2).astype(np.float64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Broadcasting in batch dimensions (x1 is unbatched, x2 has batch dim)
+    x1 = np.random.randn(3, 4).astype(np.float32)
+    x2 = np.random.randn(6, 4).astype(np.float32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 6: Batched with broadcasting (x1 has leading dim 1, x2 has leading dim 3)
-    x1 = np.random.randn(1, 4, 3).astype(np.float32)
-    x2 = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Higher-dimensional batching with broadcast compatibility (e.g., (2, 1, 3, 4) and (1, 5, 4))
+    x1 = np.random.randn(2, 1, 3, 4).astype(np.float32)
+    x2 = np.random.randn(1, 5, 4).astype(np.float32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 7: Large dimensions
-    x1 = np.random.randn(64, 128).astype(np.float32)
-    x2 = np.random.randn(128).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Complex numbers
+    x1 = (
+        np.random.randn(3, 3) + 1j * np.random.randn(3, 3)
+    ).astype(np.complex64)
+    x2 = (np.random.randn(3) + 1j * np.random.randn(3)).astype(np.complex64)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 8: Higher dimensional batching
-    x1 = np.random.randint(-5, 5, size=(2, 3, 4, 5)).astype(np.int64)
-    x2 = np.random.randint(-5, 5, size=(2, 3, 5)).astype(np.int64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1x1 matrix and 1-element vector
+    x1 = np.array([[-5.5]], dtype=np.float32)
+    x2 = np.array([2.0], dtype=np.float32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 9: Boolean types
-    x1 = np.random.choice([True, False], size=(2, 2))
-    x2 = np.random.choice([True, False], size=(2,))
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Boolean arrays
+    x1 = np.array(
+        [[True, False, True], [False, True, False]], dtype=np.bool_
+    )
+    x2 = np.array([True, True, False], dtype=np.bool_)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 10: float64 precision
-    x1 = np.random.randn(5, 5).astype(np.float64)
-    x2 = np.random.randn(5).astype(np.float64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D batching with matching shapes
+    x1 = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    x2 = np.random.randn(2, 3, 5).astype(np.float32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
-    # Input 11: Negative float values
-    x1 = -np.abs(np.random.randn(3, 3).astype(np.float32))
-    x2 = -np.abs(np.random.randn(3).astype(np.float32))
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Non-square large dimensions
+    x1 = np.random.randn(10, 100, 50).astype(np.float32)
+    x2 = np.random.randn(10, 50).astype(np.float32)
+    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.matvec"] = matvec_inputs()
 

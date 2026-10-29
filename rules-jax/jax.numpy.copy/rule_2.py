@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The order parameter should be "none" since it is not implemented in JAX (Rule 2)
+# input tensor rank must be non-negative (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == 5) if n else
-          v["arg1_value"] == 5)
+    s.add(Not(v["arg1_ndim"] >= 0) if n else
+          v["arg1_ndim"] >= 0)
 )
 
 def rule_2_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_2_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 2
-        rule_2(solver, {'arg1_value': arg1_value})
+        rule_2(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_2(solver, {'arg1_value': arg1['value']}, neg)
+        rule_2(solver, {'arg1_ndim': arg1['ndim']}, neg)

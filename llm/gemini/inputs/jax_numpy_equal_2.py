@@ -4,73 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def equal_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, positive float y
-    x = np.array([1.0, 2.0, 3.0, 2.0], dtype=np.float32)
-    y = 2.0
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 2D int32 array, zero float y
-    x = np.array([[0, 1], [2, 0]], dtype=np.int32)
+    # Input 1: 1D float32 array and float 0.0
+    x = np.array([0.0, 1.0, -1.0, 0.0], dtype=np.float32)
     y = 0.0
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D float64 array, negative float y
-    x = np.array([[[ -1.5, 2.3], [1.1, -1.5]], [[0.0, -1.5], [-1.5, 4.5]]], dtype=np.float64)
-    y = -1.5
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float64 array and float 1.5
+    x = np.array([[1.5, 2.0], [-1.5, 1.5]], dtype=np.float64)
+    y = 1.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 0D float32 array, positive float y
-    x = np.array(4.2, dtype=np.float32)
-    y = 4.2
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 3D int32 array and float -2.0
+    x = np.array([[[-2, 0], [1, -2]], [[3, -2], [-2, 5]]], dtype=np.int32)
+    y = -2.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 1D float16 array, positive float y
-    x = np.array([10.0, 20.0, 10.0], dtype=np.float16)
-    y = 10.0
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 0D scalar array and float 42.0
+    x = np.array(42.0, dtype=np.float32)
+    y = 42.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 4D float32 array, negative zero float y
-    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    # Input 5: 1D array with negative zero and float -0.0
+    x = np.array([-0.0, 0.0, 1.0], dtype=np.float32)
     y = -0.0
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: 2D int64 array, positive float y
-    x = np.array([[5, 6, 7], [8, 5, 9]], dtype=np.int64)
-    y = 5.0
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D float32 array and float 0.5
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    x[0, 1, 1, 1] = 0.5
+    y = 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 1D int8 array, negative float y
-    x = np.array([-3, -2, -1, 0, 1], dtype=np.int8)
-    y = -3.0
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D array containing infinities and float inf
+    x = np.array([float("inf"), float("-inf"), 1.0], dtype=np.float64)
+    y = float("inf")
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: 3D float32 array, positive float y
-    x = np.random.randn(2, 3, 4).astype(np.float32)
-    y = 1.0
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array containing NaN and float nan
+    x = np.array([float("nan"), 0.0, 1.0], dtype=np.float32)
+    y = float("nan")
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 2D float64 array, large float y
-    x = np.array([[123.45, 0.0], [0.0, 123.45]], dtype=np.float64)
-    y = 123.45
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Empty 1D float array and float 10.0
+    x = np.array([], dtype=np.float32)
+    y = 10.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 2D uint8 array and float 255.0
+    x = np.array([[0, 255], [255, 128]], dtype=np.uint8)
+    y = 255.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 5D float16 array and float -1.0
+    x = np.zeros((1, 2, 1, 3, 2), dtype=np.float16)
+    x[0, 1, 0, 2, 1] = -1.0
+    y = -1.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.equal_2"] = equal_inputs()
 

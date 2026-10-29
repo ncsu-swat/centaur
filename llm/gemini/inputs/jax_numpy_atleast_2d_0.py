@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def atleast_2d_inputs():
     list_of_inputs = []
 
-    # Input 1: 0-D tensor (scalar), float32
-    arys = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 1: 0D scalar float32 array
+    arys = np.array(3.14, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 2: 1-D tensor, int32
-    arys = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 2: 0D scalar int32 array with negative value
+    arys = np.array(-42, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 3: 2-D tensor, float64 with negative values
-    arys = np.array([[-1.0, -2.0], [-3.0, -4.0]], dtype=np.float64)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 3: 1D int64 array
+    arys = np.array([1, 2, 3, 4], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 4: 3-D tensor, uint8
-    arys = np.arange(24, dtype=np.uint8).reshape(2, 3, 4)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 4: 1D empty float32 array
+    arys = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 5: 4-D tensor, float32 random
-    arys = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 5: 1D float64 array with negative and positive values
+    arys = np.array([-1.5, 0.0, 2.5, -3.75], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 6: 1-D tensor, boolean
-    arys = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 6: 2D boolean array
+    arys = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 7: 0-D tensor, int64
-    arys = np.array(-100, dtype=np.int64)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 7: 2D float32 array
+    arys = np.array([[-1.0, 2.0, -3.0], [4.0, -5.0, 6.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 8: 5-D tensor, float16
-    arys = np.ones((1, 2, 1, 3, 1), dtype=np.float16)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
-
-    # Input 9: Empty/zero-sized 2-D tensor
+    # Input 8: 2D empty array
     arys = np.empty((0, 5), dtype=np.float32)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 10: 1-D tensor with 1 element, int16
-    arys = np.array([42], dtype=np.int16)
-    list_of_inputs.append({"arys": copy.deepcopy(arys)})
+    # Input 9: 3D uint8 array
+    arys = np.zeros((2, 3, 4), dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
+
+    # Input 10: 3D complex64 array
+    arys = np.array([[[1.0 + 2.0j, 3.0 - 4.0j]], [[-5.0j, 6.0 + 0.0j]]], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
+
+    # Input 11: 4D int16 array
+    arys = np.ones((1, 2, 1, 3), dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.atleast_2d"] = atleast_2d_inputs()
 

@@ -4,85 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_numpy_greater_inputs():
+def greater_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic Python integers
-    input_dict = {
-        "x": 5,
-        "y": 2
-    }
+    # Input 1: Basic positive integers where x > y
+    input_dict = {"x": 5, "y": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python integers with negative values
-    input_dict = {
-        "x": -10,
-        "y": 0
-    }
+    # Input 2: Equal zeros
+    input_dict = {"x": 0, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D numpy integer arrays of same shape (int32)
-    input_dict = {
-        "x": np.array([1, -5, 10], dtype=np.int32),
-        "y": np.array([2, -5, 8], dtype=np.int32)
-    }
+    # Input 3: Negative integers where x > y
+    input_dict = {"x": -5, "y": -10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D numpy integer arrays (int64)
-    input_dict = {
-        "x": np.array([[10, -5], [4, 2]], dtype=np.int64),
-        "y": np.array([[5, -10], [4, 1]], dtype=np.int64)
-    }
+    # Input 4: Negative and positive integers
+    input_dict = {"x": -10, "y": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy integer scalars
-    input_dict = {
-        "x": np.int32(-15),
-        "y": np.int32(-20)
-    }
+    # Input 5: Positive integers where x < y
+    input_dict = {"x": 100, "y": 200}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Broadcasting 1D array with 2D array (int16)
-    input_dict = {
-        "x": np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int16),
-        "y": np.array([2, 2, 2], dtype=np.int16)
-    }
+    # Input 6: x is positive, y is zero
+    input_dict = {"x": 1, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D numpy arrays (int8)
-    input_dict = {
-        "x": np.array([[[1, 2], [3, 4]]], dtype=np.int8),
-        "y": np.array([[[2, 1], [4, 3]]], dtype=np.int8)
-    }
+    # Input 7: x is zero, y is positive
+    input_dict = {"x": 0, "y": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar array broadcasting
-    input_dict = {
-        "x": np.array([10, 20, 30], dtype=np.int32),
-        "y": np.array([15], dtype=np.int32)
-    }
+    # Input 8: Negative integer compared to zero
+    input_dict = {"x": -1, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large integer values (int64)
-    input_dict = {
-        "x": np.array([9223372036854775807, -9223372036854775808], dtype=np.int64),
-        "y": np.array([0, 0], dtype=np.int64)
-    }
+    # Input 9: Large 32-bit boundary integers
+    input_dict = {"x": 2147483647, "y": 2147483646}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Multi-dimensional random integer arrays
-    input_dict = {
-        "x": np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int32),
-        "y": np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int32)
-    }
+    # Input 10: Equal negative integers
+    input_dict = {"x": -1000, "y": -1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Equal positive integers
+    input_dict = {"x": 42, "y": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Large positive and negative values
+    input_dict = {"x": 999999, "y": -999999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.greater_7"] = jax_numpy_greater_inputs()
+generated_inputs["jax.numpy.greater_7"] = greater_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

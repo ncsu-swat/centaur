@@ -10,72 +10,108 @@ import copy
 def nonzero_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array, size < actual non-zeros (truncation)
-    a = np.array([1, 0, -2, 0, 3, -4, 0], dtype=np.int32)
-    size = 2
-    fill_value = (np.array(-1, dtype=np.int32),)
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 1: 1D int32 array, size equals number of non-zero elements
+    a = np.array([0, 1, 0, 2, 3], dtype=np.int32)
+    input_dict = {
+        "a": a,
+        "size": 3,
+        "fill_value": (-1,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array, size > actual non-zeros (padding)
-    a = np.array([[0.0, 1.5], [2.3, 0.0]], dtype=np.float32)
-    size = 5
-    fill_value = (np.array(-1, dtype=np.int32), np.array(-1, dtype=np.int32))
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 2: 1D float32 array, size larger than non-zero elements (padding)
+    a = np.array([0.0, -1.5, 0.0, 3.2, 0.0], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "size": 6,
+        "fill_value": (0,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D int64 array
-    a = np.array([[[1, 0], [0, 1]], [[0, 0], [1, 1]]], dtype=np.int64)
-    size = 6
-    fill_value = (np.array(0, dtype=np.int32), np.array(0, dtype=np.int32), np.array(0, dtype=np.int32))
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 3: 2D int64 array, size smaller than non-zero elements (truncation)
+    a = np.array([[1, 0, 2], [0, -3, 4]], dtype=np.int64)
+    input_dict = {
+        "a": a,
+        "size": 2,
+        "fill_value": (-1, -1)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D float64 array
-    a = np.array([0.0, -1.1, 0.0, 2.2, 3.3], dtype=np.float64)
-    size = 3
-    fill_value = (np.array(99, dtype=np.int32),)
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 4: 2D float64 array, padded with custom fill values
+    a = np.array([[0.0, 0.0], [5.5, 0.0], [0.0, -2.1]], dtype=np.float64)
+    input_dict = {
+        "a": a,
+        "size": 5,
+        "fill_value": (99, 99)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D int32 array, completely filled with non-zeros
-    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    size = 8
-    fill_value = (np.array(-9, dtype=np.int32), np.array(-9, dtype=np.int32))
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 5: 2D boolean array
+    a = np.array([[True, False, True], [False, False, True]], dtype=np.bool_)
+    input_dict = {
+        "a": a,
+        "size": 4,
+        "fill_value": (0, 0)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float32 array with sparse non-zeros
-    a = np.zeros((2, 2, 2, 2), dtype=np.float32)
-    a[0, 1, 0, 1] = 4.2
-    a[1, 0, 1, 0] = -1.7
-    size = 3
-    fill_value = (
-        np.array(-1, dtype=np.int32),
-        np.array(-1, dtype=np.int32),
-        np.array(-1, dtype=np.int32),
-        np.array(-1, dtype=np.int32)
-    )
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 6: 3D float32 array
+    a = np.zeros((2, 3, 4), dtype=np.float32)
+    a[0, 1, 2] = 1.0
+    a[1, 2, 3] = -4.5
+    input_dict = {
+        "a": a,
+        "size": 4,
+        "fill_value": (-1, -1, -1)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D int32 array, all zeros
-    a = np.zeros((10,), dtype=np.int32)
-    size = 3
-    fill_value = (np.array(-1, dtype=np.int32),)
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 7: 3D int32 array, size 0 (empty result)
+    a = np.ones((2, 2, 2), dtype=np.int32)
+    input_dict = {
+        "a": a,
+        "size": 0,
+        "fill_value": (0, 0, 0)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D int64 array
-    a = np.array([[0, 0], [1, 0], [0, 2]], dtype=np.int64)
-    size = 5
-    fill_value = (np.array(999, dtype=np.int32), np.array(999, dtype=np.int32))
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 8: 4D uint8 array
+    a = np.zeros((2, 2, 2, 2), dtype=np.uint8)
+    a[0, 0, 1, 1] = 255
+    a[1, 1, 0, 0] = 128
+    input_dict = {
+        "a": a,
+        "size": 3,
+        "fill_value": (255, 255, 255, 255)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D float64 array
-    a = np.array([[[1.0, 0.0], [0.0, 1.0]], [[0.0, 0.0], [1.0, 1.0]]], dtype=np.float64)
-    size = 2
-    fill_value = (np.array(-1, dtype=np.int32), np.array(-1, dtype=np.int32), np.array(-1, dtype=np.int32))
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 9: 1D complex64 array with non-zero elements
+    a = np.array([0.0 + 0.0j, 1.0 + 2.0j, 0.0 + 0.0j, -3.0 + 0.0j], dtype=np.complex64)
+    input_dict = {
+        "a": a,
+        "size": 5,
+        "fill_value": (-1,)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D int32 array, size exactly matching non-zeros
-    a = np.array([10, 20, 0, 30, 40], dtype=np.int32)
-    size = 4
-    fill_value = (np.array(5, dtype=np.int32),)
-    list_of_inputs.append({"a": a, "size": size, "fill_value": fill_value})
+    # Input 10: 2D int16 array with all elements non-zero
+    a = np.array([[-10, 20], [30, -40]], dtype=np.int16)
+    input_dict = {
+        "a": a,
+        "size": 4,
+        "fill_value": (100, 100)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D int8 array with negative fill values
+    a = np.array([[[0, -1], [2, 0]], [[0, 0], [5, -6]]], dtype=np.int8)
+    input_dict = {
+        "a": a,
+        "size": 6,
+        "fill_value": (-1, 0, 1)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for three tensor arguments, the scale tensor must contain positive values or be empty (Rule 16)
+# scale must be positive and evaluation point x must lie within the distribution support (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And((And(v["arg1_ndim"] == v["arg2_ndim"], v["arg2_ndim"] == v["arg3_ndim"])), (Or((Or([And(i < (v["arg3_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == 0) for i in range(6)])), Select(v["arg3_range"], 0) > 0)))) if n else
-          And((And(v["arg1_ndim"] == v["arg2_ndim"], v["arg2_ndim"] == v["arg3_ndim"])), (Or((Or([And(i < (v["arg3_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == 0) for i in range(6)])), Select(v["arg3_range"], 0) > 0))))
+    s.add(Not(And(v["arg3_value"] > 0, v["arg1_value"] >= v["arg2_value"])) if n else
+          And(v["arg3_value"] > 0, v["arg1_value"] >= v["arg2_value"]))
 )
 
 def rule_16_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -21,34 +21,28 @@ def rule_16_func(arg1, arg2, arg3, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, (float, np.floating)):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not isinstance(arg2, (float, np.floating)):
             return False
-        if not isinstance(arg3, np.ndarray):
+        if not isinstance(arg3, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
-        arg3_ndim = Int('arg3_ndim')
-        arg3_shape = Array('arg3_shape', IntSort(), IntSort())
-        arg3_range = Array('arg3_range', IntSort(), IntSort())
+        arg1_value = Real('arg1_value')
+        arg2_value = Real('arg2_value')
+        arg3_value = Real('arg3_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
-        solver.add(arg3_ndim == arg3.ndim)
-        for i in range(arg3.ndim):
-            arg3_shape = Store(arg3_shape, i, arg3.shape[i])
-        arg3_range = Store(arg3_range, 0, int(np.min(arg3)))
-        arg3_range = Store(arg3_range, 1, int(np.max(arg3)))
+        solver.add(arg1_value == arg1)
+        solver.add(arg2_value == arg2)
+        solver.add(arg3_value == arg3)
 
         # Constraints for rule 16
-        rule_16(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg3_range': arg3_range, 'arg3_shape': arg3_shape, 'arg3_ndim': arg3_ndim})
+        rule_16(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_16(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg3_range': arg3['range'], 'arg3_shape': arg3['shape'], 'arg3_ndim': arg3['ndim']}, neg)
+        rule_16(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)

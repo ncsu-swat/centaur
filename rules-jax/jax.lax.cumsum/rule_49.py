@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the difference between the tensor rank and the axis parameter must be strictly positive (Rule 49)
+# when cumsumming along axis 3, operand rank must be at least 4 (Rule 49)
 
 rule_49 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] - v["arg2_value"] > 0) if n else
-          v["arg1_ndim"] - v["arg2_value"] > 0)
+    s.add(Not(If(v["arg2_value"] == 3, v["arg1_ndim"] >= 4, True)) if n else
+          If(v["arg2_value"] == 3, v["arg1_ndim"] >= 4, True))
 )
 
 def rule_49_func(arg1, arg2, solver=None, neg=False):

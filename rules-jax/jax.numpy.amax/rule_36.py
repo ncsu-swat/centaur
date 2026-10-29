@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# each axis in the tuple must be in the valid dimension range and there must be no duplicates (Rule 36)
+# for a 2-dimensional tensor, reduction integer axis must fall between -2 and 1 (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(And((And([Implies(i < (v["arg2_length"] - 1 + 1), (Or((And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])), (And(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0))))) for i in range(6)])), (And([Implies(i < (v["arg2_length"] - 1 + 1), (And([Implies(j < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) != Select(v["arg2_values"], j)) for j in range(6)]))) for i in range(6)])))) if n else
-          And((And([Implies(i < (v["arg2_length"] - 1 + 1), (Or((And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])), (And(Select(v["arg2_values"], i) < 0, Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0))))) for i in range(6)])), (And([Implies(i < (v["arg2_length"] - 1 + 1), (And([Implies(j < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) != Select(v["arg2_values"], j)) for j in range(6)]))) for i in range(6)]))))
+    s.add(Not(If(v["arg1_ndim"] == 2, And(-2 <= v["arg2_value"], v["arg2_value"] <= 1), True)) if n else
+          If(v["arg1_ndim"] == 2, And(-2 <= v["arg2_value"], v["arg2_value"] <= 1), True))
 )
 
 def rule_36_func(arg1, arg2, solver=None, neg=False):
@@ -22,25 +22,22 @@ def rule_36_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 36
-        rule_36(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_36(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_36(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_36(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

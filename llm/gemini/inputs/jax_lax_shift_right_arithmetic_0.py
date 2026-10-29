@@ -4,65 +4,76 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def shift_right_arithmetic_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic int32 1D arrays
-    x = np.array([16, 32, 64, 128], dtype=np.int32)
+    # Input 1: 1D int32 arrays
+    x = np.array([-16, -8, -4, 0, 4, 8, 16], dtype=np.int32)
+    y = np.array([1, 2, 1, 0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 2: 2D int64 arrays with negative numbers
+    x = np.array([[-100, -50], [25, 100]], dtype=np.int64)
+    y = np.array([[2, 1], [0, 3]], dtype=np.int64)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 3: 0D scalar-like int32 arrays
+    x = np.array(-32, dtype=np.int32)
+    y = np.array(2, dtype=np.int32)
+    list_of_inputs.append({"x": x, "y": y})
+
+    # Input 4: 1D int32 arrays
+    x = np.array([1024, 512, 256, 128], dtype=np.int32)
     y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    list_of_inputs.append({"x": x, "y": y})
 
-    # Input 2: Negative values (arithmetic shift should preserve sign)
-    x = np.array([-16, -32, -64, -128], dtype=np.int32)
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 5: 2D int32 arrays with broadcasting (same ndim)
+    x = np.array([[-128], [64], [-32]], dtype=np.int32)
+    y = np.array([[1, 2, 3, 4]], dtype=np.int32)
+    list_of_inputs.append({"x": x, "y": y})
 
-    # Input 3: int32 2D arrays
-    x = np.array([[10, -20, 30], [-40, 50, -60]], dtype=np.int32)
-    y = np.array([[1, 2, 1], [2, 1, 2]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 6: 3D int32 arrays
+    x = np.array(
+        [[[-8, 16], [-32, 64]], [[-128, 256], [-512, 1024]]], dtype=np.int32
+    )
+    y = np.ones((2, 2, 2), dtype=np.int32)
+    list_of_inputs.append({"x": x, "y": y})
 
-    # Input 4: int32 3D arrays
-    x = np.array([[[100, -200], [300, -400]], [[500, -600], [700, -800]]], dtype=np.int32)
-    y = np.array([[[1, 2], [3, 4]], [[1, 2], [3, 4]]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 7: 4D int32 arrays with broadcasting (same ndim)
+    x = np.random.randint(-1000, 1000, size=(1, 2, 1, 3), dtype=np.int32)
+    y = np.random.randint(0, 5, size=(2, 2, 4, 3), dtype=np.int32)
+    list_of_inputs.append({"x": x, "y": y})
 
-    # Input 5: int64 1D arrays
-    x = np.array([1000000, -2000000, 3000000], dtype=np.int64)
-    y = np.array([10, 20, 5], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 8: 1D int64 arrays with larger shifts
+    x = np.array([-(2**60), 2**60, -1, 1], dtype=np.int64)
+    y = np.array([60, 30, 10, 0], dtype=np.int64)
+    list_of_inputs.append({"x": x, "y": y})
 
-    # Input 6: int64 2D arrays
-    x = np.array([[1024, -2048], [4096, -8192]], dtype=np.int64)
-    y = np.array([[2, 3], [4, 5]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 9: 2D int64 arrays
+    x = np.array([[255, -128], [64, -32]], dtype=np.int64)
+    y = np.array([[1, 2], [3, 4]], dtype=np.int64)
+    list_of_inputs.append({"x": x, "y": y})
 
-    # Input 7: Broadcasting (1, 4) and (3, 4) in int32
-    x = np.array([[16, 32, 64, 128]], dtype=np.int32)
-    y = np.array([[1, 1, 1, 1], [2, 2, 2, 2], [3, 3, 3, 3]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 10: 1D int64 arrays
+    x = np.array([65535, -32768, 16384, -8192], dtype=np.int64)
+    y = np.array([4, 4, 4, 4], dtype=np.int64)
+    list_of_inputs.append({"x": x, "y": y})
 
-    # Input 8: Broadcasting (3, 1) and (3, 5) in int64
-    x = np.array([[-16], [-32], [-64]], dtype=np.int64)
-    y = np.array([[1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
-
-    # Input 9: 1-element arrays
-    x = np.array([[-1024]], dtype=np.int32)
-    y = np.array([[5]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
-
-    # Input 10: int64 3D arrays
-    x = np.array([[[16, 32, 64]]], dtype=np.int64)
-    y = np.array([[[1, 2, 3]]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 11: 3D int32 arrays with zeros
+    x = np.zeros((3, 3, 3), dtype=np.int32)
+    y = np.random.randint(0, 10, size=(3, 3, 3), dtype=np.int32)
+    list_of_inputs.append({"x": x, "y": y})
 
     return list_of_inputs
 
-generated_inputs["jax.lax.shift_right_arithmetic"] = shift_right_arithmetic_inputs()
+
+generated_inputs["jax.lax.shift_right_arithmetic"] = (
+    shift_right_arithmetic_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -7,62 +7,64 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def jax_numpy_bitwise_or_inputs():
+
+def bitwise_or_inputs():
     list_of_inputs = []
 
-    # Input 1
+    # Input 1: 1D int32 array with True
     x = True
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array([0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2
+    # Input 2: 1D boolean array with False
     x = False
-    y = np.array([[-1, 2], [3, -4]], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3
+    # Input 3: 2D signed int64 array with negative values
     x = True
-    y = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array([[-5, 4], [3, -2]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4
+    # Input 4: 3D int32 array with False
     x = False
-    y = np.random.randint(-50, 50, size=(2, 2, 3)).astype(np.int16)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5
+    # Input 5: 0D scalar tensor int32
     x = True
-    y = np.random.randint(-100, 100, size=(4, 4)).astype(np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array(0, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6
+    # Input 6: 1D int64 array covering boundary/negative values
     x = False
-    y = np.array([-128, -1, 0, 127], dtype=np.int8)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array([-1024, 1023, 0, -1], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7
+    # Input 7: 4D int32 array
     x = True
-    y = np.random.randint(-1000, 1000, size=(1, 2, 2, 1)).astype(np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.array([[[[0, 1], [2, 3]]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8
-    x = True
-    y = np.array([False], dtype=bool)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
-
-    # Input 9
+    # Input 8: 3D zeros int32 array
     x = False
-    y = np.random.randint(-10000, 10000, size=(5, 5)).astype(np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.zeros((2, 2, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10
+    # Input 9: 3D boolean array
     x = True
-    y = np.array([123456789, 987654321], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    y = np.ones((3, 1, 4), dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 2D int64 array
+    x = False
+    y = np.array([[100000, 0], [-200000, 300000]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.bitwise_or_5"] = jax_numpy_bitwise_or_inputs()
+
+generated_inputs["jax.numpy.bitwise_or_5"] = bitwise_or_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

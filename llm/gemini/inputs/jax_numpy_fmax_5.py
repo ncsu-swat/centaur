@@ -4,73 +4,94 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fmax_inputs():
     list_of_inputs = []
 
-    # Input 1: positive integer, 1D float array with positive/negative values
-    x1 = 5
-    x2 = np.array([-1.0, 2.5, 6.0, 4.3, -5.2], dtype=np.float32)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 1: Basic 1D array with positive integer scalar
+    input_dict = {
+        "x1": 5,
+        "x2": np.array([1, 7, 9, 4], dtype=np.int32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative integer, 2D float array with nan and inf
-    x1 = -3
-    x2 = np.array([[np.nan, 2.0], [np.inf, -10.0]], dtype=np.float32)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 2: 2D array with negative integer scalar
+    input_dict = {
+        "x1": -3,
+        "x2": np.array([[-5, -2], [0, -10]], dtype=np.int64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: zero, 3D float array
-    x1 = 0
-    x2 = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 3: 1D float array with zero scalar
+    input_dict = {
+        "x1": 0,
+        "x2": np.array([-1.5, 0.0, 2.3, -0.1], dtype=np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: large integer, 1D integer array
-    x1 = 100
-    x2 = np.array([50, 150, 0, -100, 200], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 4: 2D float array containing NaN and Inf
+    input_dict = {
+        "x1": 2,
+        "x2": np.array(
+            [[np.nan, np.inf], [-np.inf, 1.0]], dtype=np.float64
+        ),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: negative integer, 4D float array
-    x1 = -10
-    x2 = np.random.randn(2, 2, 2, 2).astype(np.float32) * 20.0
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 5: 3D float32 array
+    input_dict = {
+        "x1": 10,
+        "x2": np.arange(24, dtype=np.float32).reshape(2, 3, 4),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: positive integer, 1D float array containing NaN
-    x1 = 4
-    x2 = np.array([np.nan, 3.0, np.nan, 5.0], dtype=np.float32)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 6: 0D scalar array
+    input_dict = {
+        "x1": -1,
+        "x2": np.array(-5, dtype=np.int32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: negative integer, 2D float array with negative infinity
-    x1 = -100
-    x2 = np.array([[-np.inf, -200.0], [5.0, -np.inf]], dtype=np.float32)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 7: 4D array with negative integer scalar
+    input_dict = {
+        "x1": -10,
+        "x2": np.zeros((2, 2, 2, 2), dtype=np.int16),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: positive integer, 2D float16 array
-    x1 = 7
-    x2 = np.array([[1.0, 8.0], [7.0, 6.0]], dtype=np.float16)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 8: 1D unsigned integer array
+    input_dict = {
+        "x1": 100,
+        "x2": np.array([50, 150, 200, 25], dtype=np.uint8),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: negative integer, 3D int32 array
-    x1 = -5
-    x2 = np.array([[[-10, 0], [1, -5]], [[-2, -8], [10, -1]]], dtype=np.int32)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 9: Empty array
+    input_dict = {
+        "x1": 42,
+        "x2": np.empty((0, 5), dtype=np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: zero, 1D float64 array
-    x1 = 0
-    x2 = np.array([-1.5, np.nan, 2.5, np.inf, -np.inf], dtype=np.float64)
-    input_dict = {"x1": x1, "x2": x2}
+    # Input 10: Array with all NaNs to test NaN handling with integer
+    input_dict = {
+        "x1": 7,
+        "x2": np.array([np.nan, np.nan, np.nan], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Large integer scalar with float64 array
+    input_dict = {
+        "x1": 1000000,
+        "x2": np.array([-1e7, 1e5, 1e6, 1e7], dtype=np.float64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fmax_5"] = fmax_inputs()
 

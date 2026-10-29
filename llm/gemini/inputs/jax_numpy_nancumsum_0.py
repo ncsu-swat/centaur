@@ -4,68 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def nancumsum_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 with NaNs, axis 0
-    a = np.array([1.0, np.nan, 3.0, -4.0, np.nan], dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "dtype": np.float32}
+    # Input 1: 1D array with NaNs, positive axis
+    a = np.array([1.0, np.nan, 3.0, np.nan, 5.0], dtype=np.float32)
+    input_dict = {"a": a, "axis": 0, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 with NaNs, axis 1
-    a = np.array([[1.0, np.nan, 3.0], [np.nan, 5.0, 6.0]], dtype=np.float32)
-    input_dict = {"a": a, "axis": 1, "dtype": np.float32}
+    # Input 2: 2D array with NaNs, axis 0
+    a = np.array(
+        [[1.0, np.nan, 3.0], [4.0, 5.0, np.nan]], dtype=np.float64
+    )
+    input_dict = {"a": a, "axis": 0, "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float64 with NaNs, axis 0
-    a = np.array([[np.nan, 2.0], [3.0, np.nan], [-1.0, 4.0]], dtype=np.float64)
-    input_dict = {"a": a, "axis": 0, "dtype": np.float64}
+    # Input 3: 2D array with negative values and NaNs, axis 1
+    a = np.array(
+        [[-2.5, np.nan, 1.2], [np.nan, -0.5, -3.1]], dtype=np.float32
+    )
+    input_dict = {"a": a, "axis": 1, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float32 with NaNs, axis 2
+    # Input 4: 2D array with negative axis
+    a = np.array(
+        [[np.nan, 2.0], [3.0, np.nan], [-1.0, 4.0]], dtype=np.float64
+    )
+    input_dict = {"a": a, "axis": -1, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D array with NaNs, axis 0
     a = np.random.randn(2, 3, 4).astype(np.float32)
     a[0, 1, 2] = np.nan
-    a[1, 2, 0] = np.nan
-    input_dict = {"a": a, "axis": 2, "dtype": np.float32}
+    a[1, 0, 0] = np.nan
+    input_dict = {"a": a, "axis": 0, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D float64, positive & negative values, axis -1
+    # Input 6: 3D array, axis 2
+    a = np.random.randn(3, 2, 5).astype(np.float64)
+    a[1, :, 2] = np.nan
+    input_dict = {"a": a, "axis": 2, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D array with negative axis -2
+    a = np.random.randn(2, 4, 3).astype(np.float32)
+    a[:, 2, :] = np.nan
+    input_dict = {"a": a, "axis": -2, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4D array, axis 1
+    a = np.random.randn(2, 3, 2, 2).astype(np.float32)
+    a[0, :, 1, 0] = np.nan
+    input_dict = {"a": a, "axis": 1, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D array with negative axis
     a = np.array([-10.0, np.nan, 20.0, -30.0], dtype=np.float64)
-    input_dict = {"a": a, "axis": -1, "dtype": np.float64}
+    input_dict = {"a": a, "axis": -1, "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D float64, axis -2
-    a = np.random.randn(5, 5).astype(np.float64)
-    a[2, 2] = np.nan
-    input_dict = {"a": a, "axis": -2, "dtype": np.float64}
+    # Input 10: 2D array of all NaNs
+    a = np.full((3, 3), np.nan, dtype=np.float32)
+    input_dict = {"a": a, "axis": 0, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D float32, axis 1, dtype converted to float64
-    a = np.random.randn(2, 2, 2).astype(np.float32)
-    a[1, 1, 1] = np.nan
-    input_dict = {"a": a, "axis": 1, "dtype": np.float64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 4D float32, axis 3
-    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    a[0, 0, 1, 1] = np.nan
-    input_dict = {"a": a, "axis": 3, "dtype": np.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 1D float32, all NaNs
-    a = np.array([np.nan, np.nan, np.nan], dtype=np.float32)
-    input_dict = {"a": a, "axis": 0, "dtype": np.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D float16, axis 0
-    a = np.array([[1.0, 2.0], [np.nan, 4.0]], dtype=np.float16)
-    input_dict = {"a": a, "axis": 0, "dtype": np.float16}
+    # Input 11: Converting float array to int32 dtype
+    a = np.array([[1.0, np.nan, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    input_dict = {"a": a, "axis": 1, "dtype": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.nancumsum"] = nancumsum_inputs()
 

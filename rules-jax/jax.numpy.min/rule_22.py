@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when axis is a tuple of integers, every element of the tuple must be a valid axis index (Rule 22)
+# input tensor and initial tensor must have compatible numeric data types (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)]))
+    s.add(Not(If(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), If(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 8), True))) if n else
+          If(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5), And(1 <= v["arg2_dtype"], v["arg2_dtype"] <= 5), If(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), And(6 <= v["arg2_dtype"], v["arg2_dtype"] <= 8), True)))
 )
 
 def rule_22_func(arg1, arg2, solver=None, neg=False):
@@ -22,25 +22,22 @@ def rule_22_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg1_dtype = Int('arg1_dtype')
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 22
-        rule_22(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_22(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_22(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_22(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)

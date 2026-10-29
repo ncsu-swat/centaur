@@ -4,73 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def multigammaln_inputs():
     list_of_inputs = []
 
-    # Input 1, valid — 1D array, d=1
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    # Input 1: 0D scalar array, d=1
+    a = np.array(2.5, dtype=np.float32)
     d = 1
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 2, valid — 1D array, d=2
-    a = np.array([1.5, 2.5, 3.5], dtype=np.float32)
+    # Input 2: 1D array, d=2 (requires a > 0.5)
+    a = np.array([1.0, 1.5, 2.0, 3.5], dtype=np.float32)
     d = 2
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 3, valid — 2D array, d=3 (float64)
-    a = np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float64)
+    # Input 3: 2D array, float64, d=3 (requires a > 1.0)
+    a = np.array([[1.5, 2.0], [3.0, 4.5]], dtype=np.float64)
     d = 3
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 4, valid — 3D array, d=4
-    a = (np.ones((2, 2, 2), dtype=np.float32) * 5.0)
+    # Input 4: 1D array, d=1 (multigammaln reduces to gammaln)
+    a = np.linspace(0.5, 10.0, 10, dtype=np.float64)
+    d = 1
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 5: 3D array, d=4 (requires a > 1.5)
+    a = np.full((2, 3, 2), 5.0, dtype=np.float32)
     d = 4
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 5, valid — 0D array (scalar), d=2
-    a = np.array(3.0, dtype=np.float32)
-    d = 2
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6, valid — 1D array, d=5
-    a = np.array([2.5, 10.0, 100.0], dtype=np.float64)
+    # Input 6: 2D array, d=5 (requires a > 2.0)
+    a = np.linspace(2.5, 8.0, 12, dtype=np.float64).reshape(3, 4)
     d = 5
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
-    # Input 7, valid — 2D random array, d=1
-    a = np.random.uniform(0.5, 10.0, size=(5, 5)).astype(np.float32)
-    d = 1
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8, valid — float64 precision, d=3
-    a = np.array([1.1, 1.2, 1.3], dtype=np.float64)
-    d = 3
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9, valid — High dimension d=10, 3D array
-    a = np.random.uniform(5.0, 20.0, size=(3, 3, 3)).astype(np.float32)
-    d = 10
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10, valid — Large values, d=2
-    a = np.array([1000.0, 2000.0], dtype=np.float32)
+    # Input 7: 1D array, float32, d=2
+    a = np.array([0.6, 1.2, 5.0, 15.0], dtype=np.float32)
     d = 2
-    input_dict = {"a": a, "d": d}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 8: 4D array, d=1
+    a = np.ones((2, 1, 3, 2), dtype=np.float32) * 2.5
+    d = 1
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 9: 1D array, float64, d=6 (requires a > 2.5)
+    a = np.array([3.0, 4.0, 5.5, 7.2], dtype=np.float64)
+    d = 6
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
+
+    # Input 10: 2D array with large values, d=3
+    a = np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32)
+    d = 3
+    list_of_inputs.append(copy.deepcopy({"a": a, "d": d}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.multigammaln_1"] = multigammaln_inputs()
 

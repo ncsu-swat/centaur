@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# elements of the list input must be within a typical physical range of -2π to 2π (Rule 16)
+# input tensor has floating-point dtype and at least one dimension (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -6.28318, Select(v["arg1_values"], i) <= 6.28318)) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), And(Select(v["arg1_values"], i) >= -6.28318, Select(v["arg1_values"], i) <= 6.28318)) for i in range(6)]))
+    s.add(Not(And(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), v["arg1_ndim"] > 0)) if n else
+          And(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), v["arg1_ndim"] > 0))
 )
 
 def rule_16_func(arg1, solver=None, neg=False):
@@ -19,23 +19,22 @@ def rule_16_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), RealSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 16
-        rule_16(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_16(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_16(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_16(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype']}, neg)

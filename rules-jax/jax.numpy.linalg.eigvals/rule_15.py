@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the matrix area formed by the last two dimensions must have a positive total size (Rule 15)
+# 4D batched matrices must have non-empty batch dimensions and matching matrix axes (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 2, Select(v["arg1_shape"], v["arg1_ndim"] - 1) * Select(v["arg1_shape"], v["arg1_ndim"] - 2) >= 1)) if n else
-          And(v["arg1_ndim"] >= 2, Select(v["arg1_shape"], v["arg1_ndim"] - 1) * Select(v["arg1_shape"], v["arg1_ndim"] - 2) >= 1))
+    s.add(Not(If(v["arg1_ndim"] == 4, And(And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], 1) > 0), Select(v["arg1_shape"], 2) == Select(v["arg1_shape"], 3)), True)) if n else
+          If(v["arg1_ndim"] == 4, And(And(Select(v["arg1_shape"], 0) > 0, Select(v["arg1_shape"], 1) > 0), Select(v["arg1_shape"], 2) == Select(v["arg1_shape"], 3)), True))
 )
 
 def rule_15_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_15_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 15
-        rule_15(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_15(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_15(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_15(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

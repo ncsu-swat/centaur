@@ -4,50 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def degrees_inputs():
     list_of_inputs = []
 
-    # Input 1: Python int zero
+    # Input 1: Zero
     input_dict = {"x": int(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python int positive
-    input_dict = {"x": int(90)}
+    # Input 2: Positive small integer
+    input_dict = {"x": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Python int negative
-    input_dict = {"x": int(-180)}
+    # Input 3: Negative small integer
+    input_dict = {"x": int(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.int32 positive
-    input_dict = {"x": np.int32(45)}
+    # Input 4: Value corresponding to approximately pi radians
+    input_dict = {"x": int(3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.int32 negative
-    input_dict = {"x": np.int32(-60)}
+    # Input 5: Value corresponding to approximately 2*pi radians
+    input_dict = {"x": int(6)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int32 zero
-    input_dict = {"x": np.int32(0)}
+    # Input 6: Negative integer
+    input_dict = {"x": int(-10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.int64 positive
-    input_dict = {"x": np.int64(360)}
+    # Input 7: Moderate positive integer
+    input_dict = {"x": int(42)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: np.int64 negative
-    input_dict = {"x": np.int64(-270)}
+    # Input 8: Larger positive integer
+    input_dict = {"x": int(180)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Python int large
+    # Input 9: Larger negative integer
+    input_dict = {"x": int(-360)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Very large integer
     input_dict = {"x": int(1000)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: np.int64 zero
-    input_dict = {"x": np.int64(0)}
+    # Input 11: Power of two integer
+    input_dict = {"x": int(256)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

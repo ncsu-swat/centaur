@@ -4,46 +4,48 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isscalar_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"element": 1.0})
-
-    # Input 2: Zero
+    # Input 1: Zero
     list_of_inputs.append({"element": 0.0})
 
-    # Input 3: Standard negative float
-    list_of_inputs.append({"element": -3.14159})
+    # Input 2: Positive float
+    list_of_inputs.append({"element": 1.0})
 
-    # Input 4: Large positive float
-    list_of_inputs.append({"element": 1e10})
+    # Input 3: Negative float
+    list_of_inputs.append({"element": -42.5})
 
-    # Input 5: Small positive float
-    list_of_inputs.append({"element": 1e-10})
+    # Input 4: Negative zero
+    list_of_inputs.append({"element": -0.0})
 
-    # Input 6: Positive infinity
-    list_of_inputs.append({"element": float('inf')})
+    # Input 5: Small float (scientific notation)
+    list_of_inputs.append({"element": 1e-15})
 
-    # Input 7: Negative infinity
-    list_of_inputs.append({"element": float('-inf')})
+    # Input 6: Large float
+    list_of_inputs.append({"element": 3.4e38})
 
-    # Input 8: NaN (Not a Number)
-    list_of_inputs.append({"element": float('nan')})
+    # Input 7: Pi approximation
+    list_of_inputs.append({"element": 3.141592653589793})
 
-    # Input 9: Max float64 representation
-    list_of_inputs.append({"element": float(np.finfo(np.float64).max)})
+    # Input 8: Positive infinity
+    list_of_inputs.append({"element": float("inf")})
 
-    # Input 10: Min float64 representation (closest to zero)
-    list_of_inputs.append({"element": float(np.finfo(np.float64).tiny)})
+    # Input 9: Negative infinity
+    list_of_inputs.append({"element": float("-inf")})
 
-    # Input 11: Machine epsilon for float32
-    list_of_inputs.append({"element": float(np.finfo(np.float32).eps)})
+    # Input 10: NaN
+    list_of_inputs.append({"element": float("nan")})
+
+    # Input 11: Subnormal-like small float
+    list_of_inputs.append({"element": 5e-324})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isscalar_3"] = isscalar_inputs()
 

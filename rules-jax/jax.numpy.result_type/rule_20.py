@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Result type of a union parameter and a float, ensuring the union value is non-negative when the float is positive (Rule 20)
+# string type specifier aligns with tensor data type (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] > 0.0, v["arg1_value"] >= 0, v["arg1_value"] < 0)) if n else
-          If(v["arg2_value"] > 0.0, v["arg1_value"] >= 0, v["arg1_value"] < 0))
+    s.add(Not(If(v["arg1_value"] == 38, v["arg2_dtype"] == 7, v["arg2_dtype"] != 7)) if n else
+          If(v["arg1_value"] == 38, v["arg2_dtype"] == 7, v["arg2_dtype"] != 7))
 )
 
 def rule_20_func(arg1, arg2, solver=None, neg=False):
@@ -20,22 +20,24 @@ def rule_20_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, str):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg2_value = Real('arg2_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
-        solver.add(arg2_value == arg2)
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 20
-        rule_20(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_20(solver, {'arg1_value': arg1_value, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_20(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_20(solver, {'arg1_value': arg1['value'], 'arg2_dtype': arg2['dtype']}, neg)

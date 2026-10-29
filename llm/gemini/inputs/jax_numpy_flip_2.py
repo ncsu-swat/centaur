@@ -4,63 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def flip_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, axis [0]
-    m = np.arange(10).astype(np.float32)
+    # Input 1: 1D integer array, flip axis 0
+    m = np.array([1, -2, 3, -4, 5], dtype=np.int32)
     axis = [0]
     list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
 
-    # Input 2: 2D float32 array, axis [1]
+    # Input 2: 2D float32 array, flip axis 0
     m = np.random.randn(3, 4).astype(np.float32)
+    axis = [0]
+    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
+
+    # Input 3: 2D float32 array, flip axis 1
+    m = np.random.randn(4, 5).astype(np.float32)
     axis = [1]
     list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
 
-    # Input 3: 2D int32 array, axis [0, 1]
-    m = np.arange(12).reshape(3, 4).astype(np.int32)
+    # Input 4: 2D float64 array, flip both axes [0, 1]
+    m = np.random.randn(5, 5).astype(np.float64)
     axis = [0, 1]
     list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
 
-    # Input 4: 3D float64 array, axis [2]
-    m = np.random.randn(2, 3, 4).astype(np.float64)
-    axis = [2]
-    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
-
-    # Input 5: 3D boolean array, axis [0, 2]
-    m = np.random.choice([True, False], size=(2, 2, 2))
-    axis = [0, 2]
-    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
-
-    # Input 6: 4D complex64 array, axis [-1]
-    m = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex64)
+    # Input 5: 3D int64 array with negative numbers, flip negative axis [-1]
+    m = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
     axis = [-1]
     list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
 
-    # Input 7: 2D float32 array, negative axes [-2, -1]
-    m = np.random.randn(5, 5).astype(np.float32)
-    axis = [-2, -1]
-    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
-
-    # Input 8: 1D int16 array, axis [-1]
-    m = np.array([1, -2, 3, -4, 5], dtype=np.int16)
-    axis = [-1]
-    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
-
-    # Input 9: 3D uint8 array, axis [1, 2]
-    m = np.random.randint(0, 255, size=(2, 4, 4), dtype=np.uint8)
+    # Input 6: 3D boolean array, flip axes [1, 2]
+    m = np.random.choice([True, False], size=(3, 3, 3))
     axis = [1, 2]
     list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
 
-    # Input 10: 5D float32 array, axis [0, 2, 4]
-    m = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    axis = [0, 2, 4]
+    # Input 7: 3D complex64 array, flip axes [0, 2]
+    m = (np.random.randn(2, 4, 3) + 1j * np.random.randn(2, 4, 3)).astype(
+        np.complex64
+    )
+    axis = [0, 2]
+    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
+
+    # Input 8: 4D float32 array, flip negative axes [-3, -1]
+    m = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    axis = [-3, -1]
+    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
+
+    # Input 9: 4D uint8 array, flip all axes [0, 1, 2, 3]
+    m = np.random.randint(0, 256, size=(2, 2, 3, 3), dtype=np.uint8)
+    axis = [0, 1, 2, 3]
+    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
+
+    # Input 10: 5D float64 array, flip subset of axes [1, 3]
+    m = np.random.randn(1, 2, 3, 2, 1).astype(np.float64)
+    axis = [1, 3]
+    list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
+
+    # Input 11: 1D array, flip negative axis [-1]
+    m = np.array([-10.5, 0.0, 15.2, -3.14], dtype=np.float32)
+    axis = [-1]
     list_of_inputs.append(copy.deepcopy({"m": m, "axis": axis}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.flip_2"] = flip_inputs()
 

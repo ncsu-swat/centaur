@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# shape compatibility when x is 2D and y is 1D and rowvar is true (Rule 18)
+# when rowvar is false, both 2D tensors must match along the first dimension (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(If(And(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 1), v["arg3_value"] == True), Select(v["arg1_shape"], 1) == Select(v["arg2_shape"], 0), True)) if n else
-          If(And(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 1), v["arg3_value"] == True), Select(v["arg1_shape"], 1) == Select(v["arg2_shape"], 0), True))
+    s.add(Not(And(And(And(v["arg3_value"] == False, v["arg1_ndim"] == 2), v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0))) if n else
+          And(And(And(v["arg3_value"] == False, v["arg1_ndim"] == 2), v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0)))
 )
 
 def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -46,9 +46,9 @@ def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == arg3)
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim, 'arg3_value': arg3_value})
+        rule_18(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim'], 'arg3_value': arg3['value']}, neg)
+        rule_18(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_value': arg3['value']}, neg)

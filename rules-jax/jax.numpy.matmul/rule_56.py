@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Precision option must be a valid precision string (Rule 56)
+# precision string must be none, highest, or float32 (Rule 56)
 
 rule_56 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), v["arg1_value"] == 37)) if n else
-          Or(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), v["arg1_value"] == 37))
+    s.add(Not(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 37), v["arg1_value"] == 38)) if n else
+          Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 37), v["arg1_value"] == 38))
 )
 
 def rule_56_func(arg1, solver=None, neg=False):

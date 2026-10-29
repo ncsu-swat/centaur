@@ -4,83 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def from_dlpack_inputs():
     list_of_inputs = []
 
     # Input 1: 1D float32 array, copy=True
-    input_dict = {
-        "x": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
-        "copy": True
-    }
+    x = np.array([1.0, -2.5, 3.2, -4.8], dtype=np.float32)
+    input_dict = {"x": x, "copy": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float64 array, copy=False
-    input_dict = {
-        "x": np.random.randn(3, 3).astype(np.float64),
-        "copy": False
-    }
+    # Input 2: 2D int32 array with negative values, copy=False
+    x = np.array([[-10, 20], [30, -40]], dtype=np.int32)
+    input_dict = {"x": x, "copy": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D int32 array, copy=True
-    input_dict = {
-        "x": np.arange(24).reshape(2, 3, 4).astype(np.int32),
-        "copy": True
-    }
+    # Input 3: 3D float64 array, copy=True
+    x = np.ones((2, 3, 4), dtype=np.float64)
+    input_dict = {"x": x, "copy": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 0D float32 array, copy=False
-    input_dict = {
-        "x": np.array(42.0, dtype=np.float32),
-        "copy": False
-    }
+    # Input 4: 0D scalar float32 array, copy=True
+    x = np.array(-5.5, dtype=np.float32)
+    input_dict = {"x": x, "copy": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D float16 array, copy=True
-    input_dict = {
-        "x": np.random.uniform(-1, 1, (2, 2, 2, 2)).astype(np.float16),
-        "copy": True
-    }
+    # Input 5: 4D int64 array, copy=False
+    x = np.arange(24, dtype=np.int64).reshape((2, 2, 2, 3))
+    input_dict = {"x": x, "copy": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D int64 array with negative values, copy=False
-    input_dict = {
-        "x": np.array([-10, -5, 0, 5, 10], dtype=np.int64),
-        "copy": False
-    }
+    # Input 6: 1D bool array, copy=True
+    x = np.array([True, False, True, True], dtype=np.bool_)
+    input_dict = {"x": x, "copy": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D uint8 array, copy=True
-    input_dict = {
-        "x": np.ones((5, 5), dtype=np.uint8) * 255,
-        "copy": True
-    }
+    # Input 7: 2D float32 array, copy=False
+    x = np.array([[0.5, 128.2], [255.1, 64.0]], dtype=np.float32)
+    input_dict = {"x": x, "copy": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D float32 array with negative values, copy=False
-    input_dict = {
-        "x": np.random.uniform(-100, 100, (3, 3, 3)).astype(np.float32),
-        "copy": False
-    }
+    # Input 8: 1D complex64 array, copy=True
+    x = np.array([1.0 + 2.0j, -3.0 - 4.0j], dtype=np.complex64)
+    input_dict = {"x": x, "copy": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D int8 array, copy=True
-    input_dict = {
-        "x": np.array([-128, 0, 127], dtype=np.int8),
-        "copy": True
-    }
+    # Input 9: 2D float32 array with negatives, copy=False
+    x = np.array([[-1.5, 2.5], [0.0, -3.5]], dtype=np.float32)
+    input_dict = {"x": x, "copy": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D float32 array, copy=False
-    input_dict = {
-        "x": np.zeros((2, 2, 2, 2, 2), dtype=np.float32),
-        "copy": False
-    }
+    # Input 10: 1D int32 array, copy=True
+    x = np.array([-32768, 0, 32767], dtype=np.int32)
+    input_dict = {"x": x, "copy": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D int64 array, copy=False
+    x = np.zeros((2, 3, 2), dtype=np.int64)
+    input_dict = {"x": x, "copy": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.from_dlpack"] = from_dlpack_inputs()
 

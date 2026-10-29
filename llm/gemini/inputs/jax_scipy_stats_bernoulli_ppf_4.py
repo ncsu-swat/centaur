@@ -7,82 +7,60 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def jax_scipy_stats_bernoulli_ppf_inputs():
+def bernoulli_ppf_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {
-        "q": np.bool_(True),
-        "p": np.bool_(False)
-    }
+    # Input 1: standard Python booleans (True, True)
+    input_dict = {"q": True, "p": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    input_dict = {
-        "q": np.bool_(False),
-        "p": np.bool_(True)
-    }
+    # Input 2: standard Python booleans (False, True)
+    input_dict = {"q": False, "p": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    input_dict = {
-        "q": np.array([True, False, True], dtype=np.bool_),
-        "p": np.array([False, True, True], dtype=np.bool_)
-    }
+    # Input 3: standard Python booleans (True, False)
+    input_dict = {"q": True, "p": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    input_dict = {
-        "q": np.array([[True, False], [False, True]], dtype=np.bool_),
-        "p": np.array([[False, True], [True, False]], dtype=np.bool_)
-    }
+    # Input 4: standard Python booleans (False, False)
+    input_dict = {"q": False, "p": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    input_dict = {
-        "q": np.bool_(True),
-        "p": np.array([True, False, True], dtype=np.bool_)
-    }
+    # Input 5: numpy boolean scalars (True, True)
+    input_dict = {"q": np.bool_(True), "p": np.bool_(True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    input_dict = {
-        "q": np.array([False, False, True], dtype=np.bool_),
-        "p": np.bool_(True)
-    }
+    # Input 6: numpy boolean scalars (False, True)
+    input_dict = {"q": np.bool_(False), "p": np.bool_(True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    input_dict = {
-        "q": np.ones((2, 2, 2), dtype=np.bool_),
-        "p": np.zeros((2, 2, 2), dtype=np.bool_)
-    }
+    # Input 7: numpy boolean scalars (True, False)
+    input_dict = {"q": np.bool_(True), "p": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    input_dict = {
-        "q": np.array([True], dtype=np.bool_),
-        "p": np.array([True, False], dtype=np.bool_)
-    }
+    # Input 8: numpy boolean scalars (False, False)
+    input_dict = {"q": np.bool_(False), "p": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    input_dict = {
-        "q": np.ones((3, 3), dtype=np.bool_),
-        "p": np.bool_(False)
-    }
+    # Input 9: mixed Python bool and numpy boolean (True, False)
+    input_dict = {"q": True, "p": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    input_dict = {
-        "q": np.zeros((2, 2, 1, 2), dtype=np.bool_),
-        "p": np.ones((2, 2, 1, 2), dtype=np.bool_)
-    }
+    # Input 10: mixed numpy boolean and Python bool (False, True)
+    input_dict = {"q": np.bool_(False), "p": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: mixed numpy boolean and Python bool (True, True)
+    input_dict = {"q": np.bool_(True), "p": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: mixed Python bool and numpy boolean (False, False)
+    input_dict = {"q": False, "p": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.bernoulli.ppf_4"] = jax_scipy_stats_bernoulli_ppf_inputs()
+generated_inputs["jax.scipy.stats.bernoulli.ppf_4"] = bernoulli_ppf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# prevent out-of-range float values when casting to float16 (Rule 41)
+# when casting float operand to integer types, scalar value must fit within standard 32-bit signed integer limits (Rule 41)
 
 rule_41 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] == 6, And(v["arg1_value"] >= -65504, v["arg1_value"] <= 65504), And(0 <= v["arg2_value"], v["arg2_value"] <= 10))) if n else
-          If(v["arg2_value"] == 6, And(v["arg1_value"] >= -65504, v["arg1_value"] <= 65504), And(0 <= v["arg2_value"], v["arg2_value"] <= 10)))
+    s.add(Not(If(And(1 <= v["arg2_value"], v["arg2_value"] <= 5), And(v["arg1_value"] >= -2147483648, v["arg1_value"] <= 2147483647), True)) if n else
+          If(And(1 <= v["arg2_value"], v["arg2_value"] <= 5), And(v["arg1_value"] >= -2147483648, v["arg1_value"] <= 2147483647), True))
 )
 
 def rule_41_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if size is positive then dtype must not be a string (Rule 30)
+# if dtype is standard float32 or float64, size must be strictly positive (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] > 0, v["arg1_value"] < 11, True)) if n else
-          If(v["arg2_value"] > 0, v["arg1_value"] < 11, True))
+    s.add(Not(If(Or(v["arg1_value"] == 7, v["arg1_value"] == 8), v["arg2_value"] > 0, v["arg2_value"] >= 0)) if n else
+          If(Or(v["arg1_value"] == 7, v["arg1_value"] == 8), v["arg2_value"] > 0, v["arg2_value"] >= 0))
 )
 
 def rule_30_func(arg1, arg2, solver=None, neg=False):

@@ -4,83 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def power_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar int32
-    input_dict = {
-        "x1": np.int32(5),
-        "x2": np.int32(3)
-    }
+    # Input 1: Basic positive base and exponent
+    input_dict = {"x1": 2, "x2": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar int64
-    input_dict = {
-        "x1": np.int64(-4),
-        "x2": np.int64(2)
-    }
+    # Input 2: Zero exponent
+    input_dict = {"x1": 5, "x2": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array, same size (int32)
-    input_dict = {
-        "x1": np.array([1, 2, 3], dtype=np.int32),
-        "x2": np.array([3, 2, 1], dtype=np.int32)
-    }
+    # Input 3: Negative base with even exponent
+    input_dict = {"x1": -3, "x2": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array, same size (int64)
-    input_dict = {
-        "x1": np.array([[1, -2], [3, -4]], dtype=np.int64),
-        "x2": np.array([[2, 3], [1, 0]], dtype=np.int64)
-    }
+    # Input 4: Negative base with odd exponent
+    input_dict = {"x1": -2, "x2": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Broad casting: 1D x1 and 2D x2
-    input_dict = {
-        "x1": np.array([2, 3, 4], dtype=np.int32),
-        "x2": np.array([[1, 2, 3], [0, 1, 2]], dtype=np.int32)
-    }
+    # Input 5: Zero base with positive exponent
+    input_dict = {"x1": 0, "x2": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Broad casting: 2D x1 and 1D x2
-    input_dict = {
-        "x1": np.array([[2], [3]], dtype=np.int32),
-        "x2": np.array([1, 2, 3], dtype=np.int32)
-    }
+    # Input 6: Zero base with zero exponent
+    input_dict = {"x1": 0, "x2": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D x1 and scalar x2
-    input_dict = {
-        "x1": np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32),
-        "x2": np.int32(2)
-    }
+    # Input 7: Base of 1 with larger exponent
+    input_dict = {"x1": 1, "x2": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar x1 and 3D x2
-    input_dict = {
-        "x1": np.int32(-2),
-        "x2": np.array([[[1, 2], [3, 0]], [[2, 1], [0, 3]]], dtype=np.int32)
-    }
+    # Input 8: Base of -1 with odd exponent
+    input_dict = {"x1": -1, "x2": 17}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D arrays (broadcasting compatible)
-    input_dict = {
-        "x1": np.array([[[[1, 2]], [[3, 4]]]], dtype=np.int64),
-        "x2": np.array([[[[2, 3], [1, 2]]]], dtype=np.int64)
-    }
+    # Input 9: Base of -1 with even exponent
+    input_dict = {"x1": -1, "x2": 20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D arrays with 0 and negative bases, positive exponents
-    input_dict = {
-        "x1": np.array([-3, 0, 5, -2], dtype=np.int32),
-        "x2": np.array([3, 5, 2, 4], dtype=np.int32)
-    }
+    # Input 10: Larger positive base and exponent
+    input_dict = {"x1": 10, "x2": 4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Base 7 with exponent 1
+    input_dict = {"x1": 7, "x2": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.power_6"] = power_inputs()
 

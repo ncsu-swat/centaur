@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if grid dimension is zero, static output size must also be zero (Rule 9)
+# if dimension is zero, output size must be zero, otherwise within total elements (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 0, v["arg2_value"] == 0, True)) if n else
-          If(v["arg1_value"] == 0, v["arg2_value"] == 0, True))
+    s.add(Not(If(v["arg1_value"] == 0, v["arg2_value"] == 0, And(v["arg2_value"] >= 0, v["arg2_value"] <= v["arg1_value"] * v["arg1_value"]))) if n else
+          If(v["arg1_value"] == 0, v["arg2_value"] == 0, And(v["arg2_value"] >= 0, v["arg2_value"] <= v["arg1_value"] * v["arg1_value"])))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):

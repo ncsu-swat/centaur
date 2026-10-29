@@ -4,59 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_sinh_inputs():
+
+def sinh_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero
-    input_dict = {"x": float(0.0)}
+    # Input 1: zero
+    input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive integer-like float
-    input_dict = {"x": float(1.0)}
+    # Input 2: positive float
+    input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative integer-like float
-    input_dict = {"x": float(-1.0)}
+    # Input 3: negative float
+    input_dict = {"x": -1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Small positive float
-    input_dict = {"x": float(0.5)}
+    # Input 4: fractional positive float
+    input_dict = {"x": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small negative float
-    input_dict = {"x": float(-0.5)}
+    # Input 5: fractional negative float
+    input_dict = {"x": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger positive float
-    input_dict = {"x": float(10.0)}
+    # Input 6: large positive float
+    input_dict = {"x": 15.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Larger negative float
-    input_dict = {"x": float(-10.0)}
+    # Input 7: large negative float
+    input_dict = {"x": -15.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Pi-like float
-    input_dict = {"x": float(3.141592653589793)}
+    # Input 8: small positive float near zero
+    input_dict = {"x": 1e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative Pi-like float
-    input_dict = {"x": float(-3.141592653589793)}
+    # Input 9: small negative float near zero
+    input_dict = {"x": -1e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Very small positive float
-    input_dict = {"x": float(1e-5)}
+    # Input 10: pi
+    input_dict = {"x": float(np.pi)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Very small negative float
-    input_dict = {"x": float(-1e-5)}
+    # Input 11: arbitrary float
+    input_dict = {"x": 2.718281828459045}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sinh_2"] = generate_sinh_inputs()
+
+generated_inputs["jax.numpy.sinh_2"] = sinh_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

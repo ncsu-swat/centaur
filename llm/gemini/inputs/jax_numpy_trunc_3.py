@@ -4,58 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def trunc_inputs():
     list_of_inputs = []
 
-    # Input 1: Python scalar integer
+    # Input 1: Zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Positive small integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Negative small integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Positive two-digit integer
     input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative scalar integer (np.int32)
-    input_dict = {"x": np.int32(-105)}
+    # Input 5: Negative two-digit integer
+    input_dict = {"x": -42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array of np.int32 containing positive and negative values
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
-    input_dict = {"x": x}
+    # Input 6: Larger positive integer
+    input_dict = {"x": 1000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array of np.int64
-    x = np.array([[1, -2, 3], [-4, 5, -6]], dtype=np.int64)
-    input_dict = {"x": x}
+    # Input 7: Larger negative integer
+    input_dict = {"x": -9999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array of np.int16
-    x = np.arange(-4, 4, dtype=np.int16).reshape((2, 2, 2))
-    input_dict = {"x": x}
+    # Input 8: Power of two
+    input_dict = {"x": 65536}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D array of np.int8
-    x = np.random.randint(-100, 100, size=(2, 2, 3, 3), dtype=np.int8)
-    input_dict = {"x": x}
+    # Input 9: Negative power of two
+    input_dict = {"x": -65536}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D array of np.uint32 (unsigned integers)
-    x = np.array([0, 10, 100, 1000, 10000], dtype=np.uint32)
-    input_dict = {"x": x}
+    # Input 10: Multi-digit positive integer
+    input_dict = {"x": 123456789}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array with large np.int64 values
-    x = np.array([[-9223372036854775807, 9223372036854775807], [0, -1]], dtype=np.int64)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 1D array of zeros (np.int32)
-    x = np.zeros((10,), dtype=np.int32)
-    input_dict = {"x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 5D array of np.int16
-    x = np.random.randint(-10, 10, size=(1, 2, 2, 2, 2), dtype=np.int16)
-    input_dict = {"x": x}
+    # Input 11: Multi-digit negative integer
+    input_dict = {"x": -987654321}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

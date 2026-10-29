@@ -1,5 +1,5 @@
 from google import genai
-import os, subprocess, time
+import os, subprocess, time, ast
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 os.environ['TF_FORCE_GPU_ALLOW_GROWTH'] = 'true'
@@ -177,6 +177,64 @@ generated_inputs["jax.numpy.matmul"] = matmul_inputs()
         prompt = prompt.replace("{examples}", examples[lib])
     return prefix + prompt
 
+def check_no_library_mutation(code):
+    """Reject LLM input code that patches jax/jnp: importing jax._src internals,
+    assigning to a jax/jnp attribute, or setattr() on a jax object. Input
+    generation must build valid inputs against UNMODIFIED jax, never monkeypatch it.
+    Returns (ok: bool, reason: str|None)."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return True, None  # let the normal runner surface syntax errors
+    jax_names = {"jax", "jnp"}
+    reasons = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                if a.name == "jax" or a.name.startswith("jax.") or a.name.startswith("jax_"):
+                    jax_names.add((a.asname or a.name).split(".")[0])
+                if a.name.startswith("jax._src"):
+                    reasons.append(f"imports jax internal '{a.name}'")
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            if node.module.startswith("jax._src"):
+                reasons.append(f"imports from jax internal '{node.module}'")
+            if node.module == "jax" or node.module.startswith("jax."):
+                for a in node.names:
+                    jax_names.add(a.asname or a.name)
+
+    def _root(n):
+        while isinstance(n, ast.Attribute):
+            n = n.value
+        return n.id if isinstance(n, ast.Name) else None
+
+    for node in ast.walk(tree):
+        targets = []
+        if isinstance(node, ast.Assign):
+            targets = node.targets
+        elif isinstance(node, (ast.AugAssign, ast.AnnAssign)):
+            targets = [node.target]
+        for t in targets:
+            if isinstance(t, ast.Attribute) and _root(t) in jax_names:
+                reasons.append(f"assigns to jax attribute '{_root(t)}...{t.attr}'")
+        if (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+                and node.func.id == "setattr" and node.args and _root(node.args[0]) in jax_names):
+            reasons.append("setattr() on a jax object")
+
+    if reasons:
+        return False, "; ".join(sorted(set(reasons))[:3])
+    return True, None
+
+
+def run_or_reject(api, code, suffix=0, lib="torch", llm="gemini"):
+    """Guard input code against jax/jnp monkeypatching before validating it."""
+    ok, reason = check_no_library_mutation(code or "")
+    if not ok:
+        return "", (f"Forbidden: your code modifies jax/jnp ({reason}). Do NOT patch or "
+                    f"monkeypatch jax/jnp -- no `jax._src` imports and no assignments to jax/jnp "
+                    f"attributes. Fix the INPUT so it is valid against unmodified jax instead.")
+    return save_and_run_code(api, code, suffix=suffix, lib=lib, llm=llm)
+
+
 def save_and_run_code(api, code, suffix=0, lib="torch", llm="gemini"):
     key = api if suffix == 0 else f"{api}_{suffix}"
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -235,7 +293,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
     time.sleep(6)
     
     if llm == "gemini":
-        model = "gemini-3.5-flash"
+        model = "gemini-3.8-flash"
         gemini_key = os.getenv("gemini_key")
         client = genai.Client(api_key=gemini_key)
         chat = client.chats.create(model=model)
@@ -276,7 +334,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         return generate_inputs(api, suffix=suffix, max_attempts=max_attempts, lib=lib, llm=llm)
     print(f"Got response from {llm} API.")
     code = extract_code_from_response(response_obj.text, llm=llm)
-    output, error = save_and_run_code(api, code, suffix=suffix, lib=lib, llm=llm)
+    output, error = run_or_reject(api, code, suffix=suffix, lib=lib, llm=llm)
     logger.info(f"[Output]\n\n{output}\n\n")
     logger.info(f"[Error]\n\n{error}\n\n") if error else logger.info("No error\n\n")
     attempt = 0
@@ -312,7 +370,7 @@ def generate_inputs(api, suffix=0, max_attempts=5, lib="torch", llm="gemini"):
         logger.info(f"[Response]\n\n{response_obj.text}\n\n")
         logger.info(f"[Usage]\n\n{format_usage(response_obj.usage)}\n\n")
         code = extract_code_from_response(response_obj.text, llm=llm)
-        output, error = save_and_run_code(api, code, suffix=suffix, lib=lib, llm=llm)
+        output, error = run_or_reject(api, code, suffix=suffix, lib=lib, llm=llm)
         logger.info(f"[Output]\n\n{output}\n\n")
         logger.info(f"[Error]\n\n{error}\n\n") if error else logger.info("No error\n\n")
         attempt += 1

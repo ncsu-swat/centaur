@@ -11,49 +11,49 @@ import numpy as np
 def broadcast_shapes_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D shape with 1 element
-    shapes = [1]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 1: Empty shape (scalar)
+    input_dict = {"shapes": []}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D shape with 4 elements
-    shapes = [4]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 2: 1D shape with size 1
+    input_dict = {"shapes": [1]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D shape (3, 1)
-    shapes = [3, 1]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 3: 1D shape
+    input_dict = {"shapes": [5]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D shape (1, 4)
-    shapes = [1, 4]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 4: 2D shape
+    input_dict = {"shapes": [3, 4]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D shape (5, 1, 1)
-    shapes = [5, 1, 1]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 5: 3D shape
+    input_dict = {"shapes": [2, 3, 5]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 0D shape (scalar)
-    shapes = []
-    list_of_inputs.append({"shapes": shapes})
+    # Input 6: 4D shape
+    input_dict = {"shapes": [1, 8, 16, 32]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D shape (2, 3, 4)
-    shapes = [2, 3, 4]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 7: Shape with zero-sized dimension
+    input_dict = {"shapes": [0, 10]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D shape with larger dimensions
-    shapes = [10, 10, 10]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 8: Shape with numpy integer types
+    input_dict = {"shapes": [np.int32(4), np.int64(7)]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D shape with ones
-    shapes = [1, 1, 1, 1]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 9: 5D shape
+    input_dict = {"shapes": [2, 1, 4, 1, 3]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D square shape
-    shapes = [5, 5]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 10: Shape with singleton dimensions
+    input_dict = {"shapes": [1, 1, 1, 1]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 4D shape (1, 2, 3, 4)
-    shapes = [1, 2, 3, 4]
-    list_of_inputs.append({"shapes": shapes})
+    # Input 11: Large dimensions
+    input_dict = {"shapes": [128, 256]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

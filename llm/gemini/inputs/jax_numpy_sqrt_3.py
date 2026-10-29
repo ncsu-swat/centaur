@@ -4,48 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_sqrt_inputs():
+
+def sqrt_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive float
-    list_of_inputs.append({"x": 4.0})
+    # Input 1: Standard positive float
+    input_dict = {"x": 4.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 2: Zero
-    list_of_inputs.append({"x": 0.0})
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 3: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large float
-    list_of_inputs.append({"x": 1e10})
+    # Input 4: Non-integer float
+    input_dict = {"x": 2.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 5: Small positive float
-    list_of_inputs.append({"x": 1e-10})
+    input_dict = {"x": 1e-12}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Fraction as float
-    list_of_inputs.append({"x": 0.25})
+    # Input 6: Large positive float
+    input_dict = {"x": 1e12}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Float approximation of Pi
-    list_of_inputs.append({"x": 3.1415926535})
+    # Input 7: Fractional float less than 1
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy.float32 scalar
-    list_of_inputs.append({"x": np.float32(9.0).item()})
+    # Input 8: Negative float (produces nan)
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy.float64 scalar
-    list_of_inputs.append({"x": np.float64(16.0).item()})
+    # Input 9: Large negative float (produces nan)
+    input_dict = {"x": -42.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 10: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Large decimal float
-    list_of_inputs.append({"x": 123456.789})
+    # Input 11: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: NaN
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sqrt_3"] = jax_numpy_sqrt_inputs()
+
+generated_inputs["jax.numpy.sqrt_3"] = sqrt_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

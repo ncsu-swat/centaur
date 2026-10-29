@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The scalar input x can be any float or integer value (Rule 49)
+# input tensor has a numeric or boolean data type index (Rule 49)
 
 rule_49 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == v["arg1_value"]) if n else
-          v["arg1_value"] == v["arg1_value"])
+    s.add(Not(v["arg1_dtype"] <= 10) if n else
+          v["arg1_dtype"] <= 10)
 )
 
 def rule_49_func(arg1, solver=None, neg=False):
@@ -19,18 +19,20 @@ def rule_49_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (float, np.floating)) or (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool))):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 49
-        rule_49(solver, {'arg1_value': arg1_value})
+        rule_49(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_49(solver, {'arg1_value': arg1['value']}, neg)
+        rule_49(solver, {'arg1_dtype': arg1['dtype']}, neg)

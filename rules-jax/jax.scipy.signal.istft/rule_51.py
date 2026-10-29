@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The difference between nperseg and noverlap must be positive (Rule 51)
+# fs as a positive scalar tensor alongside positive nfft (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] - v["arg2_value"] > 0) if n else
-          v["arg1_value"] - v["arg2_value"] > 0)
+    s.add(Not(And(And(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) > 0), v["arg2_value"] > 0)) if n else
+          And(And(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) > 0), v["arg2_value"] > 0))
 )
 
 def rule_51_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,27 @@ def rule_51_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not isinstance(arg1, np.ndarray):
             return False
         if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 51
-        rule_51(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_51(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_51(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_51(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

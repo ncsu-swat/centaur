@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if x contains only positive values, y must also contain positive values to avoid undefined or infinite logarithmic results (Rule 8)
+# Positive domain constraint on y when x is strictly positive (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
     s.add(Not(If(Select(v["arg1_range"], 0) > 0, Select(v["arg2_range"], 0) > 0, True)) if n else

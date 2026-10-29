@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# A scalar float or integer input must lie within the range of -1000000 to 1000000 (Rule 33)
+# float scalar multiplication identity (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg1_value"] < 1000000, v["arg1_value"] > -1000000)) if n else
-          If(v["arg1_value"] > 0, v["arg1_value"] < 1000000, v["arg1_value"] > -1000000))
+    s.add(Not(v["arg1_value"] * 1 == v["arg1_value"]) if n else
+          v["arg1_value"] * 1 == v["arg1_value"])
 )
 
 def rule_33_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_33_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Real('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 33
         rule_33(solver, {'arg1_value': arg1_value})

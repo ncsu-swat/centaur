@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Dtype of the identity matrix must be a numeric or boolean type (Rule 8)
+# dtype of identity matrix should not be string (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] < 11) if n else
-          v["arg1_value"] < 11)
+    s.add(Not(v["arg1_value"] != 11) if n else
+          v["arg1_value"] != 11)
 )
 
 def rule_8_func(arg1, solver=None, neg=False):

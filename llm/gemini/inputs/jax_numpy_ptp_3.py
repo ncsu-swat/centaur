@@ -4,70 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_ptp_inputs():
+
+def ptp_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32 array, axis list [0], keepdims False
-    a = np.random.randn(4, 5).astype(np.float32)
+    # Input 1: 1D float32 array, single axis
+    a = np.array([-5.0, 0.0, 3.5, 12.0, -2.5], dtype=np.float32)
     input_dict = {"a": a, "axis": [0], "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array, axis list [1], keepdims True
-    a = np.random.randn(3, 6).astype(np.float32)
-    input_dict = {"a": a, "axis": [1], "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 3D float32 array, axis list [0, 2], keepdims False
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"a": a, "axis": [0, 2], "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D int32 array, axis list [0], keepdims True
-    a = np.random.randint(-10, 10, size=(10,)).astype(np.int32)
+    # Input 2: 2D int32 array, axis 0, keepdims True
+    a = np.array([[1, 5, -3], [4, -2, 8]], dtype=np.int32)
     input_dict = {"a": a, "axis": [0], "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D float32 array, axis list [1, 3], keepdims True
-    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    input_dict = {"a": a, "axis": [1, 3], "keepdims": True}
+    # Input 3: 2D float64 array, axis 1, keepdims False
+    a = np.array([[-1.5, 2.5, 0.0], [10.2, -4.8, 3.3]], dtype=np.float64)
+    input_dict = {"a": a, "axis": [1], "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D float64 array with negative and positive values, axis list [0], keepdims False
-    a = (np.random.rand(5, 5) * 100 - 50).astype(np.float64)
-    input_dict = {"a": a, "axis": [0], "keepdims": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 3D int64 array, axis list [2], keepdims True
-    a = np.random.randint(-100, 100, size=(3, 4, 5)).astype(np.int64)
-    input_dict = {"a": a, "axis": [2], "keepdims": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 2D float32 array, axis list [0, 1], keepdims False
-    a = np.random.randn(10, 10).astype(np.float32)
+    # Input 4: 2D int64 array, multiple axes [0, 1], keepdims False
+    a = np.arange(-12, 12, dtype=np.int64).reshape(4, 6)
     input_dict = {"a": a, "axis": [0, 1], "keepdims": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D float32 array, axis list [2, 4], keepdims True
-    a = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    input_dict = {"a": a, "axis": [2, 4], "keepdims": True}
+    # Input 5: 3D float32 array, negative axis [-1], keepdims True
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {"a": a, "axis": [-1], "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D float32 array, axis list [0], keepdims False
-    a = np.random.randn(15).astype(np.float32)
-    input_dict = {"a": a, "axis": [0], "keepdims": False}
+    # Input 6: 3D float64 array, multiple axes [0, 2], keepdims True
+    a = np.random.uniform(-10.0, 10.0, size=(3, 4, 5)).astype(np.float64)
+    input_dict = {"a": a, "axis": [0, 2], "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 3D float64 array, axis list [1], keepdims False
-    a = np.random.randn(2, 4, 3).astype(np.float64)
+    # Input 7: 3D int32 array, axis [1], keepdims False
+    a = np.random.randint(-50, 50, size=(2, 5, 3), dtype=np.int32)
     input_dict = {"a": a, "axis": [1], "keepdims": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4D float32 array, axes [1, 2], keepdims False
+    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    input_dict = {"a": a, "axis": [1, 2], "keepdims": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 4D float16 array, negative axes [-3, -1], keepdims True
+    a = np.random.uniform(-5.0, 5.0, size=(2, 4, 3, 2)).astype(np.float16)
+    input_dict = {"a": a, "axis": [-3, -1], "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D int64 array, all axes [0, 1, 2, 3], keepdims True
+    a = np.random.randint(0, 100, size=(2, 2, 3, 3), dtype=np.int64)
+    input_dict = {"a": a, "axis": [0, 1, 2, 3], "keepdims": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D array with constant values, keepdims True
+    a = np.ones(10, dtype=np.float32) * 7.5
+    input_dict = {"a": a, "axis": [0], "keepdims": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.ptp_3"] = jax_numpy_ptp_inputs()
+
+generated_inputs["jax.numpy.ptp_3"] = ptp_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

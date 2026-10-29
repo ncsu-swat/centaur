@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bernoulli_inputs():
     list_of_inputs = []
 
-    # Input 1: Very small positive integer
-    input_dict = {"n": 1}
+    # Input 1: minimal positive integer
+    input_dict = {"n": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Small positive integer
-    input_dict = {"n": 2}
+    # Input 2: small integer
+    input_dict = {"n": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Standard size
-    input_dict = {"n": 5}
+    # Input 3: integer 3
+    input_dict = {"n": int(3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Medium size
-    input_dict = {"n": 10}
+    # Input 4: integer 4
+    input_dict = {"n": int(4)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Using numpy int32 type
-    input_dict = {"n": np.int32(15)}
+    # Input 5: integer 5
+    input_dict = {"n": int(5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger value
-    input_dict = {"n": 20}
+    # Input 6: integer 6
+    input_dict = {"n": int(6)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Using numpy int64 type
-    input_dict = {"n": np.int64(30)}
+    # Input 7: integer 8
+    input_dict = {"n": int(8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Larger value
-    input_dict = {"n": 50}
+    # Input 8: integer 10
+    input_dict = {"n": int(10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Even larger value
-    input_dict = {"n": 100}
+    # Input 9: integer 15
+    input_dict = {"n": int(15)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Another standard value
-    input_dict = {"n": 8}
+    # Input 10: integer 20
+    input_dict = {"n": int(20)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Another standard value
-    input_dict = {"n": 12}
+    # Input 11: integer 30
+    input_dict = {"n": int(30)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.bernoulli"] = bernoulli_inputs()
 

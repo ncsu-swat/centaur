@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input is an integer, it must be a non-zero value within a safe range to avoid overflow or division by zero (Rule 73)
+# integer scalar input must be strictly greater than ten (Rule 73)
 
 rule_73 = lambda s, v, n=False: (
-    s.add(Not(And(And((Or(v["arg1_value"] < 0, v["arg1_value"] > 0)), v["arg1_value"] >= -1000000), v["arg1_value"] <= 1000000)) if n else
-          And(And((Or(v["arg1_value"] < 0, v["arg1_value"] > 0)), v["arg1_value"] >= -1000000), v["arg1_value"] <= 1000000))
+    s.add(Not(v["arg1_value"] > 10) if n else
+          v["arg1_value"] > 10)
 )
 
 def rule_73_func(arg1, solver=None, neg=False):

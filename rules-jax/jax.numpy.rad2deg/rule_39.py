@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor dimension size must be valid if not a scalar (Rule 39)
+# scalar float angle in radians bounded within multi-turn range (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) >= 1, True)) if n else
-          If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) >= 1, True))
+    s.add(Not(If(v["arg1_value"] > 0.0, v["arg1_value"] <= 6283.185, v["arg1_value"] >= -6283.185)) if n else
+          If(v["arg1_value"] > 0.0, v["arg1_value"] <= 6283.185, v["arg1_value"] >= -6283.185))
 )
 
 def rule_39_func(arg1, solver=None, neg=False):
@@ -19,23 +19,20 @@ def rule_39_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg1_value = Real('arg1_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        for i in range(arg1.ndim):
-            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_39(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_39(solver, {'arg1_value': arg1['value']}, neg)

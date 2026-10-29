@@ -4,94 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def unique_values_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, size smaller than unique values
-    input_dict = {
-        "x": np.array([3.0, 1.0, 2.0, 1.0, 3.0], dtype=np.float32),
-        "size": 2,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array with duplicates
+    x = np.array([3.0, 1.0, 2.0, 1.0, 3.0, 4.0], dtype=np.float32)
+    size = 6
+    fill_value = 0.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 2: 1D array, size larger than unique values (padding needed)
-    input_dict = {
-        "x": np.array([5.0, 2.0, 8.0, 2.0], dtype=np.float32),
-        "size": 5,
-        "fill_value": -1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D int32 array with negative and positive values
+    x = np.array([-5, 10, -5, 0, 2, 10, -1], dtype=np.int32)
+    size = 10
+    fill_value = -999.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 3: 2D array with negative values
-    input_dict = {
-        "x": np.array([[-1.0, -2.0], [-2.0, -3.0]], dtype=np.float32),
-        "size": 3,
-        "fill_value": -9.9
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float64 array
+    x = np.array([[1.5, 2.5], [2.5, 3.5], [1.5, 4.5]], dtype=np.float64)
+    size = 4
+    fill_value = -1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 4: 3D array, float64
-    input_dict = {
-        "x": np.array([[[1.5, 2.5], [1.5, 3.5]], [[2.5, 3.5], [4.5, 5.5]]], dtype=np.float64),
-        "size": 6,
-        "fill_value": -0.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D float32 array where size is smaller than unique count
+    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    size = 3
+    fill_value = 0.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 5: Large 1D array generated randomly, size equal to number of unique values
-    x_rand = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0], dtype=np.float32)
-    input_dict = {
-        "x": x_rand,
-        "size": 10,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D int64 array
+    x = np.arange(24, dtype=np.int64).reshape((2, 3, 4)) % 5
+    size = 8
+    fill_value = -1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 6: Array containing NaN values (unique_values handles NaN with equal_nan=True)
-    input_dict = {
-        "x": np.array([np.nan, 2.0, np.nan, 1.0], dtype=np.float32),
-        "size": 4,
-        "fill_value": -99.9
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D float32 array with all identical elements
+    x = np.full((10,), 7.5, dtype=np.float32)
+    size = 5
+    fill_value = 0.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 7: High-dimensional array (4D)
-    input_dict = {
-        "x": np.ones((2, 2, 2, 2), dtype=np.float32),
-        "size": 3,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D array of single element
+    x = np.array([42.0], dtype=np.float32)
+    size = 3
+    fill_value = 1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 8: 1D array with positive and negative infinity
-    input_dict = {
-        "x": np.array([np.inf, -np.inf, np.inf, 1.0], dtype=np.float32),
-        "size": 5,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D float32 tensor
+    x = np.ones((2, 2, 2, 2), dtype=np.float32)
+    x[0, 1, 0, 1] = -3.0
+    x[1, 0, 1, 0] = 5.0
+    size = 5
+    fill_value = -10.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 9: Single element array
-    input_dict = {
-        "x": np.array([42.0], dtype=np.float32),
-        "size": 2,
-        "fill_value": 1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D float64 array with strictly negative values
+    x = np.array([-10.0, -20.0, -10.0, -30.0, -20.0], dtype=np.float64)
+    size = 5
+    fill_value = 99.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 10: Array with duplicate values and large float size limit
-    input_dict = {
-        "x": np.array([100.0, 100.0, 200.0, 300.0, 200.0], dtype=np.float32),
-        "size": 10,
-        "fill_value": -999.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Empty 1D float32 array
+    x = np.array([], dtype=np.float32)
+    size = 4
+    fill_value = 0.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
+
+    # Input 11: 2D int16 array with large padding size
+    x = np.array([[3, 3, 3], [3, 3, 3]], dtype=np.int16)
+    size = 6
+    fill_value = 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "size": size, "fill_value": fill_value})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.unique_values_3"] = unique_values_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when fill_value is an integer, the input tensor must be an integer type (Rule 21)
+# for boolean tensor, size is at most 2 when extracting unique elements without padding (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And((And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 5)), (Or(v["arg2_value"] > 0, v["arg2_value"] <= 0)))) if n else
-          And((And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 5)), (Or(v["arg2_value"] > 0, v["arg2_value"] <= 0))))
+    s.add(Not(If(v["arg1_dtype"] == 0, And(v["arg2_value"] > 0, v["arg2_value"] <= 2), v["arg2_value"] > 0)) if n else
+          If(v["arg1_dtype"] == 0, And(v["arg2_value"] > 0, v["arg2_value"] <= 2), v["arg2_value"] > 0))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):

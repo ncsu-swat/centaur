@@ -4,93 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def pareto_ppf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, float32, basic valid values
-    q = np.array([0.1, 0.5, 0.9], dtype=np.float32)
-    b = np.array([1.5, 2.5, 3.5], dtype=np.float32)
-    loc = np.array([0.0, 1.0, -1.0], dtype=np.float32)
-    scale = np.array([1.0, 2.0, 0.5], dtype=np.float32)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 2D arrays, float32
-    q = np.random.uniform(0.0, 0.95, size=(3, 3)).astype(np.float32)
-    b = np.random.uniform(0.5, 5.0, size=(3, 3)).astype(np.float32)
-    loc = np.random.uniform(-2.0, 2.0, size=(3, 3)).astype(np.float32)
-    scale = np.random.uniform(0.1, 3.0, size=(3, 3)).astype(np.float32)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: float64 1D arrays
-    q = np.array([0.01, 0.99], dtype=np.float64)
-    b = np.array([0.5, 10.0], dtype=np.float64)
-    loc = np.array([0.0, 0.0], dtype=np.float64)
-    scale = np.array([1.0, 1.0], dtype=np.float64)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 3D arrays, float32
-    q = np.random.uniform(0.1, 0.9, size=(2, 2, 2)).astype(np.float32)
-    b = np.random.uniform(1.0, 3.0, size=(2, 2, 2)).astype(np.float32)
-    loc = np.random.uniform(0.0, 1.0, size=(2, 2, 2)).astype(np.float32)
-    scale = np.random.uniform(1.0, 2.0, size=(2, 2, 2)).astype(np.float32)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 0D arrays (scalars represented as numpy arrays)
+    # Input 1: 0-D scalar arrays, standard float32
     q = np.array(0.5, dtype=np.float32)
     b = np.array(2.0, dtype=np.float32)
-    loc = np.array(-0.5, dtype=np.float32)
-    scale = np.array(1.5, dtype=np.float32)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    loc = np.array(0.0, dtype=np.float32)
+    scale = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 6: Broadcasting case 1
-    q = np.array([0.2, 0.5, 0.8], dtype=np.float32)
-    b = np.array([[1.0], [2.0]], dtype=np.float32)
+    # Input 2: 1-D arrays, float64
+    q = np.array([0.1, 0.25, 0.5, 0.75, 0.9], dtype=np.float64)
+    b = np.array([1.5, 2.0, 3.0, 2.5, 1.0], dtype=np.float64)
+    loc = np.array([0.0, 1.0, -1.0, 2.0, 0.5], dtype=np.float64)
+    scale = np.array([1.0, 2.0, 0.5, 1.5, 3.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
+
+    # Input 3: 2-D arrays, matching shapes
+    q = np.array([[0.1, 0.3], [0.6, 0.8]], dtype=np.float32)
+    b = np.array([[2.5, 1.5], [3.0, 0.5]], dtype=np.float32)
+    loc = np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float32)
+    scale = np.array([[1.0, 1.0], [2.0, 2.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
+
+    # Input 4: Broadcasting 1D to 2D
+    q = np.linspace(0.01, 0.99, 5, dtype=np.float32).reshape(5, 1)
+    b = np.array([1.0, 2.0, 3.0], dtype=np.float32).reshape(1, 3)
     loc = np.array([0.0], dtype=np.float32)
-    scale = np.array([[1.0]], dtype=np.float32)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    scale = np.array([1.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 7: Broadcasting case 2
-    q = np.random.uniform(0.1, 0.9, size=(1, 4)).astype(np.float32)
-    b = np.random.uniform(0.5, 2.5, size=(3, 1)).astype(np.float32)
-    loc = np.array([1.0], dtype=np.float32)
-    scale = np.array([0.5], dtype=np.float32)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Boundary value q=0
+    q = np.array([0.0, 0.0], dtype=np.float64)
+    b = np.array([2.0, 5.0], dtype=np.float64)
+    loc = np.array([10.0, -5.0], dtype=np.float64)
+    scale = np.array([2.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 8: Large scale, negative loc, float64
-    q = np.array([0.2, 0.4, 0.6], dtype=np.float64)
-    b = np.array([1.2, 1.2, 1.2], dtype=np.float64)
-    loc = np.array([-10.0, -20.0, -30.0], dtype=np.float64)
-    scale = np.array([100.0, 200.0, 300.0], dtype=np.float64)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3-D tensors with non-trivial shapes
+    q = np.random.uniform(0.05, 0.95, size=(2, 3, 4)).astype(np.float32)
+    b = np.random.uniform(0.5, 5.0, size=(2, 3, 4)).astype(np.float32)
+    loc = np.zeros((2, 3, 4), dtype=np.float32)
+    scale = np.ones((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 9: High dimension 4D
-    q = np.random.uniform(0.0, 0.9, size=(2, 2, 2, 2)).astype(np.float32)
-    b = np.random.uniform(0.1, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
-    loc = np.zeros((2, 2, 2, 2), dtype=np.float32)
-    scale = np.ones((2, 2, 2, 2), dtype=np.float32)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Negative loc and various scales
+    q = np.array([0.2, 0.4, 0.6], dtype=np.float32)
+    b = np.array([3.0, 3.0, 3.0], dtype=np.float32)
+    loc = np.array([-10.0, -20.0, -30.0], dtype=np.float32)
+    scale = np.array([0.1, 0.5, 1.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 10: 1D float64 with very small shape parameter (b)
-    q = np.array([0.1, 0.2], dtype=np.float64)
-    b = np.array([0.01, 0.05], dtype=np.float64)
-    loc = np.array([10.0, 20.0], dtype=np.float64)
-    scale = np.array([5.0, 10.0], dtype=np.float64)
-    input_dict = {"q": q, "b": b, "loc": loc, "scale": scale}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: q very close to 1
+    q = np.array([0.99, 0.999, 0.9999], dtype=np.float64)
+    b = np.array([4.0, 4.0, 4.0], dtype=np.float64)
+    loc = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+    scale = np.array([1.0, 1.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
+
+    # Input 9: Small positive b parameter
+    q = np.array([[0.1, 0.5]], dtype=np.float32)
+    b = np.array([[0.05, 0.1]], dtype=np.float32)
+    loc = np.array([[1.0, 2.0]], dtype=np.float32)
+    scale = np.array([[0.5, 0.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
+
+    # Input 10: Broadcasting 3D with scalar shapes
+    q = np.full((2, 2, 2), 0.5, dtype=np.float32)
+    b = np.array(2.0, dtype=np.float32)
+    loc = np.array(0.0, dtype=np.float32)
+    scale = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "b": b, "loc": loc, "scale": scale})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.pareto.ppf"] = pareto_ppf_inputs()
 

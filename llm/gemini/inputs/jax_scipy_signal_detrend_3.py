@@ -4,113 +4,140 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def detrend_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, linear trend
-    data = np.arange(10, dtype=np.float32) + np.random.normal(0, 0.1, 10).astype(np.float32)
-    input_dict = {
-        "data": data,
-        "axis": -1,
-        "type": "linear",
-        "bp": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, linear detrend, axis -1, single breakpoint at 0
+    data = np.linspace(0.0, 10.0, 20, dtype=np.float32) + np.random.randn(
+        20
+    ).astype(np.float32)
+    axis = -1
+    detrend_type = "linear"
+    bp = (0,)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 2: 1D float64 array, constant trend
-    data = np.ones(15, dtype=np.float64) * 5.0 + np.random.normal(0, 0.5, 15).astype(np.float64)
-    input_dict = {
-        "data": data,
-        "axis": 0,
-        "type": "constant",
-        "bp": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array, constant detrend, axis 0, bp=(0,)
+    data = np.array(
+        [-5.0, -2.0, 0.0, 3.0, 7.0, 12.0, 15.0, 20.0], dtype=np.float64
+    )
+    axis = 0
+    detrend_type = "constant"
+    bp = (0,)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 3: 2D float32 array, axis=-1, linear trend
-    data = np.random.randn(5, 10).astype(np.float32)
-    input_dict = {
-        "data": data,
-        "axis": -1,
-        "type": "linear",
-        "bp": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, linear detrend along axis 0, with internal breakpoint
+    data = np.random.randn(30, 8).astype(np.float32)
+    axis = 0
+    detrend_type = "linear"
+    bp = (0, 15)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 4: 2D float64 array, axis=1, piecewise linear trend
-    data = np.random.randn(8, 12).astype(np.float64)
-    input_dict = {
-        "data": data,
-        "axis": 1,
-        "type": "linear",
-        "bp": (4,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array, constant detrend along axis 1
+    data = np.random.randn(6, 12).astype(np.float64)
+    axis = 1
+    detrend_type = "constant"
+    bp = (0,)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 5: 2D float32 array, axis=0, constant trend
-    data = np.random.randn(10, 4).astype(np.float32)
-    input_dict = {
-        "data": data,
-        "axis": 0,
-        "type": "constant",
-        "bp": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array, linear detrend along axis 2 with multiple breakpoints
+    data = np.random.randn(4, 5, 40).astype(np.float32)
+    axis = 2
+    detrend_type = "linear"
+    bp = (0, 10, 25)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 6: 3D float32 array, axis=2, piecewise linear trend
-    data = np.random.randn(3, 4, 10).astype(np.float32)
-    input_dict = {
-        "data": data,
-        "axis": 2,
-        "type": "linear",
-        "bp": (5,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array, linear detrend along axis -1 with negative values
+    data = (np.random.randn(3, 4, 16) - 5.0).astype(np.float32)
+    axis = -1
+    detrend_type = "linear"
+    bp = (0,)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 7: 3D float64 array, axis=1, constant trend
-    data = np.random.randn(5, 8, 3).astype(np.float64)
-    input_dict = {
-        "data": data,
-        "axis": 1,
-        "type": "constant",
-        "bp": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array, constant detrend along middle axis (axis 1)
+    data = np.random.randn(5, 18, 6).astype(np.float64)
+    axis = 1
+    detrend_type = "constant"
+    bp = (0,)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 8: 1D float32 array with negative values, piecewise linear
-    data = np.linspace(-10, 10, 20, dtype=np.float32) + np.random.randn(20).astype(np.float32)
-    input_dict = {
-        "data": data,
-        "axis": 0,
-        "type": "linear",
-        "bp": (10,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array, linear detrend along axis -1
+    data = np.random.randn(2, 3, 4, 25).astype(np.float32)
+    axis = -1
+    detrend_type = "linear"
+    bp = (0, 12)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 9: 2D float32 array, axis=0, multiple breakpoints
-    data = np.random.randn(15, 6).astype(np.float32)
-    input_dict = {
-        "data": data,
-        "axis": 0,
-        "type": "linear",
-        "bp": (5, 10)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array, negative axis index (axis=-2)
+    data = np.random.randn(20, 10).astype(np.float64)
+    axis = -2
+    detrend_type = "linear"
+    bp = (0, 8)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
-    # Input 10: 3D float32 array, axis=1, multiple breakpoints
-    data = np.random.randn(2, 12, 2).astype(np.float32)
-    input_dict = {
-        "data": data,
-        "axis": 1,
-        "type": "linear",
-        "bp": (3, 7)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D array, large size, linear detrend with multiple breakpoints
+    data = np.sin(np.linspace(0, 50, 100)).astype(np.float32)
+    axis = 0
+    detrend_type = "linear"
+    bp = (0, 25, 50, 75)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
+
+    # Input 11: 4D array, constant detrend along axis 0
+    data = np.random.randn(15, 2, 3, 4).astype(np.float32)
+    axis = 0
+    detrend_type = "constant"
+    bp = (0,)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"data": data, "axis": axis, "type": detrend_type, "bp": bp}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.signal.detrend_3"] = detrend_inputs()
 

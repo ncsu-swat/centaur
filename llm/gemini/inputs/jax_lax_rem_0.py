@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rem_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32, same shape
-    x = np.array([5.5, 6.2, 7.8], dtype=np.float32)
-    y = np.array([2.0, 3.0, 4.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D int32 arrays
+    x = np.array([10, -10, 7, -7], dtype=np.int32)
+    y = np.array([3, 3, -3, -3], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 2: 2D float32, same shape with negative values
-    x = np.array([[-10.5, 12.0], [15.5, -20.0]], dtype=np.float32)
-    y = np.array([[3.0, -4.0], [-5.0, 6.0]], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float32 arrays
+    x = np.array([[5.5, -5.5], [12.2, -12.2]], dtype=np.float32)
+    y = np.array([[2.0, 2.0], [3.0, -3.0]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 3: 1D int32, same shape
-    x = np.array([10, 20, 30], dtype=np.int32)
-    y = np.array([3, 4, 7], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 3D float64 arrays
+    x = np.random.uniform(10.0, 50.0, size=(2, 3, 4)).astype(np.float64)
+    y = np.random.uniform(1.0, 5.0, size=(2, 3, 4)).astype(np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 4: 2D int32, same shape with negative values
-    x = np.array([[-15, 25], [-35, 45]], dtype=np.int32)
-    y = np.array([[4, -6], [-8, 10]], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D int64 arrays with negative values
+    x = np.array([-100, 250, -350, 400], dtype=np.int64)
+    y = np.array([7, -13, 29, -31], dtype=np.int64)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 5: 3D float64, same shape
-    x = np.array([[[1.5, 2.5], [3.5, 4.5]], [[5.5, 6.5], [7.5, 8.5]]], dtype=np.float64)
-    y = np.array([[[0.5, 1.2], [1.5, 2.2]], [[2.5, 3.2], [3.5, 4.2]]], dtype=np.float64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D int32 arrays with broadcasting
+    x = np.array([[15, 25, 35], [45, 55, 65]], dtype=np.int32)
+    y = np.array([[4], [6]], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 6: 1D int64, same shape
-    x = np.array([100, 200, 300, 400], dtype=np.int64)
-    y = np.array([15, 25, 35, 45], dtype=np.int64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 0D scalar float32 arrays
+    x = np.array(7.5, dtype=np.float32)
+    y = np.array(2.25, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 7: 2D float32 with broadcasting (1, 3) and (2, 3)
-    x = np.array([[10.0, 20.0, 30.0]], dtype=np.float32)
-    y = np.array([[3.0, 4.0, 5.0], [6.0, 7.0, 8.0]], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D float32 arrays
+    x = np.random.uniform(-20.0, 20.0, size=(2, 2, 3, 3)).astype(np.float32)
+    y = np.random.uniform(1.5, 4.5, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 8: 2D int32 with broadcasting (3, 1) and (3, 3)
-    x = np.array([[10], [20], [30]], dtype=np.int32)
-    y = np.array([[3, 4, 5], [6, 7, 8], [9, 10, 11]], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D int64 arrays
+    x = np.array([[100, 200], [300, 400]], dtype=np.int64)
+    y = np.array([[7, 13], [17, 19]], dtype=np.int64)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 9: 3D float32 with broadcasting (2, 1, 2) and (2, 2, 2)
-    x = np.array([[[1.0, 2.0]], [[3.0, 4.0]]], dtype=np.float32)
-    y = np.array([[[0.3, 0.4], [0.5, 0.6]], [[0.7, 0.8], [0.9, 1.0]]], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D float32 arrays
+    x = np.array([12.5, -25.2, 64.1, -120.8], dtype=np.float32)
+    y = np.array([5.1, 4.2, 7.3, -9.4], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
-    # Input 10: 0D float32 (scalar-like arrays)
-    x = np.array(15.5, dtype=np.float32)
-    y = np.array(4.0, dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D int32 arrays with broadcasting
+    x = np.array([[[10, 20, 30]], [[40, 50, 60]]], dtype=np.int32)
+    y = np.array([[[3, 7, 9]], [[4, 6, 8]]], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+
+    # Input 11: 2D float64 arrays with broadcasting
+    x = np.array([[1.5, 2.5, 3.5], [4.5, 5.5, 6.5]], dtype=np.float64)
+    y = np.array([[1.0, 2.0, 3.0]], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.rem"] = rem_inputs()
 

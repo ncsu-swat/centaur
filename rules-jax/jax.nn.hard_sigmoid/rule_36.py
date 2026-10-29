@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor dimension must be less than or equal to 8 (Rule 36)
+# input tensor is either a scalar or a 2D matrix (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 8) if n else
-          v["arg1_ndim"] <= 8)
+    s.add(Not(Or(v["arg1_ndim"] == 0, v["arg1_ndim"] == 2)) if n else
+          Or(v["arg1_ndim"] == 0, v["arg1_ndim"] == 2))
 )
 
 def rule_36_func(arg1, solver=None, neg=False):

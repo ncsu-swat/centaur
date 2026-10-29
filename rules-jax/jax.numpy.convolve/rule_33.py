@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# mode parameter must be either same or valid (Rule 33)
+# string parameters must evaluate to a valid convolution mode or precision string (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] != 20, v["arg1_value"] == 19, True)) if n else
-          If(v["arg1_value"] != 20, v["arg1_value"] == 19, True))
+    s.add(Not(If(v["arg1_value"] == 37, True, (Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 20), v["arg1_value"] == 19)))) if n else
+          If(v["arg1_value"] == 37, True, (Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 20), v["arg1_value"] == 19))))
 )
 
 def rule_33_func(arg1, solver=None, neg=False):

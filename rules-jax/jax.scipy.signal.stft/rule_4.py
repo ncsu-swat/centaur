@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The FFT length must be greater than or equal to the segment length (Rule 4)
+# FFT length nfft must be greater than or equal to segment length nperseg (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
     s.add(Not(v["arg1_value"] >= v["arg2_value"]) if n else

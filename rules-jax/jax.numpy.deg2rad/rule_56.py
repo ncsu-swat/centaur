@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The tensor elements must be within the standard degree range of [-180, 180] (Rule 56)
+# 1-dimensional angle tensor contains an even number of entries (Rule 56)
 
 rule_56 = lambda s, v, n=False: (
-    s.add(Not(And(Select(v["arg1_range"], 0) >= -180, Select(v["arg1_range"], 1) <= 180)) if n else
-          And(Select(v["arg1_range"], 0) >= -180, Select(v["arg1_range"], 1) <= 180))
+    s.add(Not(And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) % 2 == 0)) if n else
+          And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) % 2 == 0))
 )
 
 def rule_56_func(arg1, solver=None, neg=False):
@@ -24,16 +24,18 @@ def rule_56_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 56
-        rule_56(solver, {'arg1_range': arg1_range})
+        rule_56(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_56(solver, {'arg1_range': arg1['range']}, neg)
+        rule_56(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

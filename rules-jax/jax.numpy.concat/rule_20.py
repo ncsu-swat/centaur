@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Negative axis must be within the valid range for the unstacked tensor (Rule 20)
+# concatenation along default first axis for non-zero-dimensional tensor (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 2, (If(v["arg2_value"] < 0, v["arg2_value"] >= 1 - v["arg1_ndim"], True)))) if n else
-          And(v["arg1_ndim"] >= 2, (If(v["arg2_value"] < 0, v["arg2_value"] >= 1 - v["arg1_ndim"], True))))
+    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg2_value"] == 0)) if n else
+          And(v["arg1_ndim"] >= 1, v["arg2_value"] == 0))
 )
 
 def rule_20_func(arg1, arg2, solver=None, neg=False):

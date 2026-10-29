@@ -4,83 +4,101 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def softmax_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, axis -1, where is all True
+    # Input 1: 1D array, axis 0, full boolean mask
     x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    axis = -1
-    where = np.array([True, True, True, True], dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 2D float32 array, axis 0, where is mask
-    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
     axis = 0
-    where = np.array([[True, False], [True, True]], dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    where = np.array([True, True, True, False], dtype=np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
 
-    # Input 3: 2D float64 array, axis 1, where is all True
-    x = np.random.randn(3, 5).astype(np.float64)
+    # Input 2: 2D array, axis -1, float32, random values
+    x = np.random.randn(3, 5).astype(np.float32)
+    axis = -1
+    where = np.ones((3, 5), dtype=np.bool_)
+    where[0, 1] = False
+    where[1, 3] = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
+
+    # Input 3: 2D array, axis 0, float64
+    x = np.random.randn(4, 6).astype(np.float64)
+    axis = 0
+    where = np.ones((4, 6), dtype=np.bool_)
+    where[2, :] = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
+
+    # Input 4: 3D array, axis 1, mixed negative and positive values
+    x = np.random.uniform(-5.0, 5.0, size=(2, 4, 3)).astype(np.float32)
     axis = 1
-    where = np.ones((3, 5), dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    where = np.random.choice([True, False], size=(2, 4, 3), p=[0.8, 0.2])
+    where[:, 0, :] = True  # Ensure at least one element is True along axis 1
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
 
-    # Input 4: 3D float32 array, axis 2
+    # Input 5: 3D array, axis -1, broadcastable where mask
     x = np.random.randn(2, 3, 4).astype(np.float32)
+    axis = -1
+    where = np.array([[[True, True, True, False]]], dtype=np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
+
+    # Input 6: 1D array with negative values only, axis -1
+    x = np.array([-10.0, -20.0, -30.0, -5.0], dtype=np.float32)
+    axis = -1
+    where = np.array([True, False, True, True], dtype=np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
+
+    # Input 7: 4D array, axis 2
+    x = np.random.randn(2, 3, 4, 5).astype(np.float32)
     axis = 2
-    where = np.ones((2, 3, 4), dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    where = np.ones((2, 3, 4, 5), dtype=np.bool_)
+    where[:, :, 1, :] = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
 
-    # Input 5: 4D float32 array, axis -1
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    axis = -1
-    where = np.ones((2, 2, 2, 2), dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D float32 array with negative values, axis 1
-    x = np.array([[-10.0, -20.0, 0.0], [5.0, -5.0, 10.0]], dtype=np.float32)
+    # Input 8: 2D array, axis 1, integer-valued floats
+    x = np.array([[10.0, 20.0, 30.0], [5.0, 15.0, 25.0]], dtype=np.float32)
     axis = 1
-    where = np.array([[True, True, False], [True, True, True]], dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    where = np.array([[True, True, False], [False, True, True]], dtype=np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
 
-    # Input 7: 1D float32 array, axis 0, partial where mask
-    x = np.array([-1.0, 0.0, 1.0], dtype=np.float32)
+    # Input 9: 3D array, axis -2, float64
+    x = np.random.randn(3, 5, 2).astype(np.float64)
+    axis = -2
+    where = np.ones((3, 5, 2), dtype=np.bool_)
+    where[:, 0, :] = False
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
+
+    # Input 10: 1D array, axis 0, all True where mask
+    x = np.array([0.0, 0.0, 0.0], dtype=np.float32)
     axis = 0
-    where = np.array([False, True, True], dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 3D float32 array, axis 1, where has some False
-    x = np.random.uniform(-1, 1, (2, 4, 3)).astype(np.float32)
-    axis = 1
-    where = (np.random.rand(2, 4, 3) > 0.2)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D float32 array with shape 5x5, axis 0
-    x = np.random.randn(5, 5).astype(np.float32)
-    axis = 0
-    where = np.ones((5, 5), dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D float32 array, axis -1, where has single active element
-    x = np.array([0.5, 1.5, 2.5], dtype=np.float32)
-    axis = -1
-    where = np.array([False, True, False], dtype=bool)
-    input_dict = {"x": x, "axis": axis, "where": where}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    where = np.array([True, True, True], dtype=np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "where": where})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.softmax_1"] = softmax_inputs()
 

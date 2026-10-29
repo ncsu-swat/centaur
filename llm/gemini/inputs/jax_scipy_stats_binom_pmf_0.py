@@ -4,90 +4,125 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def binom_pmf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays with int and float32
-    k = np.array([0, 1, 2, 3, 4], dtype=np.int32)
-    n = np.array([5, 5, 5, 5, 5], dtype=np.int32)
-    p = np.array([0.5, 0.5, 0.5, 0.5, 0.5], dtype=np.float32)
-    loc = np.array([0, 0, 0, 0, 0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 1: 0D scalars
+    list_of_inputs.append(
+        {
+            "k": np.array(3, dtype=np.int32),
+            "n": np.array(10, dtype=np.int32),
+            "p": np.array(0.5, dtype=np.float32),
+            "loc": np.array(0, dtype=np.int32),
+        }
+    )
 
-    # Input 2: 0D scalar-like arrays
-    k = np.array(2, dtype=np.int32)
-    n = np.array(10, dtype=np.int32)
-    p = np.array(0.3, dtype=np.float32)
-    loc = np.array(0, dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 2: 1D arrays, same shape
+    list_of_inputs.append(
+        {
+            "k": np.array([0, 1, 2, 3], dtype=np.float32),
+            "n": np.array([5, 5, 5, 5], dtype=np.float32),
+            "p": np.array([0.2, 0.4, 0.6, 0.8], dtype=np.float32),
+            "loc": np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        }
+    )
 
-    # Input 3: 2D arrays with matching shapes
-    k = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    n = np.array([[10, 10], [10, 10]], dtype=np.int32)
-    p = np.array([[0.2, 0.8], [0.5, 0.1]], dtype=np.float32)
-    loc = np.array([[0, 1], [-1, 2]], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 3: Non-zero loc (positive loc)
+    list_of_inputs.append(
+        {
+            "k": np.array([2, 3, 4, 5], dtype=np.int32),
+            "n": np.array([5, 5, 5, 5], dtype=np.int32),
+            "p": np.array([0.3, 0.3, 0.3, 0.3], dtype=np.float32),
+            "loc": np.array([2, 2, 2, 2], dtype=np.int32),
+        }
+    )
 
-    # Input 4: Broadcasting shapes
-    k = np.array([1, 2, 3], dtype=np.int32)
-    n = np.array([10], dtype=np.int32)
-    p = np.array([0.5], dtype=np.float32)
-    loc = np.array([0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 4: Negative loc
+    list_of_inputs.append(
+        {
+            "k": np.array([-1, 0, 1, 2], dtype=np.int64),
+            "n": np.array([4, 4, 4, 4], dtype=np.int64),
+            "p": np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64),
+            "loc": np.array([-2, -2, -2, -2], dtype=np.int64),
+        }
+    )
 
-    # Input 5: Boundary probabilities (p = 0.0 and p = 1.0)
-    k = np.array([0, 5], dtype=np.int32)
-    n = np.array([5, 5], dtype=np.int32)
-    p = np.array([0.0, 1.0], dtype=np.float32)
-    loc = np.array([0, 0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 5: 2D arrays
+    list_of_inputs.append(
+        {
+            "k": np.array([[1, 2], [3, 4]], dtype=np.int32),
+            "n": np.array([[5, 5], [5, 5]], dtype=np.int32),
+            "p": np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32),
+            "loc": np.array([[0, 0], [0, 0]], dtype=np.int32),
+        }
+    )
 
-    # Input 6: Edge case where k > n
-    k = np.array([6, 7, 8], dtype=np.int32)
-    n = np.array([5, 5, 5], dtype=np.int32)
-    p = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-    loc = np.array([0, 0, 0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 6: Broadcasting between k, n, p, loc
+    list_of_inputs.append(
+        {
+            "k": np.arange(6, dtype=np.float32).reshape(6, 1),
+            "n": np.array([10], dtype=np.float32),
+            "p": np.array([0.2, 0.5, 0.8], dtype=np.float32).reshape(1, 3),
+            "loc": np.array([0.0], dtype=np.float32),
+        }
+    )
 
-    # Input 7: Float32 inputs for all parameters
-    k = np.array([1.0, 2.0], dtype=np.float32)
-    n = np.array([10.0, 10.0], dtype=np.float32)
-    p = np.array([0.25, 0.75], dtype=np.float32)
-    loc = np.array([0.0, 0.0], dtype=np.float32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 7: Edge probabilities p=0.0 and p=1.0
+    list_of_inputs.append(
+        {
+            "k": np.array([0, 10], dtype=np.int32),
+            "n": np.array([10, 10], dtype=np.int32),
+            "p": np.array([0.0, 1.0], dtype=np.float32),
+            "loc": np.array([0, 0], dtype=np.int32),
+        }
+    )
 
-    # Input 8: Float64 inputs
-    k = np.array([3.0, 4.0], dtype=np.float64)
-    n = np.array([20.0, 20.0], dtype=np.float64)
-    p = np.array([0.1, 0.9], dtype=np.float64)
-    loc = np.array([1.0, 1.0], dtype=np.float64)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 8: Values of k outside valid support (k < loc or k > n + loc)
+    list_of_inputs.append(
+        {
+            "k": np.array([-1, 0, 5, 11], dtype=np.float64),
+            "n": np.array([10, 10, 10, 10], dtype=np.float64),
+            "p": np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float64),
+            "loc": np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float64),
+        }
+    )
 
-    # Input 9: 3D arrays
-    k = np.ones((2, 2, 2), dtype=np.int32) * 2
-    n = np.ones((2, 2, 2), dtype=np.int32) * 10
-    p = np.ones((2, 2, 2), dtype=np.float32) * 0.4
-    loc = np.zeros((2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 9: 3D tensor inputs
+    list_of_inputs.append(
+        {
+            "k": np.ones((2, 3, 4), dtype=np.int32) * 2,
+            "n": np.ones((2, 3, 4), dtype=np.int32) * 6,
+            "p": np.full((2, 3, 4), 0.25, dtype=np.float32),
+            "loc": np.zeros((2, 3, 4), dtype=np.int32),
+        }
+    )
 
-    # Input 10: Larger values of n and k
-    k = np.array([50, 100], dtype=np.int32)
-    n = np.array([100, 200], dtype=np.int32)
-    p = np.array([0.5, 0.5], dtype=np.float32)
-    loc = np.array([0, 0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 10: Float64 precision with broadcast loc
+    list_of_inputs.append(
+        {
+            "k": np.array([[2.0, 4.0], [6.0, 8.0]], dtype=np.float64),
+            "n": np.array([[10.0, 10.0], [10.0, 10.0]], dtype=np.float64),
+            "p": np.array([[0.5], [0.5]], dtype=np.float64),
+            "loc": np.array([1.0], dtype=np.float64),
+        }
+    )
 
-    # Input 11: Negative values of k (results in pmf of 0, which is valid)
-    k = np.array([-1, -2], dtype=np.int32)
-    n = np.array([10, 10], dtype=np.int32)
-    p = np.array([0.5, 0.5], dtype=np.float32)
-    loc = np.array([0, 0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "n": n, "p": p, "loc": loc})
+    # Input 11: n=0 trials
+    list_of_inputs.append(
+        {
+            "k": np.array([0, 1], dtype=np.int32),
+            "n": np.array([0, 0], dtype=np.int32),
+            "p": np.array([0.5, 0.5], dtype=np.float32),
+            "loc": np.array([0, 0], dtype=np.int32),
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.binom.pmf"] = binom_pmf_inputs()
 

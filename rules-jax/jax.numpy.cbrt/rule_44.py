@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# float input must be within reasonable numerical bounds (Rule 44)
+# input tensor has 32-bit or 64-bit integer data type (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -1000000.0, v["arg1_value"] <= 1000000.0)) if n else
-          And(v["arg1_value"] >= -1000000.0, v["arg1_value"] <= 1000000.0))
+    s.add(Not(Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 4)) if n else
+          Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 4))
 )
 
 def rule_44_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_44_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 44
-        rule_44(solver, {'arg1_value': arg1_value})
+        rule_44(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_44(solver, {'arg1_value': arg1['value']}, neg)
+        rule_44(solver, {'arg1_dtype': arg1['dtype']}, neg)

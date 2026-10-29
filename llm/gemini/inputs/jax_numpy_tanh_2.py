@@ -4,41 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import math
 
 def tanh_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 1: zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Zero
-    list_of_inputs.append({"x": 0.0})
+    # Input 2: negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Standard negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 3: positive one
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Small positive float
-    list_of_inputs.append({"x": 0.25})
+    # Input 4: negative one
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small negative float
-    list_of_inputs.append({"x": -0.25})
+    # Input 5: small positive value
+    input_dict = {"x": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large positive float
-    list_of_inputs.append({"x": 15.0})
+    # Input 6: small negative value
+    input_dict = {"x": -0.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large negative float
-    list_of_inputs.append({"x": -15.0})
+    # Input 7: large positive value (saturation to 1.0)
+    input_dict = {"x": 20.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Float representing pi
-    list_of_inputs.append({"x": 3.141592653589793})
+    # Input 8: large negative value (saturation to -1.0)
+    input_dict = {"x": -20.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Very small float close to zero
-    list_of_inputs.append({"x": 1e-6})
+    # Input 9: very small positive float close to zero
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative float representing -pi
-    list_of_inputs.append({"x": -3.141592653589793})
+    # Input 10: pi
+    input_dict = {"x": math.pi}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

@@ -11,41 +11,53 @@ import numpy as np
 def pascal_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({"n": 1, "kind": "symmetric"})
+    # Input 1: size 1, symmetric
+    input_dict = {"n": 1, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    list_of_inputs.append({"n": 2, "kind": "lower"})
+    # Input 2: size 1, lower
+    input_dict = {"n": 1, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    list_of_inputs.append({"n": 3, "kind": "upper"})
+    # Input 3: size 1, upper
+    input_dict = {"n": 1, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    list_of_inputs.append({"n": 4, "kind": "symmetric"})
+    # Input 4: size 2, symmetric
+    input_dict = {"n": 2, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    list_of_inputs.append({"n": 5, "kind": "lower"})
+    # Input 5: size 3, lower
+    input_dict = {"n": 3, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    list_of_inputs.append({"n": 6, "kind": "upper"})
+    # Input 6: size 4, upper
+    input_dict = {"n": 4, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    list_of_inputs.append({"n": 7, "kind": "symmetric"})
+    # Input 7: size 5, symmetric
+    input_dict = {"n": 5, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    list_of_inputs.append({"n": 8, "kind": "lower"})
+    # Input 8: size 6, lower
+    input_dict = {"n": 6, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    list_of_inputs.append({"n": 9, "kind": "upper"})
+    # Input 9: size 7, upper
+    input_dict = {"n": 7, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    list_of_inputs.append({"n": 10, "kind": "symmetric"})
+    # Input 10: size 10, symmetric
+    input_dict = {"n": 10, "kind": "symmetric"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11
-    list_of_inputs.append({"n": 15, "kind": "lower"})
+    # Input 11: size 12, lower
+    input_dict = {"n": 12, "kind": "lower"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 12
-    list_of_inputs.append({"n": 20, "kind": "upper"})
+    # Input 12: size 15, upper
+    input_dict = {"n": 15, "kind": "upper"}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

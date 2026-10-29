@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# an integer multiplied by two and added by one is not equal to itself multiplied by two (Rule 29)
+# Scalar integer input should not be sentinel -1 (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] * 2 + 1 != v["arg1_value"] * 2) if n else
-          v["arg1_value"] * 2 + 1 != v["arg1_value"] * 2)
+    s.add(Not(v["arg1_value"] != -1) if n else
+          v["arg1_value"] != -1)
 )
 
 def rule_29_func(arg1, solver=None, neg=False):

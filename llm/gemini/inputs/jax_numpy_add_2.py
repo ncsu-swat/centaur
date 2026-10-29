@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def add_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 tensor + positive float
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    y = 10.5
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 1: 1D float32 array and positive float
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    y = 5.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D float32 tensor + negative float
-    x = np.random.randn(2, 3).astype(np.float32)
-    y = -5.0
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 3: 3D float64 tensor + zero float
-    x = np.random.randn(2, 2, 2).astype(np.float64)
-    y = 0.0
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 4: 1D int32 tensor + float
-    x = np.array([-1, 0, 1, 2], dtype=np.int32)
-    y = 1.5
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 5: 4D float32 tensor + small float
-    x = np.random.randn(1, 2, 2, 1).astype(np.float32)
-    y = 1e-4
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 6: 0D (scalar) float32 tensor + float
-    x = np.array(5.5, dtype=np.float32)
-    y = 2.5
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 7: 2D float64 tensor with large values + float
-    x = np.array([[1e5, -1e5], [2e5, -2e5]], dtype=np.float64)
-    y = 3.14159
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 8: 1D float32 tensor + very large float
-    x = np.array([0.1, 0.2], dtype=np.float32)
-    y = 1e10
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 9: 5D float32 tensor + float
-    x = np.ones((1, 2, 1, 2, 1), dtype=np.float32)
-    y = -0.5
-    list_of_inputs.append({"x": x, "y": y})
-
-    # Input 10: 2D int16 tensor + negative float
-    x = np.array([[1, 2], [3, 4]], dtype=np.int16)
+    # Input 2: 2D float64 array and negative float
+    x = np.random.randn(3, 4).astype(np.float64)
     y = -2.718
-    list_of_inputs.append({"x": x, "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 3: 3D int32 array and zero float
+    x = np.random.randint(-10, 10, size=(2, 3, 2), dtype=np.int32)
+    y = 0.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 0D scalar array and positive float
+    x = np.array(42, dtype=np.int64)
+    y = 3.14159
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 5: 4D float32 array with negative values and float
+    x = np.random.uniform(-5.0, 5.0, size=(2, 2, 3, 4)).astype(np.float32)
+    y = 100.25
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: 1D bool array and float
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    y = 1.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: 2D uint8 array and large float
+    x = np.arange(12, dtype=np.uint8).reshape(3, 4)
+    y = 1e5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: 1D empty array and float
+    x = np.array([], dtype=np.float32)
+    y = 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: 2D complex64 array and float
+    x = np.array([[1.0 + 2.0j, 3.0 - 4.0j], [5.0 + 0.0j, -2.0 - 1.0j]], dtype=np.complex64)
+    y = -0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 5D float16 array and very small float
+    x = np.ones((1, 2, 1, 3, 2), dtype=np.float16)
+    y = 1e-4
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 2D array with inf and nan values
+    x = np.array([[np.inf, -np.inf], [np.nan, 1.0]], dtype=np.float32)
+    y = 2.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.add_2"] = add_inputs()
 

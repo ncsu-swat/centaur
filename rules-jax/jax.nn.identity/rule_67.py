@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor should be of floating point or complex data type (Rule 67)
+# tensor has unsigned 8-bit integer data type (Rule 67)
 
 rule_67 = lambda s, v, n=False: (
-    s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
-          And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
+    s.add(Not(v["arg1_dtype"] == 5) if n else
+          v["arg1_dtype"] == 5)
 )
 
 def rule_67_func(arg1, solver=None, neg=False):

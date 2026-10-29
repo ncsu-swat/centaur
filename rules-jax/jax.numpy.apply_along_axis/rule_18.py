@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the reduction or activation function is relu, the input tensor must not be a complex number data type (Rule 18)
+# Fourier transform function requires complex floating-point tensor (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 10, v["arg2_dtype"] < 9, True)) if n else
-          If(v["arg1_value"] == 10, v["arg2_dtype"] < 9, True))
+    s.add(Not(If(Or(v["arg1_value"] == 29, v["arg1_value"] == 30), Or(v["arg2_dtype"] == 9, v["arg2_dtype"] == 10), True)) if n else
+          If(Or(v["arg1_value"] == 29, v["arg1_value"] == 30), Or(v["arg2_dtype"] == 9, v["arg2_dtype"] == 10), True))
 )
 
 def rule_18_func(arg1, arg2, solver=None, neg=False):

@@ -4,275 +4,269 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dot_product_attention_inputs():
     list_of_inputs = []
 
-    # Case 1: Standard Float32 Multi-Head Attention (MHA)
-    B, T, S, N, K, H = 2, 8, 8, 4, 4, 16
-    query = np.random.randn(B, T, N, H).astype(np.float32)
-    key = np.random.randn(B, S, K, H).astype(np.float32)
-    value = np.random.randn(B, S, K, H).astype(np.float32)
-    bias = np.random.randn(B, N, T, S).astype(np.float32)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([8, 8], dtype=np.int32)
-    key_value_seq_lengths = np.array([8, 8], dtype=np.int32)
-    
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.25,
-        'is_causal': False,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (2, 2),
-        'implementation': 'xla',
-        'return_residual': False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 2: Float16 with Causal Mask
-    B, T, S, N, K, H = 1, 4, 4, 2, 2, 8
-    query = np.random.randn(B, T, N, H).astype(np.float16)
-    key = np.random.randn(B, S, K, H).astype(np.float16)
-    value = np.random.randn(B, S, K, H).astype(np.float16)
-    bias = np.random.randn(B, N, T, S).astype(np.float16)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([4], dtype=np.int32)
-    key_value_seq_lengths = np.array([4], dtype=np.int32)
-
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.35,
-        'is_causal': True,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (1, 1),
-        'implementation': 'xla',
-        'return_residual': True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 3: Grouped Query Attention (GQA) where N is multiple of K
-    B, T, S, N, K, H = 2, 6, 6, 4, 2, 16
-    query = np.random.randn(B, T, N, H).astype(np.float32)
-    key = np.random.randn(B, S, K, H).astype(np.float32)
-    value = np.random.randn(B, S, K, H).astype(np.float32)
-    bias = np.random.randn(B, N, T, S).astype(np.float32)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([6, 6], dtype=np.int32)
-    key_value_seq_lengths = np.array([6, 6], dtype=np.int32)
-
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.125,
-        'is_causal': False,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (3, 3),
-        'implementation': 'xla',
-        'return_residual': False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 4: Multi-Query Attention (MQA) where K = 1
-    B, T, S, N, K, H = 2, 8, 8, 4, 1, 16
-    query = np.random.randn(B, T, N, H).astype(np.float32)
-    key = np.random.randn(B, S, K, H).astype(np.float32)
-    value = np.random.randn(B, S, K, H).astype(np.float32)
-    bias = np.random.randn(B, N, T, S).astype(np.float32)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([8, 8], dtype=np.int32)
-    key_value_seq_lengths = np.array([8, 8], dtype=np.int32)
-
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.25,
-        'is_causal': True,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (2, 2),
-        'implementation': 'xla',
-        'return_residual': True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 5: Larger configuration with residual return
-    B, T, S, N, K, H = 4, 16, 16, 8, 8, 32
-    query = np.random.randn(B, T, N, H).astype(np.float32)
-    key = np.random.randn(B, S, K, H).astype(np.float32)
-    value = np.random.randn(B, S, K, H).astype(np.float32)
-    bias = np.random.randn(B, N, T, S).astype(np.float32)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([16, 16, 16, 16], dtype=np.int32)
-    key_value_seq_lengths = np.array([16, 16, 16, 16], dtype=np.int32)
-
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.176,
-        'is_causal': False,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (4, 4),
-        'implementation': 'xla',
-        'return_residual': True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 6: Float64 high-precision attention
-    B, T, S, N, K, H = 1, 8, 8, 4, 4, 16
-    query = np.random.randn(B, T, N, H).astype(np.float64)
-    key = np.random.randn(B, S, K, H).astype(np.float64)
-    value = np.random.randn(B, S, K, H).astype(np.float64)
-    bias = np.random.randn(B, N, T, S).astype(np.float64)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([8], dtype=np.int32)
-    key_value_seq_lengths = np.array([8], dtype=np.int32)
-
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.25,
-        'is_causal': False,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (2, 2),
-        'implementation': 'xla',
-        'return_residual': True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 7: Varied sequence lengths
-    B, T, S, N, K, H = 2, 10, 10, 4, 4, 16
-    query = np.random.randn(B, T, N, H).astype(np.float32)
-    key = np.random.randn(B, S, K, H).astype(np.float32)
-    value = np.random.randn(B, S, K, H).astype(np.float32)
-    bias = np.random.randn(B, N, T, S).astype(np.float32)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([10, 8], dtype=np.int32)
-    key_value_seq_lengths = np.array([10, 9], dtype=np.int32)
-
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.25,
-        'is_causal': True,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (5, 5),
-        'implementation': 'xla',
-        'return_residual': False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 8: Batch of size 3 GQA
-    B, T, S, N, K, H = 3, 12, 12, 6, 2, 16
-    query = np.random.randn(B, T, N, H).astype(np.float32)
-    key = np.random.randn(B, S, K, H).astype(np.float32)
-    value = np.random.randn(B, S, K, H).astype(np.float32)
-    bias = np.random.randn(B, N, T, S).astype(np.float32)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([12, 12, 12], dtype=np.int32)
-    key_value_seq_lengths = np.array([12, 12, 12], dtype=np.int32)
-
-    input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.25,
-        'is_causal': False,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (2, 2),
-        'implementation': 'xla',
-        'return_residual': True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Case 9: Small symmetric config without residual
+    # Input 1: Standard MHA, square sequence length
     B, T, S, N, K, H = 2, 4, 4, 2, 2, 8
-    query = np.random.randn(B, T, N, H).astype(np.float32)
-    key = np.random.randn(B, S, K, H).astype(np.float32)
-    value = np.random.randn(B, S, K, H).astype(np.float32)
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
     bias = np.random.randn(B, N, T, S).astype(np.float32)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([4, 4], dtype=np.int32)
-    key_value_seq_lengths = np.array([4, 4], dtype=np.int32)
-
+    mask = np.ones((B, N, T, S), dtype=bool)
+    q_lens = np.array([T, T], dtype=np.int32)
+    kv_lens = np.array([S, S], dtype=np.int32)
     input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.353,
-        'is_causal': False,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (1, 1),
-        'implementation': 'xla',
-        'return_residual': False
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": float(1.0 / np.sqrt(H)),
+        "is_causal": False,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (2, 2),
+        "implementation": "xla",
+        "return_residual": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 10: Float16 with larger sequence size
-    B, T, S, N, K, H = 1, 16, 16, 4, 4, 16
-    query = np.random.randn(B, T, N, H).astype(np.float16)
-    key = np.random.randn(B, S, K, H).astype(np.float16)
-    value = np.random.randn(B, S, K, H).astype(np.float16)
-    bias = np.random.randn(B, N, T, S).astype(np.float16)
-    mask = np.random.choice([True, False], size=(B, N, T, S))
-    query_seq_lengths = np.array([16], dtype=np.int32)
-    key_value_seq_lengths = np.array([16], dtype=np.int32)
-
+    # Input 2: Grouped Query Attention (GQA), causal, return_residual=True
+    B, T, S, N, K, H = 2, 6, 6, 4, 2, 16
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.zeros((B, 1, T, S), dtype=np.float32)
+    mask = np.ones((B, 1, T, S), dtype=bool)
+    q_lens = np.array([6, 5], dtype=np.int32)
+    kv_lens = np.array([6, 5], dtype=np.int32)
     input_dict = {
-        'query': query,
-        'key': key,
-        'value': value,
-        'bias': bias,
-        'mask': mask,
-        'scale': 0.25,
-        'is_causal': True,
-        'query_seq_lengths': query_seq_lengths,
-        'key_value_seq_lengths': key_value_seq_lengths,
-        'local_window_size': (8, 8),
-        'implementation': 'xla',
-        'return_residual': True
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.25,
+        "is_causal": True,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (6, 6),
+        "implementation": "xla",
+        "return_residual": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Multi-Query Attention (MQA, K=1)
+    B, T, S, N, K, H = 1, 8, 8, 4, 1, 8
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.random.randn(1, N, T, S).astype(np.float32)
+    mask = np.ones((1, N, T, S), dtype=bool)
+    q_lens = np.array([8], dtype=np.int32)
+    kv_lens = np.array([8], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.125,
+        "is_causal": False,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (4, 4),
+        "implementation": "xla",
+        "return_residual": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Non-square dimensions T != S
+    B, T, S, N, K, H = 2, 3, 5, 2, 2, 4
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.random.uniform(-1.0, 1.0, size=(B, N, T, S)).astype(np.float32)
+    mask = np.ones((B, N, T, S), dtype=bool)
+    q_lens = np.array([3, 2], dtype=np.int32)
+    kv_lens = np.array([5, 4], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.5,
+        "is_causal": False,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (5, 5),
+        "implementation": "xla",
+        "return_residual": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Asymmetric local window size
+    B, T, S, N, K, H = 3, 4, 4, 2, 2, 8
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.zeros((B, N, T, S), dtype=np.float32)
+    mask = np.ones((B, N, T, S), dtype=bool)
+    q_lens = np.array([4, 4, 3], dtype=np.int32)
+    kv_lens = np.array([4, 4, 3], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.35,
+        "is_causal": False,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (1, 2),
+        "implementation": "xla",
+        "return_residual": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Float64 precision
+    B, T, S, N, K, H = 1, 2, 2, 1, 1, 4
+    q = np.random.randn(B, T, N, H).astype(np.float64)
+    k = np.random.randn(B, S, K, H).astype(np.float64)
+    v = np.random.randn(B, S, K, H).astype(np.float64)
+    bias = np.ones((B, N, T, S), dtype=np.float64) * -0.5
+    mask = np.array([[[[True, False], [True, True]]]], dtype=bool)
+    q_lens = np.array([2], dtype=np.int32)
+    kv_lens = np.array([2], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.5,
+        "is_causal": True,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (2, 0),
+        "implementation": "xla",
+        "return_residual": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Broadcastable bias and mask
+    B, T, S, N, K, H = 2, 4, 4, 4, 4, 8
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.random.randn(1, 1, T, S).astype(np.float32)
+    mask = np.ones((B, 1, 1, S), dtype=bool)
+    q_lens = np.array([4, 4], dtype=np.int32)
+    kv_lens = np.array([4, 4], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.2,
+        "is_causal": False,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (3, 3),
+        "implementation": "xla",
+        "return_residual": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Larger head dimension H=32
+    B, T, S, N, K, H = 2, 4, 4, 4, 4, 32
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.random.uniform(-5.0, 0.0, size=(B, N, T, S)).astype(np.float32)
+    mask = np.ones((B, N, T, S), dtype=bool)
+    q_lens = np.array([4, 3], dtype=np.int32)
+    kv_lens = np.array([4, 4], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": float(1.0 / np.sqrt(32)),
+        "is_causal": False,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (3, 1),
+        "implementation": "xla",
+        "return_residual": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Grouped Query Attention with K=1 and T=5, S=5
+    B, T, S, N, K, H = 2, 5, 5, 2, 1, 16
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.zeros((B, N, T, S), dtype=np.float32)
+    mask = np.ones((B, N, T, S), dtype=bool)
+    q_lens = np.array([5, 4], dtype=np.int32)
+    kv_lens = np.array([5, 5], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.25,
+        "is_causal": True,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (4, 0),
+        "implementation": "xla",
+        "return_residual": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Single batch with smaller scale
+    B, T, S, N, K, H = 1, 3, 3, 2, 2, 8
+    q = np.random.randn(B, T, N, H).astype(np.float32)
+    k = np.random.randn(B, S, K, H).astype(np.float32)
+    v = np.random.randn(B, S, K, H).astype(np.float32)
+    bias = np.random.randn(B, N, T, S).astype(np.float32)
+    mask = np.ones((B, N, T, S), dtype=bool)
+    q_lens = np.array([3], dtype=np.int32)
+    kv_lens = np.array([3], dtype=np.int32)
+    input_dict = {
+        "query": q,
+        "key": k,
+        "value": v,
+        "bias": bias,
+        "mask": mask,
+        "scale": 0.05,
+        "is_causal": False,
+        "query_seq_lengths": q_lens,
+        "key_value_seq_lengths": kv_lens,
+        "local_window_size": (2, 2),
+        "implementation": "xla",
+        "return_residual": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.nn.dot_product_attention_2"] = dot_product_attention_inputs()
+
+generated_inputs["jax.nn.dot_product_attention_2"] = (
+    dot_product_attention_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -4,57 +4,66 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def real_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D complex64 array with positive and negative parts
-    val = np.array([1 + 2j, -3 - 4j, 5 - 6j, -7 + 8j], dtype=np.complex64)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 1: 1D complex64 array
+    val = np.array([1.0 + 2.0j, -3.5 + 0.0j, 0.0 - 4.2j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 2: 2D complex128 matrix
-    val = np.array([[1.5 + 0.5j, -2.5 - 1.5j], [3.5 + 2.5j, -4.5 - 3.5j]], dtype=np.complex128)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 2: 2D complex128 array with positive and negative components
+    val = np.array(
+        [[1.5 - 2.5j, -3.0 + 4.0j], [0.0 + 0.0j, -5.5 - 6.5j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 3: 0D complex64 array (scalar-like)
-    val = np.array(-2.5 + 3.5j, dtype=np.complex64)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 3: 0D scalar complex array
+    val = np.array(3.0 - 7.0j, dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 4: 3D complex64 array
-    val = np.random.randn(2, 3, 4).astype(np.float32) + 1j * np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 4: 1D float32 array (real inputs are valid)
+    val = np.array([-1.2, 0.0, 3.4, 5.6], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 5: 1D float32 array (purely real input)
-    val = np.array([-1.2, 0.0, 3.4], dtype=np.float32)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 5: 2D int32 array
+    val = np.array([[-10, 20], [30, -40]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 6: 2D int32 array
-    val = np.array([[1, -2, 3], [-4, 5, -6]], dtype=np.int32)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 6: 3D complex64 array
+    val = (
+        np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)
+    ).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 7: 1D complex128 array containing special values (inf, nan)
-    val = np.array([complex(np.inf, -np.inf), complex(np.nan, 1.0), complex(0.0, np.nan)], dtype=np.complex128)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 7: 4D float64 array
+    val = np.random.randn(2, 2, 3, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 8: 4D complex64 array
-    val = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex64)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 8: Empty 1D array
+    val = np.array([], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 9: 1D bool array
-    val = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 9: 2D boolean array
+    val = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 10: Empty complex128 array with shape (0, 5)
-    val = np.empty((0, 5), dtype=np.complex128)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 10: 1D complex128 array with special values (inf, nan)
+    val = np.array(
+        [np.nan + 1.0j, np.inf - 2.0j, -np.inf + 0.0j], dtype=np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 11: 1D float64 array with extreme values
-    val = np.array([-1e30, 1e30, 0.0], dtype=np.float64)
-    list_of_inputs.append({"val": copy.deepcopy(val)})
+    # Input 11: 3D int64 array
+    val = np.arange(-12, 12, dtype=np.int64).reshape((2, 3, 4))
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.real_1"] = real_inputs()
 

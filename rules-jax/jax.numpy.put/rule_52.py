@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# mode must be 'clip' and inplace must be false (Rule 52)
+# indices in tuple must be within bounds for a 1D target array (Rule 52)
 
 rule_52 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] == False, v["arg1_value"] == 34)) if n else
-          And(v["arg2_value"] == False, v["arg1_value"] == 34))
+    s.add(Not(And(And(v["arg1_ndim"] == 1, v["arg2_length"] > 0), And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) < Select(v["arg1_shape"], 0))) for i in range(6)]))) if n else
+          And(And(v["arg1_ndim"] == 1, v["arg2_length"] > 0), And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) < Select(v["arg1_shape"], 0))) for i in range(6)])))
 )
 
 def rule_52_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,30 @@ def rule_52_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, bool):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        arg2_value = Bool('arg2_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        solver.add(arg2_value == arg2)
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 52
-        rule_52(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_52(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_52(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_52(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor data types of x and alpha should match (Rule 6)
+# data types of x and alpha should match (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] == v["arg2_dtype"]) if n else
-          v["arg1_dtype"] == v["arg2_dtype"])
+    s.add(Not(And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8)) if n else
+          And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8))
 )
 
 def rule_6_func(arg1, arg2, solver=None, neg=False):

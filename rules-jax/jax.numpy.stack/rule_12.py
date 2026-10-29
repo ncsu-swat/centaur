@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the axis parameter must be within the valid range for the single input tensor (Rule 12)
+# axis parameter for 1D single tensor must be -1 or 0 (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0)) if n else
-          And(v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0))
+    s.add(Not(If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == -1), True)) if n else
+          If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == -1), True))
 )
 
 def rule_12_func(arg1, arg2, solver=None, neg=False):

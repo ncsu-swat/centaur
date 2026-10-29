@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tolerance limits for stability (Rule 52)
+# relative tolerance is strictly positive and absolute tolerance is non-negative (Rule 52)
 
 rule_52 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg1_value"] >= 0, v["arg1_value"] <= 100), v["arg2_value"] >= 0), v["arg2_value"] <= 100)) if n else
-          And(And(And(v["arg1_value"] >= 0, v["arg1_value"] <= 100), v["arg2_value"] >= 0), v["arg2_value"] <= 100))
+    s.add(Not(And(v["arg1_value"] > 0, v["arg2_value"] >= 0)) if n else
+          And(v["arg1_value"] > 0, v["arg2_value"] >= 0))
 )
 
 def rule_52_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# 1D integer shape must be non-negative and compatible with sharding of size 1 (Rule 50)
+# integer shape with a floating-point dtype encoding (Rule 50)
 
 rule_50 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 0, v["arg2_length"] == 1)) if n else
-          And(v["arg1_value"] >= 0, v["arg2_length"] == 1))
+    s.add(Not(And(And(v["arg1_value"] >= 0, 6 <= v["arg2_value"]), v["arg2_value"] <= 8)) if n else
+          And(And(v["arg1_value"] >= 0, 6 <= v["arg2_value"]), v["arg2_value"] <= 8))
 )
 
 def rule_50_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_50_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
-        if not (isinstance(arg2, tuple) and all(isinstance(e, str) for e in arg2)):
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_value = Int('arg1_value')
-        arg2_length = Int('arg2_length')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_value == int(arg1))
-        solver.add(arg2_length == len(arg2))
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 50
-        rule_50(solver, {'arg1_value': arg1_value, 'arg2_length': arg2_length})
+        rule_50(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_50(solver, {'arg1_value': arg1['value'], 'arg2_length': arg2['length']}, neg)
+        rule_50(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

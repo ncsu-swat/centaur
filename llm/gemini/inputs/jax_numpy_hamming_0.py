@@ -4,46 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def hamming_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero size window
+    # Input 1: Zero length window
     list_of_inputs.append({"M": 0})
 
-    # Input 2: Window of size 1
+    # Input 2: Length 1
     list_of_inputs.append({"M": 1})
 
-    # Input 3: Window of size 2
+    # Input 3: Length 2
     list_of_inputs.append({"M": 2})
 
-    # Input 4: Window of size 3
+    # Input 4: Length 3
     list_of_inputs.append({"M": 3})
 
-    # Input 5: Window of size 4
+    # Input 5: Small even number
     list_of_inputs.append({"M": 4})
 
-    # Input 6: Window of size 5
+    # Input 6: Small odd number
     list_of_inputs.append({"M": 5})
 
-    # Input 7: Window of size 10
-    list_of_inputs.append({"M": 10})
+    # Input 7: Power of 2 (8)
+    list_of_inputs.append({"M": 8})
 
-    # Input 8: Size using np.int32 type
-    list_of_inputs.append({"M": np.int32(15)})
+    # Input 8: Power of 2 (16)
+    list_of_inputs.append({"M": 16})
 
-    # Input 9: Size using np.int64 type
-    list_of_inputs.append({"M": np.int64(25)})
+    # Input 9: Non-power of 2
+    list_of_inputs.append({"M": 25})
 
-    # Input 10: Window of size 100
-    list_of_inputs.append({"M": 100})
+    # Input 10: Larger window (64)
+    list_of_inputs.append({"M": 64})
 
-    # Input 11: Larger window of size 512
+    # Input 11: Window size 128
+    list_of_inputs.append({"M": 128})
+
+    # Input 12: Window size 512
     list_of_inputs.append({"M": 512})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.hamming"] = hamming_inputs()
 

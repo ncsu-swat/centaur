@@ -4,48 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_kaiser_inputs():
+def kaiser_inputs():
     list_of_inputs = []
 
-    # Input 1: Window size 0, beta 0
-    list_of_inputs.append({"M": 0, "beta": 0})
+    # Input 1: Minimal window size of 1 with beta=0
+    list_of_inputs.append({"M": int(1), "beta": int(0)})
 
-    # Input 2: Window size 1, beta 5
-    list_of_inputs.append({"M": 1, "beta": np.int32(5)})
+    # Input 2: Zero window size (empty array output)
+    list_of_inputs.append({"M": int(0), "beta": int(5)})
 
-    # Input 3: Window size 5, beta 0 (as numpy int64)
-    list_of_inputs.append({"M": np.int64(5), "beta": 0})
+    # Input 3: Small window size 2
+    list_of_inputs.append({"M": int(2), "beta": int(1)})
 
-    # Input 4: Standard size and beta (as numpy int32)
-    list_of_inputs.append({"M": np.int32(14), "beta": np.int32(6)})
+    # Input 4: Small odd window size 3
+    list_of_inputs.append({"M": int(3), "beta": int(3)})
 
-    # Input 5: Larger window size, small beta (numpy int64)
-    list_of_inputs.append({"M": 50, "beta": np.int64(2)})
+    # Input 5: Standard window size 4 with moderate beta
+    list_of_inputs.append({"M": int(4), "beta": int(2)})
 
-    # Input 6: Medium size, large beta
-    list_of_inputs.append({"M": np.int64(32), "beta": np.int64(12)})
+    # Input 6: Window size 5 with beta=14 (often used in FIR filter design)
+    list_of_inputs.append({"M": int(5), "beta": int(14)})
 
-    # Input 7: Small window size 2, beta 1
-    list_of_inputs.append({"M": 2, "beta": np.int32(1)})
+    # Input 7: Window size 8 with beta=6
+    list_of_inputs.append({"M": int(8), "beta": int(6)})
 
-    # Input 8: Even window size 8, beta 8
-    list_of_inputs.append({"M": np.int32(8), "beta": np.int32(8)})
+    # Input 8: Window size 16 with beta=0 (rectangular window equivalent)
+    list_of_inputs.append({"M": int(16), "beta": int(0)})
 
-    # Input 9: Odd window size 15, beta 3
-    list_of_inputs.append({"M": 15, "beta": 3})
+    # Input 9: Window size 32 with larger beta
+    list_of_inputs.append({"M": int(32), "beta": int(10)})
 
-    # Input 10: Large window size 1000, beta 5
-    list_of_inputs.append({"M": np.int32(1000), "beta": 5})
+    # Input 10: Window size 64 with beta=8
+    list_of_inputs.append({"M": int(64), "beta": int(8)})
 
-    # Input 11: Power of two window size, beta 10
-    list_of_inputs.append({"M": 256, "beta": np.int64(10)})
+    # Input 11: Window size 128 with beta=5
+    list_of_inputs.append({"M": int(128), "beta": int(5)})
+
+    # Input 12: Window size 256 with beta=12
+    list_of_inputs.append({"M": int(256), "beta": int(12)})
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.kaiser_3"] = generate_kaiser_inputs()
+generated_inputs["jax.numpy.kaiser_3"] = kaiser_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

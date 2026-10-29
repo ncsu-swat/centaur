@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The axis parameter must be a valid axis of the input tensor, supporting both non-negative and negative indexing (Rule 26)
+# if axis specifies the trailing dimension via -1, operand rank must be at least 1 (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, (If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0)))) if n else
-          And(v["arg1_ndim"] >= 1, (If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0))))
+    s.add(Not(If(v["arg2_value"] == -1, v["arg1_ndim"] >= 1, True)) if n else
+          If(v["arg2_value"] == -1, v["arg1_ndim"] >= 1, True))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):

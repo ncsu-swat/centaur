@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when axis is a list of integers, every element must be a valid axis index and point to a dimension of size 1 (Rule 35)
+# the first dimension specified in a non-empty list of axes must have size 1 if non-negative (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And(And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) < v["arg1_ndim"]), (If(Select(v["arg2_values"], i) < 0, Select(v["arg1_shape"], Select(v["arg2_values"], i) + v["arg1_ndim"]) == 1, Select(v["arg1_shape"], Select(v["arg2_values"], i)) == 1)))) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), And(And(Select(v["arg2_values"], i) >= 0 - v["arg1_ndim"], Select(v["arg2_values"], i) < v["arg1_ndim"]), (If(Select(v["arg2_values"], i) < 0, Select(v["arg1_shape"], Select(v["arg2_values"], i) + v["arg1_ndim"]) == 1, Select(v["arg1_shape"], Select(v["arg2_values"], i)) == 1)))) for i in range(6)]))
+    s.add(Not(If(And(v["arg2_length"] > 0, Select(v["arg2_values"], 0) >= 0), Select(v["arg1_shape"], Select(v["arg2_values"], 0)) == 1, True)) if n else
+          If(And(v["arg2_length"] > 0, Select(v["arg2_values"], 0) >= 0), Select(v["arg1_shape"], Select(v["arg2_values"], 0)) == 1, True))
 )
 
 def rule_35_func(arg1, arg2, solver=None, neg=False):
@@ -27,13 +27,11 @@ def rule_35_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_length = Int('arg2_length')
         arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
         for i in range(arg1.ndim):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
         solver.add(arg2_length == len(arg2))
@@ -41,9 +39,9 @@ def rule_35_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 35
-        rule_35(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_35(solver, {'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_35(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_35(solver, {'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

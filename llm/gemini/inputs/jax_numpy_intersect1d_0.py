@@ -4,143 +4,125 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def intersect1d_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic integer arrays
-    ar1 = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    ar2 = np.array([3, 4, 5, 6, 7], dtype=np.int32)
+    # Input 1: Basic 1D integer arrays
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([1, 2, 3, 4, 5], dtype=np.int32),
+        "ar2": np.array([3, 4, 5, 6, 7], dtype=np.int32),
         "assume_unique": False,
         "return_indices": False,
-        "size": None,
-        "fill_value": None
+        "size": 3,
+        "fill_value": np.int32(0),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Float32 arrays with unique values
-    ar1 = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
-    ar2 = np.array([0.3, 0.4, 0.5, 0.6], dtype=np.float32)
+    # Input 2: Float arrays with negative values and return_indices=True
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([-2.5, -1.0, 0.0, 1.5, 3.0], dtype=np.float32),
+        "ar2": np.array([-1.0, 1.5, 4.5], dtype=np.float32),
         "assume_unique": True,
         "return_indices": True,
-        "size": None,
-        "fill_value": None
+        "size": 2,
+        "fill_value": np.float32(-999.0),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Int64 arrays, negative values
-    ar1 = np.array([-5, -4, -3, -2, -1, 0], dtype=np.int64)
-    ar2 = np.array([-3, -2, -1, 0, 1, 2], dtype=np.int64)
+    # Input 3: Multi-dimensional arrays (flattened by intersect1d)
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([[10, 20], [30, 40]], dtype=np.int64),
+        "ar2": np.array([[20, 50], [40, 60]], dtype=np.int64),
         "assume_unique": False,
         "return_indices": True,
-        "size": None,
-        "fill_value": None
+        "size": 4,
+        "fill_value": np.int64(-1),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Float64 arrays, different lengths
-    ar1 = np.array([1.5, 2.5, 3.5], dtype=np.float64)
-    ar2 = np.array([0.5, 1.5, 2.5, 3.5, 4.5], dtype=np.float64)
+    # Input 4: Size larger than intersection count (padding with fill_value)
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([1, 2, 3], dtype=np.int32),
+        "ar2": np.array([2, 4, 6], dtype=np.int32),
+        "assume_unique": False,
+        "return_indices": False,
+        "size": 5,
+        "fill_value": np.int32(99),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Size smaller than intersection count (truncation)
+    input_dict = {
+        "ar1": np.array([1, 2, 3, 4, 5, 6], dtype=np.int32),
+        "ar2": np.array([2, 3, 4, 5, 6, 7], dtype=np.int32),
         "assume_unique": True,
         "return_indices": False,
-        "size": None,
-        "fill_value": None
+        "size": 2,
+        "fill_value": np.int32(0),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Multidimensional arrays (flattened automatically by the API)
-    ar1 = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    ar2 = np.array([[3, 4], [5, 6]], dtype=np.int32)
+    # Input 6: Double precision float inputs with duplicates
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([1.1, 2.2, 2.2, 3.3, 4.4], dtype=np.float64),
+        "ar2": np.array([2.2, 3.3, 3.3, 5.5], dtype=np.float64),
         "assume_unique": False,
         "return_indices": True,
-        "size": None,
-        "fill_value": None
+        "size": 3,
+        "fill_value": np.float64(0.0),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Boolean arrays
-    ar1 = np.array([True, False, True], dtype=bool)
-    ar2 = np.array([False, False, True], dtype=bool)
+    # Input 7: Boolean arrays
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([True, False, True], dtype=np.bool_),
+        "ar2": np.array([False, False], dtype=np.bool_),
         "assume_unique": False,
         "return_indices": False,
-        "size": None,
-        "fill_value": None
+        "size": 2,
+        "fill_value": np.bool_(False),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Arrays with duplicate values
-    ar1 = np.array([1, 1, 2, 2, 3, 3], dtype=np.int32)
-    ar2 = np.array([2, 2, 3, 3, 4, 4], dtype=np.int32)
+    # Input 8: Empty array intersection
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
-        "assume_unique": False,
+        "ar1": np.array([], dtype=np.int32),
+        "ar2": np.array([1, 2, 3], dtype=np.int32),
+        "assume_unique": True,
         "return_indices": True,
-        "size": None,
-        "fill_value": None
+        "size": 3,
+        "fill_value": np.int32(-1),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large range integers
-    ar1 = np.array([1000, 2000, 3000], dtype=np.int32)
-    ar2 = np.array([3000, 4000, 5000], dtype=np.int32)
+    # Input 9: Disjoint sets with zero intersection
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.array([100, 200, 300], dtype=np.int32),
+        "ar2": np.array([400, 500, 600], dtype=np.int32),
         "assume_unique": True,
         "return_indices": False,
-        "size": None,
-        "fill_value": None
+        "size": 3,
+        "fill_value": np.int32(0),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Empty first array
-    ar1 = np.array([], dtype=np.int32)
-    ar2 = np.array([1, 2, 3], dtype=np.int32)
+    # Input 10: 3D array inputs with size equal to 0
     input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
+        "ar1": np.arange(8, dtype=np.int32).reshape(2, 2, 2),
+        "ar2": np.arange(4, 12, dtype=np.int32).reshape(2, 4),
         "assume_unique": False,
         "return_indices": True,
-        "size": None,
-        "fill_value": None
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Mixed positive and negative floats with duplicates
-    ar1 = np.array([-1.5, 0.0, 1.5, 3.0, 3.0], dtype=np.float32)
-    ar2 = np.array([-3.0, -1.5, 0.0, 1.5, 1.5], dtype=np.float32)
-    input_dict = {
-        "ar1": ar1,
-        "ar2": ar2,
-        "assume_unique": False,
-        "return_indices": True,
-        "size": None,
-        "fill_value": None
+        "size": 0,
+        "fill_value": np.int32(0),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.intersect1d"] = intersect1d_inputs()
 

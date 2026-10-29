@@ -4,23 +4,66 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
+import copy
 import numpy as np
+
 
 def gamma_inputs():
     list_of_inputs = []
-    
-    list_of_inputs.append({"x": np.array([1.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([2.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([3.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([4.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([5.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([1.5], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([2.5], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([3.5], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([4.5], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([5.5], dtype=np.float32)})
-    
+
+    # Input 1: 1D array of positive floats (float32)
+    x = np.array([0.5, 1.0, 1.5, 2.0, 3.0, 5.0], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 2: 1D array of positive and negative non-integers (float64)
+    x = np.array([-3.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 3: Scalar (0-D array) float32
+    x = np.array(4.2, dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 4: 2D array of floats (float32)
+    x = np.array(
+        [[1.0, 2.0, 3.0], [0.5, 1.5, 2.5], [4.0, 5.0, 6.0]], dtype=np.float32
+    )
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 5: 3D array of random positive floats (float64)
+    x = np.abs(np.random.randn(2, 3, 4)).astype(np.float64) + 0.1
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 6: 1D complex array (complex64)
+    x = np.array(
+        [1.0 + 1.0j, 2.0 - 0.5j, -0.5 + 2.0j, 3.0 + 0.0j], dtype=np.complex64
+    )
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 7: 2D complex array (complex128)
+    x = np.array(
+        [[1.5 + 0.5j, -1.2 + 0.3j], [2.1 - 1.4j, 0.5 + 0.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 8: 1D array containing special edge cases (zeros, inf, nan)
+    x = np.array([0.0, -0.0, np.inf, -np.inf, np.nan], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 9: 4D array of small positive values (float32)
+    x = np.ones((2, 2, 2, 2), dtype=np.float32) * 0.75
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 10: 1D array with negative integer poles
+    x = np.array([-3.0, -2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: 1D array with larger values to test range
+    x = np.array([10.0, 15.0, 20.0, 30.0], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.gamma"] = gamma_inputs()
 

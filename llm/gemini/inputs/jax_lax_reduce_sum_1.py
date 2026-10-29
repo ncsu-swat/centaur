@@ -4,65 +4,74 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_reduce_sum_inputs():
+
+def reduce_sum_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array, sum over axis 0
-    operand = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    # Input 1: 1D array, reduce along axis 0
+    operand = np.array([1.0, -2.0, 3.5, 4.0], dtype=np.float32)
     axes = [0]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 2: 2D float32 array, sum over axis 0
-    operand = np.random.randn(3, 4).astype(np.float32)
-    axes = [0]
-    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
-
-    # Input 3: 2D float32 array, sum over axis 1
-    operand = np.random.randn(5, 2).astype(np.float32)
+    # Input 2: 2D array, reduce along axis 1
+    operand = np.arange(12, dtype=np.int32).reshape(3, 4) - 5
     axes = [1]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 4: 2D float32 array, sum over axes [0, 1]
-    operand = np.random.randn(4, 4).astype(np.float32)
+    # Input 3: 2D array, reduce along all axes [0, 1]
+    operand = np.random.randn(5, 5).astype(np.float64)
     axes = [0, 1]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 5: 3D float32 array, sum over axes [0, 2]
-    operand = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 4: 3D array, reduce along axis 0 and 2
+    operand = np.random.uniform(-10, 10, size=(2, 3, 4)).astype(np.float32)
     axes = [0, 2]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 6: 1D float64 array, sum over axis 0
-    operand = np.random.randn(10).astype(np.float64)
+    # Input 5: 3D array, empty axes list (no reduction)
+    operand = np.ones((2, 2, 2), dtype=np.int64)
+    axes = []
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
+
+    # Input 6: 4D array, reduce along a single middle axis
+    operand = np.random.randn(2, 4, 3, 5).astype(np.float32)
+    axes = [2]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
+
+    # Input 7: Complex numbers
+    operand = (
+        np.array([[1.0 + 2.0j, -3.0 + 4.0j], [0.5 - 1.5j, 2.0 + 0.0j]])
+    ).astype(np.complex64)
     axes = [0]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 7: 2D int16 array with negative values, sum over axis 1
-    operand = np.random.randint(-100, 100, size=(4, 4)).astype(np.int16)
+    # Input 8: 5D array, reduce along multiple axes
+    operand = np.random.randn(2, 2, 3, 2, 4).astype(np.float32)
+    axes = [1, 3, 4]
+    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
+
+    # Input 9: 16-bit float dtype
+    operand = np.array([[-1.5, 2.5], [3.0, -4.0]], dtype=np.float16)
     axes = [1]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 8: 3D uint8 array, sum over axis 0
-    operand = np.random.randint(0, 10, size=(2, 2, 2)).astype(np.uint8)
+    # Input 10: 2D int16 array, reduce along axis 0
+    operand = np.array([[-10, 20, 30], [5, -15, 25]], dtype=np.int16)
     axes = [0]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
-    # Input 9: 4D float32 array, sum over axis 3
-    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    axes = [3]
-    list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
-
-    # Input 10: 1D float32 array, sum over empty list of axes
-    operand = np.array([1.5, 2.5, -3.5], dtype=np.float32)
-    axes = []
+    # Input 11: 4D array, reduce all axes
+    operand = np.random.randn(3, 2, 2, 3).astype(np.float64)
+    axes = [0, 1, 2, 3]
     list_of_inputs.append(copy.deepcopy({"operand": operand, "axes": axes}))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.reduce_sum_1"] = jax_lax_reduce_sum_inputs()
+
+generated_inputs["jax.lax.reduce_sum_1"] = reduce_sum_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

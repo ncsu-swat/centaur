@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tuple of integers must have all elements greater than or equal to 1 to avoid nan (Rule 61)
+# the last element of a non-empty list of integers should be at least 1 (Rule 61)
 
 rule_61 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 1) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 1) for i in range(6)]))
+    s.add(Not(If(v["arg1_length"] > 0, Select(v["arg1_values"], v["arg1_length"] - 1) >= 1, True)) if n else
+          If(v["arg1_length"] > 0, Select(v["arg1_values"], v["arg1_length"] - 1) >= 1, True))
 )
 
 def rule_61_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_61_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
@@ -33,9 +33,9 @@ def rule_61_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 61
-        rule_61(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_61(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_61(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_61(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

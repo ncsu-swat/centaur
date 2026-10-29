@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# preferred element type must be a valid data type index (Rule 10)
+# preferred element type when specified as dtype must be a valid numeric type (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 0, v["arg1_value"] <= 12)) if n else
-          And(v["arg1_value"] >= 0, v["arg1_value"] <= 12))
+    s.add(Not(And(0 <= v["arg1_value"], v["arg1_value"] <= 10)) if n else
+          And(0 <= v["arg1_value"], v["arg1_value"] <= 10))
 )
 
 def rule_10_func(arg1, solver=None, neg=False):

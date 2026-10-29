@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def select_n_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, bool "which" (all False), 1 case, float32
-    which = np.zeros(5, dtype=bool)
-    cases = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array cases, 1D int32 which (same shape), float32
+    cases = np.array([1.0, -2.0, 3.5, -4.5], dtype=np.float32)
+    which = np.zeros((4,), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 2: 2D arrays, int32 "which" (all 0), 1 case, float32
-    which = np.zeros((3, 4), dtype=np.int32)
-    cases = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Scalar "which" (int32 = 0), 1 case, 3D array, int32
+    # Input 2: 2D array cases, scalar int32 which, int32
+    cases = np.array([[1, -2, 3], [-4, 5, -6]], dtype=np.int32)
     which = np.array(0, dtype=np.int32)
-    cases = np.random.randint(-10, 10, size=(2, 2, 2)).astype(np.int32)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 4: 1D arrays, int32 "which" (all 0), 1 case, float64
-    which = np.zeros(10, dtype=np.int32)
-    cases = np.random.randn(10).astype(np.float64)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array cases, 2D int32 which (same shape), float64
+    cases = np.arange(12, dtype=np.float64).reshape(3, 4) - 5.0
+    which = np.zeros((3, 4), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 5: Scalar "which" (bool = False), 1 case, scalar, float32
-    which = np.array(False, dtype=bool)
-    cases = np.array(1.5, dtype=np.float32)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D array cases, scalar bool which, bool
+    cases = np.array([True, False, True, False], dtype=np.bool_)
+    which = np.array(False, dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 6: 2D arrays, int32 "which" (all 0), 1 case, int64
-    which = np.zeros((2, 2), dtype=np.int32)
-    cases = np.random.randint(-100, 100, size=(2, 2)).astype(np.int64)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array cases, 3D int32 which (same shape), complex64
+    cases = np.ones((2, 3, 2), dtype=np.complex64) * (1.5 - 2.5j)
+    which = np.zeros((2, 3, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 7: 4D arrays, bool "which" (all False), 1 case, float16
-    which = np.zeros((2, 2, 2, 2), dtype=bool)
-    cases = np.random.randn(2, 2, 2, 2).astype(np.float16)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 0D scalar cases, scalar int32 which, float32
+    cases = np.array(3.14, dtype=np.float32)
+    which = np.array(0, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 8: 1D arrays, int32 "which" (all 0), 1 case, boolean
-    which = np.zeros(6, dtype=np.int32)
-    cases = np.random.choice([True, False], size=(6,)).astype(bool)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D array cases, 4D int32 which (same shape), int16
+    cases = np.arange(24, dtype=np.int16).reshape(2, 2, 2, 3) - 10
+    which = np.zeros((2, 2, 2, 3), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 9: 3D arrays, int32 "which" (all 0), 1 case, float32, with negative values in cases
-    which = np.zeros((3, 1, 3), dtype=np.int32)
-    cases = (np.random.randn(3, 1, 3) * 10.0).astype(np.float32)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D array cases, scalar bool which, uint8
+    cases = np.full((2, 3, 4), 255, dtype=np.uint8)
+    which = np.array(False, dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
-    # Input 10: 2D arrays, int8 "which" (all 0), 1 case, complex64
-    which = np.zeros((2, 3), dtype=np.int8)
-    cases = (np.random.randn(2, 3) + 1j * np.random.randn(2, 3)).astype(np.complex64)
-    input_dict = {"which": which, "cases": cases}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D array cases, 1D bool which (same shape), int64
+    cases = np.array([-100, 200, -300, 400], dtype=np.int64)
+    which = np.zeros((4,), dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
+
+    # Input 10: 2D array cases, scalar int32 which, float16
+    cases = np.array([[-1.5, 2.5], [3.5, -4.5]], dtype=np.float16)
+    which = np.array(0, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
+
+    # Input 11: 5D array cases, 5D int32 which (same shape), int8
+    cases = np.ones((1, 2, 1, 3, 2), dtype=np.int8) * -7
+    which = np.zeros((1, 2, 1, 3, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"which": which, "cases": cases}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.select_n"] = select_n_inputs()
 

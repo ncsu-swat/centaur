@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# distribution shape parameter a must be strictly less than b (Rule 3)
+# shape parameter a must be strictly less than b (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
     s.add(Not(Select(v["arg1_range"], 1) < Select(v["arg2_range"], 0)) if n else

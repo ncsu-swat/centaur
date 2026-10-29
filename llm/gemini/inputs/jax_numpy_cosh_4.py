@@ -4,50 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def cosh_inputs():
     list_of_inputs = []
 
-    # Input 1: float32 array
-    input_dict = {"x": np.array([0.0, 1.0, -1.0, 2.5, -2.5], dtype=np.float32)}
+    # Input 1: 1D array of positive and negative floats (float32)
+    x = np.array([0.0, 1.0, -1.0, 2.5, -2.5], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: int32 array
-    input_dict = {"x": np.array([0, 1, -1, 2, -2], dtype=np.int32)}
+    # Input 2: 1D array of integers (int32)
+    x = np.array([-3, -1, 0, 1, 2, 4], dtype=np.int32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float64 array
-    input_dict = {"x": np.array([[1.0, 2.0], [-1.0, -2.0]], dtype=np.float64)}
+    # Input 3: 2D array of floats (float32)
+    x = np.array([[0.5, -1.5, 2.0], [-0.5, 1.2, -2.2]], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float32 array
-    input_dict = {"x": np.array([[[0.5, -0.5], [1.5, -1.5]], [[2.5, -2.5], [3.5, -3.5]]], dtype=np.float32)}
+    # Input 4: 2D array of integers (int64)
+    x = np.array([[0, 2], [-4, 6], [1, -3]], dtype=np.int64)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: complex64 array
-    input_dict = {"x": np.array([1.0 + 1.0j, -2.0 - 3.0j, 0.0 + 0.0j], dtype=np.complex64)}
+    # Input 5: 3D array of floats (float32)
+    x = np.array(
+        [
+            [[0.1, -0.2], [0.3, 0.4]],
+            [[-0.5, 0.6], [-0.7, 0.8]]
+        ],
+        dtype=np.float32
+    )
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array with single element
-    input_dict = {"x": np.array([0.0], dtype=np.float32)}
+    # Input 6: 1D array of float64
+    x = np.array([-5.0, 0.0, 5.0], dtype=np.float64)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: float32 array with small and moderate values
-    input_dict = {"x": np.array([1e-5, -1e-5, 20.0, -20.0], dtype=np.float32)}
+    # Input 7: 1D array of complex numbers (complex64)
+    x = np.array([1.0 + 2.0j, -0.5 + 0.5j, 2.0 - 1.0j], dtype=np.complex64)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: float16 array
-    input_dict = {"x": np.array([1.0, 2.5, -3.0, 4.2], dtype=np.float16)}
+    # Input 8: 2D array of complex numbers (complex128)
+    x = np.array(
+        [
+            [0.0 + 1.0j, -2.0 + 0.0j],
+            [1.5 - 0.5j, 2.0 + 1.0j]
+        ],
+        dtype=np.complex128
+    )
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D float32 array
-    input_dict = {"x": np.array([[[[1.0, -1.0]]]], dtype=np.float32)}
+    # Input 9: 1D array of booleans
+    x = np.array([True, False, True, False], dtype=bool)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D float32 array with wider range
-    input_dict = {"x": np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)}
+    # Input 10: 1D array of zeros
+    x = np.zeros(5, dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Single-element 1D array
+    x = np.array([1.5], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

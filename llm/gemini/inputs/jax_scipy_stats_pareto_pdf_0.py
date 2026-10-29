@@ -4,83 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def pareto_pdf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, simple float32
-    x = np.array([2.0, 3.0, 4.0], dtype=np.float32)
-    b = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
-
-    # Input 2: Scalar arrays (0D tensors), float32
+    # Input 1: 0D scalar tensors, float32, x >= loc + scale
     x = np.array(2.5, dtype=np.float32)
     b = np.array(1.5, dtype=np.float32)
     loc = np.array(0.0, dtype=np.float32)
     scale = np.array(1.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 3: 2D arrays, float64
-    x = np.array([[1.5, 2.0], [2.5, 3.0]], dtype=np.float64)
-    b = np.array([[2.0, 2.0], [2.0, 2.0]], dtype=np.float64)
-    loc = np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float64)
-    scale = np.array([[1.0, 1.0], [1.0, 1.0]], dtype=np.float64)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 2: 1D tensors, standard float64 values
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
+    b = np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float64)
+    loc = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+    scale = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 4: Broadcasting shapes
-    x = np.array([2.0, 3.0, 4.0], dtype=np.float32)
-    b = np.array([[1.5], [2.5]], dtype=np.float32)
-    loc = np.array([0.0], dtype=np.float32)
-    scale = np.array([1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 3: Negative loc, x < loc + scale (out-of-support case, pdf evaluates to 0)
+    x = np.array([-1.0, 0.0, 1.0], dtype=np.float32)
+    b = np.array([3.0, 3.0, 3.0], dtype=np.float32)
+    loc = np.array([-2.0, -2.0, -2.0], dtype=np.float32)
+    scale = np.array([2.0, 2.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 5: Offset and non-default scale, 1D
-    x = np.array([5.0, 6.0], dtype=np.float32)
-    b = np.array([2.0, 2.0], dtype=np.float32)
-    loc = np.array([1.0, 2.0], dtype=np.float32)
-    scale = np.array([2.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 4: 2D tensors, matching shapes
+    x = np.array([[2.0, 3.0], [4.0, 5.0]], dtype=np.float32)
+    b = np.array([[1.0, 2.0], [0.5, 3.5]], dtype=np.float32)
+    loc = np.array([[0.0, 0.5], [1.0, -1.0]], dtype=np.float32)
+    scale = np.array([[1.0, 1.5], [2.0, 0.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 6: 3D arrays, float32 with randomized positive values
-    x = (np.random.rand(2, 2, 2) + 2.0).astype(np.float32)
-    b = (np.random.rand(2, 2, 2) + 0.5).astype(np.float32)
-    loc = np.zeros((2, 2, 2), dtype=np.float32)
-    scale = np.ones((2, 2, 2), dtype=np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 5: Broadcasting - 1D x with scalar-like 1D parameters
+    x = np.linspace(1.5, 10.0, 10, dtype=np.float64)
+    b = np.array([2.5], dtype=np.float64)
+    loc = np.array([0.5], dtype=np.float64)
+    scale = np.array([1.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 7: Large scale and shift, float64
-    x = np.array([100.0, 200.0], dtype=np.float64)
-    b = np.array([3.5, 4.5], dtype=np.float64)
-    loc = np.array([-10.0, -20.0], dtype=np.float64)
-    scale = np.array([10.0, 20.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 6: 3D tensors
+    x = np.ones((2, 3, 4), dtype=np.float32) * 5.0
+    b = np.ones((2, 3, 4), dtype=np.float32) * 2.0
+    loc = np.zeros((2, 3, 4), dtype=np.float32)
+    scale = np.ones((2, 3, 4), dtype=np.float32) * 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 8: Small 1D arrays, float32, small shapes
-    x = np.array([1.5], dtype=np.float32)
-    b = np.array([0.5], dtype=np.float32)
-    loc = np.array([-1.0], dtype=np.float32)
-    scale = np.array([0.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 7: Broadcasting - (3, 1) with (1, 4)
+    x = np.array([[2.0], [3.0], [4.0]], dtype=np.float32)
+    b = np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float32)
+    loc = np.array([[0.0]], dtype=np.float32)
+    scale = np.array([[1.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 9: 4D tensors, float32
-    x = (np.ones((2, 2, 2, 2)) * 3.0).astype(np.float32)
-    b = (np.ones((2, 2, 2, 2)) * 1.2).astype(np.float32)
-    loc = (np.ones((2, 2, 2, 2)) * 0.5).astype(np.float32)
-    scale = (np.ones((2, 2, 2, 2)) * 1.5).astype(np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 8: Large shape parameter b and small scale
+    x = np.array([1.001, 1.01, 1.1], dtype=np.float64)
+    b = np.array([50.0, 20.0, 10.0], dtype=np.float64)
+    loc = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+    scale = np.array([0.1, 0.5, 0.8], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
-    # Input 10: Sharp distribution parameters (high b), float32
-    x = np.array([1.1, 1.2, 1.3], dtype=np.float32)
-    b = np.array([10.0, 15.0, 20.0], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "b": b, "loc": loc, "scale": scale})
+    # Input 9: Non-zero positive loc with shifted support
+    x = np.array([11.0, 15.0, 20.0], dtype=np.float32)
+    b = np.array([1.2, 2.4, 3.6], dtype=np.float32)
+    loc = np.array([10.0, 10.0, 10.0], dtype=np.float32)
+    scale = np.array([0.5, 1.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
+
+    # Input 10: 4D tensors with broadcasting
+    x = np.random.uniform(5.0, 10.0, size=(2, 1, 3, 4)).astype(np.float32)
+    b = np.random.uniform(0.5, 3.0, size=(1, 2, 3, 1)).astype(np.float32)
+    loc = np.zeros((1, 1, 1, 1), dtype=np.float32)
+    scale = np.ones((1, 1, 1, 1), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "b": b, "loc": loc, "scale": scale})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.pareto.pdf"] = pareto_pdf_inputs()
 

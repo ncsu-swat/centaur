@@ -4,113 +4,113 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ifft2_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 2D float32 array with default backward norm
-    a = np.random.randn(8, 8).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (8, 8),
-        "axes": [-2, -1],
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D complex64 array, default-like axes, backward norm
+    a = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(
+        np.complex64
+    )
+    s = (4, 4)
+    axes = [-2, -1]
+    norm = "backward"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 2: 2D complex64 array with ortho norm
-    a = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "s": (4, 4),
-        "axes": [0, 1],
-        "norm": "ortho"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float32 array with shape resizing, ortho norm
+    a = np.random.randn(2, 3).astype(np.float32)
+    s = (4, 6)
+    axes = [0, 1]
+    norm = "ortho"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 3: 3D float64 array with forward norm
-    a = np.random.randn(2, 6, 6).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "s": (6, 6),
-        "axes": [1, 2],
-        "norm": "forward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 3D complex128 array, forward norm
+    a = (np.random.randn(3, 8, 8) + 1j * np.random.randn(3, 8, 8)).astype(
+        np.complex128
+    )
+    s = (8, 8)
+    axes = [1, 2]
+    norm = "forward"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 4: Size expansion (padding)
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (6, 6),
-        "axes": [0, 1],
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float64 array with negative values, axes on first two dimensions
+    a = (np.random.randn(5, 5, 2) * -2.5).astype(np.float64)
+    s = (4, 4)
+    axes = [0, 1]
+    norm = "backward"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 5: 4D array transforming specific axes
-    a = np.random.randn(2, 3, 4, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (4, 4),
-        "axes": [2, 3],
-        "norm": "ortho"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 4D complex64 array, ortho norm on axes [2, 3]
+    a = (
+        np.random.randn(2, 2, 4, 4) + 1j * np.random.randn(2, 2, 4, 4)
+    ).astype(np.complex64)
+    s = (4, 4)
+    axes = [2, 3]
+    norm = "ortho"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 6: Size reduction (cropping)
-    a = np.random.randn(10, 10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (5, 5),
-        "axes": [0, 1],
-        "norm": "forward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D float32 array, non-consecutive axes [0, 2]
+    a = np.random.randn(3, 4, 3, 2).astype(np.float32)
+    s = (6, 6)
+    axes = [0, 2]
+    norm = "forward"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 7: 3D complex128 array
-    a = (np.random.randn(3, 8, 8) + 1j * np.random.randn(3, 8, 8)).astype(np.complex128)
-    input_dict = {
-        "a": a,
-        "s": (4, 4),
-        "axes": [-2, -1],
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D integer array, negative axes indices
+    a = np.random.randint(-10, 10, size=(6, 6)).astype(np.int32)
+    s = (6, 6)
+    axes = [-1, -2]
+    norm = "backward"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 8: Non-square dimensions
-    a = np.random.randn(16, 16).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (8, 12),
-        "axes": [0, 1],
-        "norm": "ortho"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D complex64 array, truncation via smaller s
+    a = (np.random.randn(4, 6, 8) + 1j * np.random.randn(4, 6, 8)).astype(
+        np.complex64
+    )
+    s = (3, 4)
+    axes = [-2, -1]
+    norm = "ortho"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 9: Custom axes non-contiguous
-    a = np.random.randn(4, 4, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "s": (2, 2),
-        "axes": [0, 2],
-        "norm": "forward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D float32 array, arbitrary axes
+    a = np.random.randn(2, 3, 2, 4, 2).astype(np.float32)
+    s = (5, 5)
+    axes = [1, 3]
+    norm = "forward"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
-    # Input 10: Higher-dimensional complex array
-    a = (np.random.randn(2, 2, 8, 8) + 1j * np.random.randn(2, 2, 8, 8)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "s": (8, 8),
-        "axes": [-2, -1],
-        "norm": "backward"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float64 array with zero padding via larger s
+    a = np.random.randn(8, 8).astype(np.float64)
+    s = (16, 16)
+    axes = [0, 1]
+    norm = "backward"
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "s": s, "axes": axes, "norm": norm})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fft.ifft2_4"] = ifft2_inputs()
 

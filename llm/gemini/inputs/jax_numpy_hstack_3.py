@@ -10,45 +10,60 @@ import copy
 def hstack_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, dtype=None
-    tup = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": None}))
+    # Input 1: 2D float32 array
+    tup = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    dtype = np.dtype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 2: 2D array, float32, dtype=None
-    tup = np.random.randn(3, 5).astype(np.float32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": None}))
+    # Input 2: 2D int32 array converted to int64
+    tup = np.array([[5, -2, 3], [-1, 4, 0]], dtype=np.int32)
+    dtype = np.dtype(np.int64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 3: 2D array, int32, dtype=float32
-    tup = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": np.float32}))
+    # Input 3: 1D float64 array
+    tup = np.array([1.5, -2.5, 3.5, -4.5], dtype=np.float64)
+    dtype = np.dtype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 4: 3D array, float64, dtype=None
-    tup = np.random.randn(2, 3, 4).astype(np.float64)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": None}))
+    # Input 4: 3D float32 array
+    tup = np.arange(12, dtype=np.float32).reshape(2, 2, 3)
+    dtype = np.dtype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 5: 1D array, int32 with negative values, dtype=int32
-    tup = np.array([-1, -2, -3], dtype=np.int32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": np.int32}))
+    # Input 5: 3D array with negative values
+    tup = np.random.uniform(-10.0, 10.0, size=(3, 4, 2)).astype(np.float64)
+    dtype = np.dtype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 6: 4D array, float32, dtype=float64
-    tup = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": np.float64}))
+    # Input 6: 2D boolean array
+    tup = np.array([[True, False], [False, True]], dtype=np.bool_)
+    dtype = np.dtype(np.bool_)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 7: 2D array, int32 with negative values, dtype=None
-    tup = np.array([[-1, -2, -3], [4, 5, 6]], dtype=np.int32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": None}))
+    # Input 7: 4D int16 array cast to float32
+    tup = np.random.randint(-100, 100, size=(2, 3, 2, 4)).astype(np.int16)
+    dtype = np.dtype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 8: 1D array with single element, int32, dtype=int32
-    tup = np.array([42], dtype=np.int32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": np.int32}))
+    # Input 8: 1D int32 array with negative integers
+    tup = np.array([-10, -20, 30, -40, 50], dtype=np.int32)
+    dtype = np.dtype(np.int32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 9: 2D array, float16, dtype=None
-    tup = np.random.randn(4, 2).astype(np.float16)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": None}))
+    # Input 9: 2D complex64 array
+    tup = np.array([[1.0 + 2.0j, -3.0 + 0.5j], [0.0 - 1.0j, 4.0 + 2.5j]], dtype=np.complex64)
+    dtype = np.dtype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
-    # Input 10: 3D array, float32, dtype=float32
-    tup = np.random.randn(3, 2, 5).astype(np.float32)
-    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": np.float32}))
+    # Input 10: 3D uint8 array cast to int32
+    tup = np.random.randint(0, 255, size=(4, 2, 3)).astype(np.uint8)
+    dtype = np.dtype(np.int32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
+
+    # Input 11: 2D single row array
+    tup = np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float32)
+    dtype = np.dtype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"tup": tup, "dtype": dtype}))
 
     return list_of_inputs
 

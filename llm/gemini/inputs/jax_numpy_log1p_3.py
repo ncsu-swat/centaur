@@ -4,49 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def log1p_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic python integer 0
-    list_of_inputs.append({"x": 0})
+    # Input 1: Zero
+    input_dict = {"x": int(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python integer 1
-    list_of_inputs.append({"x": 1})
+    # Input 2: One
+    input_dict = {"x": int(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Larger positive python integer
-    list_of_inputs.append({"x": 100})
+    # Input 3: Negative one (boundary value, log(0))
+    input_dict = {"x": int(-1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: numpy int32 0
-    list_of_inputs.append({"x": np.int32(0)})
+    # Input 4: Small positive integer
+    input_dict = {"x": int(2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy int32 5
-    list_of_inputs.append({"x": np.int32(5)})
+    # Input 5: Moderate positive integer
+    input_dict = {"x": int(10)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int64 100
-    list_of_inputs.append({"x": np.int64(100)})
+    # Input 6: Larger positive integer
+    input_dict = {"x": int(100)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy int64 1000
-    list_of_inputs.append({"x": np.int64(1000)})
+    # Input 7: Large positive integer
+    input_dict = {"x": int(10000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Python integer 10
-    list_of_inputs.append({"x": 10})
+    # Input 8: Negative integer beyond -1 (returns nan in log)
+    input_dict = {"x": int(-5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large python integer
-    list_of_inputs.append({"x": 1000000})
+    # Input 9: Negative integer
+    input_dict = {"x": int(-100)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Edge case python integer -1
-    list_of_inputs.append({"x": -1})
+    # Input 10: Very large integer
+    input_dict = {"x": int(1000000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: numpy int32 -1
-    list_of_inputs.append({"x": np.int32(-1)})
-
-    # Input 12: Python integer 42
-    list_of_inputs.append({"x": 42})
+    # Input 11: Arbitrary integer
+    input_dict = {"x": int(42)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.log1p_3"] = log1p_inputs()
 

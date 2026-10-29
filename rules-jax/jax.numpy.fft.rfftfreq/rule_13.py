@@ -7,35 +7,40 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the scalar spacing tensor d must have a non-zero value (Rule 13)
+# window length n must be non-negative and tensor sample spacing d must be strictly positive (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] == 0, (Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0)))) if n else
-          And(v["arg1_ndim"] == 0, (Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0))))
+    s.add(Not(And(And(v["arg1_value"] >= 0, v["arg2_ndim"] == 0), Select(v["arg2_range"], 0) > 0)) if n else
+          And(And(v["arg1_value"] >= 0, v["arg2_ndim"] == 0), Select(v["arg2_range"], 0) > 0))
 )
 
-def rule_13_func(arg1, solver=None, neg=False):
+def rule_13_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+            return False
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_value = Int('arg1_value')
+        arg2_ndim = Int('arg2_ndim')
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_value == int(arg1))
+        solver.add(arg2_ndim == arg2.ndim)
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 13
-        rule_13(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim})
+        rule_13(solver, {'arg1_value': arg1_value, 'arg2_range': arg2_range, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_13(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_13(solver, {'arg1_value': arg1['value'], 'arg2_range': arg2['range'], 'arg2_ndim': arg2['ndim']}, neg)

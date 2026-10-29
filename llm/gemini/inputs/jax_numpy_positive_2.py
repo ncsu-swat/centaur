@@ -4,51 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def positive_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D integer scalar (np.int32)
-    x = np.int32(-10)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: Zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of np.int32 with positive, negative, and zero values
-    x = np.array([-5, 0, 5], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: Small positive integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array of np.int64
-    x = np.array([[-1, 2, -3], [4, -5, 6]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Small negative integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array of np.int16
-    x = np.array([[[1, -2], [3, -4]], [[5, -6], [7, -8]]], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: Moderate positive integer
+    input_dict = {"x": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D array of np.int8 with minimum and maximum values
-    x = np.array([-128, 0, 127], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: Moderate negative integer
+    input_dict = {"x": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array of np.uint32 (unsigned integers)
-    x = np.array([[10, 20], [30, 40]], dtype=np.uint32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Power of two
+    input_dict = {"x": 1024}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D array of np.int32 with random integers
-    x = np.random.randint(-100, 100, size=(2, 2, 3, 3)).astype(np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Negative power of two
+    input_dict = {"x": -2048}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar np.int64
-    x = np.int64(99999)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Max 32-bit signed integer
+    input_dict = {"x": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D array of np.uint8
-    x = np.array([0, 128, 255], dtype=np.uint8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Min 32-bit signed integer
+    input_dict = {"x": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array of np.int64 with large values
-    x = np.array([[-9223372036854775807, 9223372036854775807]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Arbitrary large positive integer
+    input_dict = {"x": 1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Arbitrary large negative integer
+    input_dict = {"x": -1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

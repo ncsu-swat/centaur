@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if size is specified, the input tensor must be at least 1D and size must be at least 1 (Rule 24)
+# size conditional on input tensor dimensionality (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg2_value"] >= 1)) if n else
-          And(v["arg1_ndim"] >= 1, v["arg2_value"] >= 1))
+    s.add(Not(If(v["arg1_ndim"] == 0, v["arg2_value"] == 1, v["arg2_value"] >= 0)) if n else
+          If(v["arg1_ndim"] == 0, v["arg2_value"] == 1, v["arg2_value"] >= 0))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):

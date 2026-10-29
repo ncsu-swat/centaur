@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the offset k should be within the bounds of the array dimensions (Rule 29)
+# offset k is strictly inside matrix boundaries for dimension greater than 1 (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(And(0 - v["arg1_value"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"])) if n else
-          And(0 - v["arg1_value"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"]))
+    s.add(Not(If(v["arg1_value"] > 1, And(1 - v["arg1_value"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"] - 1), v["arg2_value"] == 0)) if n else
+          If(v["arg1_value"] > 1, And(1 - v["arg1_value"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"] - 1), v["arg2_value"] == 0))
 )
 
 def rule_29_func(arg1, arg2, solver=None, neg=False):

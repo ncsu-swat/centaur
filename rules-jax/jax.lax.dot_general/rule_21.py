@@ -7,32 +7,42 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# RHS tensor must be at least 1-dimensional (Rule 21)
+# out_sharding tuple length must equal 2 for standard 2D matrix multiplication (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] >= 1) if n else
-          v["arg1_ndim"] >= 1)
+    s.add(Not(If(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), v["arg3_length"] == 2, True)) if n else
+          If(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), v["arg3_length"] == 2, True))
 )
 
-def rule_21_func(arg1, solver=None, neg=False):
+def rule_21_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not isinstance(arg2, np.ndarray):
+            return False
+        if not (isinstance(arg3, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
+            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
+        arg3_length = Int('arg3_length')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg3_length == len(arg3))
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_ndim': arg1_ndim})
+        rule_21(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg3_length': arg3_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_21(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg3_length': arg3['length']}, neg)

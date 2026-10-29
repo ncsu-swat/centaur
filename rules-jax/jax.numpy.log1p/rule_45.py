@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The minimum value in the input tensor must be strictly greater than -1 to ensure real-valued results (Rule 45)
+# if scalar input of primitive type is negative, it must be strictly greater than -1 (Rule 45)
 
 rule_45 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) + 1 > 0) if n else
-          Select(v["arg1_range"], 0) + 1 > 0)
+    s.add(Not(If(v["arg1_value"] < 0, v["arg1_value"] > -1, True)) if n else
+          If(v["arg1_value"] < 0, v["arg1_value"] > -1, True))
 )
 
 def rule_45_func(arg1, solver=None, neg=False):
@@ -19,21 +19,18 @@ def rule_45_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 45
-        rule_45(solver, {'arg1_range': arg1_range})
+        rule_45(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_45(solver, {'arg1_range': arg1['range']}, neg)
+        rule_45(solver, {'arg1_value': arg1['value']}, neg)

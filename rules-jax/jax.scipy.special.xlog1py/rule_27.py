@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# x should be a real-valued number tensor (Rule 27)
+# tensor x represents discrete counts with int32 or int64 dtype (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)) if n else
-          And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 8))
+    s.add(Not(Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 4)) if n else
+          Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 4))
 )
 
 def rule_27_func(arg1, solver=None, neg=False):

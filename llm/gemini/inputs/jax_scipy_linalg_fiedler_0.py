@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fiedler_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, standard positive values
-    a = np.array([1.0, 4.0, 12.0, 45.0, 77.0], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
-
-    # Input 2: 1D int32 array
+    # Input 1: 1D positive integer array
     a = np.array([1, 4, 12, 45, 77], dtype=np.int32)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 3: 1D float64 array with negative and positive values
-    a = np.array([-10.5, 0.0, 5.5, -2.3, 100.1], dtype=np.float64)
+    # Input 2: 1D float32 array with negative and positive values
+    a = np.array([-2.5, 0.0, 1.5, 3.2, -4.1], dtype=np.float32)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 4: 2D float32 array, batch of vectors
-    a = np.random.randn(3, 5).astype(np.float32)
+    # Input 3: 1D float64 array
+    a = np.array([0.1, 0.5, 1.2, 2.3], dtype=np.float64)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 5: 2D int32 array
-    a = np.random.randint(-10, 10, size=(2, 4)).astype(np.int32)
+    # Input 4: 1D array of length 1 (scalar vector)
+    a = np.array([5.0], dtype=np.float32)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 6: 3D float32 array
-    a = np.random.randn(2, 2, 3).astype(np.float32)
+    # Input 5: 1D empty array
+    a = np.array([], dtype=np.float32)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 7: 1D array with single element
-    a = np.array([42.0], dtype=np.float32)
+    # Input 6: 2D array (batched 1D arrays)
+    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int64)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 8: 1D array of zeros
-    a = np.zeros(6, dtype=np.float32)
+    # Input 7: 2D array with float values and negative numbers
+    a = np.array([[-1.0, 2.0, -3.0], [0.5, -0.5, 1.5]], dtype=np.float32)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 9: 4D float64 array
-    a = np.random.randn(2, 1, 3, 4).astype(np.float64)
+    # Input 8: 3D array (batch of vectors)
+    a = np.random.randn(2, 3, 4).astype(np.float64)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
-    # Input 10: 1D array with large values
-    a = np.array([1e5, -1e5, 0.0, 5e4], dtype=np.float32)
+    # Input 9: 4D array
+    a = np.random.randn(2, 2, 2, 5).astype(np.float32)
+    list_of_inputs.append({"a": copy.deepcopy(a)})
+
+    # Input 10: 1D large integer array
+    a = np.arange(20, dtype=np.int32)
+    list_of_inputs.append({"a": copy.deepcopy(a)})
+
+    # Input 11: 1D array with duplicate values
+    a = np.array([2.0, 2.0, 5.0, 5.0, 2.0], dtype=np.float64)
     list_of_inputs.append({"a": copy.deepcopy(a)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.fiedler"] = fiedler_inputs()
 

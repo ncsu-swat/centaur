@@ -4,63 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.scipy.linalg
-import jax.numpy as jnp
-import scipy.linalg
+import numpy as np
 
-# Patch jax.scipy.linalg to include invhilbert as it is missing in the standard JAX library
-def _patched_invhilbert(n, exact=False):
-    val = scipy.linalg.invhilbert(int(n), exact=bool(exact))
-    return jnp.array(val)
-
-jax.scipy.linalg.invhilbert = _patched_invhilbert
 
 def invhilbert_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {"n": int(1), "exact": True}
+    # Input 1: order 1 matrix, float approximation
+    input_dict = {"n": 1, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    input_dict = {"n": int(2), "exact": False}
+    # Input 2: order 2 matrix, exact integer computation
+    input_dict = {"n": 2, "exact": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    input_dict = {"n": int(3), "exact": True}
+    # Input 3: order 3 matrix, float approximation
+    input_dict = {"n": 3, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    input_dict = {"n": int(4), "exact": False}
+    # Input 4: order 4 matrix, exact integer computation
+    input_dict = {"n": 4, "exact": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    input_dict = {"n": np.int32(5), "exact": True}
+    # Input 5: order 5 matrix, float approximation
+    input_dict = {"n": 5, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    input_dict = {"n": np.int64(6), "exact": False}
+    # Input 6: order 6 matrix, exact integer computation
+    input_dict = {"n": 6, "exact": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    input_dict = {"n": int(7), "exact": np.bool_(True)}
+    # Input 7: order 7 matrix, float approximation
+    input_dict = {"n": 7, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    input_dict = {"n": int(8), "exact": np.bool_(False)}
+    # Input 8: order 8 matrix, exact integer computation
+    input_dict = {"n": 8, "exact": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    input_dict = {"n": int(10), "exact": True}
+    # Input 9: order 9 matrix, float approximation
+    input_dict = {"n": 9, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    input_dict = {"n": np.int16(12), "exact": False}
+    # Input 10: order 10 matrix, exact integer computation
+    input_dict = {"n": 10, "exact": True}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.invhilbert"] = invhilbert_inputs()
 

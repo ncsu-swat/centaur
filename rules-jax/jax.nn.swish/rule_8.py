@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# minimum value in the tensor should not exceed the maximum value (Rule 8)
+# input tensor must have valid min and max values (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
     s.add(Not(Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1)) if n else

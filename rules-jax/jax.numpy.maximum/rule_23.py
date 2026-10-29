@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Strict matching of boolean data types to avoid mixed-type logical operations (Rule 23)
+# when first tensor is float32, second tensor should also be float32 (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_dtype"] == 0, v["arg2_dtype"] == 0, (If(v["arg2_dtype"] == 0, v["arg1_dtype"] == 0, True)))) if n else
-          If(v["arg1_dtype"] == 0, v["arg2_dtype"] == 0, (If(v["arg2_dtype"] == 0, v["arg1_dtype"] == 0, True))))
+    s.add(Not(If(v["arg1_dtype"] == 7, v["arg2_dtype"] == 7, True)) if n else
+          If(v["arg1_dtype"] == 7, v["arg2_dtype"] == 7, True))
 )
 
 def rule_23_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# When both the discontinuity threshold and period are tensors, they must have the same dimension and their minimum values must be positive with the threshold being less than the period (Rule 27)
+# discontinuity and period tensors must both be scalars with discont at most half of period (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] == v["arg2_ndim"], Select(v["arg1_range"], 0) > 0), Select(v["arg1_range"], 0) < Select(v["arg2_range"], 0))) if n else
-          And(And(v["arg1_ndim"] == v["arg2_ndim"], Select(v["arg1_range"], 0) > 0), Select(v["arg1_range"], 0) < Select(v["arg2_range"], 0)))
+    s.add(Not(And(And(And(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0), Select(v["arg1_range"], 0) > 0), 2 * Select(v["arg1_range"], 0) <= Select(v["arg2_range"], 0))) if n else
+          And(And(And(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0), Select(v["arg1_range"], 0) > 0), 2 * Select(v["arg1_range"], 0) <= Select(v["arg2_range"], 0)))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):

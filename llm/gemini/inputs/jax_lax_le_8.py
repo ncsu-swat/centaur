@@ -7,82 +7,89 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def jax_lax_le_inputs():
+def lax_le_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, int32
+    # Input 1: 1D array with positive integers
+    input_dict = {
+        "x": 3,
+        "y": np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 2D array with negative and positive values
     input_dict = {
         "x": 0,
-        "y": np.array([-1, 0, 1, 2], dtype=np.int32)
+        "y": np.array([[-2, -1, 0], [1, 2, 3]], dtype=np.int32)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, int32
+    # Input 3: Negative integer scalar x and 1D array
     input_dict = {
-        "x": 5,
-        "y": np.random.randint(-10, 10, size=(3, 3), dtype=np.int32)
+        "x": -5,
+        "y": np.array([-10, -5, 0, 5], dtype=np.int32)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D array, int32
-    input_dict = {
-        "x": -3,
-        "y": np.random.randint(-5, 5, size=(2, 2, 2), dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D array, int64
+    # Input 4: 0-dimensional (scalar) array
     input_dict = {
         "x": 10,
-        "y": np.array([5, 10, 15], dtype=np.int64)
+        "y": np.array(10, dtype=np.int32)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D array, int32
-    input_dict = {
-        "x": 0,
-        "y": np.random.randint(-1, 2, size=(2, 1, 3, 2), dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D array, int64
-    input_dict = {
-        "x": -100,
-        "y": np.random.randint(-200, 0, size=(4, 4), dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 0D array (scalar), int32
-    input_dict = {
-        "x": 42,
-        "y": np.array(42, dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 5D array, int32
+    # Input 5: 3D array
     input_dict = {
         "x": 1,
-        "y": np.random.randint(-5, 5, size=(1, 2, 1, 2, 1), dtype=np.int32)
+        "y": np.zeros((2, 3, 4), dtype=np.int32)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D array, int32
+    # Input 6: 4D array with large integers
     input_dict = {
-        "x": -10,
-        "y": np.array([-20, -10, 0, 10], dtype=np.int32)
+        "x": 100,
+        "y": np.arange(16, dtype=np.int32).reshape((2, 2, 2, 2)) * 10
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array, int64
+    # Input 7: Empty 1D array
     input_dict = {
-        "x": 1000,
-        "y": np.random.randint(500, 1500, size=(10, 10), dtype=np.int64)
+        "x": 0,
+        "y": np.array([], dtype=np.int32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 2D array with single row
+    input_dict = {
+        "x": -1,
+        "y": np.array([[-5, -3, -1, 1, 3]], dtype=np.int32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D array with shape (1, 1, 1)
+    input_dict = {
+        "x": 42,
+        "y": np.array([[[42]]], dtype=np.int32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 5D array
+    input_dict = {
+        "x": 2,
+        "y": np.ones((1, 2, 1, 3, 1), dtype=np.int32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D column vector
+    input_dict = {
+        "x": 7,
+        "y": np.array([[3], [7], [12]], dtype=np.int32)
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.le_8"] = jax_lax_le_inputs()
+generated_inputs["jax.lax.le_8"] = lax_le_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

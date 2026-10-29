@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Weights shape compatibility with single integer axis (Rule 12)
+# weights tensor shape must match tensor a or match the single reduction axis (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(Or((And(v["arg3_ndim"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == Select(v["arg1_shape"], i)) for i in range(6)])))), (And(v["arg3_ndim"] == 1, (Or((And(v["arg2_value"] >= 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"]))), (And(v["arg2_value"] < 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"]))))))))) if n else
-          Or((And(v["arg3_ndim"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == Select(v["arg1_shape"], i)) for i in range(6)])))), (And(v["arg3_ndim"] == 1, (Or((And(v["arg2_value"] >= 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"]))), (And(v["arg2_value"] < 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"])))))))))
+    s.add(Not(Or((And(v["arg1_ndim"] == v["arg3_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) == Select(v["arg3_shape"], i)) for i in range(6)])))), (And(v["arg3_ndim"] == 1, (If(v["arg2_value"] >= 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"]), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"]))))))) if n else
+          Or((And(v["arg1_ndim"] == v["arg3_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) == Select(v["arg3_shape"], i)) for i in range(6)])))), (And(v["arg3_ndim"] == 1, (If(v["arg2_value"] >= 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"]), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"])))))))
 )
 
 def rule_12_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -46,9 +46,9 @@ def rule_12_func(arg1, arg2, arg3, solver=None, neg=False):
             arg3_shape = Store(arg3_shape, i, arg3.shape[i])
 
         # Constraints for rule 12
-        rule_12(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_shape': arg3_shape, 'arg3_ndim': arg3_ndim})
+        rule_12(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_ndim': arg3_ndim, 'arg3_shape': arg3_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_12(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_shape': arg3['shape'], 'arg3_ndim': arg3['ndim']}, neg)
+        rule_12(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_ndim': arg3['ndim'], 'arg3_shape': arg3['shape']}, neg)

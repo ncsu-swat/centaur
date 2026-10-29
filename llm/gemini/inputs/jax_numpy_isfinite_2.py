@@ -4,59 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import math
 
-def jax_numpy_isfinite_inputs():
+def isfinite_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
+    # Input 1: Standard positive float
     input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative float
-    input_dict = {"x": -2.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero
+    # Input 2: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: negative zero
+    # Input 3: Negative zero
     input_dict = {"x": -0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: infinity
-    input_dict = {"x": float('inf')}
+    # Input 4: Standard negative float
+    input_dict = {"x": -42.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: negative infinity
-    input_dict = {"x": float('-inf')}
+    # Input 5: Positive infinity
+    input_dict = {"x": float("inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: nan
-    input_dict = {"x": float('nan')}
+    # Input 6: Negative infinity
+    input_dict = {"x": float("-inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: large float
-    input_dict = {"x": 1.7976931348623157e308}
+    # Input 7: NaN
+    input_dict = {"x": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: small float
-    input_dict = {"x": 2.2250738585072014e-308}
+    # Input 8: Very large float
+    input_dict = {"x": 1e308}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy float64 scalar
-    input_dict = {"x": np.float64(3.14159)}
+    # Input 9: Very small positive float (subnormal range)
+    input_dict = {"x": 1e-308}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: numpy float32 scalar
-    input_dict = {"x": np.float32(-0.001)}
+    # Input 10: Mathematical constant pi
+    input_dict = {"x": math.pi}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative small float
+    input_dict = {"x": -1.23456789e-5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.isfinite_2"] = jax_numpy_isfinite_inputs()
+generated_inputs["jax.numpy.isfinite_2"] = isfinite_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

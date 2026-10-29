@@ -4,53 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ndim_inputs():
     list_of_inputs = []
 
-    # 1. Scalar boolean
-    a = np.bool_(True)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 1: Standard Python True
+    input_dict = {"a": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 2. 0D boolean array
-    a = np.array(True, dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 2: Standard Python False
+    input_dict = {"a": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 3. 1D boolean array
-    a = np.array([True, False, True], dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 3: NumPy scalar True
+    input_dict = {"a": np.bool_(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 4. 2D boolean array
-    a = np.array([[True, False], [False, True]], dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 4: NumPy scalar False
+    input_dict = {"a": np.bool_(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 5. 3D boolean array
-    a = np.ones((2, 2, 2), dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 5: np.True_ singleton
+    input_dict = {"a": np.True_}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 6. 4D boolean array
-    a = np.zeros((1, 3, 2, 1), dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 6: np.False_ singleton
+    input_dict = {"a": np.False_}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 7. 5D boolean array
-    a = np.ones((2, 1, 2, 1, 2), dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 7: Casted boolean from integer 1
+    input_dict = {"a": bool(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 8. Large 2D boolean array
-    a = np.random.choice([True, False], size=(10, 10)).astype(np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 8: Casted boolean from integer 0
+    input_dict = {"a": bool(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 9. 1D boolean array with single element
-    a = np.array([False], dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 9: NumPy bool casted from integer 1
+    input_dict = {"a": np.bool_(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 10. 3D boolean array with shape containing 0
-    a = np.empty((0, 2, 3), dtype=np.bool_)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 10: NumPy bool casted from integer 0
+    input_dict = {"a": np.bool_(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ndim_4"] = ndim_inputs()
 

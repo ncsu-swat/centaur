@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The dimensionality of the tensor is between 0 and 16 (Rule 50)
+# for a scalar input tensor, the minimum and maximum values must coincide (Rule 50)
 
 rule_50 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 16)) if n else
-          And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 16))
+    s.add(Not(If(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) == Select(v["arg1_range"], 1), True)) if n else
+          If(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) == Select(v["arg1_range"], 1), True))
 )
 
 def rule_50_func(arg1, solver=None, neg=False):
@@ -25,14 +25,17 @@ def rule_50_func(arg1, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 50
-        rule_50(solver, {'arg1_ndim': arg1_ndim})
+        rule_50(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_50(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_50(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim']}, neg)

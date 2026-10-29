@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if axis is non-negative, it must be strictly less than the dimension count of operand (Rule 57)
+# for a 5D tensor, axis must be within the range -5 to 4 (Rule 57)
 
 rule_57 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True)) if n else
-          If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], True))
+    s.add(Not(If(v["arg1_ndim"] == 5, And(v["arg2_value"] >= -5, v["arg2_value"] <= 4), True)) if n else
+          If(v["arg1_ndim"] == 5, And(v["arg2_value"] >= -5, v["arg2_value"] <= 4), True))
 )
 
 def rule_57_func(arg1, arg2, solver=None, neg=False):

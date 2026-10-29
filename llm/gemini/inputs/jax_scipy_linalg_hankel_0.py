@@ -4,73 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def hankel_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D integer arrays (positive values)
-    c = np.array([1, 2, 3], dtype=np.int32)
-    r = np.array([3, 4, 5, 6], dtype=np.int32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D int32 arrays with matching lengths
+    c = np.array([1, 2, 3, 4], dtype=np.int32)
+    r = np.array([4, 5, 6, 7], dtype=np.int32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 2: Basic 1D float arrays with negative values
-    c = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    r = np.array([-3.0, -4.0, -5.0], dtype=np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float32 arrays where M > N
+    c = np.array([1.0, 2.5, -3.0], dtype=np.float32)
+    r = np.array([-3.0, 4.2, -5.1, 6.0, 7.8], dtype=np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 3: 1D float64 arrays with different lengths
-    c = np.array([10.5, 20.5], dtype=np.float64)
-    r = np.array([20.5, 30.5, 40.5, 50.5], dtype=np.float64)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D float64 arrays where N > M with negative values
+    c = np.array([-10.0, -5.5, 0.0, 5.5, 10.0, 15.0], dtype=np.float64)
+    r = np.array([15.0, -2.0], dtype=np.float64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 4: Batched 2D inputs of same shape
-    c = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    r = np.array([[3, 4, 5], [6, 7, 8]], dtype=np.int32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D complex64 arrays
+    c = np.array([1.0 + 2.0j, -3.0 + 0.5j, 4.0 - 1.0j], dtype=np.complex64)
+    r = np.array([4.0 - 1.0j, 0.0 + 0.0j, -2.0 - 2.0j, 1.0 + 3.0j], dtype=np.complex64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 5: Batched input with broadcasting (1D c and 2D r)
-    c = np.array([1, 2, 3], dtype=np.float32)
-    r = np.array([[3, 4, 5, 6], [7, 8, 9, 10]], dtype=np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D complex128 arrays
+    c = np.array([0.5 - 1.5j, 2.0 + 3.0j], dtype=np.complex128)
+    r = np.array([2.0 + 3.0j, -1.0 + 0.0j, 3.5 - 4.5j], dtype=np.complex128)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 6: Batched input with broadcasting (2D c and 1D r)
-    c = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    r = np.array([2, 5, 6], dtype=np.int32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D single-element arrays (minimal size)
+    c = np.array([42.0], dtype=np.float32)
+    r = np.array([42.0], dtype=np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 7: 3D batched inputs with floats
-    c = np.random.randn(2, 2, 3).astype(np.float32)
-    r = np.random.randn(2, 2, 4).astype(np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D batched float32 arrays with identical leading dimensions
+    c = np.random.randn(3, 4).astype(np.float32)
+    r = np.random.randn(3, 5).astype(np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 8: Complex number arrays
-    c = np.array([1+1j, 2+2j, 3+3j], dtype=np.complex64)
-    r = np.array([3+3j, 4+4j, 5+5j], dtype=np.complex64)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D broadcast-compatible leading dimensions
+    c = np.random.randn(1, 6).astype(np.float64)
+    r = np.random.randn(4, 3).astype(np.float64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 9: Single element arrays
-    c = np.array([5.0], dtype=np.float32)
-    r = np.array([5.0, 6.0], dtype=np.float32)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D batched int64 arrays
+    c = np.random.randint(-100, 100, size=(2, 3, 5), dtype=np.int64)
+    r = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
+    list_of_inputs.append({"c": c, "r": r})
 
-    # Input 10: Boolean arrays
-    c = np.array([True, False, True], dtype=bool)
-    r = np.array([True, True, False, False], dtype=bool)
-    input_dict = {"c": c, "r": r}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D multi-dimensional broadcasted arrays
+    c = np.random.randn(2, 1, 3, 4).astype(np.float32)
+    r = np.random.randn(1, 5, 3, 2).astype(np.float32)
+    list_of_inputs.append({"c": c, "r": r})
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.hankel"] = hankel_inputs()
 

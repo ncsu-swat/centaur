@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# fweights must be 1D (Rule 5)
+# fweights must be a 1D tensor (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
     s.add(Not(v["arg1_ndim"] == 1) if n else

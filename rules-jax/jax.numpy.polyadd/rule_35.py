@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both input tensors must have a numeric data type (Rule 35)
+# both input polynomials have floating-point coefficients (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And((And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 10)), (And(v["arg2_dtype"] >= 1, v["arg2_dtype"] <= 10)))) if n else
-          And((And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 10)), (And(v["arg2_dtype"] >= 1, v["arg2_dtype"] <= 10))))
+    s.add(Not(And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8)) if n else
+          And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8))
 )
 
 def rule_35_func(arg1, arg2, solver=None, neg=False):

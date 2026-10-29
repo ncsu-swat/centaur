@@ -4,133 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def slice_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, slicing a portion
-    operand = np.arange(10, dtype=np.int32)
-    start_indices = (2,)
-    limit_indices = (8,)
-    strides = (1,)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 1: 1D int32 array, stride 1
+    input_dict = {
+        "operand": np.arange(10, dtype=np.int32),
+        "start_indices": (2,),
+        "limit_indices": (8,),
+        "strides": (1,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, slice without striding
-    operand = np.random.randn(5, 5).astype(np.float32)
-    start_indices = (1, 1)
-    limit_indices = (4, 4)
-    strides = (1, 1)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 2: 2D float32 array, mixed strides
+    input_dict = {
+        "operand": np.ones((5, 6), dtype=np.float32),
+        "start_indices": (1, 0),
+        "limit_indices": (4, 5),
+        "strides": (1, 2),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, slice with striding
-    operand = np.random.randn(10, 10).astype(np.float32)
-    start_indices = (0, 0)
-    limit_indices = (10, 10)
-    strides = (2, 2)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 3: 3D float64 array
+    input_dict = {
+        "operand": np.zeros((4, 4, 4), dtype=np.float64),
+        "start_indices": (0, 1, 2),
+        "limit_indices": (3, 4, 3),
+        "strides": (2, 1, 1),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, float64
-    operand = np.random.randn(4, 4, 4).astype(np.float64)
-    start_indices = (1, 0, 2)
-    limit_indices = (3, 4, 4)
-    strides = (1, 1, 1)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 4: 1D boolean array with stride 2
+    input_dict = {
+        "operand": np.array([True, False, True, True, False], dtype=np.bool_),
+        "start_indices": (0,),
+        "limit_indices": (5,),
+        "strides": (2,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D array, slicing with strides
-    operand = np.zeros((2, 4, 6, 8), dtype=np.float32)
-    start_indices = (0, 0, 0, 0)
-    limit_indices = (2, 4, 6, 8)
-    strides = (1, 2, 2, 4)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 5: 4D int64 array, full slice
+    input_dict = {
+        "operand": np.ones((2, 3, 4, 5), dtype=np.int64),
+        "start_indices": (0, 0, 0, 0),
+        "limit_indices": (2, 3, 4, 5),
+        "strides": (1, 1, 1, 1),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array with stride > 1, bool dtype
-    operand = np.ones(20, dtype=np.bool_)
-    start_indices = (5,)
-    limit_indices = (15,)
-    strides = (3,)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 6: 2D complex64 array with stride 2 in both dimensions
+    input_dict = {
+        "operand": np.zeros((6, 8), dtype=np.complex64),
+        "start_indices": (1, 2),
+        "limit_indices": (5, 7),
+        "strides": (2, 2),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array of complex64
-    operand = (np.random.randn(6, 6) + 1j * np.random.randn(6, 6)).astype(np.complex64)
-    start_indices = (2, 2)
-    limit_indices = (5, 5)
-    strides = (1, 1)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 7: 1D float32 array, empty result (start == limit)
+    input_dict = {
+        "operand": np.arange(20, dtype=np.float32),
+        "start_indices": (5,),
+        "limit_indices": (5,),
+        "strides": (1,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 5D array, small sizes, int8 dtype
-    operand = np.ones((2, 2, 2, 2, 2), dtype=np.int8)
-    start_indices = (0, 0, 0, 0, 0)
-    limit_indices = (1, 2, 1, 2, 1)
-    strides = (1, 1, 1, 1, 1)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 8: 3D uint8 array with different strides
+    input_dict = {
+        "operand": np.ones((10, 10, 10), dtype=np.uint8),
+        "start_indices": (2, 3, 4),
+        "limit_indices": (8, 9, 10),
+        "strides": (3, 2, 1),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D array, strided slicing on one dimension
-    operand = np.random.randn(100, 2, 2).astype(np.float32)
-    start_indices = (10, 0, 0)
-    limit_indices = (90, 2, 2)
-    strides = (10, 1, 1)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 9: 2D float16 array with stride 3 along columns
+    input_dict = {
+        "operand": np.arange(24, dtype=np.float16).reshape(4, 6),
+        "start_indices": (0, 1),
+        "limit_indices": (4, 6),
+        "strides": (1, 3),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array, slicing to a single element
-    operand = np.arange(100).reshape(10, 10).astype(np.int32)
-    start_indices = (5, 5)
-    limit_indices = (6, 6)
-    strides = (1, 1)
-    list_of_inputs.append({
-        'operand': operand,
-        'start_indices': start_indices,
-        'limit_indices': limit_indices,
-        'strides': strides
-    })
+    # Input 10: 5D int16 array
+    input_dict = {
+        "operand": np.ones((2, 2, 2, 2, 2), dtype=np.int16),
+        "start_indices": (0, 1, 0, 1, 0),
+        "limit_indices": (1, 2, 2, 2, 1),
+        "strides": (1, 1, 1, 1, 1),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D int32 array with large stride
+    input_dict = {
+        "operand": np.arange(100, dtype=np.int32),
+        "start_indices": (10,),
+        "limit_indices": (90,),
+        "strides": (15,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.slice_2"] = slice_inputs()
 

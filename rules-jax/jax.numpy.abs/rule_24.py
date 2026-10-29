@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input parameter of union type int or float is bounded using conditional check (Rule 24)
+# boolean scalar input must be a valid boolean value (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] < 0, v["arg1_value"] > -500000, v["arg1_value"] < 500000)) if n else
-          If(v["arg1_value"] < 0, v["arg1_value"] > -500000, v["arg1_value"] < 500000))
+    s.add(Not(Or(v["arg1_value"] == True, v["arg1_value"] == False)) if n else
+          Or(v["arg1_value"] == True, v["arg1_value"] == False))
 )
 
 def rule_24_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_24_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, bool):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Bool('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 24
         rule_24(solver, {'arg1_value': arg1_value})

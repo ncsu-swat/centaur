@@ -4,103 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def argpartition_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, positive integers, axis=-1, kth in the middle
-    a = np.array([6, 8, 4, 3, 1, 9, 7, 5, 2, 3], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "kth": 4,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, float32, standard partition
+    a = np.array([6.0, 8.0, 4.0, 3.0, 1.0, 9.0, 7.0, 5.0, 2.0], dtype=np.float32)
+    kth = 4
+    axis = -1
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 2: 1D array, random floats including negatives, axis=0, kth=2
-    a = np.array([-1.5, 3.2, -0.1, 0.0, 5.5, -10.2], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "kth": 2,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array, int32, partition at 0 (minimum element)
+    a = np.array([10, -5, 3, 0, -20, 8], dtype=np.int32)
+    kth = 0
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 3: 2D array, float32, partition along axis=0
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "kth": 1,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, float64, partition along axis 0
+    a = np.array([[5.5, 2.1, 8.9], [1.2, 7.4, 0.3], [9.8, 3.6, 4.2]], dtype=np.float64)
+    kth = 1
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 4: 2D array, int32, partition along axis=1
-    a = np.random.randint(-50, 50, size=(4, 6)).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "kth": 3,
-        "axis": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array, int64, partition along axis 1
+    a = np.arange(20, dtype=np.int64).reshape(4, 5)[:, ::-1]
+    kth = 3
+    axis = 1
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 5: 3D array, float32, partition along axis=-1
-    a = np.random.randn(3, 4, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "kth": 2,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array, float32, negative axis
+    a = np.random.randn(2, 4, 6).astype(np.float32)
+    kth = 2
+    axis = -2
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 6: 1D array of larger size, float64, axis=0
-    a = np.linspace(10.0, -10.0, 20).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "kth": 10,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D array with duplicate values and negative numbers
+    a = np.array([-3, 5, -3, 2, 2, -1, 0, 5], dtype=np.int32)
+    kth = 5
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 7: 4D array, int16, partition along axis=2
-    a = np.random.randint(-100, 100, size=(2, 3, 4, 2)).astype(np.int16)
-    input_dict = {
-        "a": a,
-        "kth": 1,
-        "axis": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array, int16, axis = 2
+    a = np.random.randint(-100, 100, size=(3, 3, 5), dtype=np.int16)
+    kth = 4
+    axis = 2
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 8: 2D array, float16, partition along axis=-2
-    a = np.random.randn(6, 3).astype(np.float16)
-    input_dict = {
-        "a": a,
-        "kth": 4,
-        "axis": -2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array, float32, axis = 1
+    a = np.random.uniform(-10.0, 10.0, size=(2, 5, 3, 2)).astype(np.float32)
+    kth = 2
+    axis = 1
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 9: 1D array, kth is positive integer
-    a = np.array([9, 8, 7, 6, 5, 4, 3, 2, 1], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "kth": 6,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D array, float16 dtype
+    a = np.array([3.5, 1.2, 7.8, -2.4, 0.0, 4.1], dtype=np.float16)
+    kth = 3
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
-    # Input 10: 3D array, axis=1, kth=0 (minimum element partition)
-    a = np.random.randn(2, 5, 2).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "kth": 0,
-        "axis": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D array with inf and nan values
+    a = np.array([[np.nan, 1.0, np.inf], [-np.inf, 2.0, 0.0]], dtype=np.float32)
+    kth = 1
+    axis = -1
+    list_of_inputs.append(copy.deepcopy({"a": a, "kth": kth, "axis": axis}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.argpartition"] = argpartition_inputs()
 

@@ -4,54 +4,57 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def imag_inputs():
     list_of_inputs = []
 
-    # Input 1: positive python integer
-    input_dict = {"val": 4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: negative python integer
-    input_dict = {"val": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero python integer
+    # Input 1: Zero
     input_dict = {"val": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: large positive python integer
-    input_dict = {"val": 100000}
+    # Input 2: Small positive integer
+    input_dict = {"val": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: large negative python integer
-    input_dict = {"val": -50000}
+    # Input 3: Small negative integer
+    input_dict = {"val": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int32 positive
-    input_dict = {"val": np.int32(42)}
+    # Input 4: Standard positive integer
+    input_dict = {"val": 4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.int32 negative
-    input_dict = {"val": np.int32(-123)}
+    # Input 5: Moderate positive integer
+    input_dict = {"val": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: np.int32 zero
-    input_dict = {"val": np.int32(0)}
+    # Input 6: Moderate negative integer
+    input_dict = {"val": -42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: np.int64 positive
-    input_dict = {"val": np.int64(999999)}
+    # Input 7: Large positive integer
+    input_dict = {"val": 1000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: np.int64 negative
-    input_dict = {"val": np.int64(-999999)}
+    # Input 8: Large negative integer
+    input_dict = {"val": -1000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: np.int64 zero
-    input_dict = {"val": np.int64(0)}
+    # Input 9: 32-bit boundary integer
+    input_dict = {"val": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Negative 32-bit boundary integer
+    input_dict = {"val": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Arbitrary odd integer
+    input_dict = {"val": 1337}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative odd integer
+    input_dict = {"val": -9999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

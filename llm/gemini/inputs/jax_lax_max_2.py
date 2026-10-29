@@ -4,85 +4,47 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def max_inputs():
+def lax_max_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar integers (Python ints)
-    input_dict = {
-        "x": 5,
-        "y": 10
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Zero values
+    list_of_inputs.append({"x": 0, "y": 0})
 
-    # Input 2: 0-D numpy arrays (int32)
-    input_dict = {
-        "x": np.array(42, dtype=np.int32),
-        "y": np.array(-10, dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Both positive integers
+    list_of_inputs.append({"x": 1, "y": 2})
 
-    # Input 3: 1-D numpy arrays (int32)
-    input_dict = {
-        "x": np.array([1, -2, 3], dtype=np.int32),
-        "y": np.array([0, 5, -3], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Negative and positive
+    list_of_inputs.append({"x": -5, "y": 5})
 
-    # Input 4: 2-D numpy arrays (int64)
-    input_dict = {
-        "x": np.array([[1, 2], [3, 4]], dtype=np.int64),
-        "y": np.array([[4, 3], [2, 1]], dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Both negative integers
+    list_of_inputs.append({"x": -20, "y": -10})
 
-    # Input 5: 3-D numpy arrays (int16)
-    input_dict = {
-        "x": np.ones((2, 2, 2), dtype=np.int16) * 5,
-        "y": np.ones((2, 2, 2), dtype=np.int16) * 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: First argument strictly greater
+    list_of_inputs.append({"x": 100, "y": 50})
 
-    # Input 6: Broadcasting with same rank (int32)
-    input_dict = {
-        "x": np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32),
-        "y": np.array([[3, 2, 1]], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Negative and zero
+    list_of_inputs.append({"x": -100, "y": 0})
 
-    # Input 7: Broadcasting with same rank, different dimensions (int64)
-    input_dict = {
-        "x": np.array([[1], [2]], dtype=np.int64),
-        "y": np.array([[2, 3, 4]], dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Identical non-zero values
+    list_of_inputs.append({"x": 42, "y": 42})
 
-    # Input 8: 4-D numpy arrays (int8)
-    input_dict = {
-        "x": np.random.randint(-10, 10, size=(2, 2, 2, 2), dtype=np.int8),
-        "y": np.random.randint(-10, 10, size=(2, 2, 2, 2), dtype=np.int8)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Close positive integers
+    list_of_inputs.append({"x": 1000, "y": 999})
 
-    # Input 9: Large integer values (int64)
-    input_dict = {
-        "x": np.array([9223372036854775807, -9223372036854775808], dtype=np.int64),
-        "y": np.array([0, 100], dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large negative values
+    list_of_inputs.append({"x": -9999, "y": -10000})
 
-    # Input 10: Scalar and array broadcasting (int32)
-    input_dict = {
-        "x": np.array([[1, -5], [10, 3]], dtype=np.int32),
-        "y": np.array(0, dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Positive and negative
+    list_of_inputs.append({"x": 7, "y": -3})
 
-    return list_of_inputs
+    # Input 11: Larger range integers
+    list_of_inputs.append({"x": 123456, "y": 654321})
 
-generated_inputs["jax.lax.max_2"] = max_inputs()
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
+generated_inputs["jax.lax.max_2"] = lax_max_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

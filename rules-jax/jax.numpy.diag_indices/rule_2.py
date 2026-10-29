@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# number of dimensions of the array must be positive (Rule 2)
+# number of dimensions must be at least one (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(v["arg1_value"] >= 1) if n else

@@ -4,57 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def erfc_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar float32 (representing True)
-    input_dict = {"x": np.float32(1.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Since jax.lax.erfc strictly requires floating subtypes, boolean values
+    # must be represented as floating-point representations of booleans (True -> 1.0, False -> 0.0)
+    # Input 1: float32 True
+    list_of_inputs.append({"x": np.float32(True)})
 
-    # Input 2: Scalar float32 (representing False)
-    input_dict = {"x": np.float32(0.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: float32 False
+    list_of_inputs.append({"x": np.float32(False)})
 
-    # Input 3: 0D float64 array
-    input_dict = {"x": np.array(1.0, dtype=np.float64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: float64 True
+    list_of_inputs.append({"x": np.float64(True)})
 
-    # Input 4: 1D float32 array
-    input_dict = {"x": np.array([1.0, 0.0, 1.0, 0.0], dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: float64 False
+    list_of_inputs.append({"x": np.float64(False)})
 
-    # Input 5: 2D float64 array
-    input_dict = {"x": np.array([[1.0, 0.0], [0.0, 1.0]], dtype=np.float64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Python float True
+    list_of_inputs.append({"x": float(True)})
 
-    # Input 6: 3D float32 array
-    input_dict = {"x": np.random.choice([0.0, 1.0], size=(2, 3, 4)).astype(np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Python float False
+    list_of_inputs.append({"x": float(False)})
 
-    # Input 7: 4D float64 array
-    input_dict = {"x": np.ones((2, 2, 2, 2), dtype=np.float64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: float32 from expression (True)
+    list_of_inputs.append({"x": np.float32(10 > 5)})
 
-    # Input 8: 5D float32 array
-    input_dict = {"x": np.zeros((2, 1, 3, 1, 2), dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: float32 from expression (False)
+    list_of_inputs.append({"x": np.float32(5 > 10)})
 
-    # Input 9: Large 1D float64 array
-    input_dict = {"x": np.random.choice([0.0, 1.0], size=(100,)).astype(np.float64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: float64 from expression (True)
+    list_of_inputs.append({"x": np.float64(1.0 != 0.0)})
 
-    # Input 10: 2D float32 identity-like array
-    input_dict = {"x": np.eye(5, dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: float64 from expression (False)
+    list_of_inputs.append({"x": np.float64(1.0 == 0.0)})
 
-    # Input 11: 3D float32 array
-    input_dict = {"x": np.array([[[1.0], [0.0], [1.0], [0.0], [1.0]]], dtype=np.float32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Python float literal 1.0
+    list_of_inputs.append({"x": 1.0})
+
+    # Input 12: Python float literal 0.0
+    list_of_inputs.append({"x": 0.0})
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.erfc_4"] = erfc_inputs()
 

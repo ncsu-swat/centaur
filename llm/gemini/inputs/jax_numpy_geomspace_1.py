@@ -4,123 +4,215 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def geomspace_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive range with float32
-    input_dict = {
-        "start": np.array(1.0, dtype=np.float32),
-        "stop": np.array(1000.0, dtype=np.float32),
-        "num": 10,
-        "endpoint": True,
-        "dtype": np.float32,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D arrays, positive floats
+    start = np.array(1.0, dtype=np.float32)
+    stop = np.array(1000.0, dtype=np.float32)
+    num = 10
+    endpoint = True
+    dtype = np.dtype(np.float32)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 2: 1D array inputs, endpoint=False
-    input_dict = {
-        "start": np.array([1.0, 2.0], dtype=np.float32),
-        "stop": np.array([10.0, 20.0], dtype=np.float32),
-        "num": 5,
-        "endpoint": False,
-        "dtype": np.float32,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 0D arrays, negative floats
+    start = np.array(-1.0, dtype=np.float64)
+    stop = np.array(-100.0, dtype=np.float64)
+    num = 5
+    endpoint = False
+    dtype = np.dtype(np.float64)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 3: 2D array inputs with float64
-    input_dict = {
-        "start": np.array([[1.0, 10.0], [100.0, 1000.0]], dtype=np.float64),
-        "stop": np.array([[10.0, 100.0], [1000.0, 10000.0]], dtype=np.float64),
-        "num": 4,
-        "endpoint": True,
-        "dtype": np.float64,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D arrays, axis=0
+    start = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    stop = np.array([16.0, 32.0, 48.0], dtype=np.float32)
+    num = 8
+    endpoint = True
+    dtype = np.dtype(np.float32)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 4: Negative range (geomspace works if signs are the same)
-    input_dict = {
-        "start": np.array([-1.0, -2.0], dtype=np.float32),
-        "stop": np.array([-100.0, -200.0], dtype=np.float32),
-        "num": 6,
-        "endpoint": True,
-        "dtype": np.float32,
-        "axis": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D arrays, axis=1, endpoint=False
+    start = np.array([2.0, 5.0], dtype=np.float64)
+    stop = np.array([128.0, 625.0], dtype=np.float64)
+    num = 4
+    endpoint = False
+    dtype = np.dtype(np.float64)
+    axis = 1
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 5: Multi-dimensional, changing axis to 1
-    input_dict = {
-        "start": np.ones((2, 3), dtype=np.float32) * 2.0,
-        "stop": np.ones((2, 3), dtype=np.float32) * 2000.0,
-        "num": 8,
-        "endpoint": False,
-        "dtype": np.float32,
-        "axis": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D arrays, axis=-1
+    start = np.array([10.0, 100.0, 1000.0], dtype=np.float32)
+    stop = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    num = 4
+    endpoint = True
+    dtype = np.dtype(np.float32)
+    axis = -1
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 6: Complex values
-    input_dict = {
-        "start": np.array([1.0 + 0j], dtype=np.complex64),
-        "stop": np.array([100.0 + 0j], dtype=np.complex64),
-        "num": 5,
-        "endpoint": True,
-        "dtype": np.complex64,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D arrays, axis=0
+    start = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    stop = np.array([[8.0, 16.0], [24.0, 32.0]], dtype=np.float32)
+    num = 4
+    endpoint = True
+    dtype = np.dtype(np.float32)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 7: Small steps, high precision
-    input_dict = {
-        "start": np.array(0.001, dtype=np.float64),
-        "stop": np.array(0.1, dtype=np.float64),
-        "num": 3,
-        "endpoint": True,
-        "dtype": np.float64,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D arrays, axis=1, endpoint=False
+    start = np.array([[1.0, 10.0], [100.0, 1000.0]], dtype=np.float64)
+    stop = np.array([[1000.0, 100.0], [10.0, 1.0]], dtype=np.float64)
+    num = 6
+    endpoint = False
+    dtype = np.dtype(np.float64)
+    axis = 1
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 8: Large number of generated values, float32
-    input_dict = {
-        "start": np.array([1.0], dtype=np.float32),
-        "stop": np.array([100000.0], dtype=np.float32),
-        "num": 100,
-        "endpoint": False,
-        "dtype": np.float32,
-        "axis": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D arrays, axis=2
+    start = np.array([[2.0, 3.0, 4.0]], dtype=np.float32)
+    stop = np.array([[16.0, 81.0, 256.0]], dtype=np.float32)
+    num = 5
+    endpoint = True
+    dtype = np.dtype(np.float32)
+    axis = 2
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 9: 3D tensor with axis=2
-    input_dict = {
-        "start": np.ones((2, 2, 2), dtype=np.float32) * 5.0,
-        "stop": np.ones((2, 2, 2), dtype=np.float32) * 125.0,
-        "num": 5,
-        "endpoint": True,
-        "dtype": np.float32,
-        "axis": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D arrays, axis=0
+    start = np.full((2, 2, 2), 1.0, dtype=np.float32)
+    stop = np.full((2, 2, 2), 64.0, dtype=np.float32)
+    num = 7
+    endpoint = True
+    dtype = np.dtype(np.float32)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
-    # Input 10: Multi-dimensional complex128
-    input_dict = {
-        "start": np.array([[1.0 + 1j, 2.0 + 2j]], dtype=np.complex128),
-        "stop": np.array([[10.0 + 10j, 20.0 + 20j]], dtype=np.complex128),
-        "num": 4,
-        "endpoint": False,
-        "dtype": np.complex128,
-        "axis": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D complex numbers, axis=0
+    start = np.array([1.0 + 1.0j, 2.0 + 0.0j], dtype=np.complex64)
+    stop = np.array([4.0 + 4.0j, 8.0 + 0.0j], dtype=np.complex64)
+    num = 3
+    endpoint = True
+    dtype = np.dtype(np.complex64)
+    axis = 0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "start": start,
+                "stop": stop,
+                "num": num,
+                "endpoint": endpoint,
+                "dtype": dtype,
+                "axis": axis,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.geomspace_1"] = geomspace_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# non-empty list of float or int for input x (Rule 51)
+# if tensor minimum is non-negative, the maximum must also be non-negative (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] > 0) if n else
-          v["arg1_length"] > 0)
+    s.add(Not(If(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) >= 0, True)) if n else
+          If(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) >= 0, True))
 )
 
 def rule_51_func(arg1, solver=None, neg=False):
@@ -19,20 +19,21 @@ def rule_51_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)) or (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1))):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 51
-        rule_51(solver, {'arg1_length': arg1_length})
+        rule_51(solver, {'arg1_range': arg1_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_51(solver, {'arg1_length': arg1['length']}, neg)
+        rule_51(solver, {'arg1_range': arg1['range']}, neg)

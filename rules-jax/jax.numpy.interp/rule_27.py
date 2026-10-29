@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# period, if a tensor, must be a positive scalar (Rule 27)
+# xp tensor coordinates cannot have a complex data type (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) > 0)) if n else
-          And(v["arg1_ndim"] == 0, Select(v["arg1_range"], 0) > 0))
+    s.add(Not(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10)) if n else
+          And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10))
 )
 
 def rule_27_func(arg1, solver=None, neg=False):
@@ -24,18 +24,15 @@ def rule_27_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim})
+        rule_27(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_27(solver, {'arg1_dtype': arg1['dtype']}, neg)

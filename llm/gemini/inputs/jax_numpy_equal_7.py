@@ -4,70 +4,49 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def equal_inputs():
     list_of_inputs = []
 
-    # Input 1: Python integers (scalars)
-    x = 5
-    y = 5
-    input_dict = {"x": x, "y": y}
+    # Input 1: Zero values
+    input_dict = {"x": 0, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python integers with negative values
-    x = -10
-    y = 10
-    input_dict = {"x": x, "y": y}
+    # Input 2: Different positive integers
+    input_dict = {"x": 1, "y": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D numpy integer arrays (int32)
-    x = np.array([1, 2, -3], dtype=np.int32)
-    y = np.array([1, -2, -3], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
+    # Input 3: Identical negative integers
+    input_dict = {"x": -5, "y": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D numpy integer arrays (int64)
-    x = np.random.randint(-100, 100, size=(5, 5), dtype=np.int64)
-    y = np.random.randint(-100, 100, size=(5, 5), dtype=np.int64)
-    input_dict = {"x": x, "y": y}
+    # Input 4: Positive and negative with same magnitude
+    input_dict = {"x": -100, "y": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Broadcasting 1D to 2D (int16)
-    x = np.array([1, 2, 3], dtype=np.int16)
-    y = np.array([[1, 2, 3], [3, 2, 1]], dtype=np.int16)
-    input_dict = {"x": x, "y": y}
+    # Input 5: Identical positive integers
+    input_dict = {"x": 42, "y": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Unsigned integer array and unsigned scalar
-    x = np.array([0, 100, 255], dtype=np.uint8)
-    y = np.uint8(100)
-    input_dict = {"x": x, "y": y}
+    # Input 6: Large positive integers (identical)
+    input_dict = {"x": 1000000000, "y": 1000000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Comparison with zeros (int32)
-    x = np.arange(-5, 5, dtype=np.int32)
-    y = np.zeros(10, dtype=np.int32)
-    input_dict = {"x": x, "y": y}
+    # Input 7: Large positive integers (different)
+    input_dict = {"x": 123456789, "y": 987654321}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D numpy integer arrays (int64)
-    x = np.ones((2, 2, 2), dtype=np.int64)
-    y = np.zeros((2, 2, 2), dtype=np.int64)
-    input_dict = {"x": x, "y": y}
+    # Input 8: Negative integer and zero
+    input_dict = {"x": -1, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Broadcasting single element 2D array to 1D array
-    x = np.array([[5]], dtype=np.int32)
-    y = np.array([5, 5, 5], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
+    # Input 9: Large negative integers (identical)
+    input_dict = {"x": -99999999, "y": -99999999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Numpy integer scalars (int8)
-    x = np.int8(-128)
-    y = np.int8(127)
-    input_dict = {"x": x, "y": y}
+    # Input 10: Two distinct powers of two
+    input_dict = {"x": 256, "y": 512}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

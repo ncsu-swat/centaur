@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For boolean input, the value must be a valid boolean constant (Rule 40)
+# floating-point scalar input is constrained to the unit interval [0.0, 1.0] (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == True, v["arg1_value"] == False)) if n else
-          Or(v["arg1_value"] == True, v["arg1_value"] == False))
+    s.add(Not(And(v["arg1_value"] >= 0.0, v["arg1_value"] <= 1.0)) if n else
+          And(v["arg1_value"] >= 0.0, v["arg1_value"] <= 1.0))
 )
 
 def rule_40_func(arg1, solver=None, neg=False):
@@ -19,12 +19,12 @@ def rule_40_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, bool):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Bool('arg1_value')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
         solver.add(arg1_value == arg1)

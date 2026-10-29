@@ -4,103 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arange_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive integer sequence
+    # Input 1: Basic positive integer range
     input_dict = {
         "start": np.array(0, dtype=np.int32),
         "stop": np.array(10, dtype=np.int32),
         "step": np.array(1, dtype=np.int32),
-        "dtype": np.int32
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Float32 sequence with fractional step
+    # Input 2: Float range with fractional step
     input_dict = {
         "start": np.array(0.0, dtype=np.float32),
-        "stop": np.array(1.0, dtype=np.float32),
-        "step": np.array(0.1, dtype=np.float32),
-        "dtype": np.float32
+        "stop": np.array(5.0, dtype=np.float32),
+        "step": np.array(0.5, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative integer range with step
+    # Input 3: Negative start to positive stop with step 2
     input_dict = {
         "start": np.array(-10, dtype=np.int32),
-        "stop": np.array(-2, dtype=np.int32),
+        "stop": np.array(10, dtype=np.int32),
         "step": np.array(2, dtype=np.int32),
-        "dtype": np.int32
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative to positive float range with Float64
-    input_dict = {
-        "start": np.array(-5.0, dtype=np.float64),
-        "stop": np.array(5.0, dtype=np.float64),
-        "step": np.array(0.5, dtype=np.float64),
-        "dtype": np.float64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Int64 large step sequence
-    input_dict = {
-        "start": np.array(100, dtype=np.int64),
-        "stop": np.array(1000, dtype=np.int64),
-        "step": np.array(100, dtype=np.int64),
-        "dtype": np.int64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Downward integer sequence (negative step)
+    # Input 4: Decrementing range with negative step
     input_dict = {
         "start": np.array(10, dtype=np.int32),
         "stop": np.array(0, dtype=np.int32),
         "step": np.array(-1, dtype=np.int32),
-        "dtype": np.int32
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Downward float sequence (negative step)
+    # Input 5: Float range with decimal step
     input_dict = {
-        "start": np.array(5.0, dtype=np.float64),
-        "stop": np.array(1.0, dtype=np.float64),
-        "step": np.array(-0.5, dtype=np.float64),
-        "dtype": np.float64
+        "start": np.array(1.0, dtype=np.float32),
+        "stop": np.array(3.0, dtype=np.float32),
+        "step": np.array(0.25, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Float16 precision sequence
+    # Input 6: Decrementing float range
     input_dict = {
-        "start": np.array(0.0, dtype=np.float16),
-        "stop": np.array(2.0, dtype=np.float16),
-        "step": np.array(0.2, dtype=np.float16),
-        "dtype": np.float16
+        "start": np.array(5.0, dtype=np.float32),
+        "stop": np.array(-5.0, dtype=np.float32),
+        "step": np.array(-1.5, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Single-element range (step is larger than difference)
+    # Input 7: Empty range (start == stop)
+    input_dict = {
+        "start": np.array(5, dtype=np.int32),
+        "stop": np.array(5, dtype=np.int32),
+        "step": np.array(1, dtype=np.int32),
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Step larger than interval (single element)
     input_dict = {
         "start": np.array(0, dtype=np.int32),
-        "stop": np.array(1, dtype=np.int32),
-        "step": np.array(2, dtype=np.int32),
-        "dtype": np.int32
+        "stop": np.array(5, dtype=np.int32),
+        "step": np.array(10, dtype=np.int32),
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Mixing input array types (will be cast to the specified dtype)
+    # Input 9: Negative start and negative stop with negative step
     input_dict = {
-        "start": np.array(0, dtype=np.int32),
-        "stop": np.array(5.5, dtype=np.float32),
-        "step": np.array(0.5, dtype=np.float64),
-        "dtype": np.float32
+        "start": np.array(-2, dtype=np.int32),
+        "stop": np.array(-10, dtype=np.int32),
+        "step": np.array(-3, dtype=np.int32),
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Negative float values
+    input_dict = {
+        "start": np.array(-4.0, dtype=np.float32),
+        "stop": np.array(2.0, dtype=np.float32),
+        "step": np.array(0.8, dtype=np.float32),
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arange_3"] = arange_inputs()
 

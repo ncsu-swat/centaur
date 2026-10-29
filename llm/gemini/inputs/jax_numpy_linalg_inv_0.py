@@ -4,73 +4,78 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def inv_inputs():
     list_of_inputs = []
 
-    def make_invertible(shape, dtype=np.float32):
-        if len(shape) < 2 or shape[-1] != shape[-2]:
-            raise ValueError("Must be a square matrix shape")
-        
-        if np.issubdtype(dtype, np.complexfloating):
-            r_dtype = np.float32 if dtype == np.complex64 else np.float64
-            r = np.random.randn(*shape).astype(r_dtype)
-            i = np.random.randn(*shape).astype(r_dtype)
-            a = (r + 1j * i).astype(dtype)
-        else:
-            a = np.random.randn(*shape).astype(dtype)
-            
-        n = shape[-1]
-        eye = np.eye(n, dtype=dtype)
-        batch_shape = shape[:-2]
-        for _ in batch_shape:
-            eye = np.expand_dims(eye, axis=0)
-        eye = np.tile(eye, batch_shape + (1, 1))
-        return a + eye * n
+    # Input 1: 1x1 float32 matrix
+    a = np.array([[5.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 1: Simple 2x2 float32 matrix
-    a = make_invertible((2, 2), np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 2: 2x2 float32 matrix with negative numbers
+    a = np.array([[2.0, -1.0], [-3.0, 4.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 2: 3x3 float64 matrix with negative values
-    a = make_invertible((3, 3), np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 3: 3x3 float64 matrix
+    a = np.array(
+        [[3.0, 1.0, 0.5], [1.0, 4.0, 2.0], [0.5, 2.0, 5.0]], dtype=np.float64
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 3: Batched 4x4 float32 matrices (shape: 2, 4, 4)
-    a = make_invertible((2, 4, 4), np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 4: 3D batched float32 matrices (batch size 4, 2x2)
+    rng = np.random.RandomState(42)
+    a = rng.randn(4, 2, 2).astype(np.float32)
+    a += np.eye(2, dtype=np.float32) * 5.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 4: Batched 2x2 float64 matrices (shape: 3, 2, 2)
-    a = make_invertible((3, 2, 2), np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 5: 4D batched float64 matrices (batch shape 2x3, 3x3)
+    a = rng.randn(2, 3, 3, 3).astype(np.float64)
+    a += np.eye(3, dtype=np.float64) * 6.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 5: Higher dimensional batch (shape: 2, 2, 3, 3)
-    a = make_invertible((2, 2, 3, 3), np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 6: 2x2 complex64 matrix
+    a = (
+        rng.randn(2, 2).astype(np.float32)
+        + 1j * rng.randn(2, 2).astype(np.float32)
+    )
+    a += np.eye(2, dtype=np.complex64) * 5.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 6: Large 10x10 float32 matrix
-    a = make_invertible((10, 10), np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 7: 3x3 complex128 matrix
+    a = (
+        rng.randn(3, 3).astype(np.float64)
+        + 1j * rng.randn(3, 3).astype(np.float64)
+    )
+    a += np.eye(3, dtype=np.complex128) * 6.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 7: Trivial 1x1 float32 matrix
-    a = make_invertible((1, 1), np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 8: Larger 10x10 float32 matrix
+    a = rng.randn(10, 10).astype(np.float32)
+    a += np.eye(10, dtype=np.float32) * 15.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 8: Complex64 3x3 matrix
-    a = make_invertible((3, 3), np.complex64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 9: 5D batched float32 matrices (1, 2, 1, 4, 4)
+    a = rng.randn(1, 2, 1, 4, 4).astype(np.float32)
+    a += np.eye(4, dtype=np.float32) * 8.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 9: Complex128 2x2 matrix
-    a = make_invertible((2, 2), np.complex128)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 10: 4x4 diagonal float32 matrix with negative and positive values
+    a = np.diag([-2.0, 3.5, -1.2, 4.0]).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 10: Batched 5x5 complex64 matrices (shape: 1, 5, 5)
-    a = make_invertible((1, 5, 5), np.complex64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 11: 3D batched complex64 matrices (3, 2, 2)
+    a = (
+        rng.randn(3, 2, 2).astype(np.float32)
+        + 1j * rng.randn(3, 2, 2).astype(np.float32)
+    )
+    a += np.eye(2, dtype=np.complex64) * 5.0
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.inv"] = inv_inputs()
 

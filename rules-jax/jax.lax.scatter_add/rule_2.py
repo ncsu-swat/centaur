@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scatter_indices must have an integer data type, represented by type codes 1 to 5 (Rule 2)
+# mode must be one of the supported scatter handling modes (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5)) if n else
-          And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5))
+    s.add(Not(Or(Or(Or(v["arg1_value"] == 34, v["arg1_value"] == 35), v["arg1_value"] == 36), v["arg1_value"] == 33)) if n else
+          Or(Or(Or(v["arg1_value"] == 34, v["arg1_value"] == 35), v["arg1_value"] == 36), v["arg1_value"] == 33))
 )
 
 def rule_2_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_2_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Constraints for rule 2
-        rule_2(solver, {'arg1_dtype': arg1_dtype})
+        rule_2(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_2(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_2(solver, {'arg1_value': arg1['value']}, neg)

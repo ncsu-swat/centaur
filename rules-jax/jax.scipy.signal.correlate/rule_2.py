@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# minimum dimensionality constraint (Rule 2)
+# mode parameter must be a supported mode (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] >= 1) if n else
-          v["arg1_ndim"] >= 1)
+    s.add(Not(Or(v["arg1_value"] == 19, v["arg1_value"] == 20)) if n else
+          Or(v["arg1_value"] == 19, v["arg1_value"] == 20))
 )
 
 def rule_2_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_2_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Constraints for rule 2
-        rule_2(solver, {'arg1_ndim': arg1_ndim})
+        rule_2(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_2(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_2(solver, {'arg1_value': arg1['value']}, neg)

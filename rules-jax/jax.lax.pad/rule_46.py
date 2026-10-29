@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# padding value must have the same dtype as the operand (Rule 46)
+# operand and padding_value are single or double precision float tensors with scalar padding (Rule 46)
 
 rule_46 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] >= 0, v["arg2_dtype"] == v["arg1_dtype"], True)) if n else
-          If(v["arg1_ndim"] >= 0, v["arg2_dtype"] == v["arg1_dtype"], True))
+    s.add(Not(And(And(And(v["arg1_dtype"] == v["arg2_dtype"], 7 <= v["arg1_dtype"]), v["arg1_dtype"] <= 8), v["arg2_ndim"] == 0)) if n else
+          And(And(And(v["arg1_dtype"] == v["arg2_dtype"], 7 <= v["arg1_dtype"]), v["arg1_dtype"] <= 8), v["arg2_ndim"] == 0))
 )
 
 def rule_46_func(arg1, arg2, solver=None, neg=False):
@@ -27,19 +27,19 @@ def rule_46_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
         arg1_dtype = Int('arg1_dtype')
+        arg2_ndim = Int('arg2_ndim')
         arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_ndim == arg2.ndim)
         solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 46
-        rule_46(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim, 'arg2_dtype': arg2_dtype})
+        rule_46(solver, {'arg1_dtype': arg1_dtype, 'arg2_ndim': arg2_ndim, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_46(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_46(solver, {'arg1_dtype': arg1['dtype'], 'arg2_ndim': arg2['ndim'], 'arg2_dtype': arg2['dtype']}, neg)

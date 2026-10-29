@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input is a float scalar, its value should be within a reasonable range to prevent square overflow (Rule 57)
+# floating-point scalar input strictly within the negative unit interval (Rule 57)
 
 rule_57 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -100000.0, v["arg1_value"] <= 100000.0)) if n else
-          And(v["arg1_value"] >= -100000.0, v["arg1_value"] <= 100000.0))
+    s.add(Not(And(-1.0 < v["arg1_value"], v["arg1_value"] < 0.0)) if n else
+          And(-1.0 < v["arg1_value"], v["arg1_value"] < 0.0))
 )
 
 def rule_57_func(arg1, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor must be of float32 or float64 dtype (Rule 23)
+# disallow unsupported integer and half-precision dtypes (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 7, v["arg1_dtype"] <= 8)) if n else
-          And(v["arg1_dtype"] >= 7, v["arg1_dtype"] <= 8))
+    s.add(Not(And(And(And(And(And(v["arg1_dtype"] != 1, v["arg1_dtype"] != 2), v["arg1_dtype"] != 3), v["arg1_dtype"] != 4), v["arg1_dtype"] != 5), v["arg1_dtype"] != 6)) if n else
+          And(And(And(And(And(v["arg1_dtype"] != 1, v["arg1_dtype"] != 2), v["arg1_dtype"] != 3), v["arg1_dtype"] != 4), v["arg1_dtype"] != 5), v["arg1_dtype"] != 6))
 )
 
 def rule_23_func(arg1, solver=None, neg=False):

@@ -4,113 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def expm_frechet_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 3x3
-    A = np.random.randn(3, 3).astype(np.float32)
-    E = np.random.randn(3, 3).astype(np.float32)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "ignored_method",
-        "compute_expm": True
-    })
+    # Input 1: Basic 2x2 float32 matrices
+    A = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    E = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"A": A, "E": E, "method": "blockEnlarge", "compute_expm": True}
+        )
+    )
 
-    # Input 2: float64 2x2
-    A = np.random.randn(2, 2).astype(np.float64)
-    E = np.random.randn(2, 2).astype(np.float64)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "Pade",
-        "compute_expm": False
-    })
+    # Input 2: 3x3 float64 matrices with compute_expm=False
+    A = np.random.randn(3, 3).astype(np.float64)
+    E = np.random.randn(3, 3).astype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"A": A, "E": E, "method": "SPS", "compute_expm": False})
+    )
 
-    # Input 3: Batched shape (2, 4, 4)
-    A = np.random.randn(2, 4, 4).astype(np.float32)
-    E = np.random.randn(2, 4, 4).astype(np.float32)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "default",
-        "compute_expm": True
-    })
+    # Input 3: 1x1 matrix (scalar matrix)
+    A = np.array([[-2.5]], dtype=np.float32)
+    E = np.array([[0.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"A": A, "E": E, "method": "default", "compute_expm": True}
+        )
+    )
 
-    # Input 4: Negative values 5x5
-    A = -np.abs(np.random.randn(5, 5)).astype(np.float32)
-    E = np.random.randn(5, 5).astype(np.float32)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "",
-        "compute_expm": True
-    })
+    # Input 4: Batched 3D tensor (batch size 4, 2x2 matrices)
+    A = np.random.randn(4, 2, 2).astype(np.float32)
+    E = np.random.randn(4, 2, 2).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"A": A, "E": E, "method": "", "compute_expm": True})
+    )
 
-    # Input 5: Batched shape (3, 2, 2) float64
-    A = np.random.randn(3, 2, 2).astype(np.float64)
-    E = np.random.randn(3, 2, 2).astype(np.float64)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "test",
-        "compute_expm": False
-    })
+    # Input 5: Complex128 2x2 matrices
+    A = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(
+        np.complex128
+    )
+    E = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"A": A, "E": E, "method": "blockEnlarge", "compute_expm": False}
+        )
+    )
 
-    # Input 6: 1x1 matrix
-    A = np.random.randn(1, 1).astype(np.float32)
-    E = np.random.randn(1, 1).astype(np.float32)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "none",
-        "compute_expm": True
-    })
+    # Input 6: Multi-batch 4D tensor (2, 3, 3, 3)
+    A = np.random.randn(2, 3, 3, 3).astype(np.float64)
+    E = np.random.randn(2, 3, 3, 3).astype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"A": A, "E": E, "method": "pade", "compute_expm": True})
+    )
 
-    # Input 7: Zero and identity matrices
-    A = np.zeros((6, 6), dtype=np.float32)
-    E = np.eye(6, dtype=np.float32)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "foo",
-        "compute_expm": True
-    })
+    # Input 7: Zero matrix for A and non-zero E
+    A = np.zeros((4, 4), dtype=np.float32)
+    E = np.eye(4, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"A": A, "E": E, "method": "SPS", "compute_expm": True})
+    )
 
-    # Input 8: Positive only A, negative only E
-    A = np.abs(np.random.randn(4, 4)).astype(np.float64)
-    E = -np.abs(np.random.randn(4, 4)).astype(np.float64)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "bar",
-        "compute_expm": False
-    })
+    # Input 8: Complex64 3x3 matrices
+    A = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex64
+    )
+    E = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(
+        copy.deepcopy({"A": A, "E": E, "method": "taylor", "compute_expm": True})
+    )
 
-    # Input 9: Batched shape (4, 3, 3)
-    A = np.random.randn(4, 3, 3).astype(np.float32)
-    E = np.random.randn(4, 3, 3).astype(np.float32)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "multi_batch",
-        "compute_expm": True
-    })
+    # Input 9: Diagonal/identity scaling with negative values
+    A = -np.eye(5, dtype=np.float32) * 3.0
+    E = np.ones((5, 5), dtype=np.float32) * -0.5
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"A": A, "E": E, "method": "blockEnlarge", "compute_expm": False}
+        )
+    )
 
-    # Input 10: 8x8 float32 matrix
-    A = np.random.randn(8, 8).astype(np.float32)
-    E = np.random.randn(8, 8).astype(np.float32)
-    list_of_inputs.append({
-        "A": A,
-        "E": E,
-        "method": "scipy",
-        "compute_expm": True
-    })
+    # Input 10: Larger 8x8 float64 matrix
+    A = np.random.randn(8, 8).astype(np.float64)
+    E = np.random.randn(8, 8).astype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"A": A, "E": E, "method": "none", "compute_expm": True})
+    )
+
+    # Input 11: Batched complex128 tensor
+    A = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(
+        np.complex128
+    )
+    E = (np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"A": A, "E": E, "method": "blockEnlarge", "compute_expm": False}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.expm_frechet"] = expm_frechet_inputs()
 

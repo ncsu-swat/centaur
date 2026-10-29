@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor x must not be a complex, string, or dtype type array (Rule 11)
+# integer or boolean tensor that undergoes casting to float (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10), v["arg1_dtype"] != 11), v["arg1_dtype"] != 12)) if n else
-          And(And(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10), v["arg1_dtype"] != 11), v["arg1_dtype"] != 12))
+    s.add(Not(And(0 <= v["arg1_dtype"], v["arg1_dtype"] <= 5)) if n else
+          And(0 <= v["arg1_dtype"], v["arg1_dtype"] <= 5))
 )
 
 def rule_11_func(arg1, solver=None, neg=False):

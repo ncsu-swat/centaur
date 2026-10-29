@@ -4,43 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def iscomplexobj_inputs():
     list_of_inputs = []
 
-    # Input 1: Python True
-    list_of_inputs.append({"x": True})
+    # Input 1: Python standard boolean True
+    list_of_inputs.append(copy.deepcopy({"x": True}))
 
-    # Input 2: Python False
-    list_of_inputs.append({"x": False})
+    # Input 2: Python standard boolean False
+    list_of_inputs.append(copy.deepcopy({"x": False}))
 
-    # Input 3: numpy boolean scalar True
-    list_of_inputs.append({"x": np.bool_(True)})
+    # Input 3: NumPy bool_ True
+    list_of_inputs.append(copy.deepcopy({"x": np.bool_(True)}))
 
-    # Input 4: numpy boolean scalar False
-    list_of_inputs.append({"x": np.bool_(False)})
+    # Input 4: NumPy bool_ False
+    list_of_inputs.append(copy.deepcopy({"x": np.bool_(False)}))
 
-    # Input 5: 1D boolean array
-    list_of_inputs.append({"x": np.array([True, False, True], dtype=bool)})
+    # Input 5: Python bool from int 1
+    list_of_inputs.append(copy.deepcopy({"x": bool(1)}))
 
-    # Input 6: 2D boolean array
-    list_of_inputs.append({"x": np.array([[True, False], [False, True]], dtype=bool)})
+    # Input 6: Python bool from int 0
+    list_of_inputs.append(copy.deepcopy({"x": bool(0)}))
 
-    # Input 7: 3D boolean array
-    list_of_inputs.append({"x": np.ones((2, 3, 4), dtype=bool)})
+    # Input 7: NumPy bool_ from integer 1
+    list_of_inputs.append(copy.deepcopy({"x": np.bool_(1)}))
 
-    # Input 8: 4D boolean array of zeros
-    list_of_inputs.append({"x": np.zeros((1, 2, 2, 3), dtype=bool)})
+    # Input 8: NumPy bool_ from integer 0
+    list_of_inputs.append(copy.deepcopy({"x": np.bool_(0)}))
 
-    # Input 9: Empty 1D boolean array
-    list_of_inputs.append({"x": np.array([], dtype=bool)})
+    # Input 9: Python bool from expression
+    list_of_inputs.append(copy.deepcopy({"x": bool(1 > 2)}))
 
-    # Input 10: 5D boolean array
-    list_of_inputs.append({"x": np.ones((1, 1, 2, 2, 2), dtype=bool)})
+    # Input 10: Python bool from expression
+    list_of_inputs.append(copy.deepcopy({"x": bool(2 > 1)}))
+
+    # Input 11: NumPy bool_ from float comparison
+    list_of_inputs.append(copy.deepcopy({"x": np.bool_(0.0 != 0.0)}))
+
+    # Input 12: NumPy bool_ from float comparison
+    list_of_inputs.append(copy.deepcopy({"x": np.bool_(1.0 == 1.0)}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.iscomplexobj_4"] = iscomplexobj_inputs()
 

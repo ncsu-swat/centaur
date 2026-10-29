@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# limit on list size to prevent excessive memory usage during conversion (Rule 27)
+# Input pair of floats specified as a 2-element tuple in non-decreasing order (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_length"] > 0, v["arg1_length"] <= 50000)) if n else
-          And(v["arg1_length"] > 0, v["arg1_length"] <= 50000))
+    s.add(Not(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) <= Select(v["arg1_values"], 1))) if n else
+          And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) <= Select(v["arg1_values"], 1)))
 )
 
 def rule_27_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_27_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1)) or (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1))):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), RealSort())
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_length': arg1_length})
+        rule_27(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_length': arg1['length']}, neg)
+        rule_27(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

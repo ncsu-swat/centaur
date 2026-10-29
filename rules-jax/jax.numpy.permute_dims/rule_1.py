@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension of the input tensor must match the length of the axes tuple (Rule 1)
+# axes length must match tensor dimension (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == v["arg2_length"]) if n else
-          v["arg1_ndim"] == v["arg2_length"])
+    s.add(Not(v["arg2_length"] == v["arg1_ndim"]) if n else
+          v["arg2_length"] == v["arg1_ndim"])
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):

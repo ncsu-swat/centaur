@@ -4,68 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tril_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 2D float32 square matrix, k=0
-    m = np.random.randn(5, 5).astype(np.float32)
+    # Input 1: 2D square float32 matrix, k=0
+    m = np.random.randn(4, 4).astype(np.float32)
     k = 0
-    list_of_inputs.append({"m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 2: 2D int32 matrix, positive k
-    m = np.random.randint(-10, 10, size=(4, 6)).astype(np.int32)
-    k = 2
-    list_of_inputs.append({"m": m, "k": k})
-
-    # Input 3: 2D float64 matrix, negative k
-    m = np.random.randn(6, 4).astype(np.float64)
-    k = -2
-    list_of_inputs.append({"m": m, "k": k})
-
-    # Input 4: 3D float32 batch matrix, k=0
-    m = np.random.randn(2, 4, 4).astype(np.float32)
-    k = 0
-    list_of_inputs.append({"m": m, "k": k})
-
-    # Input 5: 3D int64 batch matrix, positive k
-    m = np.random.randint(-100, 100, size=(3, 5, 5)).astype(np.int64)
+    # Input 2: 2D rectangular float64 matrix (more rows), k=1
+    m = np.random.randn(5, 3).astype(np.float64)
     k = 1
-    list_of_inputs.append({"m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 6: 4D float32 batch matrix, negative k
-    m = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    # Input 3: 2D rectangular int32 matrix (more columns), k=-1
+    m = np.random.randint(-10, 10, size=(3, 6), dtype=np.int32)
     k = -1
-    list_of_inputs.append({"m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 7: 2D boolean matrix, k=0
-    m = np.random.choice([True, False], size=(5, 5))
+    # Input 4: 3D batch array, int64, k=0
+    m = np.random.randint(-100, 100, size=(2, 4, 4), dtype=np.int64)
     k = 0
-    list_of_inputs.append({"m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 8: Tall 2D matrix (rows > cols), positive k
-    m = np.random.randn(10, 3).astype(np.float32)
-    k = 3
-    list_of_inputs.append({"m": m, "k": k})
+    # Input 5: 3D batch array, float32, negative k
+    m = np.random.randn(3, 5, 5).astype(np.float32)
+    k = -2
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 9: Wide 2D matrix (cols > rows), negative k
-    m = np.random.randn(3, 10).astype(np.float32)
-    k = -3
-    list_of_inputs.append({"m": m, "k": k})
+    # Input 6: 4D tensor, complex64, positive k
+    real = np.random.randn(2, 3, 4, 4).astype(np.float32)
+    imag = np.random.randn(2, 3, 4, 4).astype(np.float32)
+    m = real + 1j * imag
+    k = 2
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 10: 2D float32 matrix, large positive k (no-op, entire matrix retained)
-    m = np.random.randn(4, 4).astype(np.float32)
+    # Input 7: 2D boolean array, k=0
+    m = np.random.choice([True, False], size=(4, 4))
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
+
+    # Input 8: 5D tensor, float32, k=-1
+    m = np.random.randn(2, 2, 2, 3, 3).astype(np.float32)
+    k = -1
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
+
+    # Input 9: 2D matrix with large positive k exceeding dimension
+    m = np.random.randn(3, 3).astype(np.float32)
     k = 10
-    list_of_inputs.append({"m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 11: 2D float32 matrix, large negative k (zeroes out entire matrix)
-    m = np.random.randn(4, 4).astype(np.float32)
+    # Input 10: 2D matrix with large negative k exceeding dimension
+    m = np.random.randn(3, 3).astype(np.float32)
     k = -10
-    list_of_inputs.append({"m": m, "k": k})
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
+
+    # Input 11: 2D 1x1 matrix, float32, k=0
+    m = np.array([[3.14]], dtype=np.float32)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.tril"] = tril_inputs()
 

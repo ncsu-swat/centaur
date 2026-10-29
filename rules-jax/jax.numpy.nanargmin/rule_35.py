@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the specified axis is 1, the input tensor must be at least 2-dimensional (Rule 35)
+# when reduction axis is -2, tensor must have at least 2 dimensions (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] == 1, v["arg1_ndim"] >= 2, True)) if n else
-          If(v["arg2_value"] == 1, v["arg1_ndim"] >= 2, True))
+    s.add(Not(If(v["arg2_value"] == -2, v["arg1_ndim"] >= 2, True)) if n else
+          If(v["arg2_value"] == -2, v["arg1_ndim"] >= 2, True))
 )
 
 def rule_35_func(arg1, arg2, solver=None, neg=False):

@@ -4,105 +4,116 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_linalg_vector_norm_inputs():
+
+def vector_norm_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, ord=2, keepdims=False
-    input_dict = {
-        "x": np.array([1.0, -2.0, 3.0], dtype=np.float32),
-        "axis": (0,),
-        "keepdims": False,
-        "ord": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array, single-axis reduction, keepdims True, ord=2
+    x = np.array([3.0, -4.0, 5.0, -12.0], dtype=np.float32)
+    axis = (0,)
+    keepdims = True
+    ord_val = 2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 2: 2D array, ord=1, keepdims=True
-    input_dict = {
-        "x": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
-        "axis": (1,),
-        "keepdims": True,
-        "ord": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float64 array, reduction along axis 1, keepdims False, ord=1
+    x = np.array([[1.0, 2.0, -3.0], [4.0, -5.0, 6.0]], dtype=np.float64)
+    axis = (1,)
+    keepdims = False
+    ord_val = 1
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 3: 3D float64 array, ord=2
-    input_dict = {
-        "x": np.random.randn(2, 3, 4).astype(np.float64),
-        "axis": (0, 2),
-        "keepdims": False,
-        "ord": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float32 array, reduction along axis 0, keepdims True, ord=2
+    x = np.random.randn(5, 4).astype(np.float32)
+    axis = (0,)
+    keepdims = True
+    ord_val = 2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 4: 2D array, ord=3, keepdims=True
-    input_dict = {
-        "x": np.random.randn(5, 5).astype(np.float32),
-        "axis": (0,),
-        "keepdims": True,
-        "ord": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float32 array, multi-axis reduction (0, 2), keepdims False, ord=1
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    axis = (0, 2)
+    keepdims = False
+    ord_val = 1
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 5: 4D array, ord=1
-    input_dict = {
-        "x": np.random.randn(2, 2, 2, 2).astype(np.float32),
-        "axis": (1, 3),
-        "keepdims": False,
-        "ord": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float64 array, negative axis index, keepdims True, ord=-1
+    x = np.random.randn(4, 3, 2).astype(np.float64)
+    axis = (-1,)
+    keepdims = True
+    ord_val = -1
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 6: 1D float64 array, ord=0
-    input_dict = {
-        "x": np.array([-10.0, 0.0, 10.0], dtype=np.float64),
-        "axis": (0,),
-        "keepdims": True,
-        "ord": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D float32 array, reduction over middle dimensions, keepdims False, ord=2
+    x = np.random.randn(2, 4, 3, 5).astype(np.float32)
+    axis = (1, 2)
+    keepdims = False
+    ord_val = 2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 7: 3D array, ord=2, keepdims=True
-    input_dict = {
-        "x": np.random.randn(3, 4, 5).astype(np.float32),
-        "axis": (1,),
-        "keepdims": True,
-        "ord": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Complex128 2D array, single-axis reduction, keepdims False, ord=2
+    x = (np.random.randn(3, 4) + 1j * np.random.randn(3, 4)).astype(np.complex128)
+    axis = (0,)
+    keepdims = False
+    ord_val = 2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 8: 2D array, ord=1, negative values
-    input_dict = {
-        "x": np.random.randn(10, 2).astype(np.float32),
-        "axis": (1,),
-        "keepdims": False,
-        "ord": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Complex64 3D array, negative multi-axis reduction, keepdims True, ord=2
+    x = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
+    axis = (-2, -1)
+    keepdims = True
+    ord_val = 2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 9: 3D array, ord=3, keepdims=True
-    input_dict = {
-        "x": np.random.randn(3, 3, 3).astype(np.float32),
-        "axis": (0, 1),
-        "keepdims": True,
-        "ord": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D float32 array, multi-axis reduction, keepdims True, ord=0
+    x = np.random.randn(2, 2, 3, 2, 4).astype(np.float32)
+    axis = (2, 3)
+    keepdims = True
+    ord_val = 0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
-    # Input 10: 4D array, ord=2, keepdims=False
-    input_dict = {
-        "x": np.random.randn(2, 3, 4, 5).astype(np.float32),
-        "axis": (2,),
-        "keepdims": False,
-        "ord": 2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float64 array, reduction across all axes, keepdims False, ord=2
+    x = np.random.randn(6, 6).astype(np.float64)
+    axis = (0, 1)
+    keepdims = False
+    ord_val = 2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
+
+    # Input 11: 1D float32 array with negative axis, keepdims False, ord=2
+    x = np.array([-1.5, 2.5, -3.5, 4.5], dtype=np.float32)
+    axis = (-1,)
+    keepdims = False
+    ord_val = 2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "axis": axis, "keepdims": keepdims, "ord": ord_val})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.linalg.vector_norm_4"] = jax_numpy_linalg_vector_norm_inputs()
+
+generated_inputs["jax.numpy.linalg.vector_norm_4"] = vector_norm_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

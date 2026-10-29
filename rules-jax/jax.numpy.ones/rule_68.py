@@ -7,35 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if shape is a list of length 1, the single dimension must be at least 1 (Rule 68)
+# non-negative integer shape with single or double precision floating-point dtype (Rule 68)
 
 rule_68 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_length"] == 1, Select(v["arg1_values"], 0) >= 1, True)) if n else
-          If(v["arg1_length"] == 1, Select(v["arg1_values"], 0) >= 1, True))
+    s.add(Not(And(v["arg1_value"] >= 0, (Or(v["arg2_value"] == 7, v["arg2_value"] == 8)))) if n else
+          And(v["arg1_value"] >= 0, (Or(v["arg2_value"] == 7, v["arg2_value"] == 8))))
 )
 
-def rule_68_func(arg1, solver=None, neg=False):
+def rule_68_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+            return False
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_value = Int('arg1_value')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_value == int(arg1))
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 68
-        rule_68(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_68(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_68(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_68(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

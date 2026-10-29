@@ -4,63 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dirichlet_logpdf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D size 3, float32
-    x = np.array([0.2, 0.5, 0.3], dtype=np.float32)
+    # Input 1: 1D tensors, K=3, float32
+    x = np.array([0.2, 0.3, 0.5], dtype=np.float32)
     alpha = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 2: 1D size 2 (K-1 for K=3), float32
-    x = np.array([0.2, 0.5], dtype=np.float32)
-    alpha = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
-
-    # Input 3: 1D size 5, float32
-    x = np.array([0.1, 0.2, 0.3, 0.1, 0.3], dtype=np.float32)
-    alpha = np.array([2.5, 2.5, 2.5, 2.5, 2.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
-
-    # Input 4: 1D size 4 (K-1 for K=5), float32
-    x = np.array([0.1, 0.2, 0.3, 0.1], dtype=np.float32)
-    alpha = np.array([2.5, 2.5, 2.5, 2.5, 2.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
-
-    # Input 5: 1D size 2, float64
+    # Input 2: 1D tensors, K=2, float64
     x = np.array([0.5, 0.5], dtype=np.float64)
     alpha = np.array([0.5, 0.5], dtype=np.float64)
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 6: 1D size 1 (K-1 for K=2), float64
-    x = np.array([0.4], dtype=np.float64)
-    alpha = np.array([0.5, 0.5], dtype=np.float64)
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    # Input 3: 1D tensors, K=4, exact binary fractions
+    x = np.array([0.125, 0.25, 0.125, 0.5], dtype=np.float32)
+    alpha = np.array([2.5, 1.5, 3.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 7: 1D size 10, float32
-    x = (np.ones(10) / 10.0).astype(np.float32)
-    alpha = np.arange(1.0, 11.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    # Input 4: 2D x with shape (K, N) where axis 0 is K=3, 1D alpha of shape (3,)
+    x_raw = np.array(
+        [[1.0, 2.0, 1.0, 2.0], [2.0, 1.0, 1.0, 2.0], [1.0, 1.0, 2.0, 4.0]],
+        dtype=np.float32,
+    )
+    x = x_raw / np.sum(x_raw, axis=0, keepdims=True)
+    alpha = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 8: 1D size 9 (K-1 for K=10), float32
-    x = (np.ones(9) / 10.0).astype(np.float32)
-    alpha = np.arange(1.0, 11.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    # Input 5: 2D x with shape (K, N) where axis 0 is K=2, 1D alpha of shape (2,)
+    x_raw = np.array([[0.3, 0.8, 0.5], [0.7, 0.2, 0.5]], dtype=np.float64)
+    x = x_raw / np.sum(x_raw, axis=0, keepdims=True)
+    alpha = np.array([2.0, 5.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 9: Asymmetric alphas, size 4, float32
-    x = np.array([0.1, 0.1, 0.1, 0.7], dtype=np.float32)
+    # Input 6: 1D tensors, K=5, uniform Dirichlet (alpha = 1)
+    x = np.array([0.2, 0.2, 0.2, 0.2, 0.2], dtype=np.float64)
+    alpha = np.ones(5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
+
+    # Input 7: 3D x with shape (K, N, M) where axis 0 is K=4, 1D alpha of shape (4,)
+    x_raw = np.ones((4, 2, 3), dtype=np.float32)
+    x = x_raw / np.sum(x_raw, axis=0, keepdims=True)
     alpha = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
-    # Input 10: Asymmetric alphas, size 3 (K-1 for K=4), float32
-    x = np.array([0.1, 0.1, 0.1], dtype=np.float32)
-    alpha = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "alpha": alpha})
+    # Input 8: 1D x with K-1 entries (implicit remaining component), alpha of shape (3,)
+    x = np.array([0.2, 0.3], dtype=np.float64)
+    alpha = np.array([1.5, 2.5, 3.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
+
+    # Input 9: 1D tensors, alpha with sparse parameters (< 1.0)
+    x = np.array([0.1, 0.8, 0.1], dtype=np.float32)
+    alpha = np.array([0.1, 0.2, 0.1], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
+
+    # Input 10: 1D tensors, large alpha values (concentrated distribution)
+    x = np.array([0.4, 0.35, 0.25], dtype=np.float64)
+    alpha = np.array([100.0, 87.5, 62.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "alpha": alpha}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.dirichlet.logpdf"] = dirichlet_logpdf_inputs()
 

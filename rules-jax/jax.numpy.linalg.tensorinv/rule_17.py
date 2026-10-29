@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# split dimension products must match for 5D tensors when ind is 1 (Rule 17)
+# for a 4D tensor when ind is 1, the first dimension must equal the product of the remaining three dimensions (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == 5, v["arg2_value"] == 1), Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) * Select(v["arg1_shape"], 3) * Select(v["arg1_shape"], 4), True)) if n else
-          If(And(v["arg1_ndim"] == 5, v["arg2_value"] == 1), Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) * Select(v["arg1_shape"], 3) * Select(v["arg1_shape"], 4), True))
+    s.add(Not(If(And(v["arg1_ndim"] == 4, v["arg2_value"] == 1), Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) * Select(v["arg1_shape"], 3), True)) if n else
+          If(And(v["arg1_ndim"] == 4, v["arg2_value"] == 1), Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) * Select(v["arg1_shape"], 3), True))
 )
 
 def rule_17_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_17_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

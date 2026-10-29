@@ -4,93 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def triu_indices_inputs():
     list_of_inputs = []
 
     # Input 1: Basic square matrix, main diagonal
-    input_dict = {
-        "n": int(3),
-        "k": int(0),
-        "m": int(3)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"n": 3, "k": 0, "m": 3})
 
-    # Input 2: Square matrix, one diagonal above main
-    input_dict = {
-        "n": int(4),
-        "k": int(1),
-        "m": int(4)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Square matrix, first super-diagonal
+    list_of_inputs.append({"n": 4, "k": 1, "m": 4})
 
-    # Input 3: Square matrix, one diagonal below main
-    input_dict = {
-        "n": int(4),
-        "k": int(-1),
-        "m": int(4)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Square matrix, first sub-diagonal
+    list_of_inputs.append({"n": 4, "k": -1, "m": 4})
 
-    # Input 4: Rectangular matrix (wide), main diagonal
-    input_dict = {
-        "n": int(3),
-        "k": int(0),
-        "m": int(5)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Rectangular matrix where m > n, main diagonal
+    list_of_inputs.append({"n": 3, "k": 0, "m": 5})
 
-    # Input 5: Rectangular matrix (tall), main diagonal
-    input_dict = {
-        "n": int(5),
-        "k": int(0),
-        "m": int(3)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Rectangular matrix where n > m, main diagonal
+    list_of_inputs.append({"n": 5, "k": 0, "m": 2})
 
-    # Input 6: Rectangular matrix (wide), positive k
-    input_dict = {
-        "n": int(3),
-        "k": int(2),
-        "m": int(5)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Rectangular matrix, positive offset k
+    list_of_inputs.append({"n": 6, "k": 2, "m": 4})
 
-    # Input 7: Rectangular matrix (tall), negative k
-    input_dict = {
-        "n": int(5),
-        "k": int(-2),
-        "m": int(3)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Rectangular matrix, negative offset k
+    list_of_inputs.append({"n": 5, "k": -3, "m": 6})
 
-    # Input 8: Minimal size 1x1
-    input_dict = {
-        "n": int(1),
-        "k": int(0),
-        "m": int(1)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Minimal 1x1 matrix
+    list_of_inputs.append({"n": 1, "k": 0, "m": 1})
 
-    # Input 9: Larger dimensions
-    input_dict = {
-        "n": int(10),
-        "k": int(3),
-        "m": int(12)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large offset exceeding matrix dimensions (empty result)
+    list_of_inputs.append({"n": 3, "k": 10, "m": 3})
 
-    # Input 10: Larger dimensions with large negative k
-    input_dict = {
-        "n": int(15),
-        "k": int(-5),
-        "m": int(15)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Negative offset covering the entire matrix
+    list_of_inputs.append({"n": 4, "k": -5, "m": 4})
+
+    # Input 11: Larger matrix with moderate offset
+    list_of_inputs.append({"n": 10, "k": 3, "m": 12})
+
+    # Input 12: Empty matrix dimensions
+    list_of_inputs.append({"n": 0, "k": 0, "m": 0})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.triu_indices"] = triu_indices_inputs()
 

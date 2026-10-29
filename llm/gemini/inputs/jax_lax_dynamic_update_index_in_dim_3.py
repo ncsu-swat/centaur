@@ -4,115 +4,120 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+import jax.lax
 
-def jax_lax_dynamic_update_index_in_dim_inputs():
+
+def dynamic_update_index_in_dim_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic valid case, float32, positive index
+    # Input 1: 1D array, update with float scalar
     input_dict = {
-        "operand": np.zeros(6, dtype=np.float32),
-        "update": 1.0,
-        "index": 2,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.zeros((6,), dtype=np.float32),
+        "update": float(1.0),
+        "index": int(2),
+        "axis": int(0),
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: float32 operand, negative index
+    # Input 2: 1D array, negative index with allow_negative_indices=True
     input_dict = {
-        "operand": np.ones(10, dtype=np.float32),
-        "update": -3.14,
-        "index": -2,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.ones((5,), dtype=np.float64),
+        "update": float(-3.5),
+        "index": int(-1),
+        "axis": int(0),
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Out of bounds positive index (will be clipped)
+    # Input 3: 1D array, index out of bounds (clipped)
     input_dict = {
-        "operand": np.arange(5, dtype=np.float32),
-        "update": 9.9,
-        "index": 10,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.arange(10, dtype=np.float32),
+        "update": float(99.0),
+        "index": int(15),
+        "axis": int(0),
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Out of bounds negative index
+    # Input 4: 1D array, allow_negative_indices=False
     input_dict = {
-        "operand": np.zeros(8, dtype=np.float32),
-        "update": 5.5,
-        "index": -15,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.zeros((8,), dtype=np.float32),
+        "update": float(4.2),
+        "index": int(3),
+        "axis": int(0),
+        "allow_negative_indices": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: float32 operand, allow_negative_indices=False
+    # Input 5: 1D array with shape (1,), index 0
     input_dict = {
-        "operand": np.ones(4, dtype=np.float32),
-        "update": 0.0,
-        "index": 1,
-        "axis": 0,
-        "allow_negative_indices": False
+        "operand": np.array([0.0], dtype=np.float32),
+        "update": float(10.0),
+        "index": int(0),
+        "axis": int(0),
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: float32 operand, another positive index
+    # Input 6: 1D array, negative index at start
     input_dict = {
-        "operand": np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32),
-        "update": 42.0,
-        "index": 3,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.zeros((4,), dtype=np.float64),
+        "update": float(2.718),
+        "index": int(-4),
+        "axis": int(0),
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large 1D array
+    # Input 7: 1D array, update at index 0
     input_dict = {
-        "operand": np.zeros(1000, dtype=np.float32),
-        "update": -100.5,
-        "index": 500,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.full((12,), 5.0, dtype=np.float32),
+        "update": float(0.0),
+        "index": int(0),
+        "axis": int(0),
+        "allow_negative_indices": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small 1D array, index 0
+    # Input 8: 1D float32 array, index at end
     input_dict = {
-        "operand": np.array([0.5, 1.5], dtype=np.float32),
-        "update": 99.9,
-        "index": 0,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.ones((7,), dtype=np.float32),
+        "update": float(3.1415),
+        "index": int(6),
+        "axis": int(0),
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: float32 operand, allow_negative_indices=False, different index
+    # Input 9: 1D array, large negative out of bounds index (clipped)
     input_dict = {
-        "operand": np.ones(7, dtype=np.float32),
-        "update": 12.0,
-        "index": 4,
-        "axis": 0,
-        "allow_negative_indices": False
+        "operand": np.zeros((5,), dtype=np.float32),
+        "update": float(-1.0),
+        "index": int(-100),
+        "axis": int(0),
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative float update, index at the last element
+    # Input 10: 1D array, axis specified as -1 (relative to 1D)
     input_dict = {
-        "operand": np.zeros(12, dtype=np.float32),
-        "update": -0.0001,
-        "index": -1,
-        "axis": 0,
-        "allow_negative_indices": True
+        "operand": np.zeros((10,), dtype=np.float64),
+        "update": float(7.7),
+        "index": int(5),
+        "axis": int(-1),
+        "allow_negative_indices": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.dynamic_update_index_in_dim_3"] = jax_lax_dynamic_update_index_in_dim_inputs()
+
+generated_inputs["jax.lax.dynamic_update_index_in_dim_3"] = (
+    dynamic_update_index_in_dim_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

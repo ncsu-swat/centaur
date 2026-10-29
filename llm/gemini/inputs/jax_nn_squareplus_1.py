@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def squareplus_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array with mixed values, standard b=4
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    # Input 1: 1D float32 with standard b=4
+    x = np.array([-3.0, -1.0, 0.0, 1.0, 3.0], dtype=np.float32)
     b = 4
-    list_of_inputs.append({"x": x, "b": b})
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
 
-    # Input 2: 2D array, b=1
-    x = np.random.randn(3, 3).astype(np.float32)
+    # Input 2: 2D float32 matrix with b=1
+    x = np.random.randn(3, 4).astype(np.float32)
     b = 1
-    list_of_inputs.append({"x": x, "b": b})
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
 
-    # Input 3: 3D array, b=10
-    x = np.random.randn(2, 2, 2).astype(np.float32)
-    b = 10
-    list_of_inputs.append({"x": x, "b": b})
-
-    # Input 4: float64 array, b=5
-    x = np.random.randn(5, 5).astype(np.float64)
-    b = 5
-    list_of_inputs.append({"x": x, "b": b})
-
-    # Input 5: float16 array, b=2
-    x = np.random.randn(4).astype(np.float16)
+    # Input 3: 3D float64 tensor with b=2
+    x = np.random.randn(2, 3, 5).astype(np.float64)
     b = 2
-    list_of_inputs.append({"x": x, "b": b})
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
 
-    # Input 6: Large 1D array, large integer b
-    x = np.linspace(-10.0, 10.0, 100).astype(np.float32)
-    b = 50
-    list_of_inputs.append({"x": x, "b": b})
+    # Input 4: 0D scalar float32 with b=5
+    x = np.array(2.5, dtype=np.float32)
+    b = 5
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
 
-    # Input 7: 0D array (scalar), b=3
-    x = np.array(1.5, dtype=np.float32)
-    b = 3
-    list_of_inputs.append({"x": x, "b": b})
+    # Input 5: 4D float32 tensor with b=10
+    x = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    b = 10
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
 
-    # Input 8: 4D array, b=8
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    b = 8
-    list_of_inputs.append({"x": x, "b": b})
-
-    # Input 9: Array with large values (positive and negative), b=20
-    x = np.array([-100.0, 100.0, -1000.0, 1000.0], dtype=np.float32)
-    b = 20
-    list_of_inputs.append({"x": x, "b": b})
-
-    # Input 10: 5D array, b=4
-    x = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
+    # Input 6: 1D float16 with b=4
+    x = np.linspace(-5.0, 5.0, 10, dtype=np.float16)
     b = 4
-    list_of_inputs.append({"x": x, "b": b})
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
+
+    # Input 7: 2D float64 with b=0
+    x = np.array([[-2.0, 0.0], [1.0, 3.0]], dtype=np.float64)
+    b = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
+
+    # Input 8: 5D float32 tensor with b=3
+    x = np.random.randn(1, 2, 2, 2, 2).astype(np.float32)
+    b = 3
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
+
+    # Input 9: Large magnitude values float32 with b=100
+    x = np.array([-1000.0, -100.0, 0.0, 100.0, 1000.0], dtype=np.float32)
+    b = 100
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
+
+    # Input 10: All zeros 1D float32 array with b=16
+    x = np.zeros((8,), dtype=np.float32)
+    b = 16
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
+
+    # Input 11: Negative values only with b=8
+    x = -np.abs(np.random.randn(4, 4).astype(np.float32))
+    b = 8
+    list_of_inputs.append(copy.deepcopy({"x": x, "b": b}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.squareplus_1"] = squareplus_inputs()
 

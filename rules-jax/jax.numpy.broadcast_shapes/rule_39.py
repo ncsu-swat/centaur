@@ -7,32 +7,43 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# shape cannot exceed maximum number of dimensions (Rule 39)
+# broadcasting a 3D shape with a 2D shape requires the last two dimensions to be compatible (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] <= 32) if n else
-          v["arg1_length"] <= 32)
+    s.add(Not(If(And(v["arg1_length"] == 3, v["arg2_length"] == 2), And((Or(Or(Select(v["arg1_values"], 1) == Select(v["arg2_values"], 0), Select(v["arg1_values"], 1) == 1), Select(v["arg2_values"], 0) == 1)), (Or(Or(Select(v["arg1_values"], 2) == Select(v["arg2_values"], 1), Select(v["arg1_values"], 2) == 1), Select(v["arg2_values"], 1) == 1))), True)) if n else
+          If(And(v["arg1_length"] == 3, v["arg2_length"] == 2), And((Or(Or(Select(v["arg1_values"], 1) == Select(v["arg2_values"], 0), Select(v["arg1_values"], 1) == 1), Select(v["arg2_values"], 0) == 1)), (Or(Or(Select(v["arg1_values"], 2) == Select(v["arg2_values"], 1), Select(v["arg1_values"], 2) == 1), Select(v["arg2_values"], 1) == 1))), True))
 )
 
-def rule_39_func(arg1, solver=None, neg=False):
+def rule_39_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1))):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+            return False
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_length': arg1_length})
+        rule_39(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_length': arg1['length']}, neg)
+        rule_39(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

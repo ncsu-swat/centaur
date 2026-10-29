@@ -7,72 +7,78 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def jax_numpy_trapezoid_inputs():
+def trapezoid_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32
-    y = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    x = np.array([0.0, 1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {"y": y, "x": x, "dx": 1, "axis": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 2D array, integrating along axis 1 (columns)
-    y = np.random.randn(3, 5).astype(np.float32)
-    x = np.array([0.0, 2.0, 5.0, 7.0, 10.0], dtype=np.float32)
-    input_dict = {"y": y, "x": x, "dx": 2, "axis": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 2D array, integrating along axis 0 (rows)
-    y = np.random.randn(4, 3).astype(np.float32)
-    x = np.array([0.0, 1.0, 3.0, 6.0], dtype=np.float32)
+    # Input 1: 1D float32 arrays, positive axis
+    y = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    x = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     input_dict = {"y": y, "x": x, "dx": 1, "axis": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, integrating along axis 2
-    y = np.random.randn(2, 3, 4).astype(np.float32)
-    x = np.array([1.0, 2.0, 4.0, 8.0], dtype=np.float32)
-    input_dict = {"y": y, "x": x, "dx": 3, "axis": 2}
+    # Input 2: 1D float64 arrays with negative values and irregular spacing
+    y = np.array([-2.5, 0.0, 3.5, -1.0, 4.2], dtype=np.float64)
+    x = np.array([-5.0, -2.0, 0.0, 1.5, 3.0], dtype=np.float64)
+    input_dict = {"y": y, "x": x, "dx": 2, "axis": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Same shape y and x
-    y = np.random.randn(3, 4).astype(np.float32)
-    x = np.tile(np.array([0.0, 1.0, 2.0, 3.0], dtype=np.float32), (3, 1))
+    # Input 3: 2D array, 1D x along axis=0
+    y = np.random.randn(6, 4).astype(np.float32)
+    x = np.linspace(0.0, 5.0, 6, dtype=np.float32)
+    input_dict = {"y": y, "x": x, "dx": 1, "axis": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D array, 1D x along axis=1
+    y = np.random.randn(5, 8).astype(np.float64)
+    x = np.linspace(1.0, 10.0, 8, dtype=np.float64)
+    input_dict = {"y": y, "x": x, "dx": -1, "axis": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D array, 2D x with identical shape, axis=-1
+    y = np.random.uniform(0.5, 2.0, size=(4, 5)).astype(np.float32)
+    x = np.tile(np.arange(5, dtype=np.float32), (4, 1))
     input_dict = {"y": y, "x": x, "dx": 1, "axis": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative values and float64
-    y = np.array([-1.0, -2.0, -3.0, -4.0], dtype=np.float64)
-    x = np.array([-3.0, -2.0, -1.0, 0.0], dtype=np.float64)
-    input_dict = {"y": y, "x": x, "dx": -1, "axis": 0}
+    # Input 6: 3D array, 1D x along axis=1
+    y = np.random.randn(3, 7, 4).astype(np.float32)
+    x = np.linspace(-1.0, 1.0, 7, dtype=np.float32)
+    input_dict = {"y": y, "x": x, "dx": 3, "axis": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Float64 1D array
-    y = np.array([1.0, 3.0, 5.0], dtype=np.float64)
-    x = np.array([0.0, 1.5, 3.0], dtype=np.float64)
-    input_dict = {"y": y, "x": x, "dx": 4, "axis": 0}
+    # Input 7: 3D array, 3D x with identical shape, axis=0
+    y = np.random.randn(4, 3, 2).astype(np.float64)
+    x = np.random.randn(4, 3, 2).astype(np.float64)
+    input_dict = {"y": y, "x": x, "dx": 1, "axis": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D array, axis 1, integers and float mix
-    y = np.random.randn(3, 5, 2).astype(np.float32)
-    x = np.arange(5, dtype=np.float32)
-    input_dict = {"y": y, "x": x, "dx": 1, "axis": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 4D array, axis -1
-    y = np.random.randn(2, 2, 2, 3).astype(np.float32)
-    x = np.array([1.0, 1.5, 2.0], dtype=np.float32)
-    input_dict = {"y": y, "x": x, "dx": 5, "axis": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D array, axis -2
-    y = np.random.randn(5, 5).astype(np.float32)
-    x = np.arange(5, dtype=np.float32)
+    # Input 8: 3D array, 1D x along negative axis=-2
+    y = np.random.randn(2, 6, 3).astype(np.float32)
+    x = np.arange(6, dtype=np.float32) * 0.5
     input_dict = {"y": y, "x": x, "dx": 2, "axis": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 4D array, 1D x along axis=2
+    y = np.random.randn(2, 3, 5, 2).astype(np.float32)
+    x = np.array([0.1, 0.4, 0.9, 1.6, 2.5], dtype=np.float32)
+    input_dict = {"y": y, "x": x, "dx": 1, "axis": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D integer arrays
+    y = np.array([1, 4, 9, 16, 25], dtype=np.int32)
+    x = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    input_dict = {"y": y, "x": x, "dx": 1, "axis": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D array, 1D x along axis=-2
+    y = np.random.randn(10, 3).astype(np.float64)
+    x = np.linspace(-3.0, 3.0, 10, dtype=np.float64)
+    input_dict = {"y": y, "x": x, "dx": -2, "axis": -2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.trapezoid_2"] = jax_numpy_trapezoid_inputs()
+generated_inputs["jax.numpy.trapezoid_2"] = trapezoid_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

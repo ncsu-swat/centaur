@@ -4,49 +4,37 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.numpy as jnp
+
 
 def result_type_inputs():
     list_of_inputs = []
 
-    # Input 1: int32
-    list_of_inputs.append({"args": "int32"})
+    dtype_strings = [
+        "int32",
+        "float32",
+        "bool",
+        "int8",
+        "uint8",
+        "int16",
+        "uint16",
+        "int64",
+        "float64",
+        "float16",
+        "bfloat16",
+        "complex64",
+        "complex128",
+        "uint32",
+        "uint64",
+    ]
 
-    # Input 2: float32
-    list_of_inputs.append({"args": "float32"})
-
-    # Input 3: int64
-    list_of_inputs.append({"args": "int64"})
-
-    # Input 4: float64
-    list_of_inputs.append({"args": "float64"})
-
-    # Input 5: bool
-    list_of_inputs.append({"args": "bool"})
-
-    # Input 6: uint8
-    list_of_inputs.append({"args": "uint8"})
-
-    # Input 7: int16
-    list_of_inputs.append({"args": "int16"})
-
-    # Input 8: float16
-    list_of_inputs.append({"args": "float16"})
-
-    # Input 9: complex64
-    list_of_inputs.append({"args": "complex64"})
-
-    # Input 10: uint32
-    list_of_inputs.append({"args": "uint32"})
-
-    # Input 11: int8
-    list_of_inputs.append({"args": "int8"})
-
-    # Input 12: complex128
-    list_of_inputs.append({"args": "complex128"})
+    for dt_str in dtype_strings:
+        input_dict = {"args": dt_str}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.result_type_2"] = result_type_inputs()
 

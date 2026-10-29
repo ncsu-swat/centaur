@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isscalar_inputs():
     list_of_inputs = []
 
-    # 1. int32
-    input_dict = {"element": np.dtype('int32')}
+    # Input 1: float32 dtype
+    input_dict = {"element": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 2. float32
-    input_dict = {"element": np.dtype('float32')}
+    # Input 2: float64 dtype
+    input_dict = {"element": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 3. bool
-    input_dict = {"element": np.dtype('bool')}
+    # Input 3: int32 dtype
+    input_dict = {"element": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 4. complex64
-    input_dict = {"element": np.dtype('complex64')}
+    # Input 4: int64 dtype
+    input_dict = {"element": np.dtype(np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 5. int8
-    input_dict = {"element": np.dtype('int8')}
+    # Input 5: uint8 dtype
+    input_dict = {"element": np.dtype(np.uint8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 6. int16
-    input_dict = {"element": np.dtype('int16')}
+    # Input 6: bool dtype
+    input_dict = {"element": np.dtype(np.bool_)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 7. uint8
-    input_dict = {"element": np.dtype('uint8')}
+    # Input 7: complex64 dtype
+    input_dict = {"element": np.dtype(np.complex64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 8. uint16
-    input_dict = {"element": np.dtype('uint16')}
+    # Input 8: complex128 dtype
+    input_dict = {"element": np.dtype(np.complex128)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 9. uint32
-    input_dict = {"element": np.dtype('uint32')}
+    # Input 9: float16 dtype
+    input_dict = {"element": np.dtype(np.float16)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 10. float16
-    input_dict = {"element": np.dtype('float16')}
+    # Input 10: int16 dtype
+    input_dict = {"element": np.dtype(np.int16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: uint32 dtype
+    input_dict = {"element": np.dtype(np.uint32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: int8 dtype
+    input_dict = {"element": np.dtype(np.int8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isscalar_8"] = isscalar_inputs()
 

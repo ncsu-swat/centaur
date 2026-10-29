@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# code_book must be 1-dimensional or 2-dimensional (Rule 2)
+# code_book must be a 1D or 2D tensor (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(Or(v["arg1_ndim"] == 1, v["arg1_ndim"] == 2)) if n else

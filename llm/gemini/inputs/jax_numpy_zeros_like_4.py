@@ -4,103 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def zeros_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, overridden with float32 and different 1D shape
-    a = np.random.randn(5).astype(np.float32)
+    # Input 1: 1D float array with shape override to 2D int32
     input_dict = {
-        "a": a,
-        "dtype": "float32",
-        "shape": (10,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 2D int32 array, overridden with int32 and different 2D shape
-    a = np.random.randint(-10, 10, size=(3, 3)).astype(np.int32)
-    input_dict = {
-        "a": a,
+        "a": np.array([1.0, 2.0, 3.0], dtype=np.float32),
         "dtype": "int32",
-        "shape": (2, 4)
+        "shape": (2, 3),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 array, overridden with float64 and different 3D shape
-    a = np.random.randn(2, 2, 2).astype(np.float64)
+    # Input 2: 2D integer array with 1D bool override
     input_dict = {
-        "a": a,
-        "dtype": "float64",
-        "shape": (3, 3, 3)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D bool array, overridden with bool and 2D shape
-    a = np.array([True, False, True], dtype=bool)
-    input_dict = {
-        "a": a,
+        "a": np.array([[1, 2], [3, 4]], dtype=np.int32),
         "dtype": "bool",
-        "shape": (2, 3)
+        "shape": (4,),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D int16 array, overridden with float32 and 1D shape
-    a = np.random.randint(-5, 5, size=(2, 2, 2, 2)).astype(np.int16)
+    # Input 3: 3D float array overridden with 3D float64
     input_dict = {
-        "a": a,
+        "a": np.ones((2, 3, 4), dtype=np.float32),
+        "dtype": "float64",
+        "shape": (3, 2, 4),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 0D scalar array overridden with 2D float32
+    input_dict = {
+        "a": np.array(5.0, dtype=np.float32),
         "dtype": "float32",
-        "shape": (8,)
+        "shape": (2, 2),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D complex64 array, overridden with complex64 and same shape
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
+    # Input 5: 1D complex array with complex64 dtype and scalar tuple shape
     input_dict = {
-        "a": a,
+        "a": np.array([1 + 2j, 3 + 4j], dtype=np.complex64),
         "dtype": "complex64",
-        "shape": (3, 3)
+        "shape": (),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 0D array (scalar), overridden with int64 and 2D shape
-    a = np.array(42).astype(np.int32)
+    # Input 6: 4D float array with same shape and uint8 dtype
     input_dict = {
-        "a": a,
-        "dtype": "int64",
-        "shape": (1, 5)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 5D float16 array, overridden with float16 and 3D shape
-    a = np.random.randn(1, 1, 1, 1, 5).astype(np.float16)
-    input_dict = {
-        "a": a,
-        "dtype": "float16",
-        "shape": (2, 2, 2)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D uint8 array, overridden with uint8 and 1D shape
-    a = np.random.randint(0, 255, size=(4, 4)).astype(np.uint8)
-    input_dict = {
-        "a": a,
+        "a": np.random.randn(2, 2, 3, 3).astype(np.float32),
         "dtype": "uint8",
-        "shape": (16,)
+        "shape": (2, 2, 3, 3),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 3D int8 array, overridden with int32 and 4D shape
-    a = np.random.randint(-100, 100, size=(1, 2, 3)).astype(np.int8)
+    # Input 7: Boolean array overridden with int64 and 1D shape
     input_dict = {
-        "a": a,
-        "dtype": "int32",
-        "shape": (1, 2, 3, 4)
+        "a": np.array([[True, False], [False, True]], dtype=np.bool_),
+        "dtype": "int64",
+        "shape": (10,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Negative float values, reshaped to a higher-dimensional shape
+    input_dict = {
+        "a": np.array([-1.5, -2.5, -3.5], dtype=np.float32),
+        "dtype": "float32",
+        "shape": (1, 3, 1),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large integer array overridden with int16 and empty shape
+    input_dict = {
+        "a": np.arange(12, dtype=np.int64).reshape(3, 4),
+        "dtype": "int16",
+        "shape": (0,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 2D array with 5D shape and float16 dtype
+    input_dict = {
+        "a": np.zeros((3, 3), dtype=np.float32),
+        "dtype": "float16",
+        "shape": (1, 2, 1, 3, 2),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Complex128 array with int8 dtype
+    input_dict = {
+        "a": np.array([[-1 - 1j]], dtype=np.complex128),
+        "dtype": "int8",
+        "shape": (5, 5),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.zeros_like_4"] = zeros_like_inputs()
 

@@ -4,95 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_inputs():
+
+def cauchy_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive scalars
-    input_dict = {
-        "x": int(2),
-        "loc": int(1),
-        "scale": int(3)
-    }
+    # Input 1: Standard values at median
+    input_dict = {"x": int(0), "loc": int(0), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Zero and negatives
-    input_dict = {
-        "x": int(-5),
-        "loc": int(-2),
-        "scale": int(1)
-    }
+    # Input 2: Positive x, standard loc and scale
+    input_dict = {"x": int(1), "loc": int(0), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Numpy int32 scalars
-    input_dict = {
-        "x": np.int32(10),
-        "loc": np.int32(0),
-        "scale": np.int32(5)
-    }
+    # Input 3: Negative x, standard loc and scale
+    input_dict = {"x": int(-1), "loc": int(0), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Numpy int64 scalars
-    input_dict = {
-        "x": np.int64(-1),
-        "loc": np.int64(3),
-        "scale": np.int64(10)
-    }
+    # Input 4: Shifted loc and scaled
+    input_dict = {"x": int(5), "loc": int(2), "scale": int(3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D numpy array of integers
-    input_dict = {
-        "x": np.array([1, 2, 3], dtype=np.int32),
-        "loc": np.array([0, 1, 2], dtype=np.int32),
-        "scale": np.array([1, 2, 3], dtype=np.int32)
-    }
+    # Input 5: Negative loc and negative x
+    input_dict = {"x": int(-10), "loc": int(-5), "scale": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D numpy array of integers
-    input_dict = {
-        "x": np.array([[1, -2], [3, -4]], dtype=np.int64),
-        "loc": np.array([[0, 1], [-1, 2]], dtype=np.int64),
-        "scale": np.array([[2, 3], [1, 4]], dtype=np.int64)
-    }
+    # Input 6: Larger scale and larger positive x
+    input_dict = {"x": int(100), "loc": int(0), "scale": int(10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Broadcasting scalar loc/scale with 1D array x
-    input_dict = {
-        "x": np.array([-10, 0, 10], dtype=np.int32),
-        "loc": int(0),
-        "scale": int(5)
-    }
+    # Input 7: Far left tail
+    input_dict = {"x": int(-50), "loc": int(50), "scale": int(25)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Broadcasting 1D array with scalar scale and 2D x
-    input_dict = {
-        "x": np.array([[1, 2], [3, 4]], dtype=np.int32),
-        "loc": np.array([1, 2], dtype=np.int32),
-        "scale": int(2)
-    }
+    # Input 8: Zero x with negative loc
+    input_dict = {"x": int(0), "loc": int(-10), "scale": int(5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D numpy array of integers
-    input_dict = {
-        "x": np.ones((2, 2, 2), dtype=np.int32) * 5,
-        "loc": np.zeros((2, 2, 2), dtype=np.int32),
-        "scale": np.ones((2, 2, 2), dtype=np.int32) * 2
-    }
+    # Input 9: x equals loc with unit scale
+    input_dict = {"x": int(7), "loc": int(7), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D numpy array with larger integers
-    input_dict = {
-        "x": np.array([100, 200, 300], dtype=np.int64),
-        "loc": np.array([50, 100, 150], dtype=np.int64),
-        "scale": np.array([10, 20, 30], dtype=np.int64)
-    }
+    # Input 10: Far negative tail with large scale
+    input_dict = {"x": int(-1000), "loc": int(0), "scale": int(100)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: All parameters identical positive integers
+    input_dict = {"x": int(42), "loc": int(42), "scale": int(42)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.cauchy.cdf_3"] = generate_inputs()
+
+generated_inputs["jax.scipy.stats.cauchy.cdf_3"] = cauchy_cdf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

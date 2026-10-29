@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# lhs_scales second dimension must match lhs second dimension (Rule 10)
+# scales contracting dimension must be positive and not exceed tensor contracting dimension (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg2_shape"], 1) == Select(v["arg1_shape"], 1)) if n else
-          Select(v["arg2_shape"], 1) == Select(v["arg1_shape"], 1))
+    s.add(Not(And(Select(v["arg2_shape"], 2) > 0, Select(v["arg2_shape"], 2) <= Select(v["arg1_shape"], 2))) if n else
+          And(Select(v["arg2_shape"], 2) > 0, Select(v["arg2_shape"], 2) <= Select(v["arg1_shape"], 2)))
 )
 
 def rule_10_func(arg1, arg2, solver=None, neg=False):

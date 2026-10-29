@@ -4,53 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def reciprocal_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, simple positive numbers
-    x = np.array([1.0, 2.0, 4.0, 8.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 0D scalar float32
+    x = np.array(2.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array with positive and negative numbers
-    x = np.array([[-0.5, 0.5], [-2.0, 2.0]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array float32 with positive and negative values
+    x = np.array([-4.0, -2.0, -0.5, 0.5, 2.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 0D float32 array (scalar tensor)
-    x = np.array(0.25, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array float64
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float32 array
-    x = np.random.uniform(0.5, 10.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D array float16
+    x = np.array([0.1, 0.2, 0.5, 1.0, 10.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D complex64 array
-    x = np.array([1.0 + 1.0j, 2.0 - 3.0j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D array float32
+    x = np.random.uniform(1.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D float32 array, small positive values
-    x = np.random.uniform(0.01, 0.1, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D array complex64
+    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, 0.5 - 1.5j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D float32 array, large values
-    x = np.random.uniform(100.0, 1000.0, size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D array complex128
+    x = np.array(
+        [[2.0 - 1.0j, 3.0 + 0.5j], [-1.0 + 2.0j, 4.0 - 4.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float16 array
-    x = np.array([0.1, 0.2, 0.5, 1.0], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D array float32
+    x = np.random.uniform(-10.0, -1.0, size=(2, 2, 3, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D complex128 array
-    x = np.array([[1.0 + 2.0j, -1.0 - 2.0j], [3.0, 4.0j]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Large values float64
+    x = np.array([1e5, 1e10, -1e8, 2.5e6], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D float64 array with negative values
-    x = np.random.uniform(-5.0, -0.1, size=(2, 1, 3, 1, 2)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 5D array float32
+    x = np.ones((1, 2, 1, 3, 2), dtype=np.float32) * 5.0
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array small values float64
+    x = np.array([1e-4, -2e-5, 3e-6, -4e-7], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.reciprocal"] = reciprocal_inputs()
 

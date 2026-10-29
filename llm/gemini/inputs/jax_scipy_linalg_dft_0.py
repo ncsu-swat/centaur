@@ -4,93 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dft_inputs():
     list_of_inputs = []
 
-    # Input 1: size 2, sqrtn scaling, complex64
+    # Input 1
     input_dict = {
-        'n': 2,
-        'scale': 'sqrtn',
-        'dtype': np.complex64
+        "n": int(1),
+        "scale": "sqrtn",
+        "dtype": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: size 4, n scaling, complex128
+    # Input 2
     input_dict = {
-        'n': 4,
-        'scale': 'n',
-        'dtype': np.complex128
+        "n": int(2),
+        "scale": "n",
+        "dtype": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: size 8, sqrtn scaling, complex128
+    # Input 3
     input_dict = {
-        'n': 8,
-        'scale': 'sqrtn',
-        'dtype': np.complex128
+        "n": int(3),
+        "scale": "sqrtn",
+        "dtype": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: size 16, n scaling, complex64
+    # Input 4
     input_dict = {
-        'n': 16,
-        'scale': 'n',
-        'dtype': np.complex64
+        "n": int(4),
+        "scale": "n",
+        "dtype": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: size 1, sqrtn scaling, complex64
+    # Input 5
     input_dict = {
-        'n': 1,
-        'scale': 'sqrtn',
-        'dtype': np.complex64
+        "n": int(5),
+        "scale": "sqrtn",
+        "dtype": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: size 3, n scaling, complex128
+    # Input 6
     input_dict = {
-        'n': 3,
-        'scale': 'n',
-        'dtype': np.complex128
+        "n": int(8),
+        "scale": "n",
+        "dtype": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: size 5, sqrtn scaling, complex128
+    # Input 7
     input_dict = {
-        'n': 5,
-        'scale': 'sqrtn',
-        'dtype': np.complex128
+        "n": int(10),
+        "scale": "sqrtn",
+        "dtype": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: size 10, n scaling, complex64
+    # Input 8
     input_dict = {
-        'n': 10,
-        'scale': 'n',
-        'dtype': np.complex64
+        "n": int(16),
+        "scale": "n",
+        "dtype": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: size 32, sqrtn scaling, complex64
+    # Input 9
     input_dict = {
-        'n': 32,
-        'scale': 'sqrtn',
-        'dtype': np.complex64
+        "n": int(32),
+        "scale": "sqrtn",
+        "dtype": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: size 64, n scaling, complex128
+    # Input 10
     input_dict = {
-        'n': 64,
-        'scale': 'n',
-        'dtype': np.complex128
+        "n": int(64),
+        "scale": "n",
+        "dtype": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.dft"] = dft_inputs()
 

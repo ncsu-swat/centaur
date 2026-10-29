@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For list shape, the sharding specification length cannot exceed the number of shape dimensions (Rule 67)
+# full sharding tuple rank matching list shape rank (Rule 67)
 
 rule_67 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_length"] <= v["arg1_length"], And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)]))) if n else
-          And(v["arg2_length"] <= v["arg1_length"], And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])))
+    s.add(Not(And(v["arg2_length"] == v["arg1_length"], And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)]))) if n else
+          And(v["arg2_length"] == v["arg1_length"], And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])))
 )
 
 def rule_67_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_67_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, tuple) and all(isinstance(e, str) for e in arg2)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
@@ -38,9 +38,9 @@ def rule_67_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 67
-        rule_67(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length, 'arg2_length': arg2_length})
+        rule_67(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_67(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length'], 'arg2_length': arg2['length']}, neg)
+        rule_67(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_length': arg2['length']}, neg)

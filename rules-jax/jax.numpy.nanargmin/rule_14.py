@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis bounds for a 4D input tensor (Rule 14)
+# non-negative axis must be strictly less than tensor rank, otherwise within valid negative bounds (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 4, And(v["arg2_value"] >= 0 - 4, v["arg2_value"] < 4), True)) if n else
-          If(v["arg1_ndim"] == 4, And(v["arg2_value"] >= 0 - 4, v["arg2_value"] < 4), True))
+    s.add(Not(If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] >= 0 - v["arg1_ndim"])) if n else
+          If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] >= 0 - v["arg1_ndim"]))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):

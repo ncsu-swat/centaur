@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor x must have a boolean or integer dtype, which corresponds to type indices 0 to 5 (Rule 4)
+# input tensor must be at least 1-dimensional and have boolean or integer dtype (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] <= 5) if n else
-          v["arg1_dtype"] <= 5)
+    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg1_dtype"] <= 5)) if n else
+          And(v["arg1_ndim"] >= 1, v["arg1_dtype"] <= 5))
 )
 
 def rule_4_func(arg1, solver=None, neg=False):
@@ -24,15 +24,17 @@ def rule_4_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
+        arg1_ndim = Int('arg1_ndim')
         arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
+        solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 4
-        rule_4(solver, {'arg1_dtype': arg1_dtype})
+        rule_4(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_4(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_4(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# a float multiplied by three is not equal to itself multiplied by three plus one (Rule 30)
+# Boolean scalar input consistency check (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] * 3 != v["arg1_value"] * 3 + 1) if n else
-          v["arg1_value"] * 3 != v["arg1_value"] * 3 + 1)
+    s.add(Not(If(v["arg1_value"] == False, v["arg1_value"] != True, True)) if n else
+          If(v["arg1_value"] == False, v["arg1_value"] != True, True))
 )
 
 def rule_30_func(arg1, solver=None, neg=False):
@@ -19,12 +19,12 @@ def rule_30_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, bool):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_value = Bool('arg1_value')
 
         # Value assignments
         solver.add(arg1_value == arg1)

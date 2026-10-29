@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Valid non-complex numeric data types for both inputs (Rule 2)
+# input tensors must have matching data types (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] <= 8, v["arg2_dtype"] <= 8)) if n else
-          And(v["arg1_dtype"] <= 8, v["arg2_dtype"] <= 8))
+    s.add(Not(v["arg1_dtype"] == v["arg2_dtype"]) if n else
+          v["arg1_dtype"] == v["arg2_dtype"])
 )
 
 def rule_2_func(arg1, arg2, solver=None, neg=False):

@@ -4,53 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def is_finite_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D float32 array with finite values
-    x = np.array([-1.2, 0.0, 3.4, 5.6], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with finite, inf, and nan values
+    x = np.array([0.0, -1.5, np.inf, -np.inf, np.nan, 3.14], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D float32 array containing inf, -inf, and nan
-    x = np.array([1.0, np.inf, -np.inf, np.nan, 2.3], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 3: 2D float64 array with random normal values
-    x = np.random.randn(3, 4).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: 3D float32 array containing nan and inf values
-    x = np.array([[[1.0, np.nan], [np.inf, 4.0]], [[-np.inf, 6.0], [7.0, 8.0]]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: 1D float16 array with small numbers
-    x = np.array([1e-3, -2e-4, 0.0], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 6: 0D float32 array (scalar tensor) with finite value
+    # Input 2: 0D scalar float32 (finite)
     x = np.array(42.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 0D float32 array (scalar tensor) with nan
-    x = np.array(np.nan, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar float64 (infinite)
+    x = np.array(np.inf, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D float64 array with random uniform values
-    x = np.random.uniform(-10.0, 10.0, (2, 2, 3, 3)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 2D float64 matrix with various values
+    x = np.array(
+        [[1.0, np.nan], [-np.inf, 0.0], [np.inf, -100.5]], dtype=np.float64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D float32 array with large finite values and infinities
-    x = np.array([[3.4028235e+38, -3.4028235e+38], [np.inf, -np.inf]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D float16 array
+    x = np.array([-np.inf, -1.0, 0.0, 1.0, np.inf, np.nan], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D float16 array of zeros
-    x = np.zeros((2, 1, 2, 1, 3), dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 3D float32 tensor
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    x[0, 1, 2] = np.inf
+    x[1, 2, 3] = np.nan
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 7: Empty 1D float32 array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: 4D float32 tensor with all finite numbers
+    x = np.zeros((2, 2, 3, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 2D float64 array with extreme values
+    x = np.array(
+        [[1e308, -1e308], [np.finfo(np.float64).tiny, -0.0]], dtype=np.float64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 1D float32 array with all NaN values
+    x = np.full((5,), np.nan, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D float64 array with subnormal and zero values
+    x = np.array([[[0.0, -0.0], [1e-320, -1e-320]]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.is_finite"] = is_finite_inputs()
 

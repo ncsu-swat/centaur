@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# polynomial coefficients p must be a 1-dimensional tensor of non-zero length (Rule 1)
+# polynomial coefficients array p must be 1-dimensional with at least one element (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0)) if n else
-          And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0))
+    s.add(Not(And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) >= 1)) if n else
+          And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) >= 1))
 )
 
 def rule_1_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_1_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 1
-        rule_1(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_1(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_1(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_1(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

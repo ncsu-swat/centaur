@@ -4,100 +4,119 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import jax
-import numpy as np
 import copy
+import jax
 from jax.sharding import Mesh, PartitionSpec
+import numpy as np
 
-# Set up global mesh context to allow PartitionSpec usage
-devices = jax.devices()
-mesh = Mesh(np.array(devices[:1]), ('x',))
-jax.set_mesh(mesh)
+# Set up active mesh context for PartitionSpec out_sharding
+_devices = np.array(jax.devices())
+_mesh = Mesh(_devices, ("x",))
+_mesh_ctx = jax.set_mesh(_mesh)
+_mesh_ctx.__enter__()
+
 
 def empty_inputs():
     list_of_inputs = []
 
-    # Input 1
+    # Input 1: shape 0, int32
     input_dict = {
-        "shape": 10,
-        "dtype": "float32",
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2
-    input_dict = {
-        "shape": 5,
+        "shape": 0,
         "dtype": "int32",
-        "out_sharding": PartitionSpec()
+        "out_sharding": PartitionSpec(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    input_dict = {
-        "shape": 100,
-        "dtype": "bool",
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4
+    # Input 2: shape 1, float32
     input_dict = {
         "shape": 1,
-        "dtype": "float64",
-        "out_sharding": PartitionSpec()
+        "dtype": "float32",
+        "out_sharding": PartitionSpec(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
+    # Input 3: shape 2, bool
     input_dict = {
-        "shape": 256,
-        "dtype": "int64",
-        "out_sharding": PartitionSpec()
+        "shape": 2,
+        "dtype": "bool",
+        "out_sharding": PartitionSpec(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
+    # Input 4: shape 4, float16
     input_dict = {
-        "shape": 3,
-        "dtype": "complex64",
-        "out_sharding": PartitionSpec()
+        "shape": 4,
+        "dtype": "float16",
+        "out_sharding": PartitionSpec(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    input_dict = {
-        "shape": 1024,
-        "dtype": "uint8",
-        "out_sharding": PartitionSpec()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8
+    # Input 5: shape 8, bfloat16
     input_dict = {
         "shape": 8,
-        "dtype": "float16",
-        "out_sharding": PartitionSpec()
+        "dtype": "bfloat16",
+        "out_sharding": PartitionSpec(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
+    # Input 6: shape 16, int8
     input_dict = {
         "shape": 16,
-        "dtype": "int16",
-        "out_sharding": PartitionSpec()
+        "dtype": "int8",
+        "out_sharding": PartitionSpec(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
+    # Input 7: shape 3, uint8
+    input_dict = {
+        "shape": 3,
+        "dtype": "uint8",
+        "out_sharding": PartitionSpec(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: shape 5, complex64
+    input_dict = {
+        "shape": 5,
+        "dtype": "complex64",
+        "out_sharding": PartitionSpec(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: shape 6, int16
+    input_dict = {
+        "shape": 6,
+        "dtype": "int16",
+        "out_sharding": PartitionSpec(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: shape 10, uint32
+    input_dict = {
+        "shape": 10,
+        "dtype": "uint32",
+        "out_sharding": PartitionSpec(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: shape 32, float64
     input_dict = {
         "shape": 32,
-        "dtype": "uint32",
-        "out_sharding": PartitionSpec()
+        "dtype": "float64",
+        "out_sharding": PartitionSpec(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: shape 64, complex128
+    input_dict = {
+        "shape": 64,
+        "dtype": "complex128",
+        "out_sharding": PartitionSpec(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.empty_4"] = empty_inputs()
 

@@ -4,93 +4,123 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arange_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple range
-    list_of_inputs.append({
+    # Input 1: Basic positive range with int32 dtype
+    input_dict = {
         "start": 0,
         "stop": 10,
         "step": 1,
-        "dtype": np.dtype('int32')
-    })
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Step of 2
-    list_of_inputs.append({
-        "start": 1,
+    # Input 2: Non-zero start and step > 1 with int64 dtype
+    input_dict = {
+        "start": 5,
+        "stop": 25,
+        "step": 5,
+        "dtype": np.dtype(np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Negative start to positive stop with float32 dtype
+    input_dict = {
+        "start": -10,
         "stop": 10,
         "step": 2,
-        "dtype": np.dtype('int64')
-    })
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative start
-    list_of_inputs.append({
-        "start": -10,
-        "stop": 0,
-        "step": 1,
-        "dtype": np.dtype('int32')
-    })
-
-    # Input 4: Negative step
-    list_of_inputs.append({
+    # Input 4: Decreasing range with negative step
+    input_dict = {
         "start": 10,
         "stop": 0,
         "step": -1,
-        "dtype": np.dtype('int32')
-    })
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Float32 output dtype
-    list_of_inputs.append({
-        "start": -5,
-        "stop": 5,
-        "step": 2,
-        "dtype": np.dtype('float32')
-    })
+    # Input 5: Range with both negative start and stop
+    input_dict = {
+        "start": -20,
+        "stop": -5,
+        "step": 3,
+        "dtype": np.dtype(np.int16),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large step
-    list_of_inputs.append({
+    # Input 6: Large step with float64 dtype
+    input_dict = {
         "start": 0,
         "stop": 100,
         "step": 10,
-        "dtype": np.dtype('int32')
-    })
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Negative start, stop, and step
-    list_of_inputs.append({
-        "start": -2,
-        "stop": -12,
-        "step": -2,
-        "dtype": np.dtype('int16')
-    })
+    # Input 7: Empty range (start == stop)
+    input_dict = {
+        "start": 0,
+        "stop": 0,
+        "step": 1,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Float64 output dtype
-    list_of_inputs.append({
-        "start": -100,
-        "stop": -50,
-        "step": 5,
-        "dtype": np.dtype('float64')
-    })
+    # Input 8: Negative step across zero
+    input_dict = {
+        "start": 100,
+        "stop": -100,
+        "step": -20,
+        "dtype": np.dtype(np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Unsigned int dtype
-    list_of_inputs.append({
-        "start": 5,
-        "stop": 15,
-        "step": 3,
-        "dtype": np.dtype('uint32')
-    })
+    # Input 9: Unsigned integer dtype
+    input_dict = {
+        "start": 1,
+        "stop": 8,
+        "step": 2,
+        "dtype": np.dtype(np.uint32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Downwards with int64
-    list_of_inputs.append({
+    # Input 10: 8-bit integer dtype
+    input_dict = {
+        "start": -50,
+        "stop": 50,
+        "step": 25,
+        "dtype": np.dtype(np.int8),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Unsigned 8-bit integer dtype
+    input_dict = {
+        "start": 0,
+        "stop": 5,
+        "step": 1,
+        "dtype": np.dtype(np.uint8),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Complex dtype
+    input_dict = {
         "start": -10,
-        "stop": -20,
-        "step": -3,
-        "dtype": np.dtype('int64')
-    })
+        "stop": -2,
+        "step": 1,
+        "dtype": np.dtype(np.complex64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arange_1"] = arange_inputs()
 

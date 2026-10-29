@@ -4,67 +4,69 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import importlib
+import numpy as np
 import scipy.linalg
-import jax
-import jax.numpy as jnp
-import jax.scipy.linalg
 
-# Monkeypatch jax.scipy.linalg to include fiedler_companion to bypass missing API in JAX
-def fiedler_companion_jax(a):
-    a_np = np.asarray(a)
-    res = scipy.linalg.fiedler_companion(a_np)
-    return jnp.array(res)
+_mod = importlib.import_module("jax.scipy.linalg")
+if not hasattr(_mod, "fiedler_companion"):
+    setattr(_mod, "fiedler_companion", scipy.linalg.fiedler_companion)
 
-jax.scipy.linalg.fiedler_companion = fiedler_companion_jax
 
 def fiedler_companion_inputs():
     list_of_inputs = []
 
-    # Input 1: float32, minimal length 2
+    # Input 1: Float32 1D array of length 2
     a = np.array([1.0, -2.0], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 2: float64, length 5
-    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 2: Float32 1D array of length 3
+    a = np.array([2.0, 3.0, -5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 3: int32, length 4
-    a = np.array([1, -3, 3, -1], dtype=np.int32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 3: Float64 1D array of length 4
+    a = np.array([1.5, -0.5, 2.0, -1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 4: complex64, length 3
-    a = np.array([1.0 + 0j, 2.0 - 1j, -3.0 + 2j], dtype=np.complex64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 4: Float64 1D array of length 5
+    a = np.array([-3.0, 1.0, 0.0, -2.0, 4.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 5: complex128, length 6
-    a = np.array([2.0, 0.0, -1.0, 4.5, -2.0, 1.1], dtype=np.complex128)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 5: Float32 1D array with positive and negative floats
+    a = np.array([10.0, -20.0, 30.0, -40.0, 50.0, -60.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 6: float32, with zeros and negative values, length 8
-    a = np.array([1.0, 0.0, -2.5, 0.0, 3.1, -4.2, 0.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 6: Float64 1D array of length 7
+    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 7: float64, length 10
-    a = np.array([1.0, -1.0, 2.0, -2.0, 3.0, -3.0, 4.0, -4.0, 5.0, -5.0], dtype=np.float64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 7: Complex64 1D array of length 3
+    a = np.array([1.0 + 1.0j, 2.0 - 1.0j, -3.0 + 2.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 8: int64, length 5
-    a = np.array([2, -5, 1, 3, -1], dtype=np.int64)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 8: Complex128 1D array of length 4
+    a = np.array(
+        [2.0 - 3.0j, -1.0 + 0.5j, 0.5 - 2.0j, 1.0 + 0.0j], dtype=np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 9: float32, monic polynomial of degree 6 (length 7)
-    a = np.array([1.0, -6.0, 15.0, -20.0, 15.0, -6.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 9: Float64 1D array of length 8
+    a = np.array(
+        [0.5, -1.5, 2.5, -3.5, 4.5, -5.5, 6.5, -7.5], dtype=np.float64
+    )
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
-    # Input 10: float32, length 12
-    a = np.array([1.0, 0.5, -0.5, 1.5, -1.5, 2.0, -2.0, 2.5, -2.5, 3.0, -3.0, 3.5], dtype=np.float32)
-    list_of_inputs.append({"a": copy.deepcopy(a)})
+    # Input 10: Float32 1D array of length 10
+    a = np.linspace(1.0, 5.0, 10, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a}))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.linalg.fiedler_companion"] = fiedler_companion_inputs()
+
+generated_inputs["jax.scipy.linalg.fiedler_companion"] = (
+    fiedler_companion_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

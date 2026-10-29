@@ -4,104 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax._src.numpy.util as jax_util
-import jax._src.lax.lax as jax_lax
+import numpy as np
 
-# Monkeypatch check_arraylike to convert tuples to np.ndarrays during validation
-orig_check_arraylike = jax_util.check_arraylike
-
-def patched_check_arraylike(fun_name, *args):
-    safe_args = [np.array(arg) if isinstance(arg, tuple) else arg for arg in args]
-    return orig_check_arraylike(fun_name, *safe_args)
-
-jax_util.check_arraylike = patched_check_arraylike
-
-# Monkeypatch lax.asarray to handle tuples by converting them to np.ndarray
-orig_asarray = jax_lax.asarray
-
-def patched_asarray(x, *args, **kwargs):
-    if isinstance(x, tuple):
-        x = np.array(x)
-    return orig_asarray(x, *args, **kwargs)
-
-jax_lax.asarray = patched_asarray
 
 def insert_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, inserting rows, float32
-    arr = np.random.randn(5, 5).astype(np.float32)
-    obj = (1, 3)
-    values = np.random.randn(2, 5).astype(np.float32)
+    # Input 1: 1D int32 array, inserting a single element at index 2
+    arr = np.array([0, 1, 2, 3, 4], dtype=np.int32)
+    obj = np.array([2], dtype=np.int32)
+    values = np.array([99], dtype=np.int32)
     axis = 0
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
-    # Input 2: 2D array, inserting a single row at index 0, int32
-    arr = np.random.randint(0, 10, size=(4, 4)).astype(np.int32)
-    obj = (0,)
-    values = np.random.randint(0, 10, size=(1, 4)).astype(np.int32)
+    # Input 2: 1D float32 array, inserting multiple elements
+    arr = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    obj = np.array([1, 3], dtype=np.int32)
+    values = np.array([10.5, 20.5], dtype=np.float32)
     axis = 0
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
-    # Input 3: 3D array, inserting along axis 1, float64
-    arr = np.random.randn(3, 3, 3).astype(np.float64)
-    obj = (1, 2)
-    values = np.random.randn(3, 2, 3).astype(np.float64)
+    # Input 3: 2D int32 array, inserting columns (axis=1)
+    arr = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
+    obj = np.array([1, 3], dtype=np.int32)
+    values = np.array([[10, 11], [12, 13]], dtype=np.int32)
     axis = 1
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
-    # Input 4: 2D array, inserting multiple columns, float32
-    arr = np.random.randn(2, 6).astype(np.float32)
-    obj = (1, 3, 5)
-    values = np.random.randn(2, 3).astype(np.float32)
-    axis = 1
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
-
-    # Input 5: 3D array, inserting along axis 0, int16
-    arr = np.random.randint(-100, 100, size=(4, 2, 3)).astype(np.int16)
-    obj = (0, 2)
-    values = np.random.randint(-100, 100, size=(2, 2, 3)).astype(np.int16)
+    # Input 4: 2D float64 array, inserting rows (axis=0)
+    arr = np.arange(12, dtype=np.float64).reshape(3, 4)
+    obj = np.array([0, 2], dtype=np.int32)
+    values = np.ones((2, 4), dtype=np.float64)
     axis = 0
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
-    # Input 6: 2D array, inserting a single column, float32
-    arr = np.random.randn(3, 5).astype(np.float32)
-    obj = (2,)
-    values = np.random.randn(3, 1).astype(np.float32)
-    axis = 1
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    # Input 5: 2D array, inserting with negative axis (axis=-1)
+    arr = np.arange(6, dtype=np.int64).reshape(2, 3)
+    obj = np.array([1], dtype=np.int32)
+    values = np.array([[100], [200]], dtype=np.int64)
+    axis = -1
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
-    # Input 7: 1D array, inserting elements at multiple indices, float64
-    arr = np.random.randn(10).astype(np.float64)
-    obj = (2, 5, 8)
-    values = np.random.randn(3).astype(np.float64)
+    # Input 6: 3D float32 array, inserting along axis 0
+    arr = np.ones((2, 3, 4), dtype=np.float32)
+    obj = np.array([1], dtype=np.int32)
+    values = np.zeros((1, 3, 4), dtype=np.float32)
     axis = 0
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
-    # Input 8: 3D array, inserting along axis 2, float32
-    arr = np.random.randn(5, 5, 5).astype(np.float32)
-    obj = (1, 2, 3, 4)
-    values = np.random.randn(5, 5, 4).astype(np.float32)
+    # Input 7: 3D int32 array, inserting along axis 1
+    arr = np.arange(24, dtype=np.int32).reshape(2, 4, 3)
+    obj = np.array([0, 3], dtype=np.int32)
+    values = np.full((2, 2, 3), 7, dtype=np.int32)
+    axis = 1
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
+
+    # Input 8: 3D float64 array, inserting along axis 2
+    arr = np.zeros((3, 2, 2), dtype=np.float64)
+    obj = np.array([1, 2], dtype=np.int32)
+    values = np.ones((3, 2, 2), dtype=np.float64)
     axis = 2
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
-    # Input 9: 2D array, inserting multiple values at the same index, float32
-    arr = np.random.randn(2, 3).astype(np.float32)
-    obj = (0, 0)
-    values = np.random.randn(2, 2).astype(np.float32)
-    axis = 1
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
-
-    # Input 10: 2D array, inserting rows, int32
-    arr = np.random.randint(-50, 50, size=(6, 2)).astype(np.int32)
-    obj = (2, 4)
-    values = np.random.randint(-50, 50, size=(2, 2)).astype(np.int32)
+    # Input 9: 1D array, inserting at negative indices
+    arr = np.array([10, 20, 30, 40, 50], dtype=np.int32)
+    obj = np.array([-2, -1], dtype=np.int32)
+    values = np.array([999, 888], dtype=np.int32)
     axis = 0
-    list_of_inputs.append({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
+
+    # Input 10: 4D float32 array, inserting along negative axis (axis=-2)
+    arr = np.random.randn(2, 2, 3, 2).astype(np.float32)
+    obj = np.array([0], dtype=np.int32)
+    values = np.random.randn(2, 2, 1, 2).astype(np.float32)
+    axis = -2
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
+
+    # Input 11: 2D bool array, inserting columns
+    arr = np.array([[True, False], [False, True]], dtype=np.bool_)
+    obj = np.array([1], dtype=np.int32)
+    values = np.array([[True], [False]], dtype=np.bool_)
+    axis = 1
+    list_of_inputs.append(
+        copy.deepcopy({"arr": arr, "obj": obj, "values": values, "axis": axis})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.insert_4"] = insert_inputs()
 

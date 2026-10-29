@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# alpha float parameter must be in a standard positive range (Rule 23)
+# alpha float parameter is bounded within a valid non-negative range (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > 0, v["arg1_value"] <= 20)) if n else
-          And(v["arg1_value"] > 0, v["arg1_value"] <= 20))
+    s.add(Not(And(v["arg1_value"] >= 0.01, v["arg1_value"] <= 100.0)) if n else
+          And(v["arg1_value"] >= 0.01, v["arg1_value"] <= 100.0))
 )
 
 def rule_23_func(arg1, solver=None, neg=False):

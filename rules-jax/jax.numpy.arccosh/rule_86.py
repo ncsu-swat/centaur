@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input list must have a bounded length to prevent memory exhaustion (Rule 86)
+# numeric scalar input should fall in the range [1, 100] (Rule 86)
 
 rule_86 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] < 10000) if n else
-          v["arg1_length"] < 10000)
+    s.add(Not(And(1 <= v["arg1_value"], v["arg1_value"] <= 100)) if n else
+          And(1 <= v["arg1_value"], v["arg1_value"] <= 100))
 )
 
 def rule_86_func(arg1, solver=None, neg=False):
@@ -19,20 +19,18 @@ def rule_86_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, list) and all(isinstance(e, (float, np.floating)) for e in arg1))):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 86
-        rule_86(solver, {'arg1_length': arg1_length})
+        rule_86(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_86(solver, {'arg1_length': arg1['length']}, neg)
+        rule_86(solver, {'arg1_value': arg1['value']}, neg)

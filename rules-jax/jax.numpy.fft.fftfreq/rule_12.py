@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# returned frequency dtype must be float or complex (Rule 12)
+# sample spacing tensor d must have numerical real dtype and non-zero value (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 6, v["arg1_value"] <= 10)) if n else
-          And(v["arg1_value"] >= 6, v["arg1_value"] <= 10))
+    s.add(Not(And(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), (Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0)))) if n else
+          And(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), (Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0))))
 )
 
 def rule_12_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_12_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_dtype = Int('arg1_dtype')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 12
-        rule_12(solver, {'arg1_value': arg1_value})
+        rule_12(solver, {'arg1_range': arg1_range, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_12(solver, {'arg1_value': arg1['value']}, neg)
+        rule_12(solver, {'arg1_range': arg1['range'], 'arg1_dtype': arg1['dtype']}, neg)

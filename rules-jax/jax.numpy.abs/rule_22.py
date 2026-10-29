@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input list of integers must be of bounded length with elements larger than -10000 (Rule 22)
+# tensor input dimension rank is within supported bounds (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_length"] >= 1, v["arg1_length"] <= 10), And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) > -10000) for i in range(6)]))) if n else
-          And(And(v["arg1_length"] >= 1, v["arg1_length"] <= 10), And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) > -10000) for i in range(6)])))
+    s.add(Not(v["arg1_ndim"] <= 8) if n else
+          v["arg1_ndim"] <= 8)
 )
 
 def rule_22_func(arg1, solver=None, neg=False):
@@ -19,23 +19,20 @@ def rule_22_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 22
-        rule_22(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_22(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_22(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_22(solver, {'arg1_ndim': arg1['ndim']}, neg)

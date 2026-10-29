@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tuple of integers or floats should have a non-negative length (Rule 45)
+# scalar float argument restricted to half-precision exponent limits (Rule 45)
 
 rule_45 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] >= 0) if n else
-          v["arg1_length"] >= 0)
+    s.add(Not(And(v["arg1_value"] >= -10.0, v["arg1_value"] <= 10.0)) if n else
+          And(v["arg1_value"] >= -10.0, v["arg1_value"] <= 10.0))
 )
 
 def rule_45_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_45_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)) or (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1))):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 45
-        rule_45(solver, {'arg1_length': arg1_length})
+        rule_45(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_45(solver, {'arg1_length': arg1['length']}, neg)
+        rule_45(solver, {'arg1_value': arg1['value']}, neg)

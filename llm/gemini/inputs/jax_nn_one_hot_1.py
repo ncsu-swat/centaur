@@ -4,95 +4,160 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_one_hot_inputs():
+
+def one_hot_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D array, float32, axis -1
-    list_of_inputs.append({
-        "x": np.array([0, 1, 2], dtype=np.int32),
-        "num_classes": 3,
-        "dtype": np.dtype('float32'),
-        "axis": -1
-    })
+    # Input 1: 1D int32 array, default-like axis=-1, float32 dtype
+    x = np.array([0, 1, 2, 1], dtype=np.int32)
+    num_classes = 3
+    dtype = np.dtype(np.float32)
+    axis = -1
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array with negative and out-of-bounds indices, float64, axis -1
-    list_of_inputs.append({
-        "x": np.array([-1, 0, 3, 5], dtype=np.int32),
-        "num_classes": 4,
-        "dtype": np.dtype('float64'),
-        "axis": -1
-    })
+    # Input 2: 2D int32 array, axis=0, float64 dtype
+    x = np.array([[0, 2, 4], [1, 3, 0]], dtype=np.int32)
+    num_classes = 5
+    dtype = np.dtype(np.float64)
+    axis = 0
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, float32, axis -1
-    list_of_inputs.append({
-        "x": np.array([[0, 1], [2, 3]], dtype=np.int32),
-        "num_classes": 5,
-        "dtype": np.dtype('float32'),
-        "axis": -1
-    })
+    # Input 3: 1D int64 array with out-of-bounds indices, int32 dtype
+    x = np.array([-1, 0, 2, 4, 10], dtype=np.int64)
+    num_classes = 4
+    dtype = np.dtype(np.int32)
+    axis = 1
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array, float16, axis 0
-    list_of_inputs.append({
-        "x": np.array([[1, 2], [0, 1]], dtype=np.int32),
-        "num_classes": 3,
-        "dtype": np.dtype('float16'),
-        "axis": 0
-    })
+    # Input 4: 0D scalar array, axis=0, float32 dtype
+    x = np.array(1, dtype=np.int32)
+    num_classes = 2
+    dtype = np.dtype(np.float32)
+    axis = 0
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Scalar (0D array), float32, axis -1
-    list_of_inputs.append({
-        "x": np.array(2, dtype=np.int32),
-        "num_classes": 5,
-        "dtype": np.dtype('float32'),
-        "axis": -1
-    })
+    # Input 5: 3D int32 array, bool dtype, axis=2
+    x = np.random.randint(0, 6, size=(2, 3, 4), dtype=np.int32)
+    num_classes = 6
+    dtype = np.dtype(np.bool_)
+    axis = 2
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D array, float32, axis 1
-    list_of_inputs.append({
-        "x": np.array([[[0, 1], [2, 0]], [[1, 1], [0, 2]]], dtype=np.int32),
-        "num_classes": 3,
-        "dtype": np.dtype('float32'),
-        "axis": 1
-    })
+    # Input 6: 2D uint8 array, float16 dtype, negative axis
+    x = np.array([[1, 7], [3, 0], [2, 5]], dtype=np.uint8)
+    num_classes = 8
+    dtype = np.dtype(np.float16)
+    axis = -1
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D array, float64, axis 0
-    list_of_inputs.append({
-        "x": np.array([1, 0, 2], dtype=np.int64),
-        "num_classes": 4,
-        "dtype": np.dtype('float64'),
-        "axis": 0
-    })
+    # Input 7: 1D int16 array, uint8 dtype, axis=-2
+    x = np.array([0, 5, 2, 8, 1, 9], dtype=np.int16)
+    num_classes = 10
+    dtype = np.dtype(np.uint8)
+    axis = -2
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array, float32, negative axis
-    list_of_inputs.append({
-        "x": np.array([[2, 1, 0], [0, 1, 2]], dtype=np.int32),
-        "num_classes": 3,
-        "dtype": np.dtype('float32'),
-        "axis": -2
-    })
+    # Input 8: 3D int32 array, float32 dtype, axis=-1
+    x = np.random.randint(0, 4, size=(1, 2, 3), dtype=np.int32)
+    num_classes = 4
+    dtype = np.dtype(np.float32)
+    axis = -1
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large num_classes, 1D array, float32, axis -1
-    list_of_inputs.append({
-        "x": np.array([5, 12, 19], dtype=np.int32),
-        "num_classes": 20,
-        "dtype": np.dtype('float32'),
-        "axis": -1
-    })
+    # Input 9: 2D int64 array, num_classes=1, int64 dtype, axis=1
+    x = np.array([[0, -1], [0, 0]], dtype=np.int64)
+    num_classes = 1
+    dtype = np.dtype(np.int64)
+    axis = 1
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D array, float32, axis -1
-    list_of_inputs.append({
-        "x": np.random.randint(0, 5, size=(2, 2, 2, 2), dtype=np.int32),
-        "num_classes": 5,
-        "dtype": np.dtype('float32'),
-        "axis": -1
-    })
+    # Input 10: 4D int32 array, axis=-3, float32 dtype
+    x = np.random.randint(0, 3, size=(2, 1, 3, 2), dtype=np.int32)
+    num_classes = 3
+    dtype = np.dtype(np.float32)
+    axis = -3
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D int32 array, complex64 dtype, axis=0
+    x = np.array([0, 2, 6], dtype=np.int32)
+    num_classes = 7
+    dtype = np.dtype(np.complex64)
+    axis = 0
+    input_dict = {
+        "x": x,
+        "num_classes": num_classes,
+        "dtype": dtype,
+        "axis": axis,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.nn.one_hot_1"] = generate_one_hot_inputs()
+
+generated_inputs["jax.nn.one_hot_1"] = one_hot_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

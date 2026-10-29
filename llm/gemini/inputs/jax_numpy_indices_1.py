@@ -4,90 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def indices_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D dense grid with int32
-    list_of_inputs.append({
+    # Input 1: Standard 2D grid, dense, int32
+    input_dict = {
         "dimensions": (2, 3),
-        "dtype": np.dtype('int32'),
-        "sparse": False
-    })
+        "dtype": np.dtype(np.int32),
+        "sparse": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D sparse grid with int64
-    list_of_inputs.append({
-        "dimensions": (3, 4),
-        "dtype": np.dtype('int64'),
-        "sparse": True
-    })
+    # Input 2: Standard 2D grid, sparse, int32
+    input_dict = {
+        "dimensions": (2, 3),
+        "dtype": np.dtype(np.int32),
+        "sparse": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D dense grid with int16
-    list_of_inputs.append({
+    # Input 3: 1D grid, dense, int64
+    input_dict = {
         "dimensions": (5,),
-        "dtype": np.dtype('int16'),
-        "sparse": False
-    })
+        "dtype": np.dtype(np.int64),
+        "sparse": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D sparse grid with int32
-    list_of_inputs.append({
-        "dimensions": (2, 2, 2),
-        "dtype": np.dtype('int32'),
-        "sparse": True
-    })
+    # Input 4: 3D grid, dense, float32
+    input_dict = {
+        "dimensions": (3, 2, 4),
+        "dtype": np.dtype(np.float32),
+        "sparse": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D dense grid with unit dimensions
-    list_of_inputs.append({
-        "dimensions": (1, 5),
-        "dtype": np.dtype('uint32'),
-        "sparse": False
-    })
+    # Input 5: 3D grid, sparse, float64
+    input_dict = {
+        "dimensions": (2, 4, 3),
+        "dtype": np.dtype(np.float64),
+        "sparse": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D dense grid with int64
-    list_of_inputs.append({
-        "dimensions": (3, 1, 2),
-        "dtype": np.dtype('int64'),
-        "sparse": False
-    })
+    # Input 6: 4D grid, dense, int16
+    input_dict = {
+        "dimensions": (2, 1, 3, 2),
+        "dtype": np.dtype(np.int16),
+        "sparse": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D sparse grid with int16
-    list_of_inputs.append({
-        "dimensions": (10, 5),
-        "dtype": np.dtype('int16'),
-        "sparse": True
-    })
+    # Input 7: Empty dimensions tuple (0-D), dense, int32
+    input_dict = {
+        "dimensions": (),
+        "dtype": np.dtype(np.int32),
+        "sparse": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large 3D dense grid
-    list_of_inputs.append({
-        "dimensions": (4, 4, 4),
-        "dtype": np.dtype('int32'),
-        "sparse": False
-    })
+    # Input 8: Zero-sized dimension, sparse, uint32
+    input_dict = {
+        "dimensions": (0, 4),
+        "dtype": np.dtype(np.uint32),
+        "sparse": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D sparse grid with int32
-    list_of_inputs.append({
-        "dimensions": (6,),
-        "dtype": np.dtype('int32'),
-        "sparse": True
-    })
+    # Input 9: Single-element multi-dimensional grid, dense, uint8
+    input_dict = {
+        "dimensions": (1, 1, 1),
+        "dtype": np.dtype(np.uint8),
+        "sparse": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D sparse grid with int64
-    list_of_inputs.append({
-        "dimensions": (2, 3, 2, 3),
-        "dtype": np.dtype('int64'),
-        "sparse": True
-    })
+    # Input 10: Larger 2D grid, sparse, int64
+    input_dict = {
+        "dimensions": (10, 20),
+        "dtype": np.dtype(np.int64),
+        "sparse": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 2D dense grid with float32 (valid dtype for indexing in some contexts)
-    list_of_inputs.append({
-        "dimensions": (3, 3),
-        "dtype": np.dtype('float32'),
-        "sparse": False
-    })
+    # Input 11: 5D grid, sparse, int32
+    input_dict = {
+        "dimensions": (2, 1, 2, 1, 2),
+        "dtype": np.dtype(np.int32),
+        "sparse": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.indices_1"] = indices_inputs()
 

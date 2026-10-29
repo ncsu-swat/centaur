@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def mod_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 arrays
+    # Input 1: 1D integer arrays (positive)
     x1 = np.array([10, 20, 30, 40], dtype=np.int32)
-    x2 = np.array([3, 7, 9, 11], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    x2 = np.array([3, 7, 4, 6], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D int32 arrays
-    x1 = np.array([[10, 15], [20, 25]], dtype=np.int32)
-    x2 = np.array([[3, 4], [5, 6]], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: 1D integer arrays with negative values
+    x1 = np.array([-10, 15, -20, 25], dtype=np.int32)
+    x2 = np.array([3, -4, -6, 7], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: 1D int32 arrays with negative values in x1
-    x1 = np.array([-10, -20, 30, -40], dtype=np.int32)
-    x2 = np.array([3, 7, 9, 11], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 3: 0D scalar arrays
+    x1 = np.array(42.5, dtype=np.float32)
+    x2 = np.array(5.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: 1D int32 arrays with negative values in x2
-    x1 = np.array([10, 20, 30, 40], dtype=np.int32)
-    x2 = np.array([-3, -7, -9, -11], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 4: 2D float32 arrays of same shape
+    x1 = np.array([[5.5, 7.2], [9.8, 12.1]], dtype=np.float32)
+    x2 = np.array([[2.0, 3.1], [4.5, 5.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: Float32 arrays
-    x1 = np.array([5.5, 10.25, 15.75], dtype=np.float32)
-    x2 = np.array([2.0, 3.5, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 5: 2D broadcasting (3, 1) and (1, 4)
+    x1 = np.arange(1, 4, dtype=np.int64).reshape(3, 1)
+    x2 = np.arange(2, 6, dtype=np.int64).reshape(1, 4)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: Float32 arrays with negative values
-    x1 = np.array([-5.5, 10.25, -15.75], dtype=np.float32)
-    x2 = np.array([2.0, -3.5, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: Float64 arrays with negative numbers
+    x1 = np.array([[-3.5, 8.25], [-11.1, 14.7]], dtype=np.float64)
+    x2 = np.array([[1.5, -2.5], [3.0, -4.2]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: Broadcasting 2D array and 1D array
-    x1 = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int32)
-    x2 = np.array([3, 4, 5], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: 3D float32 arrays
+    x1 = np.random.uniform(5.0, 20.0, size=(2, 3, 4)).astype(np.float32)
+    x2 = np.random.uniform(1.0, 4.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Broadcasting 2D array and a 1D scalar-like array
-    x1 = np.array([[10, 20], [30, 40]], dtype=np.int32)
-    x2 = np.array([3], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: 1D int64 arrays
+    x1 = np.array([1000000000, 2000000000, 3000000000], dtype=np.int64)
+    x2 = np.array([3000, 7000, 4000], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Int64 3D arrays
-    x1 = np.arange(1, 9, dtype=np.int64).reshape((2, 2, 2))
-    x2 = np.array([[[3, 3], [3, 3]], [[3, 3], [3, 3]]], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 9: Broadcasting 3D with 1D
+    x1 = np.random.randint(10, 50, size=(2, 3, 4)).astype(np.int32)
+    x2 = np.array([2, 3, 5, 7], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Float64 arrays with large values
-    x1 = np.array([1e10, 2.5e10], dtype=np.float64)
-    x2 = np.array([3.0, 7.0], dtype=np.float64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 10: 4D arrays float32
+    x1 = np.random.uniform(10.0, 50.0, size=(2, 2, 3, 3)).astype(np.float32)
+    x2 = np.random.uniform(2.0, 6.0, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: Scalar arrays (0-D)
-    x1 = np.array(15, dtype=np.int32)
-    x2 = np.array(4, dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 11: 2D float64 with broadcasting scalar
+    x1 = np.array([[10.5, 20.5], [30.5, 40.5]], dtype=np.float64)
+    x2 = np.array(3.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.mod"] = mod_inputs()
 

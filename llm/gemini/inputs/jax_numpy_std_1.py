@@ -4,14 +4,24 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def std_inputs():
     list_of_inputs = []
 
-    def make_input(a, axis, dtype, ddof, keepdims, where, mean, correction):
-        return {
+    # Input 1: 1D array, axis=0, float32
+    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    axis = 0
+    dtype = np.float32
+    ddof = 0
+    keepdims = False
+    where = np.array([True, True, True, True, True], dtype=bool)
+    mean = np.array([3.0], dtype=np.float32)
+    correction = 0
+    list_of_inputs.append(
+        {
             "a": a,
             "axis": axis,
             "dtype": dtype,
@@ -19,120 +29,220 @@ def std_inputs():
             "keepdims": keepdims,
             "where": where,
             "mean": mean,
-            "correction": correction
+            "correction": correction,
         }
+    )
 
-    # Input 1: 2D array, axis=0, float32, ddof=0, keepdims=False
-    a = np.random.randn(4, 5).astype(np.float32)
+    # Input 2: 2D array, axis=0, keepdims=True, float64, correction=1
+    a = np.arange(12, dtype=np.float64).reshape(4, 3)
     axis = 0
+    dtype = np.float64
+    ddof = 0
+    keepdims = True
+    where = np.ones((4, 3), dtype=bool)
+    mean = np.mean(a, axis=0, keepdims=True)
+    correction = 1
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
+
+    # Input 3: 2D array, axis=1, keepdims=False, with some masked where values
+    a = np.array(
+        [[2.5, -1.0, 3.2], [0.0, 4.5, -2.1], [-3.3, 1.2, 5.0]],
+        dtype=np.float32,
+    )
+    axis = 1
     dtype = np.float32
     ddof = 0
     keepdims = False
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
+    where = np.array(
+        [[True, True, True], [True, True, True], [True, True, True]], dtype=bool
+    )
+    mean = np.mean(a, axis=1, keepdims=True).astype(np.float32)
+    correction = 0
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
 
-    # Input 2: 2D array, axis=1, float64, ddof=1, keepdims=True
-    a = np.random.randn(3, 6).astype(np.float64)
-    axis = 1
-    dtype = np.float64
-    ddof = 1
-    keepdims = True
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
-
-    # Input 3: 3D array, axis=2, float32, ddof=0, keepdims=True, with partial where
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    axis = 2
-    dtype = np.float32
-    ddof = 0
-    keepdims = True
-    where = np.random.choice([True, True, False], size=a.shape)
-    mean = np.mean(a, axis=axis, keepdims=True, where=where)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
-
-    # Input 4: 2D array, negative axis, float32, ddof=1, keepdims=False
-    a = np.random.randn(5, 5).astype(np.float32)
+    # Input 4: 3D array, axis=-1, keepdims=True, negative values
+    a = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
     axis = -1
     dtype = np.float32
-    ddof = 1
-    keepdims = False
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
-
-    # Input 5: 3D array, axis=0, float32, ddof=2, keepdims=True
-    a = np.random.randn(3, 4, 5).astype(np.float32)
-    axis = 0
-    dtype = np.float32
-    ddof = 2
-    keepdims = True
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
-
-    # Input 6: Float16 input, float32 output dtype, axis=1
-    a = np.random.randn(4, 4).astype(np.float16)
-    axis = 1
-    dtype = np.float32
     ddof = 0
     keepdims = True
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float16)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
+    where = np.ones((2, 3, 4), dtype=bool)
+    mean = np.mean(a, axis=-1, keepdims=True)
+    correction = 1
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
 
-    # Input 7: Larger dimensions, axis=1, ddof=1, keepdims=False
-    a = np.random.randn(10, 10, 10).astype(np.float32)
+    # Input 5: 3D array, axis=1, complex64
+    a = (
+        np.random.randn(3, 4, 2).astype(np.float32)
+        + 1j * np.random.randn(3, 4, 2).astype(np.float32)
+    ).astype(np.complex64)
     axis = 1
-    dtype = np.float32
-    ddof = 1
+    dtype = np.complex64
+    ddof = 0
     keepdims = False
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
+    where = np.ones((3, 4, 2), dtype=bool)
+    mean = np.mean(a, axis=1, keepdims=True)
+    correction = 0
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
 
-    # Input 8: 2D array, axis=0, float64, ddof=0, keepdims=True
-    a = np.random.randn(8, 2).astype(np.float64)
-    axis = 0
+    # Input 6: 4D array, axis=2, float64, correction=2
+    a = np.random.randn(2, 2, 5, 3).astype(np.float64)
+    axis = 2
     dtype = np.float64
     ddof = 0
     keepdims = True
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
+    where = np.ones((2, 2, 5, 3), dtype=bool)
+    mean = np.mean(a, axis=2, keepdims=True)
+    correction = 2
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
 
-    # Input 9: 2D array, axis=0, with partial where and ddof=1
-    a = np.random.randn(6, 6).astype(np.float32)
+    # Input 7: 2D integer input, output float32, axis=0
+    a = np.array(
+        [[10, 20, 30], [-10, -20, -30], [5, 15, 25]], dtype=np.int32
+    )
     axis = 0
     dtype = np.float32
-    ddof = 1
+    ddof = 0
     keepdims = False
-    where = np.random.choice([True, True, False], size=a.shape)
-    mean = np.mean(a, axis=axis, keepdims=True, where=where)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
+    where = np.ones((3, 3), dtype=bool)
+    mean = np.mean(a, axis=0, keepdims=True).astype(np.float32)
+    correction = 1
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
 
-    # Input 10: Simple 2D array, axis=1, ddof=0, keepdims=False, float64
-    a = np.random.randn(5, 3).astype(np.float64)
-    axis = 1
+    # Input 8: 1D array with where mask excluding an element
+    a = np.array([10.0, -10.0, 50.0, 20.0], dtype=np.float32)
+    axis = 0
+    dtype = np.float32
+    ddof = 0
+    keepdims = True
+    where = np.array([True, True, False, True], dtype=bool)
+    mean = np.array([20.0 / 3.0], dtype=np.float32)
+    correction = 0
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
+
+    # Input 9: 3D array, axis=0, keepdims=False, float16 cast to float32
+    a = np.ones((3, 2, 2), dtype=np.float16) * 4.0
+    axis = 0
+    dtype = np.float32
+    ddof = 0
+    keepdims = False
+    where = np.ones((3, 2, 2), dtype=bool)
+    mean = np.full((1, 2, 2), 4.0, dtype=np.float32)
+    correction = 0
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
+
+    # Input 10: 2D array, axis=-2, float64
+    a = np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float64)
+    axis = -2
     dtype = np.float64
     ddof = 0
     keepdims = False
-    where = np.ones_like(a, dtype=bool)
-    mean = np.mean(a, axis=axis, keepdims=True)
-    correction = None
-    list_of_inputs.append(make_input(a, axis, dtype, ddof, keepdims, where, mean, correction))
+    where = np.ones((3, 2), dtype=bool)
+    mean = np.mean(a, axis=-2, keepdims=True)
+    correction = 1
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "dtype": dtype,
+            "ddof": ddof,
+            "keepdims": keepdims,
+            "where": where,
+            "mean": mean,
+            "correction": correction,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.std_1"] = std_inputs()
 

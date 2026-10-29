@@ -4,53 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gammasgn_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of positive floats
-    x = np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 1: 0D scalar float32 positive
+    x = np.array(2.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array of negative floats (non-integers)
-    x = np.array([-0.5, -1.5, -2.5, -3.5], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 2: 0D scalar float64 negative non-integer
+    x = np.array(-1.5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D array with special values (+0, -0, inf, -inf, nan)
+    # Input 3: 1D array with positive values
+    x = np.array([0.5, 1.0, 2.0, 3.5, 10.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 4: 1D array with negative non-integer values
+    x = np.array([-0.5, -1.2, -2.7, -3.1], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 5: 1D array with special values (+0.0, -0.0, inf, -inf, nan)
     x = np.array([0.0, -0.0, np.inf, -np.inf, np.nan], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D array containing negative integers (should return nan)
-    x = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 6: 2D array with float32
+    x = np.linspace(-4.5, 4.5, 12, dtype=np.float32).reshape(3, 4)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 2D array of mixed floats
-    x = np.array([[1.2, -0.8], [-2.3, 3.1]], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 7: 2D array with float64
+    x = np.array(
+        [[-2.3, -1.8, -0.1], [0.1, 1.8, 2.3]],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 3D array
-    x = np.array([[[0.5, -1.5], [2.5, -3.5]], [[4.5, -5.5], [6.5, -7.5]]], dtype=np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 8: 3D array with various signs
+    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 0D array (scalar array)
-    x = np.array(-1.5, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 9: 4D array with float64
+    x = np.random.uniform(0.1, 10.0, size=(2, 2, 2, 3)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Float64 1D array
-    x = np.array([10.5, -10.5, 20.1, -20.1], dtype=np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 10: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Large values
-    x = np.array([100.0, -100.5, 500.2, -500.8], dtype=np.float32)
-    list_of_inputs.append({"x": x})
-
-    # Input 10: Array with very small non-zero values
-    x = np.array([1e-10, -1e-10, 1e-20, -1e-20], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 11: Negative integer values where NaN is expected
+    x = np.array([-1.0, -2.0, -3.0, -4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.gammasgn"] = gammasgn_inputs()
 

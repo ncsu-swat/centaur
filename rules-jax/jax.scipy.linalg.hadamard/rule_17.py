@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dtype of Hadamard matrix must be a signed numeric type, excluding bool, uint8, and str (Rule 17)
+# dtype must be a complex floating-point type (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_value"] != 0, v["arg1_value"] != 5), v["arg1_value"] != 11)) if n else
-          And(And(v["arg1_value"] != 0, v["arg1_value"] != 5), v["arg1_value"] != 11))
+    s.add(Not(And(9 <= v["arg1_value"], v["arg1_value"] <= 10)) if n else
+          And(9 <= v["arg1_value"], v["arg1_value"] <= 10))
 )
 
 def rule_17_func(arg1, solver=None, neg=False):

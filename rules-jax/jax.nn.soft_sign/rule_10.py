@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension of soft_sign input tensor should be at most 6 (Rule 10)
+# tensor rank should be between 1 and 4 (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 6) if n else
-          v["arg1_ndim"] <= 6)
+    s.add(Not(And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 4)) if n else
+          And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 4))
 )
 
 def rule_10_func(arg1, solver=None, neg=False):

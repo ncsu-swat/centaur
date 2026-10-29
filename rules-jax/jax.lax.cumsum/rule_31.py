@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# valid axis range for cumulative sum, supporting negative indexing (Rule 31)
+# for a 2D tensor, axis must be within range -2 to 1 (Rule 31)
 
 rule_31 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg1_ndim"] + v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else
-          If(v["arg2_value"] < 0, v["arg1_ndim"] + v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True)) if n else
+          If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True))
 )
 
 def rule_31_func(arg1, arg2, solver=None, neg=False):

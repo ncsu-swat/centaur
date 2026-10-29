@@ -4,83 +4,74 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def divmod_inputs():
     list_of_inputs = []
 
-    # Input 1: positive integer, 1D int32 array
-    input_dict = {
-        "x1": 10,
-        "x2": np.array([3, 4, 7], dtype=np.int32)
-    }
+    # Input 1: 1D int32 array
+    input_dict = {"x1": 10, "x2": np.array([3, 4, 7], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative integer, 1D int32 array
-    input_dict = {
-        "x1": -5,
-        "x2": np.array([1, 2, 3, 4], dtype=np.int32)
-    }
+    # Input 2: Negative integer dividend, 1D int64 array
+    input_dict = {"x1": -15, "x2": np.array([2, 4, 5, 8], dtype=np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: zero integer, 1D int32 array with negative values
-    input_dict = {
-        "x1": 0,
-        "x2": np.array([-3, -2, -1], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: positive integer, 2D int32 array
+    # Input 3: 2D float32 array
     input_dict = {
         "x1": 100,
-        "x2": np.array([[3, 7, 9], [11, 13, 17]], dtype=np.int32)
+        "x2": np.array([[2.5, 4.0], [5.0, 8.0]], dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: negative integer, 2D int64 array with negative values
-    input_dict = {
-        "x1": -50,
-        "x2": np.array([[-15, -20], [-25, -30]], dtype=np.int64)
-    }
+    # Input 4: Zero dividend, 1D int32 array
+    input_dict = {"x1": 0, "x2": np.array([1, 2, 3, 4], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: positive integer, 2D float32 array
-    input_dict = {
-        "x1": 12,
-        "x2": np.array([[1.5, 2.0], [3.5, 4.0]], dtype=np.float32)
-    }
+    # Input 5: Negative integer dividend, negative/positive divisors
+    input_dict = {"x1": -7, "x2": np.array([-3, -2, 2, 3], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: positive integer, 3D int32 array
-    input_dict = {
-        "x1": 7,
-        "x2": np.ones((2, 2, 2), dtype=np.int32) * 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: negative integer, 1D float64 array
-    input_dict = {
-        "x1": -15,
-        "x2": np.array([2.5, 3.5, 4.5], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: large positive integer, 3D int16 array
-    input_dict = {
-        "x1": 1000,
-        "x2": np.array([[[5, 10], [15, 20]]], dtype=np.int16)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: positive integer, 1-element 1D int32 array
+    # Input 6: 3D int32 array
     input_dict = {
         "x1": 42,
-        "x2": np.array([5], dtype=np.int32)
+        "x2": np.array([[[2, 3], [4, 5]], [[6, 7], [8, 9]]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 0D scalar array divisor
+    input_dict = {"x1": 17, "x2": np.array(5, dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Negative integer dividend, 2D float64 array
+    input_dict = {
+        "x1": -50,
+        "x2": np.array([[-10.5, 3.2], [-4.1, 7.8]], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D int64 array with larger integers
+    input_dict = {"x1": 1024, "x2": np.arange(1, 11, dtype=np.int64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D int32 array
+    input_dict = {
+        "x1": 33,
+        "x2": np.full((2, 2, 2, 2), fill_value=5, dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D float32 array
+    input_dict = {
+        "x1": 8,
+        "x2": np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.divmod_4"] = divmod_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor must have a numeric data type, and decimals must be non-negative (Rule 26)
+# half-precision float tensor with non-negative decimals (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg2_value"] >= 0, 1 <= v["arg1_dtype"]), v["arg1_dtype"] <= 10)) if n else
-          And(And(v["arg2_value"] >= 0, 1 <= v["arg1_dtype"]), v["arg1_dtype"] <= 10))
+    s.add(Not(And(v["arg1_dtype"] == 6, v["arg2_value"] >= 0)) if n else
+          And(v["arg1_dtype"] == 6, v["arg2_value"] >= 0))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):

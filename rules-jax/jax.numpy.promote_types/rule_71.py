@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# first argument is dtype and second is string, validating the string representation (Rule 71)
+# float32 dtype promoted with float32 string specifier (Rule 71)
 
 rule_71 = lambda s, v, n=False: (
-    s.add(Not(And((v["arg1_value"] == v["arg1_value"]), (Or(v["arg2_value"] == 38, v["arg2_value"] == 39)))) if n else
-          And((v["arg1_value"] == v["arg1_value"]), (Or(v["arg2_value"] == 38, v["arg2_value"] == 39))))
+    s.add(Not(And(v["arg1_value"] == 7, v["arg2_value"] == 38)) if n else
+          And(v["arg1_value"] == 7, v["arg2_value"] == 38))
 )
 
 def rule_71_func(arg1, arg2, solver=None, neg=False):

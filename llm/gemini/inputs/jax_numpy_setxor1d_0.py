@@ -4,113 +4,125 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def setxor1d_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D int arrays
+    # Input 1: Basic 1D int32 arrays with size and fill_value
     input_dict = {
         "ar1": np.array([1, 2, 3, 4], dtype=np.int32),
         "ar2": np.array([3, 4, 5, 6], dtype=np.int32),
         "assume_unique": False,
-        "size": 4,
-        "fill_value": np.array(0, dtype=np.int32)
+        "size": 6,
+        "fill_value": np.array(0, dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Arrays with negative values
+    # Input 2: 1D float32 arrays with negative numbers
     input_dict = {
-        "ar1": np.array([-1, -2, 0, 5], dtype=np.int32),
-        "ar2": np.array([-2, 5, 10], dtype=np.int32),
+        "ar1": np.array([-2.5, -1.0, 0.0, 1.5], dtype=np.float32),
+        "ar2": np.array([-1.0, 1.5, 2.0, 3.5], dtype=np.float32),
         "assume_unique": False,
         "size": 5,
-        "fill_value": np.array(-999, dtype=np.int32)
+        "fill_value": np.array(-99.0, dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Float arrays, assumed unique
+    # Input 3: Multi-dimensional arrays (flattened by setxor1d)
     input_dict = {
-        "ar1": np.array([1.0, 2.0, 3.5], dtype=np.float32),
-        "ar2": np.array([2.0, 3.5, 4.0], dtype=np.float32),
-        "assume_unique": True,
-        "size": 2,
-        "fill_value": np.array(0.0, dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 2D arrays (flattened by setxor1d)
-    input_dict = {
-        "ar1": np.array([[1, 2], [3, 4]], dtype=np.int32),
-        "ar2": np.array([[3, 4], [5, 6]], dtype=np.int32),
+        "ar1": np.array([[1, 2], [3, 4]], dtype=np.int64),
+        "ar2": np.array([[3, 4], [5, 6]], dtype=np.int64),
         "assume_unique": False,
-        "size": 6,
-        "fill_value": np.array(-1, dtype=np.int32)
+        "size": 4,
+        "fill_value": np.array(-1, dtype=np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Arrays with duplicate values
+    # Input 4: assume_unique=True with unique elements in each input
     input_dict = {
-        "ar1": np.array([1, 1, 2, 2, 3], dtype=np.int32),
-        "ar2": np.array([2, 3, 4, 4], dtype=np.int32),
-        "assume_unique": False,
-        "size": 3,
-        "fill_value": np.array(99, dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: uint8 arrays
-    input_dict = {
-        "ar1": np.array([10, 20, 30], dtype=np.uint8),
-        "ar2": np.array([30, 40, 50], dtype=np.uint8),
+        "ar1": np.array([10, 20, 30, 40], dtype=np.int32),
+        "ar2": np.array([30, 40, 50, 60], dtype=np.int32),
         "assume_unique": True,
         "size": 4,
-        "fill_value": np.array(0, dtype=np.uint8)
+        "fill_value": np.array(0, dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: int64 arrays with larger values
+    # Input 5: Duplicate values in input arrays with assume_unique=False
     input_dict = {
-        "ar1": np.array([100000, 200000], dtype=np.int64),
-        "ar2": np.array([200000, 300000], dtype=np.int64),
+        "ar1": np.array([1, 1, 2, 2, 3], dtype=np.int32),
+        "ar2": np.array([2, 3, 3, 4, 4], dtype=np.int32),
         "assume_unique": False,
-        "size": 10,
-        "fill_value": np.array(-1, dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: float64 arrays
-    input_dict = {
-        "ar1": np.array([0.1, 0.2, 0.3], dtype=np.float64),
-        "ar2": np.array([0.3, 0.4, 0.5], dtype=np.float64),
-        "assume_unique": True,
         "size": 3,
-        "fill_value": np.array(0.0, dtype=np.float64)
+        "fill_value": np.array(-1, dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Empty array as the first input
+    # Input 6: Boolean arrays
+    input_dict = {
+        "ar1": np.array([True, False, True], dtype=np.bool_),
+        "ar2": np.array([False, False], dtype=np.bool_),
+        "assume_unique": False,
+        "size": 2,
+        "fill_value": np.array(False, dtype=np.bool_),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Float64 arrays with size larger than result (padding required)
+    input_dict = {
+        "ar1": np.array([0.5, 1.5, 2.5], dtype=np.float64),
+        "ar2": np.array([1.5, 3.5], dtype=np.float64),
+        "assume_unique": True,
+        "size": 8,
+        "fill_value": np.array(np.nan, dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Empty array inputs
     input_dict = {
         "ar1": np.array([], dtype=np.int32),
         "ar2": np.array([1, 2, 3], dtype=np.int32),
         "assume_unique": False,
         "size": 5,
-        "fill_value": np.array(-1, dtype=np.int32)
+        "fill_value": np.array(0, dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Array with signed values and unique inputs
+    # Input 9: Disjoint sets
     input_dict = {
-        "ar1": np.array([100, -100, 50, -50], dtype=np.int32),
-        "ar2": np.array([50, -50, 25, -25], dtype=np.int32),
+        "ar1": np.array([1, 3, 5, 7], dtype=np.int32),
+        "ar2": np.array([2, 4, 6, 8], dtype=np.int32),
         "assume_unique": True,
-        "size": 6,
-        "fill_value": np.array(-999, dtype=np.int32)
+        "size": 8,
+        "fill_value": np.array(-1, dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Completely identical inputs (empty symmetric difference)
+    input_dict = {
+        "ar1": np.array([1, 2, 3, 4], dtype=np.int64),
+        "ar2": np.array([1, 2, 3, 4], dtype=np.int64),
+        "assume_unique": True,
+        "size": 4,
+        "fill_value": np.array(0, dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D input arrays
+    input_dict = {
+        "ar1": np.arange(8, dtype=np.int32).reshape(2, 2, 2),
+        "ar2": np.arange(4, 12, dtype=np.int32).reshape(2, 2, 2),
+        "assume_unique": False,
+        "size": 10,
+        "fill_value": np.array(999, dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.setxor1d"] = setxor1d_inputs()
 

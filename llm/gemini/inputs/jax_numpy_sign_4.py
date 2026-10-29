@@ -4,64 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.numpy as jnp
+import numpy as np
 
-# Patch jax.numpy.sign to convert list inputs to jax arrays automatically
-original_sign = jnp.sign
-
-def patched_sign(x, *args, **kwargs):
-    if isinstance(x, list):
-        x = jnp.array(x)
-    return original_sign(x, *args, **kwargs)
-
-jnp.sign = patched_sign
 
 def sign_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic list of floats
-    input_dict = {"x": [1.0, -2.5, 0.0, 3.14, -0.5]}
+    # Input 1: 1D array of integers (positive, negative, zero)
+    input_dict = {"x": np.array([0, -3, 7, -10, 15], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: List of integers with negative values
-    input_dict = {"x": [-10, 0, 5, -2, 100]}
+    # Input 2: 1D array of floats
+    input_dict = {"x": np.array([-2.5, 0.0, 3.14, -0.001, 100.2], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: List of complex numbers
-    input_dict = {"x": [3 + 4j, -1j, 0 + 0j, -5 + 12j]}
+    # Input 3: 2D array of integers
+    input_dict = {"x": np.array([[1, -1, 0], [-5, 8, -12]], dtype=np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D nested list
-    input_dict = {"x": [[1.0, -1.0, 0.0], [-2.0, 3.0, -4.0]]}
+    # Input 4: 2D array of floats
+    input_dict = {
+        "x": np.array([[-0.5, 1.2], [0.0, -9.9], [4.4, -3.3]], dtype=np.float64)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: List with infinity values
-    input_dict = {"x": [float('inf'), float('-inf'), 0.0, 1.0]}
+    # Input 5: 3D array of integers
+    input_dict = {
+        "x": np.array([[[1, -2], [3, -4]], [[-5, 6], [0, -8]]], dtype=np.int32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D nested list
-    input_dict = {"x": [[[1, -1], [2, -2]], [[3, -3], [4, -4]]]}
+    # Input 6: 1D array of complex numbers
+    input_dict = {
+        "x": np.array(
+            [1 + 0j, 3 + 4j, 0 + 5j, -2 - 2j, 0 + 0j], dtype=np.complex64
+        )
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: List with zeros and negative zero
-    input_dict = {"x": [-1.0, 0.0, 1.0, -0.0]}
+    # Input 7: 2D array of complex numbers
+    input_dict = {
+        "x": np.array([[1 + 1j, -1 - 1j], [0j, 3 - 4j]], dtype=np.complex128)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Nested list of complex numbers
-    input_dict = {"x": [[1j, -1j], [2 + 2j, -2 - 2j]]}
+    # Input 8: 1D array of int16
+    input_dict = {"x": np.array([-32000, 0, 32000, -1, 1], dtype=np.int16)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: List with very small float values
-    input_dict = {"x": [1e-15, -1e-15, 0.0, 1.0]}
+    # Input 9: 1D array with special float values (inf, -inf, nan)
+    input_dict = {
+        "x": np.array([np.inf, -np.inf, np.nan, 0.0, -0.0], dtype=np.float32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D list with mixed numeric types
-    input_dict = {"x": [-1, 2.5, -3, 4.2, 0]}
+    # Input 10: 1D array with single element
+    input_dict = {"x": np.array([-42.0], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D array of random floats
+    input_dict = {"x": np.random.randn(2, 3, 4, 5).astype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sign_4"] = sign_inputs()
 

@@ -4,89 +4,101 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax
+import numpy as np
+
 
 class PrecisionTuple(tuple):
-    def min(self, axis=None, out=None, **kwargs):
-        return self[0]
-    def max(self, axis=None, out=None, **kwargs):
-        return self[0]
+
+    def __array__(self, dtype=None, copy=None):
+        return np.array(list(self), dtype=object)
+
 
 def multi_dot_inputs():
     list_of_inputs = []
 
-    # Input 1: 3D array of shape (3, 5, 5), float32, precision: ("default", "default")
-    arrays = np.random.randn(3, 5, 5).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("default", "default"))
-    })
+    # Input 1: 3 square matrices (float32)
+    arrays = np.random.randn(3, 8, 8).astype(np.float32)
+    precision = PrecisionTuple(("default", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 2: 3D array of shape (4, 2, 2), float32, precision: ("high", "high")
-    arrays = np.random.randn(4, 2, 2).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("high", "high"))
-    })
+    # Input 2: 2 square matrices (float64)
+    arrays = np.random.randn(2, 16, 16).astype(np.float64)
+    precision = PrecisionTuple(("high", "high"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 3: 3D array of shape (3, 10, 10), float64, precision: ("highest", "highest")
+    # Input 3: 4 square matrices with negative values (float32)
+    arrays = np.random.uniform(-5.0, 5.0, size=(4, 6, 6)).astype(np.float32)
+    precision = PrecisionTuple(("highest", "highest"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
+
+    # Input 4: 5 small square matrices (float32)
+    arrays = np.random.randn(5, 4, 4).astype(np.float32)
+    precision = PrecisionTuple(("default", "high"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
+
+    # Input 5: 3 square matrices (float64)
     arrays = np.random.randn(3, 10, 10).astype(np.float64)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("highest", "highest"))
-    })
+    precision = PrecisionTuple(("high", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 4: 3D array of shape (5, 3, 3), float32, precision: ("default", "default")
-    arrays = np.random.randn(5, 3, 3).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("default", "default"))
-    })
+    # Input 6: 6 small square matrices (float32)
+    arrays = np.random.uniform(-2.0, 2.0, size=(6, 3, 3)).astype(np.float32)
+    precision = PrecisionTuple(("highest", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 5: 3D array of shape (2, 8, 8), float64, precision: ("high", "high")
-    arrays = np.random.randn(2, 8, 8).astype(np.float64)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("high", "high"))
-    })
+    # Input 7: 2 large square matrices (float32)
+    arrays = np.random.randn(2, 32, 32).astype(np.float32)
+    precision = PrecisionTuple(("default", "highest"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 6: 3D array of shape (3, 6, 6), float32, precision: ("highest", "highest")
-    arrays = np.random.randn(3, 6, 6).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("highest", "highest"))
-    })
+    # Input 8: 4 square matrices (float64)
+    arrays = np.random.randn(4, 5, 5).astype(np.float64)
+    precision = PrecisionTuple(("high", "highest"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 7: 3D array of shape (4, 4, 4), float32, precision: ("default", "default")
-    arrays = np.random.randn(4, 4, 4).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("default", "default"))
-    })
+    # Input 9: 3 square matrices with mixed positive/negative values (float32)
+    arrays = np.random.uniform(-10.0, 10.0, size=(3, 12, 12)).astype(
+        np.float32
+    )
+    precision = PrecisionTuple(("highest", "high"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 8: 3D array with negative/positive uniform values, precision: ("high", "high")
-    arrays = np.random.uniform(-2.0, 2.0, (3, 7, 7)).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("high", "high"))
-    })
+    # Input 10: 5 2x2 square matrices (float32)
+    arrays = np.random.randn(5, 2, 2).astype(np.float32)
+    precision = PrecisionTuple(("default", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
-    # Input 9: 3D array of shape (2, 12, 12), float32, precision: ("highest", "highest")
-    arrays = np.random.randn(2, 12, 12).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("highest", "highest"))
-    })
-
-    # Input 10: 3D array of shape (3, 9, 9), float32, precision: ("default", "default")
-    arrays = np.random.randn(3, 9, 9).astype(np.float32)
-    list_of_inputs.append({
-        "arrays": copy.deepcopy(arrays),
-        "precision": PrecisionTuple(("default", "default"))
-    })
+    # Input 11: 2 square matrices (float64)
+    arrays = np.random.uniform(-1.0, 1.0, size=(2, 20, 20)).astype(np.float64)
+    precision = PrecisionTuple(("high", "default"))
+    list_of_inputs.append(
+        copy.deepcopy({"arrays": arrays, "precision": precision})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.multi_dot_2"] = multi_dot_inputs()
 

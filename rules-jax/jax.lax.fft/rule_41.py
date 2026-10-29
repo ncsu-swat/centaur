@@ -7,16 +7,17 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input tensor dtype must match the expectations of the FFT type (Rule 41)
+# for 1D FFT, transformed dimension of input tensor matches the transform length specified in list (Rule 41)
 
 rule_41 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg2_value"] == 29, v["arg2_value"] == 30), Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8))) if n else
-          If(Or(v["arg2_value"] == 29, v["arg2_value"] == 30), Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10), Or(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7), v["arg1_dtype"] == 8)))
+    s.add(Not(If((And(v["arg2_value"] == 29, v["arg3_length"] == 1)), (And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg3_values"], 0))), True)) if n else
+          If((And(v["arg2_value"] == 29, v["arg3_length"] == 1)), (And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg3_values"], 0))), True))
 )
 
-def rule_41_func(arg1, arg2, solver=None, neg=False):
+def rule_41_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
@@ -24,20 +25,30 @@ def rule_41_func(arg1, arg2, solver=None, neg=False):
             return False
         if not isinstance(arg2, str):
             return False
+        if not (isinstance(arg3, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 41
-        rule_41(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_41(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_41(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_41(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

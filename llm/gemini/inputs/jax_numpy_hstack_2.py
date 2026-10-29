@@ -7,60 +7,103 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
+
 def hstack_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, float32, same size
-    tup1 = (np.random.randn(5).astype(np.float32), np.random.randn(5).astype(np.float32))
-    input_dict = {"tup": tup1, "dtype": np.dtype('float32')}
+    # Input 1: 1D arrays, shape (3,), float32
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    b = np.array([4.0, 5.0, 6.0], dtype=np.float32)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("float32"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D arrays, float32, same size (larger)
-    tup2 = (np.random.randn(10).astype(np.float32), np.random.randn(10).astype(np.float32))
-    input_dict = {"tup": tup2, "dtype": np.dtype('float32')}
+    # Input 2: 1D arrays with negative values, shape (4,), int32
+    a = np.array([-1, 0, 1, 2], dtype=np.int32)
+    b = np.array([2, -3, 4, 5], dtype=np.int32)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("int64"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D arrays with negative values, float64, same size
-    tup3 = (np.array([-1.5, -2.0, 3.5], dtype=np.float64), np.array([4.0, -5.5, -1.0], dtype=np.float64))
-    input_dict = {"tup": tup3, "dtype": np.dtype('float64')}
+    # Input 3: 2D arrays, shape (2, 3), float32
+    a = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    b = np.array([[7.0, 8.0, 9.0], [10.0, 11.0, 12.0]], dtype=np.float32)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("float32"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D arrays, float64, same size
-    tup4 = (np.random.randn(3, 4).astype(np.float64), np.random.randn(3, 4).astype(np.float64))
-    input_dict = {"tup": tup4, "dtype": np.dtype('float64')}
+    # Input 4: 2D arrays with negative values, shape (3, 2), float64
+    a = np.array([[-2.5, 1.0], [1.5, -0.5], [-0.5, 3.2]], dtype=np.float64)
+    b = np.array([[3.0, -1.0], [0.0, 2.2], [-4.1, 5.5]], dtype=np.float64)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("float64"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D arrays, int32, same size
-    tup5 = (np.random.randint(-10, 10, size=(2, 3)).astype(np.int32), np.random.randint(-10, 10, size=(2, 3)).astype(np.int32))
-    input_dict = {"tup": tup5, "dtype": np.dtype('int32')}
+    # Input 5: Three 2D arrays of shape (3, 2), int32
+    a = np.ones((3, 2), dtype=np.int32)
+    b = np.zeros((3, 2), dtype=np.int32)
+    c = np.full((3, 2), -7, dtype=np.int32)
+    input_dict = {
+        "tup": (a, b, c),
+        "dtype": np.dtype("int32"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D arrays, float32, same size
-    tup6 = (np.random.randn(2, 3, 4).astype(np.float32), np.random.randn(2, 3, 4).astype(np.float32))
-    input_dict = {"tup": tup6, "dtype": np.dtype('float32')}
+    # Input 6: 3D arrays, shape (2, 3, 4), float32
+    a = np.ones((2, 3, 4), dtype=np.float32)
+    b = np.full((2, 3, 4), 2.5, dtype=np.float32)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("float32"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D arrays with int16 dtype, same size, output dtype specified as int32
-    tup7 = (np.array([1, 2, 3, 4], dtype=np.int16), np.array([5, 6, 7, 8], dtype=np.int16))
-    input_dict = {"tup": tup7, "dtype": np.dtype('int32')}
+    # Input 7: 3D arrays, shape (3, 2, 2), int64
+    a = np.arange(12, dtype=np.int64).reshape((3, 2, 2))
+    b = np.arange(-12, 0, dtype=np.int64).reshape((3, 2, 2))
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("int64"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D arrays of length 1, float32, output dtype float64
-    tup8 = (np.array([1.0], dtype=np.float32), np.array([2.0], dtype=np.float32))
-    input_dict = {"tup": tup8, "dtype": np.dtype('float64')}
+    # Input 8: 4D arrays, shape (2, 2, 3, 2), float64
+    a = np.ones((2, 2, 3, 2), dtype=np.float64)
+    b = np.zeros((2, 2, 3, 2), dtype=np.float64)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("float64"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D arrays, float32, same size
-    tup9 = (np.random.randn(2, 2, 2, 2).astype(np.float32), np.random.randn(2, 2, 2, 2).astype(np.float32))
-    input_dict = {"tup": tup9, "dtype": np.dtype('float32')}
+    # Input 9: Boolean 1D arrays, shape (4,)
+    a = np.array([True, False, True, False], dtype=np.bool_)
+    b = np.array([False, False, True, True], dtype=np.bool_)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("bool"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D arrays, boolean, same size, output dtype int32
-    tup10 = (np.array([[True, False], [False, True]]), np.array([[True, True], [False, False]]))
-    input_dict = {"tup": tup10, "dtype": np.dtype('int32')}
+    # Input 10: 2D arrays, shape (4, 1), float32 to float64
+    a = np.array([[1.0], [2.0], [3.0], [4.0]], dtype=np.float32)
+    b = np.array([[-1.0], [-2.0], [-3.0], [-4.0]], dtype=np.float32)
+    input_dict = {
+        "tup": (a, b),
+        "dtype": np.dtype("float64"),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.hstack_2"] = hstack_inputs()
 

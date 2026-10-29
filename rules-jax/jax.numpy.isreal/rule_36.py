@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If input is a list of integers with at least two elements, the first element should be less than or equal to the second element (Rule 36)
+# non-empty list of booleans has valid boolean initial element (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_length"] > 1, Select(v["arg1_values"], 0) <= Select(v["arg1_values"], 1), True)) if n else
-          If(v["arg1_length"] > 1, Select(v["arg1_values"], 0) <= Select(v["arg1_values"], 1), True))
+    s.add(Not(And(v["arg1_length"] > 0, (Or(Select(v["arg1_values"], 0) == True, Select(v["arg1_values"], 0) == False)))) if n else
+          And(v["arg1_length"] > 0, (Or(Select(v["arg1_values"], 0) == True, Select(v["arg1_values"], 0) == False))))
 )
 
 def rule_36_func(arg1, solver=None, neg=False):
@@ -19,13 +19,13 @@ def rule_36_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, list) and all(isinstance(e, bool) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_values = Array('arg1_values', IntSort(), BoolSort())
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
@@ -33,9 +33,9 @@ def rule_36_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 36
-        rule_36(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_36(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_36(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_36(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

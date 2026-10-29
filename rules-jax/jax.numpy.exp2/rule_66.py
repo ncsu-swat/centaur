@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input is a float, it should be within safe exponential bounds (Rule 66)
+# scalar input within valid complex64 magnitude limits (Rule 66)
 
 rule_66 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -100.0, v["arg1_value"] <= 100.0)) if n else
-          And(v["arg1_value"] >= -100.0, v["arg1_value"] <= 100.0))
+    s.add(Not(And(v["arg1_value"] >= -126, v["arg1_value"] <= 126)) if n else
+          And(v["arg1_value"] >= -126, v["arg1_value"] <= 126))
 )
 
 def rule_66_func(arg1, solver=None, neg=False):

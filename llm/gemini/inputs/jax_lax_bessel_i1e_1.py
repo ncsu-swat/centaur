@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bessel_i1e_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of float32 with positive values
-    x = np.array([0.0, 1.0, 2.0, 5.0, 10.0], dtype=np.float32)
-    list_of_inputs.append({"x": x})
-
-    # Input 2: 1D array of float32 with negative values
-    x = np.array([-0.5, -1.5, -3.0, -10.0], dtype=np.float32)
-    list_of_inputs.append({"x": x})
-
-    # Input 3: 2D array of float32 with mixed values
-    x = np.array([[1.0, -1.0], [2.5, -2.5]], dtype=np.float32)
-    list_of_inputs.append({"x": x})
-
-    # Input 4: 3D array of float64
-    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": x})
-
-    # Input 5: 0D array (scalar) of float32
+    # Input 1: 0D scalar float32
     x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: Large 1D array of float32
-    x = np.linspace(-100.0, 100.0, 50, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 2: 1D array with positive values
+    x = np.array([0.0, 0.5, 1.0, 2.5, 5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D array of float64 with very small values
-    x = np.array([1e-5, -1e-5, 1e-10, -1e-10], dtype=np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 3: 1D array with negative values
+    x = np.array([-5.0, -2.5, -1.0, -0.5, -0.1], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D array of float32
-    x = np.random.uniform(-10.0, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 4: 1D array with float64 values
+    x = np.linspace(-10.0, 10.0, num=15, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D array of float32 containing zeros
-    x = np.zeros((5,), dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 5: 2D array float32
+    x = np.random.randn(3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D array of float64 with large values to test exponential scaling stability
-    x = np.array([[500.0, -500.0], [1000.0, -1000.0]], dtype=np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 6: 2D array float64
+    x = np.random.uniform(-50.0, 50.0, size=(5, 5)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 7: 3D array with large values
+    x = np.array([[[100.0, -100.0], [500.0, -500.0]]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: 3D array with random normal values
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 4D array float64
+    x = np.random.randn(2, 2, 3, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 1D empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array near zero
+    x = np.array([-1e-7, 0.0, 1e-7], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.bessel_i1e_1"] = bessel_i1e_inputs()
 

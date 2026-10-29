@@ -4,65 +4,64 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_lax_zeta_inputs():
+
+def zeta_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar inputs (0D arrays), float32 with integer values
-    x = np.array(2.0, dtype=np.float32)
-    q = np.array(1.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 1
+    input_dict = {"x": 2.0, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar inputs, float64 with integer values
-    x = np.array(3.0, dtype=np.float64)
-    q = np.array(2.0, dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 2
+    input_dict = {"x": 3.0, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D arrays, size 5, float32 with integer values
-    x = np.array([2.0, 3.0, 4.0, 2.0, 3.0], dtype=np.float32)
-    q = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 3
+    input_dict = {"x": 2.0, "q": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D arrays, 3x3, float32 with integer values
-    x = np.random.randint(2, 10, size=(3, 3)).astype(np.float32)
-    q = np.random.randint(1, 10, size=(3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 4
+    input_dict = {"x": 4.0, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D arrays, 2x2x2, float64 with integer values
-    x = np.random.randint(2, 6, size=(2, 2, 2)).astype(np.float64)
-    q = np.random.randint(1, 6, size=(2, 2, 2)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 5
+    input_dict = {"x": 3.0, "q": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Broadcastable shapes (3, 1) and (1, 3), float32 with integer values
-    x = np.array([[2.0], [3.0], [4.0]], dtype=np.float32)
-    q = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 6
+    input_dict = {"x": 5.0, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Scalar x and 1D array q, float32 with integer values
-    x = np.array(2.0, dtype=np.float32)
-    q = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 7
+    input_dict = {"x": 2.0, "q": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array x and scalar q, float32 with integer values
-    x = np.random.randint(2, 6, size=(2, 4)).astype(np.float32)
-    q = np.array(3.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 8
+    input_dict = {"x": 4.0, "q": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D arrays of size 10, float64 with integer values
-    x = np.random.randint(2, 8, size=(10,)).astype(np.float64)
-    q = np.random.randint(1, 8, size=(10,)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 9
+    input_dict = {"x": 6.0, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D arrays, 2x2x2x2, float32 with integer values
-    x = np.random.randint(2, 5, size=(2, 2, 2, 2)).astype(np.float32)
-    q = np.random.randint(1, 5, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "q": copy.deepcopy(q)})
+    # Input 10
+    input_dict = {"x": 3.0, "q": 4.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11
+    input_dict = {"x": 5.0, "q": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12
+    input_dict = {"x": 2.0, "q": 5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.zeta_3"] = jax_lax_zeta_inputs()
+
+generated_inputs["jax.lax.zeta_3"] = zeta_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -4,75 +4,97 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_stats_norm_pdf_inputs():
+
+def norm_pdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32 arrays
-    x = np.array([-1.0, 0.0, 1.0], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 1: 0D scalar arrays (float32)
+    input_dict = {
+        "x": np.array(0.5, dtype=np.float32),
+        "loc": np.array(0.0, dtype=np.float32),
+        "scale": np.array(1.0, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 arrays with non-zero loc and scale
-    x = np.array([[-2.0, -1.0], [1.0, 2.0]], dtype=np.float32)
-    loc = np.array([[0.5, 0.5], [0.5, 0.5]], dtype=np.float32)
-    scale = np.array([[1.5, 1.5], [1.5, 1.5]], dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 2: 1D arrays matching shapes
+    input_dict = {
+        "x": np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32),
+        "loc": np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        "scale": np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: float64 precision 1D arrays
-    x = np.array([0.1, 0.2, 0.3], dtype=np.float64)
-    loc = np.array([-0.1, -0.2, -0.3], dtype=np.float64)
-    scale = np.array([0.5, 0.5, 0.5], dtype=np.float64)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 3: Float64 precision with non-standard loc and scale
+    input_dict = {
+        "x": np.array([10.5, -5.2, 3.1], dtype=np.float64),
+        "loc": np.array([5.0, -2.0, 0.0], dtype=np.float64),
+        "scale": np.array([2.5, 0.5, 1.2], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 0D arrays (scalars wrapped as tensors)
-    x = np.array(1.5, dtype=np.float32)
-    loc = np.array(0.0, dtype=np.float32)
-    scale = np.array(2.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 4: 2D arrays with identical shapes
+    input_dict = {
+        "x": np.array([[-1.0, 0.5], [1.2, -0.8]], dtype=np.float32),
+        "loc": np.array([[0.0, 1.0], [-1.0, 0.0]], dtype=np.float32),
+        "scale": np.array([[1.0, 2.0], [0.5, 1.5]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Broadcasting 2D 'x' with 1D 'loc' and 1D 'scale'
-    x = np.random.randn(3, 4).astype(np.float32)
-    loc = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)
-    scale = np.array([1.0, 1.1, 1.2, 1.3], dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 5: 2D arrays with broadcasting
+    input_dict = {
+        "x": np.ones((3, 4), dtype=np.float32),
+        "loc": np.array([[1.0], [2.0], [3.0]], dtype=np.float32),
+        "scale": np.array([[0.5, 1.0, 1.5, 2.0]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D float32 arrays
-    x = np.random.randn(2, 2, 2).astype(np.float32)
-    loc = np.ones((2, 2, 2), dtype=np.float32) * 0.5
-    scale = np.ones((2, 2, 2), dtype=np.float32) * 2.5
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 6: 3D array for x with 1D broadcasting loc and scale
+    input_dict = {
+        "x": np.zeros((2, 3, 4), dtype=np.float32),
+        "loc": np.array([0.0, -1.0, 1.0, 2.0], dtype=np.float32),
+        "scale": np.array([1.0, 0.8, 1.2, 0.5], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small scale values (narrow distribution)
-    x = np.array([-0.01, 0.0, 0.01], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([0.1, 0.1, 0.1], dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 7: 4D arrays
+    input_dict = {
+        "x": np.random.randn(2, 1, 3, 2).astype(np.float32),
+        "loc": np.random.randn(1, 4, 1, 2).astype(np.float32),
+        "scale": np.abs(np.random.randn(2, 4, 3, 1)).astype(np.float32) + 0.1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large scale values (broad distribution)
-    x = np.array([-100.0, 0.0, 100.0], dtype=np.float32)
-    loc = np.array([10.0, 10.0, 10.0], dtype=np.float32)
-    scale = np.array([50.0, 50.0, 50.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 8: Integer inputs (should be promoted to float)
+    input_dict = {
+        "x": np.array([-2, -1, 0, 1, 2], dtype=np.int32),
+        "loc": np.array([0, 0, 0, 0, 0], dtype=np.int32),
+        "scale": np.array([1, 2, 1, 2, 1], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative mean/location parameters
-    x = np.array([-1.5, -0.5, 0.5, 1.5], dtype=np.float32)
-    loc = np.array([-2.0, -2.0, -2.0, -2.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 9: Large values in tails
+    input_dict = {
+        "x": np.array([-100.0, -50.0, 0.0, 50.0, 100.0], dtype=np.float32),
+        "loc": np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        "scale": np.array([10.0, 10.0, 10.0, 10.0, 10.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: High-dimensional 4D arrays
-    x = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    loc = np.zeros((2, 3, 4, 5), dtype=np.float32)
-    scale = np.ones((2, 3, 4, 5), dtype=np.float32)
-    list_of_inputs.append({"x": x, "loc": loc, "scale": scale})
+    # Input 10: Empty arrays
+    input_dict = {
+        "x": np.empty((0, 5), dtype=np.float32),
+        "loc": np.empty((0, 5), dtype=np.float32),
+        "scale": np.empty((0, 5), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.norm.pdf_1"] = jax_scipy_stats_norm_pdf_inputs()
+
+generated_inputs["jax.scipy.stats.norm.pdf_1"] = norm_pdf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

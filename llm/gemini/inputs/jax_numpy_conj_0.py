@@ -4,53 +4,64 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def conj_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D complex64 array with positive and negative components
-    x = np.array([1 + 2j, -3 + 4j, 5 - 6j, -7 - 8j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D complex64 array with negative values
+    x = np.array([1.0 + 2.0j, -3.0 - 4.0j, 5.0 - 6.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 2: 2D complex128 array
-    x = np.array([[1.5 - 2.5j, -3.0 + 0j], [0j, 4.5 + 5.5j]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.array(
+        [[1.0 - 1.0j, 2.0 + 3.0j], [-4.0 + 0.0j, 0.0 - 5.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D complex64 array
-    x = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar array (complex)
+    x = np.array(-2.5 + 7.5j, dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D complex64 scalar array
-    x = np.array(2.0 - 3.0j, dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D real float32 array
+    x = np.array([-1.5, 0.0, 2.5, -3.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D float32 array
-    x = np.array([-1.0, 0.0, 1.0, 2.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 2D real float64 array
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 2D float64 array with negative values
-    x = np.random.randn(5, 5).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 3D complex64 array
+    x = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D int32 array
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 4D float32 array
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Larger 2D complex64 array
-    x = (np.random.randn(10, 10) + 1j * np.random.randn(10, 10)).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Integer array (int32)
+    x = np.array([-5, 0, 10, -15], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D complex128 array containing nan and inf
-    x = np.array([np.nan + 1j, 2.0 - np.inf * 1j, np.inf + np.nan * 1j], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Integer array (int64, 2D)
+    x = np.array([[1, -2, 3], [-4, 5, -6]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 4D complex64 array
-    x = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array with complex dtype
+    x = np.empty((0, 5), dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Boolean array
+    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.conj"] = conj_inputs()
 

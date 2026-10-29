@@ -7,30 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Scalar input values must be well-defined real numbers (Rule 29)
+# integer scalar as first operand falls within valid range for an int8 tensor operand (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] - v["arg1_value"] == 0) if n else
-          v["arg1_value"] - v["arg1_value"] == 0)
+    s.add(Not(If(v["arg2_dtype"] == 1, And(v["arg1_value"] >= -128, v["arg1_value"] <= 127), True)) if n else
+          If(v["arg2_dtype"] == 1, And(v["arg1_value"] >= -128, v["arg1_value"] <= 127), True))
 )
 
-def rule_29_func(arg1, solver=None, neg=False):
+def rule_29_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+            return False
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Int('arg1_value')
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
+        solver.add(arg1_value == int(arg1))
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 29
-        rule_29(solver, {'arg1_value': arg1_value})
+        rule_29(solver, {'arg1_value': arg1_value, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_29(solver, {'arg1_value': arg1['value']}, neg)
+        rule_29(solver, {'arg1_value': arg1['value'], 'arg2_dtype': arg2['dtype']}, neg)

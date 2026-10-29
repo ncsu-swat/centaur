@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The offset parameter loc and shape parameter n must have the same number of dimensions if both are non-scalar tensors (Rule 17)
+# tensor evaluation point k bounded below by scalar offset loc (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If((And(v["arg1_ndim"] > 0, v["arg2_ndim"] > 0)), v["arg1_ndim"] == v["arg2_ndim"], True)) if n else
-          If((And(v["arg1_ndim"] > 0, v["arg2_ndim"] > 0)), v["arg1_ndim"] == v["arg2_ndim"], True))
+    s.add(Not(Select(v["arg1_range"], 0) >= v["arg2_value"]) if n else
+          Select(v["arg1_range"], 0) >= v["arg2_value"])
 )
 
 def rule_17_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,21 @@ def rule_17_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not ((isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)) or isinstance(arg2, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_17(solver, {'arg1_range': arg1_range, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_17(solver, {'arg1_range': arg1['range'], 'arg2_value': arg2['value']}, neg)

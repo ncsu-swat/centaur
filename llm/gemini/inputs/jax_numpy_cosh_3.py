@@ -4,72 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_cosh_3_inputs():
+
+def cosh_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar positive integer
-    x = 5
-    input_dict = {"x": x}
+    # Input 1: Zero
+    input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar negative integer
-    x = -3
-    input_dict = {"x": x}
+    # Input 2: Small positive integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Scalar zero
-    x = 0
-    input_dict = {"x": x}
+    # Input 3: Small negative integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array of int32
-    x = np.array([-2, -1, 0, 1, 2], dtype=np.int32)
-    input_dict = {"x": x}
+    # Input 4: Moderate positive integer
+    input_dict = {"x": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D array of int64 with negative and positive values
-    x = np.array([[-5, 4], [3, -2]], dtype=np.int64)
-    input_dict = {"x": x}
+    # Input 5: Moderate negative integer
+    input_dict = {"x": -2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D array of int16
-    x = np.array([[[1, -1], [2, -2]], [[3, -3], [0, 0]]], dtype=np.int16)
-    input_dict = {"x": x}
+    # Input 6: Positive integer 5
+    input_dict = {"x": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D array of int8
-    x = np.arange(-10, 11, 2, dtype=np.int8)
-    input_dict = {"x": x}
+    # Input 7: Negative integer -5
+    input_dict = {"x": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 0D array (scalar array) of int32
-    x = np.array(-8, dtype=np.int32)
-    input_dict = {"x": x}
+    # Input 8: Larger positive integer 10
+    input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large 4D array of int32 containing zeros and ones
-    x = np.zeros((2, 2, 2, 2), dtype=np.int32)
-    x[0, 1, 0, 1] = 5
-    x[1, 0, 1, 0] = -5
-    input_dict = {"x": x}
+    # Input 9: Larger negative integer -10
+    input_dict = {"x": -10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Numpy integer scalar (np.int64)
-    x = np.int64(10)
-    input_dict = {"x": x}
+    # Input 10: Positive integer 20
+    input_dict = {"x": 20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 1D array of uint32 (unsigned integer)
-    x = np.array([0, 1, 2, 3, 4], dtype=np.uint32)
-    input_dict = {"x": x}
+    # Input 11: Negative integer -20
+    input_dict = {"x": -20}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Positive integer 50
+    input_dict = {"x": 50}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.cosh_3"] = jax_numpy_cosh_3_inputs()
+
+generated_inputs["jax.numpy.cosh_3"] = cosh_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

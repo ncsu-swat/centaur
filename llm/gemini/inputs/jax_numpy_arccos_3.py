@@ -4,61 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arccos_inputs():
     list_of_inputs = []
 
     # Input 1: Zero (int)
-    input_dict = {"x": 0}
+    input_dict = {"x": int(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive one (int)
-    input_dict = {"x": 1}
+    # Input 2: Positive boundary value (int)
+    input_dict = {"x": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative one (int)
-    input_dict = {"x": -1}
+    # Input 3: Negative boundary value (int)
+    input_dict = {"x": int(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Positive integer outside [-1, 1] range (int)
-    input_dict = {"x": 2}
+    # Input 4: Positive value outside [-1, 1] (int)
+    input_dict = {"x": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative integer outside [-1, 1] range (int)
-    input_dict = {"x": -2}
+    # Input 5: Negative value outside [-1, 1] (int)
+    input_dict = {"x": int(-2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 6: Large positive integer (int)
-    input_dict = {"x": 100}
+    input_dict = {"x": int(100)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 7: Large negative integer (int)
-    input_dict = {"x": -100}
+    input_dict = {"x": int(-100)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy int32 zero
+    # Input 8: np.int32 scalar zero
     input_dict = {"x": np.int32(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy int64 one
-    input_dict = {"x": np.int64(1)}
+    # Input 9: np.int32 scalar 1
+    input_dict = {"x": np.int32(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy int16 negative one
-    input_dict = {"x": np.int16(-1)}
+    # Input 10: np.int64 scalar -1
+    input_dict = {"x": np.int64(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: numpy int8 positive integer
-    input_dict = {"x": np.int8(5)}
+    # Input 11: np.int16 scalar 5
+    input_dict = {"x": np.int16(5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 12: numpy int32 negative integer
-    input_dict = {"x": np.int32(-5)}
+    # Input 12: np.int8 scalar -10
+    input_dict = {"x": np.int8(-10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arccos_3"] = arccos_inputs()
 

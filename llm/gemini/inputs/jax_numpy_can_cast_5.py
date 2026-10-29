@@ -4,83 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def can_cast_inputs():
     list_of_inputs = []
 
-    # Input 1: int32 to int64, safe casting
-    list_of_inputs.append({
+    # Input 1: 1D int32 array to int64, safe casting
+    input_dict = {
         "from_": np.array([1, 2, 3], dtype=np.int32),
         "to": np.dtype(np.int64),
-        "casting": "safe"
-    })
+        "casting": "safe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: float64 scalar to float32, same_kind casting
-    list_of_inputs.append({
-        "from_": np.array(1.5, dtype=np.float64),
+    # Input 2: 2D float32 array to float64, safe casting
+    input_dict = {
+        "from_": np.ones((2, 3), dtype=np.float32),
+        "to": np.dtype(np.float64),
+        "casting": "safe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: scalar/0D float64 array to float32, same_kind casting
+    input_dict = {
+        "from_": np.array(3.14, dtype=np.float64),
         "to": np.dtype(np.float32),
-        "casting": "same_kind"
-    })
+        "casting": "same_kind",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: float32 matrix to complex64, safe casting
-    list_of_inputs.append({
-        "from_": np.random.randn(2, 2).astype(np.float32),
-        "to": np.dtype(np.complex64),
-        "casting": "safe"
-    })
-
-    # Input 4: bool matrix to int32, safe casting
-    list_of_inputs.append({
-        "from_": np.array([[True, False]], dtype=np.bool_),
+    # Input 4: 3D int64 array to int32, unsafe casting
+    input_dict = {
+        "from_": np.zeros((2, 2, 2), dtype=np.int64),
         "to": np.dtype(np.int32),
-        "casting": "safe"
-    })
+        "casting": "unsafe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: complex128 to float64, unsafe casting
-    list_of_inputs.append({
-        "from_": np.array([1+2j, 3+4j], dtype=np.complex128),
-        "to": np.dtype(np.float64),
-        "casting": "unsafe"
-    })
-
-    # Input 6: int16 3D tensor to int32, safe casting
-    list_of_inputs.append({
-        "from_": np.ones((2, 3, 4), dtype=np.int16),
+    # Input 5: 1D bool array to int32, safe casting
+    input_dict = {
+        "from_": np.array([True, False, True], dtype=np.bool_),
         "to": np.dtype(np.int32),
-        "casting": "safe"
-    })
+        "casting": "safe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: int8 to int8, 'no' casting
-    list_of_inputs.append({
-        "from_": np.array([10], dtype=np.int8),
-        "to": np.dtype(np.int8),
-        "casting": "no"
-    })
+    # Input 6: 2D complex64 array to complex128, safe casting
+    input_dict = {
+        "from_": np.array([[1 + 2j, 3 + 4j]], dtype=np.complex64),
+        "to": np.dtype(np.complex128),
+        "casting": "safe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: float64 to float64, 'equiv' casting
-    list_of_inputs.append({
-        "from_": np.zeros((5,), dtype=np.float64),
-        "to": np.dtype(np.float64),
-        "casting": "equiv"
-    })
+    # Input 7: 4D uint8 array to uint8, 'no' casting
+    input_dict = {
+        "from_": np.zeros((1, 2, 3, 4), dtype=np.uint8),
+        "to": np.dtype(np.uint8),
+        "casting": "no",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: signed int64 to unsigned int64, unsafe casting
-    list_of_inputs.append({
-        "from_": np.array([-1, 0, 1], dtype=np.int64),
-        "to": np.dtype(np.uint64),
-        "casting": "unsafe"
-    })
+    # Input 8: 1D float32 array to float32, 'equiv' casting
+    input_dict = {
+        "from_": np.array([-1.5, 0.0, 2.5], dtype=np.float32),
+        "to": np.dtype(np.float32),
+        "casting": "equiv",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: float32 3D tensor to int32, same_kind casting
-    list_of_inputs.append({
-        "from_": np.random.randn(1, 2, 3).astype(np.float32),
+    # Input 9: 2D int16 array to float32, safe casting
+    input_dict = {
+        "from_": np.array([[-10, 20], [30, -40]], dtype=np.int16),
+        "to": np.dtype(np.float32),
+        "casting": "safe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D float64 array to int32, unsafe casting
+    input_dict = {
+        "from_": np.array([1.1, 2.2, 3.3], dtype=np.float64),
         "to": np.dtype(np.int32),
-        "casting": "same_kind"
-    })
+        "casting": "unsafe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.can_cast_5"] = can_cast_inputs()
 

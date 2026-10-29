@@ -4,129 +4,146 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
+import numpy as np
 
-jax.lax.Precision.__lt__ = lambda self, other: False
-jax.lax.Precision.__gt__ = lambda self, other: False
-jax.lax.Precision.__le__ = lambda self, other: True
-jax.lax.Precision.__ge__ = lambda self, other: True
+
+class PrecisionTuple(tuple):
+
+    def _as_numpy_ndarray(self):
+        return np.array([0, 0])
+
+    def __array__(self, dtype=None, copy=None):
+        return np.array([0, 0])
+
 
 def correlate_inputs():
     list_of_inputs = []
 
+    # Input 1: Basic float32, mode='valid'
     a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    v = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    v = np.array([1.0, -1.0, 2.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "valid",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype(np.float32)
+        "precision": PrecisionTuple(("default", "default")),
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    a = np.array([1.0 + 2.0j, 3.0 - 1.0j, 2.0 + 0.0j], dtype=np.complex64)
-    v = np.array([2.0 + 1.0j, 1.0 - 1.0j], dtype=np.complex64)
+    # Input 2: float64, mode='full'
+    a = np.array([-2.5, 0.0, 1.5, 3.2], dtype=np.float64)
+    v = np.array([0.5, -1.2], dtype=np.float64)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "full",
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": np.dtype(np.complex64)
+        "precision": PrecisionTuple(("high", "high")),
+        "preferred_element_type": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    a = np.array([-1.5, 2.5, -3.5, 4.5, -5.5], dtype=np.float64)
-    v = np.array([-0.5, 1.5], dtype=np.float64)
+    # Input 3: int32 inputs, mode='same', preferred_element_type float32
+    a = np.array([10, -5, 2, 7, -3, 8], dtype=np.int32)
+    v = np.array([1, 2, 3], dtype=np.int32)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "same",
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": np.dtype(np.float64)
+        "precision": PrecisionTuple(("default", "default")),
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    a = np.random.randn(100).astype(np.float32)
-    v = np.random.randn(10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "mode": "valid",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    a = np.array([2.0, 3.0], dtype=np.float32)
-    v = np.array([1.0, 4.0, 5.0, 6.0], dtype=np.float32)
+    # Input 4: Complex numbers, mode='full'
+    a = np.array([1.0 + 2.0j, -3.0 + 0.5j, 0.0 - 1.0j], dtype=np.complex64)
+    v = np.array([2.0 - 1.0j, 1.0 + 1.0j], dtype=np.complex64)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "full",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype(np.float32)
+        "precision": PrecisionTuple(("highest", "highest")),
+        "preferred_element_type": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    a = np.array([1, -2, 3, -4], dtype=np.int32)
-    v = np.array([2, -1], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "v": v,
-        "mode": "same",
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    a = np.array([0.5, -1.5, 2.0, -2.5], dtype=np.float16)
-    v = np.array([1.0, -1.0], dtype=np.float16)
+    # Input 5: Complex128 inputs, mode='valid'
+    a = np.array(
+        [-1.5 + 2.5j, 3.0 - 4.0j, 0.5 + 0.5j, -2.0 - 1.0j], dtype=np.complex128
+    )
+    v = np.array([1.0 + 0.0j, -0.5 + 1.0j], dtype=np.complex128)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "valid",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype(np.float32)
+        "precision": PrecisionTuple(("high", "default")),
+        "preferred_element_type": np.dtype(np.complex128),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    a = np.array([1.0 - 1.0j, 2.0 + 2.0j, -3.0 + 3.0j], dtype=np.complex128)
-    v = np.array([1.0 + 0.0j, 0.0 - 1.0j], dtype=np.complex128)
+    # Input 6: Equal lengths, mode='full'
+    a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    v = np.array([4.0, 3.0, 2.0, 1.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "full",
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": np.dtype(np.complex128)
+        "precision": PrecisionTuple(("default", "highest")),
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    a = np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)
-    v = np.array([2.5], dtype=np.float32)
+    # Input 7: Single element v, mode='same'
+    a = np.array([5.0, -2.0, 3.5, 8.1, -1.2], dtype=np.float32)
+    v = np.array([2.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "same",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype(np.float32)
+        "precision": PrecisionTuple(("default", "default")),
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    a = np.zeros(10, dtype=np.float32)
-    v = np.zeros(5, dtype=np.float32)
+    # Input 8: Larger 1D arrays, mode='valid'
+    a = np.linspace(-10, 10, 100, dtype=np.float64)
+    v = np.ones(10, dtype=np.float64)
     input_dict = {
         "a": a,
         "v": v,
         "mode": "valid",
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.dtype(np.float32)
+        "precision": PrecisionTuple(("highest", "highest")),
+        "preferred_element_type": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: float16 arrays, mode='same'
+    a = np.array([0.1, -0.5, 1.2, -2.0, 3.0, -1.5], dtype=np.float16)
+    v = np.array([1.0, 0.5, -0.5], dtype=np.float16)
+    input_dict = {
+        "a": a,
+        "v": v,
+        "mode": "same",
+        "precision": PrecisionTuple(("default", "default")),
+        "preferred_element_type": np.dtype(np.float16),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Array 'a' shorter than 'v', mode='full'
+    a = np.array([1.0, -1.0], dtype=np.float32)
+    v = np.array([2.0, 0.0, -2.0, 1.0, 3.0], dtype=np.float32)
+    input_dict = {
+        "a": a,
+        "v": v,
+        "mode": "full",
+        "precision": PrecisionTuple(("high", "high")),
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.correlate_2"] = correlate_inputs()
 

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scale parameter should be strictly positive for primitive types (Rule 1)
+# scale parameter must be strictly positive (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(v["arg1_value"] > 0) if n else
@@ -19,7 +19,7 @@ def rule_1_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not (isinstance(arg1, (float, np.floating)) or (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool))):
             return False
 
         # Variable declarations

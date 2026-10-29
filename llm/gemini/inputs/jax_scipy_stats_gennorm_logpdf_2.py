@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gennorm_logpdf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, beta=1.5
+    # Input 1: 1D array, beta = 2.0 (standard normal equivalent)
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    beta = 1.5
-    list_of_inputs.append({"x": x, "beta": beta})
-
-    # Input 2: 2D float32 array, beta=0.5
-    x = np.random.randn(3, 4).astype(np.float32)
-    beta = 0.5
-    list_of_inputs.append({"x": x, "beta": beta})
-
-    # Input 3: 3D float64 array, beta=2.0
-    x = np.random.randn(2, 2, 2).astype(np.float64)
     beta = 2.0
-    list_of_inputs.append({"x": x, "beta": beta})
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 4: 0D array (scalar), beta=3.0
-    x = np.array(1.5, dtype=np.float32)
-    beta = 3.0
-    list_of_inputs.append({"x": x, "beta": beta})
-
-    # Input 5: 1D array with positive values, beta=0.1
-    x = np.array([0.1, 0.5, 1.0, 10.0], dtype=np.float32)
-    beta = 0.1
-    list_of_inputs.append({"x": x, "beta": beta})
-
-    # Input 6: 2D array of zeros, beta=1.0
-    x = np.zeros((5, 5), dtype=np.float32)
+    # Input 2: 2D array, beta = 1.0 (Laplace distribution equivalent)
+    x = np.array([[-1.5, 0.5], [2.3, -0.7]], dtype=np.float64)
     beta = 1.0
-    list_of_inputs.append({"x": x, "beta": beta})
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 7: 4D array of float64, beta=5.5
-    x = np.random.uniform(-5.0, 5.0, size=(2, 2, 3, 3)).astype(np.float64)
+    # Input 3: 0D scalar array, beta = 0.5 (heavy-tailed)
+    x = np.array(0.0, dtype=np.float32)
+    beta = 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
+
+    # Input 4: 3D array of zeros and ones, beta = 4.0
+    x = np.ones((2, 3, 4), dtype=np.float32)
+    beta = 4.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
+
+    # Input 5: 1D array with large positive and negative values, beta = 3.0
+    x = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float64)
+    beta = 3.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
+
+    # Input 6: 2D array with random normal values, beta = 1.5
+    x = np.random.randn(4, 5).astype(np.float32)
+    beta = 1.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
+
+    # Input 7: 4D tensor with small values, beta = 0.8
+    x = np.linspace(-0.5, 0.5, 16).reshape(2, 2, 2, 2).astype(np.float32)
+    beta = 0.8
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
+
+    # Input 8: 1D array float64, beta = 5.5
+    x = np.linspace(-3.0, 3.0, 50, dtype=np.float64)
     beta = 5.5
-    list_of_inputs.append({"x": x, "beta": beta})
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 8: 1D array, beta=0.01 (very small positive beta)
-    x = np.array([-0.5, 0.5], dtype=np.float32)
-    beta = 0.01
-    list_of_inputs.append({"x": x, "beta": beta})
+    # Input 9: 2D array with strictly negative values, beta = 2.5
+    x = -np.abs(np.random.randn(3, 3)).astype(np.float32) - 0.1
+    beta = 2.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 9: 2D array with large values, beta=10.0
-    x = np.array([[-100.0, 100.0], [-50.0, 50.0]], dtype=np.float32)
+    # Input 10: 1D single element array, beta = 10.0
+    x = np.array([1.23], dtype=np.float64)
     beta = 10.0
-    list_of_inputs.append({"x": x, "beta": beta})
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
-    # Input 10: 1D array with float32 values, beta=100.0 (large beta)
-    x = np.random.uniform(-1.0, 1.0, size=(10,)).astype(np.float32)
-    beta = 100.0
-    list_of_inputs.append({"x": x, "beta": beta})
+    # Input 11: 3D array with extreme values, beta = 0.1
+    x = np.array([[[-1e-3, 1e-3]], [[-2.0, 2.0]]], dtype=np.float32)
+    beta = 0.1
+    list_of_inputs.append(copy.deepcopy({"x": x, "beta": beta}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.gennorm.logpdf_2"] = gennorm_logpdf_inputs()
 

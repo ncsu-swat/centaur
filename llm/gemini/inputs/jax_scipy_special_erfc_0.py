@@ -4,27 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import os
-os.environ["JAX_PLATFORMS"] = "cpu"
-os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-
+import copy
 import numpy as np
+
 
 def erfc_inputs():
     list_of_inputs = []
-    
-    list_of_inputs.append({"x": np.array([1.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([-1.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([0.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([0.5], dtype=np.float64)})
-    list_of_inputs.append({"x": np.array([[1.0]], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([[[1.0]]], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([2.0, 3.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([-2.0, -3.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([0.1], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([-0.1], dtype=np.float32)})
-    
+
+    # Input 1: 0D scalar float32
+    x = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 2: 1D array with positive, negative, and zero values
+    x = np.array([-3.0, -1.5, 0.0, 1.5, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 3: 2D array float64
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 4: 1D array int32
+    x = np.array([-5, -2, 0, 1, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 5: 3D array float32
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 6: 4D array float64
+    x = np.random.randn(2, 2, 3, 2).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 7: 1D array float16
+    x = np.array([-2.0, -0.5, 0.5, 2.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: 2D array with large positive values
+    x = np.array([[10.0, 20.0], [30.0, 40.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 2D array with large negative values
+    x = np.array([[-10.0, -20.0], [-30.0, -40.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 1D array int64
+    x = np.arange(-4, 5, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.erfc"] = erfc_inputs()
 

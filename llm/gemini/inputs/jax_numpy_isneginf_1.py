@@ -4,66 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isneginf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with inf, -inf, nan, and finite values
-    x = np.array([-np.inf, 0.0, np.inf, np.nan, -10.0], dtype=np.float32)
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 1: 1D float32 array with -inf, inf, nan, and finite values
+    x = np.array([-np.inf, 5.0, np.inf, np.nan, -1.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 2: 2D float64 array
-    x = np.array([[-np.inf, 1.0], [np.inf, -2.0]], dtype=np.float64)
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 2: 2D float64 array (3x3) with -inf on diagonal
+    x = np.array(
+        [
+            [-np.inf, 1.5, 2.3],
+            [0.0, -np.inf, -4.2],
+            [np.nan, np.inf, -np.inf],
+        ],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 3: 3D float16 array
-    x = np.array([[[-np.inf], [3.0]], [[np.nan], [-np.inf]]], dtype=np.float16)
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
-
-    # Input 4: Scalar-like 0D float32 array
+    # Input 3: 0D scalar float32 array with -inf
     x = np.array(-np.inf, dtype=np.float32)
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 5: 1D float64 array, all finite
-    x = np.linspace(-10, 10, 5, dtype=np.float64)
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 4: 1D int32 array
+    x = np.array([-10, -1, 0, 1, 10], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 6: 4D float32 array
-    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
-    x[0, 1, 0, 1] = -np.inf
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 5: 3D float32 array (2, 2, 3)
+    x = np.array(
+        [
+            [[-np.inf, 1.0, 2.0], [np.inf, -np.inf, 0.0]],
+            [[np.nan, -3.0, -np.inf], [4.0, 5.0, 6.0]],
+        ],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 7: 1D int32 array
-    x = np.array([-1, 0, 1, 2], dtype=np.int32)
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 6: 1D float16 array
+    x = np.array([-np.inf, -100.0, 0.0, 100.0, np.inf], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 8: 2D float32 random array with one negative infinity
-    x = np.random.randn(3, 3).astype(np.float32)
-    x[1, 1] = -np.inf
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 7: 2D float32 array with all -inf
+    x = np.full((2, 4), -np.inf, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 9: 3D float64 array containing only negative infinities
-    x = np.ones((2, 3, 4), dtype=np.float64) * -np.inf
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 8: 1D float64 array with no -inf
+    x = np.array([np.nan, np.inf, 1e10, -1e10, 0.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
-    # Input 10: 5D float32 array with singleton dimensions
-    x = np.zeros((1, 2, 1, 3, 1), dtype=np.float32)
-    x[0, 1, 0, 2, 0] = -np.inf
-    out = None
-    list_of_inputs.append(copy.deepcopy({"x": x, "out": out}))
+    # Input 9: 4D float32 array with shape (1, 2, 1, 3)
+    x = np.array([[[[-np.inf, 0.5, np.inf]], [[-2.5, -np.inf, np.nan]]]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 10: 1D empty float32 array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
+
+    # Input 11: 2D int64 array
+    x = np.array([[-100, 0, 100], [200, -300, 400]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "out": None}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isneginf_1"] = isneginf_inputs()
 

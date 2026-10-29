@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# each axis in the tuple must be within the valid range of input tensor dimensions (Rule 14)
+# all axes in tuple must be valid dimension indices and tuple length cannot exceed tensor rank (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
     s.add(Not(And(v["arg2_length"] <= v["arg1_ndim"], And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) < v["arg1_ndim"], Select(v["arg2_values"], i) + v["arg1_ndim"] >= 0)) for i in range(6)]))) if n else
@@ -38,9 +38,9 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_14(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_14(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

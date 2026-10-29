@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor dimensions should be within a valid JAX limit, up to 8 dimensions (Rule 50)
+# input tensor dimension count is restricted to at most 4 (Rule 50)
 
 rule_50 = lambda s, v, n=False: (
-    s.add(Not(And(0 <= v["arg1_ndim"], v["arg1_ndim"] <= 8)) if n else
-          And(0 <= v["arg1_ndim"], v["arg1_ndim"] <= 8))
+    s.add(Not(v["arg1_ndim"] <= 4) if n else
+          v["arg1_ndim"] <= 4)
 )
 
 def rule_50_func(arg1, solver=None, neg=False):

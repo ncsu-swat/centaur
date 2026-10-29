@@ -4,153 +4,135 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def take_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D array, valid indices, sorted, unique
-    a = np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)
-    indices = np.array([1, 3], dtype=np.int32)
+    # Input 1: 1D array, 1D indices, mode='fill'
     input_dict = {
-        "a": a,
-        "indices": indices,
+        "a": np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float32),
+        "indices": np.array([0, 2, 4], dtype=np.int32),
         "axis": 0,
         "mode": "fill",
         "unique_indices": True,
         "indices_are_sorted": True,
-        "fill_value": 0.0
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, taking along axis 1, unsorted, not unique, clip mode
-    a = np.random.randn(3, 4).astype(np.float32)
-    indices = np.array([2, 0, 2], dtype=np.int32)
+    # Input 2: 2D array, 1D indices, axis=1, mode='clip'
     input_dict = {
-        "a": a,
-        "indices": indices,
+        "a": np.arange(12, dtype=np.float64).reshape(3, 4),
+        "indices": np.array([1, 3], dtype=np.int64),
+        "axis": 1,
+        "mode": "clip",
+        "unique_indices": True,
+        "indices_are_sorted": True,
+        "fill_value": -1.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D array, negative axis, duplicate unsorted indices
+    input_dict = {
+        "a": np.array([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]], dtype=np.float32),
+        "indices": np.array([2, 0, 2, 1], dtype=np.int32),
+        "axis": -2,
+        "mode": "fill",
+        "unique_indices": False,
+        "indices_are_sorted": False,
+        "fill_value": np.nan,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D array, 2D indices matrix
+    input_dict = {
+        "a": np.linspace(0.0, 1.0, 6, dtype=np.float32).reshape(2, 3),
+        "indices": np.array([[0, 1], [1, 2]], dtype=np.int32),
         "axis": 1,
         "mode": "clip",
         "unique_indices": False,
         "indices_are_sorted": False,
-        "fill_value": -1.0
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Float64 array, taking along axis 0, out of bounds with NaN fill
-    a = np.random.randn(5, 5).astype(np.float64)
-    indices = np.array([1, 6, -2], dtype=np.int64)
+    # Input 5: 3D array, negative indices, mode='fill'
     input_dict = {
-        "a": a,
-        "indices": indices,
+        "a": np.arange(24, dtype=np.float32).reshape(2, 3, 4),
+        "indices": np.array([-1, -3], dtype=np.int32),
+        "axis": 1,
+        "mode": "fill",
+        "unique_indices": False,
+        "indices_are_sorted": False,
+        "fill_value": -999.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D array, out-of-bounds indices with clip
+    input_dict = {
+        "a": np.ones((4, 4, 4), dtype=np.float64),
+        "indices": np.array([0, 5, -5, 2], dtype=np.int64),
+        "axis": 2,
+        "mode": "clip",
+        "unique_indices": False,
+        "indices_are_sorted": False,
+        "fill_value": 0.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Out-of-bounds indices with fill_value
+    input_dict = {
+        "a": np.array([100.0, 200.0, 300.0], dtype=np.float32),
+        "indices": np.array([0, 10, 1], dtype=np.int32),
         "axis": 0,
         "mode": "fill",
         "unique_indices": False,
         "indices_are_sorted": False,
-        "fill_value": float('nan')
+        "fill_value": 42.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D array, out of bounds with a custom fill value
-    a = np.arange(24).reshape(2, 3, 4).astype(np.float32)
-    indices = np.array([0, 5], dtype=np.int32)
+    # Input 8: 4D tensor, axis=3, unique and sorted indices
     input_dict = {
-        "a": a,
-        "indices": indices,
-        "axis": 2,
-        "mode": "fill",
-        "unique_indices": True,
-        "indices_are_sorted": True,
-        "fill_value": -99.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Same 3D array, out of bounds with clip mode
-    a = np.arange(24).reshape(2, 3, 4).astype(np.float32)
-    indices = np.array([0, 5], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "indices": indices,
-        "axis": 2,
-        "mode": "clip",
-        "unique_indices": True,
-        "indices_are_sorted": True,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D array and 2D indices
-    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    indices = np.array([[0, 1], [1, 0]], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "indices": indices,
-        "axis": 0,
-        "mode": "fill",
-        "unique_indices": False,
-        "indices_are_sorted": False,
-        "fill_value": -1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 1D array with identical index elements
-    a = np.random.randn(10).astype(np.float32)
-    indices = np.array([2, 2, 2], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "indices": indices,
-        "axis": 0,
-        "mode": "clip",
-        "unique_indices": False,
-        "indices_are_sorted": True,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 4D array, axis 3, sorted, unique indices
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    indices = np.array([0, 1], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "indices": indices,
+        "a": np.random.randn(2, 3, 2, 5).astype(np.float32),
+        "indices": np.array([1, 2, 4], dtype=np.int32),
         "axis": 3,
         "mode": "fill",
         "unique_indices": True,
         "indices_are_sorted": True,
-        "fill_value": 1.23
+        "fill_value": 0.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Single-element array with repeated indexing
-    a = np.array([5.0], dtype=np.float32)
-    indices = np.array([0, 0, 0], dtype=np.int32)
+    # Input 9: 1D array with 0D (scalar-like) index tensor
     input_dict = {
-        "a": a,
-        "indices": indices,
+        "a": np.array([7.5, 8.5, 9.5], dtype=np.float64),
+        "indices": np.array(1, dtype=np.int32),
         "axis": 0,
-        "mode": "fill",
-        "unique_indices": False,
-        "indices_are_sorted": True,
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D array, negative axis index
-    a = np.random.randn(8, 8).astype(np.float32)
-    indices = np.array([1, 3, 5], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "indices": indices,
-        "axis": -1,
         "mode": "clip",
         "unique_indices": True,
         "indices_are_sorted": True,
-        "fill_value": 0.0
+        "fill_value": 0.0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D array with negative axis and mode='clip'
+    input_dict = {
+        "a": np.zeros((3, 5, 2), dtype=np.float32),
+        "indices": np.array([0, 1, 2, 3, 4], dtype=np.int64),
+        "axis": -2,
+        "mode": "clip",
+        "unique_indices": True,
+        "indices_are_sorted": True,
+        "fill_value": 1.0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.take_1"] = take_inputs()
 

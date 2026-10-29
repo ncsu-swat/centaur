@@ -4,75 +4,97 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_cauchy_ppf_inputs():
+
+def cauchy_ppf_inputs():
     list_of_inputs = []
 
-    # Case 1: 1D arrays, float32, standard range
-    q = np.array([0.1, 0.5, 0.9], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
+    # Input 1: 1D arrays, float32, standard Cauchy
+    q = np.array([0.1, 0.25, 0.5, 0.75, 0.9], dtype=np.float32)
+    loc = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+    scale = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
 
-    # Case 2: 2D arrays, float32
-    q = np.array([[0.2, 0.4], [0.6, 0.8]], dtype=np.float32)
-    loc = np.array([[1.0, -1.0], [2.0, -2.0]], dtype=np.float32)
-    scale = np.array([[0.5, 1.5], [2.0, 0.1]], dtype=np.float32)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
+    # Input 2: 0D scalar arrays, float32
+    q = np.array(0.5, dtype=np.float32)
+    loc = np.array(2.0, dtype=np.float32)
+    scale = np.array(0.5, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
 
-    # Case 3: 3D arrays, float64
-    q = np.random.uniform(0.01, 0.99, size=(2, 2, 2)).astype(np.float64)
-    loc = np.random.normal(0, 1, size=(2, 2, 2)).astype(np.float64)
-    scale = np.random.uniform(0.1, 5.0, size=(2, 2, 2)).astype(np.float64)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
+    # Input 3: 2D arrays, float64, negative loc
+    q = np.array([[0.2, 0.4], [0.6, 0.8]], dtype=np.float64)
+    loc = np.array([[-1.5, -0.5], [0.5, 1.5]], dtype=np.float64)
+    scale = np.array([[0.5, 1.0], [1.5, 2.0]], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
 
-    # Case 4: 0D arrays (scalars as tensors)
-    q = np.array(0.25, dtype=np.float32)
+    # Input 4: 3D arrays, float32
+    q = np.full((2, 3, 4), 0.3, dtype=np.float32)
+    loc = np.zeros((2, 3, 4), dtype=np.float32)
+    scale = np.ones((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
+
+    # Input 5: Broadcasting shapes (3, 1) and (1, 4)
+    q = np.array([[0.1], [0.5], [0.9]], dtype=np.float32)
+    loc = np.array([[0.0, -1.0, 1.0, 2.0]], dtype=np.float32)
+    scale = np.array([[1.0, 2.0, 0.5, 1.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
+
+    # Input 6: 1D array with values close to 0 and 1, float64
+    q = np.array([0.001, 0.01, 0.05, 0.95, 0.99, 0.999], dtype=np.float64)
+    loc = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+    scale = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
+
+    # Input 7: Broadcasting 0D loc and scale with 2D q
+    q = np.array([[0.1, 0.3, 0.5], [0.7, 0.8, 0.9]], dtype=np.float32)
     loc = np.array(-5.0, dtype=np.float32)
-    scale = np.array(2.5, dtype=np.float32)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
+    scale = np.array(10.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
 
-    # Case 5: Broadcasting, q is 1D, loc is 2D, scale is 1D
-    q = np.array([0.1, 0.9], dtype=np.float32)
-    loc = np.array([[0.0, 1.0], [2.0, 3.0]], dtype=np.float32)
-    scale = np.array([1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
+    # Input 8: 1D single-element arrays
+    q = np.array([0.75], dtype=np.float32)
+    loc = np.array([3.0], dtype=np.float32)
+    scale = np.array([2.5], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
 
-    # Case 6: Edge values for q (very close to 0 and 1)
-    q = np.array([1e-5, 0.5, 1.0 - 1e-5], dtype=np.float64)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float64)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float64)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
+    # Input 9: 4D arrays, float64
+    q = np.linspace(0.1, 0.9, 12).reshape(1, 2, 2, 3).astype(np.float64)
+    loc = np.zeros((1, 2, 2, 3), dtype=np.float64)
+    scale = np.ones((1, 2, 2, 3), dtype=np.float64) * 0.5
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
 
-    # Case 7: Larger scale values
-    q = np.linspace(0.1, 0.9, 5).astype(np.float32)
-    loc = np.array([100.0, 200.0, 300.0, 400.0, 500.0], dtype=np.float32)
-    scale = np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float32)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
-
-    # Case 8: Small scale values (close to 0)
-    q = np.array([0.5, 0.5], dtype=np.float32)
-    loc = np.array([0.0, 0.0], dtype=np.float32)
-    scale = np.array([1e-3, 1e-4], dtype=np.float32)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
-
-    # Case 9: Multi-dimensional, float64
-    q = np.random.uniform(0.1, 0.9, size=(3, 1, 4)).astype(np.float64)
-    loc = np.zeros((3, 1, 4), dtype=np.float64)
-    scale = np.ones((3, 1, 4), dtype=np.float64)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
-
-    # Case 10: Negative loc and various scale shapes (broadcasting)
-    q = np.array([0.3, 0.7], dtype=np.float32)
-    loc = np.array([-10.0], dtype=np.float32)
-    scale = np.array([5.0], dtype=np.float32)
-    list_of_inputs.append({"q": q, "loc": loc, "scale": scale})
+    # Input 10: 2D arrays with fractional scale and large negative loc
+    q = np.array([[0.25, 0.5], [0.5, 0.75]], dtype=np.float32)
+    loc = np.array([[-100.0, -50.0], [-10.0, 0.0]], dtype=np.float32)
+    scale = np.array([[0.01, 0.05], [0.1, 0.2]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"q": q, "loc": loc, "scale": scale})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.cauchy.ppf_1"] = generate_cauchy_ppf_inputs()
+
+generated_inputs["jax.scipy.stats.cauchy.ppf_1"] = cauchy_ppf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

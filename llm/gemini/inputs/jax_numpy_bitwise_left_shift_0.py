@@ -4,73 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_left_shift_inputs():
     list_of_inputs = []
 
     # Input 1: 1D int32 arrays
     x = np.array([1, 2, 4, 8], dtype=np.int32)
-    y = np.array([1, 2, 3, 4], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    y = np.array([1, 2, 1, 0], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D int32 arrays with negative values for x
-    x = np.array([[-1, -2], [3, 4]], dtype=np.int32)
-    y = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D int64 arrays with negative values
+    x = np.array([[-1, 2], [-5, 10]], dtype=np.int64)
+    y = np.array([[2, 1], [0, 3]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D int32 arrays
-    x = np.random.randint(-100, 100, size=(2, 3, 4)).astype(np.int32)
-    y = np.random.randint(0, 10, size=(2, 3, 4)).astype(np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D scalar arrays (int32)
+    x = np.array(7, dtype=np.int32)
+    y = np.array(3, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: Broadcasting 2D and 1D (int64)
-    x = np.random.randint(-1000, 1000, size=(3, 3)).astype(np.int64)
-    y = np.array([1, 2, 3], dtype=np.int64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Broadcasting 2D and 1D (int32)
+    x = np.array([[1], [3], [5]], dtype=np.int32)
+    y = np.array([0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: Scalar-like 0D arrays (int64)
-    x = np.array(5, dtype=np.int64)
+    # Input 5: 1D int64 arrays
+    x = np.array([3, 7, 15, 31], dtype=np.int64)
+    y = np.array([1, 2, 3, 4], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: 3D int32 arrays
+    x = np.ones((2, 3, 4), dtype=np.int32)
+    y = np.full((2, 3, 4), 2, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: 1D int32 arrays with negative numbers
+    x = np.array([-16, -8, 0, 8, 16], dtype=np.int32)
+    y = np.array([1, 2, 0, 1, 2], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: 2D int64 arrays
+    x = np.array([[100, 200], [300, 400]], dtype=np.int64)
+    y = np.array([[1, 2], [3, 4]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: 0D scalar arrays (int64)
+    x = np.array(-5, dtype=np.int64)
     y = np.array(2, dtype=np.int64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 1D int32 arrays with positive values
-    x = np.array([1024, 2048, 4096], dtype=np.int32)
-    y = np.array([5, 10, 15], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Signed int32 with negative and zero values
-    x = np.array([-128, -64, -1, 0, 1, 127], dtype=np.int32)
-    y = np.array([1, 2, 3, 4, 5, 0], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Larger shape 3D (int64)
-    x = np.random.randint(-50, 50, size=(5, 5, 5)).astype(np.int64)
-    y = np.random.randint(0, 5, size=(5, 5, 5)).astype(np.int64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Broadcastable shapes (1, 5) and (5, 1) in int32
-    x = np.array([[1, 2, 3, 4, 5]], dtype=np.int32)
-    y = np.array([[1], [2], [3], [4], [5]], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: int64 1D arrays
-    x = np.array([100, 200, 300], dtype=np.int64)
-    y = np.array([8, 8, 8], dtype=np.int64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D int32 arrays with broadcasting
+    x = np.arange(12, dtype=np.int32).reshape(1, 3, 2, 2)
+    y = np.array([[[[1]]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_left_shift"] = bitwise_left_shift_inputs()
 

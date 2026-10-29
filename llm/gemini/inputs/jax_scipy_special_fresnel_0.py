@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fresnel_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array in [-10, 10]
+    # Input 1: 1D float32 array within guaranteed domain [-10, 10]
     x = np.linspace(-10.0, 10.0, 50, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array in [-5, 5]
-    x = np.random.uniform(-5.0, 5.0, (10, 10)).astype(np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 2: 1D float64 array
+    x = np.array([-5.0, -2.5, 0.0, 2.5, 5.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D float32 array with negative and positive values
-    x = np.random.uniform(-8.0, 8.0, (2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": x})
-
-    # Input 4: 0D array (scalar) float32
+    # Input 3: 0D scalar tensor (float32)
     x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D float16 array
-    x = np.linspace(-2.0, 2.0, 20, dtype=np.float16)
-    list_of_inputs.append({"x": x})
+    # Input 4: 2D float32 matrix
+    x = np.random.uniform(-5.0, 5.0, size=(4, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D float64 array
-    x = np.random.uniform(-3.0, 3.0, (2, 2, 3, 3)).astype(np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 5: 3D float64 tensor
+    x = np.random.uniform(-3.0, 3.0, size=(2, 3, 4)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Array with specific edge cases: negative, zero, positive
-    x = np.array([-10.0, -5.0, -1.0, 0.0, 1.0, 5.0, 10.0], dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 6: 1D float16 array
+    x = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Array with very small values near zero
-    x = np.random.uniform(-1e-4, 1e-4, (5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 7: 2D integer array (real-valued)
+    x = np.array([[-3, -1, 0], [1, 2, 4]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Array with large values (outside guaranteed domain, but still valid types)
-    x = np.linspace(-20.0, 20.0, 10, dtype=np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 8: 4D tensor float32
+    x = np.random.uniform(-2.0, 2.0, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D array of uniform random values in [-1, 1]
-    x = np.random.uniform(-1.0, 1.0, 100).astype(np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 9: 1D array with values outside [-10, 10]
+    x = np.array([-50.0, -20.0, 20.0, 50.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: 5D array
-    x = np.random.uniform(-2.0, 2.0, (2, 2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 10: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 2D float64 array with near-zero and zero values
+    x = np.array([[-1e-6, 0.0], [0.0, 1e-6]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.fresnel"] = fresnel_inputs()
 

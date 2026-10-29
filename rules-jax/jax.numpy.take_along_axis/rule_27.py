@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Out-of-bounds indexing mode must be fill or clip (Rule 27)
+# mode string parameter must be either clip or fill (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 36, v["arg1_value"] == 34)) if n else
-          Or(v["arg1_value"] == 36, v["arg1_value"] == 34))
+    s.add(Not(Or(v["arg1_value"] == 34, v["arg1_value"] == 36)) if n else
+          Or(v["arg1_value"] == 34, v["arg1_value"] == 36))
 )
 
 def rule_27_func(arg1, solver=None, neg=False):

@@ -4,25 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gammaln_inputs():
     list_of_inputs = []
 
-    # All inputs use the same shape (4,) and dtype float32 to minimize JAX compilation time.
-    list_of_inputs.append({"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([1.1, 2.2, 3.3, 4.4], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([-0.5, -1.5, -2.5, -3.5], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([0.01, 0.02, 0.03, 0.04], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([5.0, 6.0, 7.0, 8.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([1.2, 1.8, 2.4, 3.0], dtype=np.float32)})
-    list_of_inputs.append({"x": np.array([-0.1, -1.1, -2.1, -3.1], dtype=np.float32)})
+    # Input 1: 1D positive float32 array
+    x = np.array([1.0, 2.0, 3.5, 4.2, 10.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 2: 2D array with negative non-integer values (float32)
+    x = np.array([[-0.5, -1.5], [-2.3, -3.7]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 3: 0D scalar float64 tensor
+    x = np.array(5.5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 4: 1D integer array
+    x = np.array([1, 2, 3, 5, 8, 13], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 5: 3D float32 array with positive random values
+    x = np.random.uniform(0.1, 20.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 6: 2D float64 array with mixed positive and negative non-integers
+    x = np.array([[-3.2, 0.5, 1.2], [-0.1, 4.8, -1.9]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 7: 4D float32 array
+    x = np.random.uniform(1.0, 50.0, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: 1D float64 array with half-integers
+    x = np.arange(0.5, 10.5, 1.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 1D float32 array with large values
+    x = np.array([50.0, 100.0, 500.0, 1000.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 2D float32 array with small positive values close to zero
+    x = np.array([[1e-4, 1e-3], [1e-2, 5e-2]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D float64 array with int64 values
+    x = np.array([4, 6, 7, 10], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.gammaln"] = gammaln_inputs()
 

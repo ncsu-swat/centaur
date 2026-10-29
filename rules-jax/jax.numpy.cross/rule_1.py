@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension of array a along axisa must be 2 or 3 (Rule 1)
+# dimension along cross product axis must be either 2 or 3 (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), (Or(Select(v["arg1_shape"], v["arg2_value"]) == 2, Select(v["arg1_shape"], v["arg2_value"]) == 3)))) if n else
-          And(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), (Or(Select(v["arg1_shape"], v["arg2_value"]) == 2, Select(v["arg1_shape"], v["arg2_value"]) == 3))))
+    s.add(Not(Or((And(v["arg2_value"] >= 0, (Or(Select(v["arg1_shape"], v["arg2_value"]) == 2, Select(v["arg1_shape"], v["arg2_value"]) == 3)))), (And(v["arg2_value"] < 0, (Or(Select(v["arg1_shape"], v["arg1_ndim"] + v["arg2_value"]) == 2, Select(v["arg1_shape"], v["arg1_ndim"] + v["arg2_value"]) == 3)))))) if n else
+          Or((And(v["arg2_value"] >= 0, (Or(Select(v["arg1_shape"], v["arg2_value"]) == 2, Select(v["arg1_shape"], v["arg2_value"]) == 3)))), (And(v["arg2_value"] < 0, (Or(Select(v["arg1_shape"], v["arg1_ndim"] + v["arg2_value"]) == 2, Select(v["arg1_shape"], v["arg1_ndim"] + v["arg2_value"]) == 3))))))
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_1_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 1
-        rule_1(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_1(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_1(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_1(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

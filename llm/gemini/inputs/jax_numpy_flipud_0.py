@@ -7,50 +7,59 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
+
 def flipud_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array
-    m = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 1: 1D integer array
+    m = np.array([1, 2, 3, 4, 5], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 2: 2D int32 array (matrix)
-    m = np.array([[1, 2], [3, 4], [5, 6]], dtype=np.int32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 2: 2D float32 array with negative values
+    m = np.array([[-1.5, 2.5], [3.0, -4.2], [0.0, 5.1]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 3: 3D bool array
-    m = np.array([[[True, False], [False, True]], [[True, True], [False, False]]], dtype=bool)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 3: 2D integer array (square)
+    m = np.arange(16, dtype=np.int64).reshape((4, 4))
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 4: 4D float64 array
-    m = np.random.randn(2, 3, 4, 5).astype(np.float64)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 4: 3D float64 array
+    m = np.random.randn(3, 4, 5).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 5: 1D int64 array with negative values
-    m = np.array([-10, -5, 0, 5, 10], dtype=np.int64)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 5: Boolean array
+    m = np.array([[True, False, True], [False, False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 6: 2D complex64 array
-    m = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 6: 4D array of float16
+    m = np.ones((2, 3, 2, 2), dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 7: 3D float16 array
-    m = np.random.randn(2, 2, 2).astype(np.float16)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    # Input 7: Complex array
+    m = np.array(
+        [[1.0 + 2.0j, -3.0 - 4.0j], [0.5 - 1.5j, 2.2 + 0.0j]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
-    # Input 8: 2D uint8 array
-    m = np.arange(12, dtype=np.uint8).reshape(4, 3)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
-
-    # Input 9: 5D int16 array
-    m = np.random.randint(-100, 100, size=(2, 2, 3, 3, 2)).astype(np.int16)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
-
-    # Input 10: 1D array with single element
+    # Input 8: Single-element 1D array
     m = np.array([42.0], dtype=np.float32)
-    list_of_inputs.append({"m": copy.deepcopy(m)})
+    list_of_inputs.append(copy.deepcopy({"m": m}))
+
+    # Input 9: Empty array with at least 1 dimension
+    m = np.empty((0, 4), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
+
+    # Input 10: 5D uint8 array
+    m = np.arange(32, dtype=np.uint8).reshape((2, 2, 2, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"m": m}))
+
+    # Input 11: Array with dimension of length 1 along axis 0
+    m = np.array([[10, 20, 30]], dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"m": m}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.flipud"] = flipud_inputs()
 

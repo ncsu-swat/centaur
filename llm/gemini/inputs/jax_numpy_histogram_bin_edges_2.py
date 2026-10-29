@@ -10,125 +10,101 @@ import copy
 def histogram_bin_edges_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 1D array with 5 bins
-    a = np.array([2, 5, 3, 6, 4, 1], dtype=np.float32)
+    # Input 1: 1D float32 array, scalar bins, standard range
+    a = np.array([0.5, 1.2, 2.1, 3.7, 4.0], dtype=np.float32)
     bins = np.array(5, dtype=np.int32)
-    range_val = (1.0, 6.0)
-    weights = np.ones_like(a)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
+    range_param = (0.0, 5.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Random standard normal array with 10 bins
-    a = np.random.randn(100).astype(np.float32)
-    bins = np.array(10, dtype=np.int32)
-    range_val = (-3.0, 3.0)
-    weights = np.random.rand(100).astype(np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
+    # Input 2: 2D float64 array, scalar bins, symmetric range
+    a = np.random.randn(4, 5).astype(np.float64)
+    bins = np.array(10, dtype=np.int64)
+    range_param = (-3.0, 3.0)
+    weights = np.random.uniform(0.1, 1.0, size=a.shape).astype(np.float64)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Float64 array with 20 bins and custom range
-    a = np.random.rand(50).astype(np.float64)
+    # Input 3: 1D int32 array, 1D explicit bin edges
+    a = np.array([1, 2, 4, 7, 8, 9, 3], dtype=np.int32)
+    bins = np.array([0.0, 2.5, 5.0, 7.5, 10.0], dtype=np.float32)
+    range_param = (0.0, 10.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 3D float32 array, scalar bins, wide range
+    a = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
     bins = np.array(20, dtype=np.int32)
-    range_val = (0.0, 1.0)
-    weights = np.random.rand(50).astype(np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
+    range_param = (-15.0, 15.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Pre-specified bin edges as tensor
-    a = np.arange(10, dtype=np.int32)
-    bins = np.array([0, 2, 5, 10], dtype=np.float32)
-    range_val = (0.0, 10.0)
-    weights = np.ones(10, dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
-
-    # Input 5: 2D array of inputs
-    a = np.random.randn(10, 10).astype(np.float32)
-    bins = np.array(15, dtype=np.int32)
-    range_val = (-2.0, 2.0)
-    weights = np.ones((10, 10), dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
-
-    # Input 6: Symmetric negative/positive values
-    a = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
-    bins = np.array(4, dtype=np.int32)
-    range_val = (-10.0, 10.0)
-    weights = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
-
-    # Input 7: Uniformly distributed data with larger bin count
-    a = np.random.uniform(-100, 100, size=(50,)).astype(np.float32)
-    bins = np.array(50, dtype=np.int32)
-    range_val = (-100.0, 100.0)
-    weights = np.random.rand(50).astype(np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
-
-    # Input 8: Int64 inputs and bins
-    a = np.array([1, 2, 3], dtype=np.int64)
-    bins = np.array(2, dtype=np.int64)
-    range_val = (1.0, 3.0)
-    weights = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
-
-    # Input 9: 3D tensor input
-    a = np.random.randn(5, 5, 5).astype(np.float32)
+    # Input 5: 1D strictly negative float32 array
+    a = np.array([-45.0, -32.5, -20.1, -12.0, -1.5], dtype=np.float32)
     bins = np.array(8, dtype=np.int32)
-    range_val = (-4.0, 4.0)
-    weights = np.random.rand(5, 5, 5).astype(np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
+    range_param = (-50.0, 0.0)
+    weights = np.random.rand(5).astype(np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: High-precision linspace input
-    a = np.linspace(-5, 5, 100).astype(np.float64)
+    # Input 6: 4D int64 array, scalar bins
+    a = np.random.randint(0, 100, size=(2, 2, 3, 2), dtype=np.int64)
+    bins = np.array(15, dtype=np.int32)
+    range_param = (0.0, 100.0)
+    weights = np.ones_like(a, dtype=np.float64)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D float32 array, 1D explicit monotonically increasing bin edges
+    a = np.array([[-8.0, -2.0], [1.0, 7.0]], dtype=np.float32)
+    bins = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
+    range_param = (-10.0, 10.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D int32 array, small number of bins
+    a = np.array([5, 12, 25, 33, 48], dtype=np.int32)
+    bins = np.array(4, dtype=np.int32)
+    range_param = (0.0, 50.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D float64 array, non-uniform 1D bin edges
+    a = np.array([0.15, 0.35, 0.8, 1.5, 1.9], dtype=np.float64)
+    bins = np.array([0.1, 0.2, 0.5, 1.0, 2.0], dtype=np.float64)
+    range_param = (0.1, 2.0)
+    weights = np.ones_like(a, dtype=np.float64)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D float64 array, large bin count
+    a = np.random.randn(3, 3, 3).astype(np.float64)
+    bins = np.array(50, dtype=np.int64)
+    range_param = (-4.0, 4.0)
+    weights = np.random.rand(3, 3, 3).astype(np.float64)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D int32 array, odd number of bins
+    a = np.array([-80, -40, 0, 40, 80], dtype=np.int32)
+    bins = np.array(7, dtype=np.int32)
+    range_param = (-100.0, 100.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 2D float32 array, range [0, 1]
+    a = np.random.rand(5, 5).astype(np.float32)
     bins = np.array(12, dtype=np.int32)
-    range_val = (-5.0, 5.0)
-    weights = np.linspace(0.1, 1.0, 100).astype(np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights
-    })
+    range_param = (0.0, 1.0)
+    weights = np.ones_like(a, dtype=np.float32)
+    input_dict = {"a": a, "bins": bins, "range": range_param, "weights": weights}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# A boolean input must be consistent with its truth value (Rule 51)
+# boolean scalar negation consistency (Rule 51)
 
 rule_51 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == True, v["arg1_value"] == True, v["arg1_value"] == False)) if n else
-          If(v["arg1_value"] == True, v["arg1_value"] == True, v["arg1_value"] == False))
+    s.add(Not(If(v["arg1_value"] == True, v["arg1_value"] != False, v["arg1_value"] != True)) if n else
+          If(v["arg1_value"] == True, v["arg1_value"] != False, v["arg1_value"] != True))
 )
 
 def rule_51_func(arg1, solver=None, neg=False):

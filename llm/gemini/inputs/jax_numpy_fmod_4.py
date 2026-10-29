@@ -10,54 +10,59 @@ import copy
 def fmod_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float, 1D float32 array (positive elements)
-    x1 = 5.0
+    # Input 1: 1D float32 array
+    x1 = 5.5
     x2 = np.array([2.0, 3.0, 4.0], dtype=np.float32)
     list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
 
-    # Input 2: negative float, 1D float32 array (positive elements)
-    x1 = -5.0
-    x2 = np.array([2.0, 3.0, 4.0], dtype=np.float32)
+    # Input 2: 2D float64 array with negative numbers
+    x1 = -7.2
+    x2 = np.array([[1.5, -2.0], [3.1, -4.0]], dtype=np.float64)
     list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
 
-    # Input 3: positive float, 2D float32 array with mixed signs
-    x1 = 7.5
-    x2 = np.array([[2.0, -3.0], [1.5, -4.5]], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
-
-    # Input 4: negative float, 2D float64 array with mixed signs
-    x1 = -8.2
-    x2 = np.array([[-2.5, 3.1], [-1.2, 4.0]], dtype=np.float64)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
-
-    # Input 5: float, 3D float32 array with positive elements
-    x1 = 12.0
-    x2 = np.random.uniform(1.0, 5.0, size=(2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
-
-    # Input 6: zero float, 1D float32 array
+    # Input 3: Zero dividend, 1D array
     x1 = 0.0
-    x2 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    x2 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
 
-    # Input 7: large float, 2D int32 array (integer tensor)
-    x1 = 100.5
-    x2 = np.array([[10, 20], [30, 40]], dtype=np.int32)
+    # Input 4: Positive dividend with mixed sign divisor
+    x1 = 10.0
+    x2 = np.array([-3.0, 3.0, -4.0, 4.0], dtype=np.float32)
     list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
 
-    # Input 8: small float, 4D float32 array
-    x1 = 0.5
-    x2 = np.random.uniform(0.1, 1.0, size=(2, 1, 3, 2)).astype(np.float32)
+    # Input 5: 3D float32 array
+    x1 = -15.5
+    x2 = np.full((2, 3, 4), 4.0, dtype=np.float32)
     list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
 
-    # Input 9: float, 1D float64 array
-    x1 = float(3.14159)
-    x2 = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+    # Input 6: 1D array with linspace values
+    x1 = 3.141592653589793
+    x2 = np.linspace(0.5, 5.0, 10, dtype=np.float64)
     list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
 
-    # Input 10: negative float, 3D float64 array
-    x1 = -100.0
-    x2 = np.random.uniform(-10.0, -1.0, size=(2, 3, 2)).astype(np.float64)
+    # Input 7: 4D float32 array
+    x1 = 42.0
+    x2 = np.array([[[[2.0, 3.0], [4.0, 5.0]]]], dtype=np.float32)
+    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+
+    # Input 8: float16 precision 2D array
+    x1 = 1.25
+    x2 = np.array([[2.5, 0.5, 1.25], [5.0, 0.25, 0.1]], dtype=np.float16)
+    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+
+    # Input 9: Single-element 1D array
+    x1 = -100.5
+    x2 = np.array([10.0], dtype=np.float32)
+    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+
+    # Input 10: 3D float64 array with both positive and negative values
+    x1 = 2.718281828459045
+    x2 = np.array([[[-1.5, 2.5]], [[-3.5, 4.5]]], dtype=np.float64)
+    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+
+    # Input 11: 2D random positive array
+    x1 = 1000.0
+    x2 = np.random.uniform(1.0, 50.0, size=(5, 5)).astype(np.float32)
     list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
 
     return list_of_inputs

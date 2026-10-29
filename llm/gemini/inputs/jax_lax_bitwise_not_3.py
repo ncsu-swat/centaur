@@ -10,35 +10,45 @@ import copy
 def bitwise_not_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar boolean
-    list_of_inputs.append({"x": np.array(True, dtype=bool)})
+    # Input 1: standard boolean True
+    input_dict = {"x": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D boolean array
-    list_of_inputs.append({"x": np.array([True, False, True, False], dtype=bool)})
+    # Input 2: standard boolean False
+    input_dict = {"x": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D boolean array
-    list_of_inputs.append({"x": np.array([[True, False], [False, True]], dtype=bool)})
+    # Input 3: numpy boolean True
+    input_dict = {"x": np.bool_(True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D random boolean array
-    list_of_inputs.append({"x": np.random.choice([True, False], size=(2, 3, 4)).astype(bool)})
+    # Input 4: numpy boolean False
+    input_dict = {"x": np.bool_(False)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D boolean array with singleton dimensions
-    list_of_inputs.append({"x": np.random.choice([True, False], size=(1, 5, 1, 5)).astype(bool)})
+    # Input 5: python bool from integer 1
+    input_dict = {"x": bool(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: All True boolean array
-    list_of_inputs.append({"x": np.ones((10,), dtype=bool)})
+    # Input 6: python bool from integer 0
+    input_dict = {"x": bool(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: All False boolean array
-    list_of_inputs.append({"x": np.zeros((8, 8), dtype=bool)})
+    # Input 7: numpy bool from integer 1
+    input_dict = {"x": np.bool_(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large 2D boolean array
-    list_of_inputs.append({"x": np.random.choice([True, False], size=(100, 100)).astype(bool)})
+    # Input 8: numpy bool from integer 0
+    input_dict = {"x": np.bool_(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D boolean array
-    list_of_inputs.append({"x": np.random.choice([True, False], size=(2, 2, 2, 2, 2)).astype(bool)})
+    # Input 9: numpy True_
+    input_dict = {"x": np.True_}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Empty boolean array with shape
-    list_of_inputs.append({"x": np.empty((0, 10), dtype=bool)})
+    # Input 10: numpy False_
+    input_dict = {"x": np.False_}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

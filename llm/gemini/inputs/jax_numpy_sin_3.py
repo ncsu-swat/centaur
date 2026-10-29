@@ -4,45 +4,60 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_numpy_sin_inputs():
+
+def sin_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic python integer (positive)
-    list_of_inputs.append({"x": 5})
+    # Input 1: Zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Basic python integer (zero)
-    list_of_inputs.append({"x": 0})
+    # Input 2: Positive small integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Basic python integer (negative)
-    list_of_inputs.append({"x": -10})
+    # Input 3: Negative small integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: NumPy int32 scalar
-    list_of_inputs.append({"x": np.int32(45)})
+    # Input 4: Positive integer 2
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: NumPy int64 scalar (negative)
-    list_of_inputs.append({"x": np.int64(-123)})
+    # Input 5: Negative integer -2
+    input_dict = {"x": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D NumPy array of int32
-    list_of_inputs.append({"x": np.array([0, 1, -1, 2], dtype=np.int32)})
+    # Input 6: Larger positive integer
+    input_dict = {"x": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D NumPy array of int64
-    list_of_inputs.append({"x": np.array([[1, 2], [-3, -4]], dtype=np.int64)})
+    # Input 7: Larger negative integer
+    input_dict = {"x": -90}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: NumPy int32 scalar
-    list_of_inputs.append({"x": np.int32(8)})
+    # Input 8: Angle-like integer 180
+    input_dict = {"x": 180}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D NumPy array of int32
-    list_of_inputs.append({"x": np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32)})
+    # Input 9: Large integer
+    input_dict = {"x": 1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: NumPy int64 scalar
-    list_of_inputs.append({"x": np.int64(100)})
+    # Input 10: Negative large integer
+    input_dict = {"x": -360}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Arbitrary integer
+    input_dict = {"x": 7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sin_3"] = jax_numpy_sin_inputs()
+
+generated_inputs["jax.numpy.sin_3"] = sin_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

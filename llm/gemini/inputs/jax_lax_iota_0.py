@@ -4,57 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def iota_inputs():
     list_of_inputs = []
 
-    # Input 1: int32, size 10
-    input_dict = {"dtype": np.int32, "size": 10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: int32, size 0
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.int32), "size": 0})
+    )
 
-    # Input 2: float32, size 5
-    input_dict = {"dtype": np.float32, "size": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: int32, size 1
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.int32), "size": 1})
+    )
 
-    # Input 3: int64, size 100
-    input_dict = {"dtype": np.int64, "size": 100}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: int64, size 10
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.int64), "size": 10})
+    )
 
-    # Input 4: float64, size 1
-    input_dict = {"dtype": np.float64, "size": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: float32, size 5
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.float32), "size": 5})
+    )
 
-    # Input 5: uint32, size 50
-    input_dict = {"dtype": np.uint32, "size": 50}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: float64, size 20
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.float64), "size": 20})
+    )
 
-    # Input 6: int16, size 1000
-    input_dict = {"dtype": np.int16, "size": 1000}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: uint8, size 256
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.uint8), "size": 256})
+    )
 
-    # Input 7: uint16, size 8
-    input_dict = {"dtype": np.uint16, "size": 8}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: uint32, size 100
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.uint32), "size": 100})
+    )
 
-    # Input 8: int8, size 12
-    input_dict = {"dtype": np.int8, "size": 12}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: int8, size 128
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.int8), "size": 128})
+    )
 
-    # Input 9: uint8, size 3
-    input_dict = {"dtype": np.uint8, "size": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: int16, size 1024
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.int16), "size": 1024})
+    )
 
-    # Input 10: float32, size 0
-    input_dict = {"dtype": np.float32, "size": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: uint16, size 50
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.uint16), "size": 50})
+    )
 
-    # Input 11: int32, size 10000
-    input_dict = {"dtype": np.int32, "size": 10000}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: bfloat16 or float16, size 64
+    list_of_inputs.append(
+        copy.deepcopy({"dtype": np.dtype(np.float16), "size": 64})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.iota"] = iota_inputs()
 

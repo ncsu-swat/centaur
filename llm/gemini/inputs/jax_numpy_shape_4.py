@@ -10,44 +10,52 @@ import copy
 def shape_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D boolean scalar
+    # Input 1: standard python True
+    input_dict = {"a": True}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: standard python False
+    input_dict = {"a": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: numpy bool True
     input_dict = {"a": np.bool_(True)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D boolean array
-    input_dict = {"a": np.array([True, False, True, False], dtype=bool)}
+    # Input 4: numpy bool False
+    input_dict = {"a": np.bool_(False)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D boolean array
-    input_dict = {"a": np.array([[True, False], [False, True]], dtype=bool)}
+    # Input 5: numpy True_ constant
+    input_dict = {"a": np.True_}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D boolean array
-    input_dict = {"a": np.ones((2, 3, 4), dtype=bool)}
+    # Input 6: numpy False_ constant
+    input_dict = {"a": np.False_}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D boolean array with single row
-    input_dict = {"a": np.zeros((1, 5), dtype=bool)}
+    # Input 7: boolean from comparison (True)
+    input_dict = {"a": bool(1 < 2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D boolean array
-    input_dict = {"a": np.ones((2, 2, 2, 2), dtype=bool)}
+    # Input 8: boolean from comparison (False)
+    input_dict = {"a": bool(2 < 1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 0D boolean array
-    input_dict = {"a": np.array(False, dtype=bool)}
+    # Input 9: np.bool_ from integer 1
+    input_dict = {"a": np.bool_(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D boolean array with size 1 dimensions
-    input_dict = {"a": np.zeros((1, 1, 1), dtype=bool)}
+    # Input 10: np.bool_ from integer 0
+    input_dict = {"a": np.bool_(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D large boolean array
-    input_dict = {"a": np.ones((10,), dtype=bool)}
+    # Input 11: extracted scalar from 0-d boolean array
+    input_dict = {"a": np.array(True, dtype=bool).item()}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D boolean array
-    input_dict = {"a": np.zeros((2, 1, 3, 1, 4), dtype=bool)}
+    # Input 12: extracted scalar from 0-d boolean array
+    input_dict = {"a": np.array(False, dtype=bool).item()}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

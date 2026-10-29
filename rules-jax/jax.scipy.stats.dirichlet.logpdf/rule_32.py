@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both x and alpha must be at least 1-dimensional and not exceed 3 dimensions for typical usage (Rule 32)
+# rank of x is at least as large as rank of alpha for batch broadcasting (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 3), v["arg2_ndim"] >= 1), v["arg2_ndim"] <= 3)) if n else
-          And(And(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 3), v["arg2_ndim"] >= 1), v["arg2_ndim"] <= 3))
+    s.add(Not(v["arg1_ndim"] >= v["arg2_ndim"]) if n else
+          v["arg1_ndim"] >= v["arg2_ndim"])
 )
 
 def rule_32_func(arg1, arg2, solver=None, neg=False):

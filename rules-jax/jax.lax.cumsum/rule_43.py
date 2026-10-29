@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for negative axis, the wrapped axis must be non-negative, and for non-negative axis, it must be less than the number of dimensions (Rule 43)
+# when cumsumming along axis 2, operand must have rank of at least 3 (Rule 43)
 
 rule_43 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else
-          If(v["arg2_value"] < 0, v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(If(v["arg2_value"] == 2, v["arg1_ndim"] >= 3, True)) if n else
+          If(v["arg2_value"] == 2, v["arg1_ndim"] >= 3, True))
 )
 
 def rule_43_func(arg1, arg2, solver=None, neg=False):

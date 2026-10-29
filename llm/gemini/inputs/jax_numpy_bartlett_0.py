@@ -4,43 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bartlett_inputs():
     list_of_inputs = []
 
-    # Input 1: Small positive integer
-    list_of_inputs.append({"M": 5})
+    # Input 1: Zero
+    input_dict = {"M": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Zero
-    list_of_inputs.append({"M": 0})
+    # Input 2: One
+    input_dict = {"M": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Another small positive integer
-    list_of_inputs.append({"M": 3})
+    # Input 3: Two
+    input_dict = {"M": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Medium positive integer
-    list_of_inputs.append({"M": 10})
+    # Input 4: Three
+    input_dict = {"M": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive integer
-    list_of_inputs.append({"M": 100})
+    # Input 5: Small even integer
+    input_dict = {"M": 4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy.int32 type
-    list_of_inputs.append({"M": np.int32(7)})
+    # Input 6: Small odd integer
+    input_dict = {"M": 7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy.int64 type
-    list_of_inputs.append({"M": np.int64(20)})
+    # Input 7: Moderate even integer
+    input_dict = {"M": 16}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Smallest positive integer
-    list_of_inputs.append({"M": 1})
+    # Input 8: Moderate odd integer
+    input_dict = {"M": 33}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Even integer
-    list_of_inputs.append({"M": 8})
+    # Input 9: Large integer
+    input_dict = {"M": 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Very large integer
-    list_of_inputs.append({"M": 1000})
+    # Input 10: Larger power of 2
+    input_dict = {"M": 256}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: NumPy int32 integer
+    input_dict = {"M": int(np.int32(64))}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: NumPy int64 integer
+    input_dict = {"M": int(np.int64(51))}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bartlett"] = bartlett_inputs()
 

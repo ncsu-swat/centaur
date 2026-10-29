@@ -7,16 +7,18 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# rank of lhs and rhs must be equal (Rule 38)
+# for 2D valid convolution, spatial dimensions of input must not be smaller than kernel dimensions (Rule 38)
 
 rule_38 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == v["arg2_ndim"]) if n else
-          v["arg1_ndim"] == v["arg2_ndim"])
+    s.add(Not(If(And(And(And(v["arg4_value"] == 19, v["arg1_ndim"] == 4), v["arg2_ndim"] == 4), v["arg3_length"] == 2), And(Select(v["arg1_shape"], 2) >= Select(v["arg2_shape"], 2), Select(v["arg1_shape"], 3) >= Select(v["arg2_shape"], 3)), True)) if n else
+          If(And(And(And(v["arg4_value"] == 19, v["arg1_ndim"] == 4), v["arg2_ndim"] == 4), v["arg3_length"] == 2), And(Select(v["arg1_shape"], 2) >= Select(v["arg2_shape"], 2), Select(v["arg1_shape"], 3) >= Select(v["arg2_shape"], 3)), True))
 )
 
-def rule_38_func(arg1, arg2, solver=None, neg=False):
+def rule_38_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
@@ -24,20 +26,34 @@ def rule_38_func(arg1, arg2, solver=None, neg=False):
             return False
         if not isinstance(arg2, np.ndarray):
             return False
+        if not (isinstance(arg3, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
+            return False
+        if not isinstance(arg4, str):
+            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
+        arg3_length = Int('arg3_length')
+        solver.add(arg4_value == list_of_string_values_jax.index(arg4))
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
         solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
+        solver.add(arg3_length == len(arg3))
+        solver.add(arg4_value == list_of_string_values_jax.index(arg4))
 
         # Constraints for rule 38
-        rule_38(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_38(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_length': arg3_length, 'arg4_value': arg4_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_38(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_38(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_length': arg3['length'], 'arg4_value': arg4['value']}, neg)

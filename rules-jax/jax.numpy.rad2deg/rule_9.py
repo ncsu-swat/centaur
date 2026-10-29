@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input is a float, it should be within a stable numerical range (Rule 9)
+# tensor elements in radians should lie within a standard full rotation (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 1000000, False, If(v["arg1_value"] < -1000000, False, True))) if n else
-          If(v["arg1_value"] > 1000000, False, If(v["arg1_value"] < -1000000, False, True)))
+    s.add(Not(And(Select(v["arg1_range"], 0) >= -6.2832, Select(v["arg1_range"], 1) <= 6.2832)) if n else
+          And(Select(v["arg1_range"], 0) >= -6.2832, Select(v["arg1_range"], 1) <= 6.2832))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):
@@ -19,20 +19,21 @@ def rule_9_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 9
-        rule_9(solver, {'arg1_value': arg1_value})
+        rule_9(solver, {'arg1_range': arg1_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_9(solver, {'arg1_value': arg1['value']}, neg)
+        rule_9(solver, {'arg1_range': arg1['range']}, neg)

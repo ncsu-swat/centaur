@@ -4,73 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def left_shift_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D int32 shift amounts
-    list_of_inputs.append({
-        'x': 1,
-        'y': np.array([1, 2, 3], dtype=np.int32)
-    })
+    # Input 1: 1D int32 array
+    input_dict = {
+        "x": 1,
+        "y": np.array([1, 2, 3, 4], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32 shift amounts
-    list_of_inputs.append({
-        'x': 5,
-        'y': np.array([[0, 1], [2, 3]], dtype=np.int32)
-    })
+    # Input 2: 2D int64 array
+    input_dict = {
+        "x": 4,
+        "y": np.array([[1, 2], [3, 0]], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative integer for x, 1D int64 shift amounts
-    list_of_inputs.append({
-        'x': -2,
-        'y': np.array([1, 2, 4], dtype=np.int64)
-    })
+    # Input 3: Negative integer for x, 1D int32 array
+    input_dict = {
+        "x": -2,
+        "y": np.array([0, 1, 2, 3], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D int32 shift amounts
-    list_of_inputs.append({
-        'x': 10,
-        'y': np.array([[[1, 2], [3, 4]]], dtype=np.int32)
-    })
+    # Input 4: 3D int32 array with zeros
+    input_dict = {
+        "x": 0,
+        "y": np.zeros((3, 3, 3), dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array of ones with int32 type
-    list_of_inputs.append({
-        'x': 3,
-        'y': np.ones((2, 2, 2), dtype=np.int32)
-    })
+    # Input 5: 3D int32 array with small shift amounts
+    input_dict = {
+        "x": 15,
+        "y": np.array([[[1, 2], [3, 4]], [[0, 1], [2, 3]]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: x is 0, shifting shouldn't change value, int32 shift amounts
-    list_of_inputs.append({
-        'x': 0,
-        'y': np.array([4, 5, 6], dtype=np.int32)
-    })
+    # Input 6: Negative integer for x, 1D int64 array
+    input_dict = {
+        "x": -10,
+        "y": np.array([1, 2, 3], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Negative boundary value, int64 shift amounts
-    list_of_inputs.append({
-        'x': -128,
-        'y': np.array([0, 1, 2], dtype=np.int64)
-    })
+    # Input 7: 0-D scalar tensor for y
+    input_dict = {
+        "x": 7,
+        "y": np.array(2, dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D arange shift amounts, int32
-    list_of_inputs.append({
-        'x': 100,
-        'y': np.arange(5, dtype=np.int32)
-    })
+    # Input 8: 2D column vector with int32
+    input_dict = {
+        "x": 3,
+        "y": np.ones((5, 1), dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Column vector (2D) shift amounts, int64
-    list_of_inputs.append({
-        'x': 42,
-        'y': np.array([[1], [2], [3]], dtype=np.int64)
-    })
+    # Input 9: 2D int64 array from arange
+    input_dict = {
+        "x": 5,
+        "y": np.arange(10, dtype=np.int64).reshape(2, 5),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array of random shift values up to 5, int32
-    list_of_inputs.append({
-        'x': 7,
-        'y': np.random.randint(0, 5, size=(4, 4), dtype=np.int32)
-    })
+    # Input 10: 4D int32 array
+    input_dict = {
+        "x": -1,
+        "y": np.array([[[[0, 1], [2, 3]]]], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Empty 1D array
+    input_dict = {
+        "x": 42,
+        "y": np.array([], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.left_shift_3"] = left_shift_inputs()
 

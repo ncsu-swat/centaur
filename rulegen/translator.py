@@ -133,11 +133,9 @@ def main():
 
     if llm == "gemini":
         base_dir = os.path.abspath(f"../rules-{lib}")
-    elif llm == "openai":
-        base_dir = os.path.abspath(f"{llm}/rules-{lib}")
     else:
-        print("llm must be either 'gemini' or 'openai'")
-        sys.exit(1)
+        # any non-gemini label writes/reads under rulegen/<llm>/rules-<lib>
+        base_dir = os.path.abspath(f"{llm}/rules-{lib}")
     
     rules_file = "rules-ebnf"
 

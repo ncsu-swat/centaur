@@ -4,41 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def exp2_inputs():
     list_of_inputs = []
 
-    # Input 1: Positive integer as float
-    list_of_inputs.append({"x": 2.0})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative integer as float
-    list_of_inputs.append({"x": -4.0})
+    # Input 2: Positive integer as float
+    input_dict = {"x": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Negative integer as float
+    input_dict = {"x": -2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Fractional positive float
-    list_of_inputs.append({"x": 0.5})
+    # Input 4: Positive fractional value
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Fractional negative float
-    list_of_inputs.append({"x": -1.5})
+    # Input 5: Negative fractional value
+    input_dict = {"x": -1.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger positive float
-    list_of_inputs.append({"x": 10.25})
+    # Input 6: Non-integer float (pi)
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Larger negative float
-    list_of_inputs.append({"x": -10.75})
+    # Input 7: Small positive float
+    input_dict = {"x": 1e-4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Float approximation of pi
-    list_of_inputs.append({"x": float(np.pi)})
+    # Input 8: Moderately large positive float
+    input_dict = {"x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Very small positive float
-    list_of_inputs.append({"x": 1e-5})
+    # Input 9: Moderately large negative float
+    input_dict = {"x": -10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative zero
-    list_of_inputs.append({"x": -0.0})
+    # Input 10: Special float - infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Special float - negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Special float - nan
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

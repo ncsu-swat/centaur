@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensors must be real-valued and cannot have complex dtypes (Rule 12)
+# Both operands must not be complex numbers (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
     s.add(Not(And(And(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10), v["arg2_dtype"] != 9), v["arg2_dtype"] != 10)) if n else

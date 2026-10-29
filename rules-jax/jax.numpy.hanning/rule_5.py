@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# window size M must be at least zero (Rule 5)
+# window size M should be at least 1 to produce a valid non-empty window (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(0 <= v["arg1_value"]) if n else
-          0 <= v["arg1_value"])
+    s.add(Not(v["arg1_value"] >= 1) if n else
+          v["arg1_value"] >= 1)
 )
 
 def rule_5_func(arg1, solver=None, neg=False):

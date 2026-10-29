@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def log_inputs():
     list_of_inputs = []
 
-    # Input 1: Python standard int 1
+    # Input 1
     input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python standard int 2
+    # Input 2
     input_dict = {"x": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Python standard int 3
-    input_dict = {"x": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Python standard int 10
+    # Input 3
     input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Python standard int 100
+    # Input 4
     input_dict = {"x": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int32 scalar 5
-    input_dict = {"x": np.int32(5)}
+    # Input 5
+    input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.int32 scalar 15
-    input_dict = {"x": np.int32(15)}
+    # Input 6
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: np.int32 scalar 50
-    input_dict = {"x": np.int32(50)}
+    # Input 7
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: np.int64 scalar 8
-    input_dict = {"x": np.int64(8)}
+    # Input 8
+    input_dict = {"x": -10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: np.int64 scalar 100
-    input_dict = {"x": np.int64(100)}
+    # Input 9
+    input_dict = {"x": 256}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: np.int64 scalar 1000
-    input_dict = {"x": np.int64(1000)}
+    # Input 10
+    input_dict = {"x": 1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11
+    input_dict = {"x": 7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.log_2"] = log_inputs()
 

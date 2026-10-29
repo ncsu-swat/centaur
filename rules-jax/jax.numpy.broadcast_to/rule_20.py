@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# broadcast integer shape must be non-negative (Rule 20)
+# integer target shape dimension must be non-negative (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
     s.add(Not(v["arg1_value"] >= 0) if n else

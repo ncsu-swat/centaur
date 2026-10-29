@@ -4,54 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def ndtr_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero
-    input_dict = {"x": 0.0}
+    # Input 1: zero
+    input_dict = {"x": float(0.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float
-    input_dict = {"x": 1.5}
+    # Input 2: positive standard deviation
+    input_dict = {"x": float(1.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
-    input_dict = {"x": -1.5}
+    # Input 3: negative standard deviation
+    input_dict = {"x": float(-1.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large positive float
-    input_dict = {"x": 8.0}
+    # Input 4: moderate positive value
+    input_dict = {"x": float(2.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large negative float
-    input_dict = {"x": -8.0}
+    # Input 5: moderate negative value
+    input_dict = {"x": float(-2.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small positive float
-    input_dict = {"x": 1e-5}
+    # Input 6: small positive fraction
+    input_dict = {"x": float(0.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small negative float
-    input_dict = {"x": -1e-5}
+    # Input 7: small negative fraction
+    input_dict = {"x": float(-0.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: np.float32 scalar positive
-    input_dict = {"x": np.float32(2.5)}
+    # Input 8: large positive value (near 1.0)
+    input_dict = {"x": float(6.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: np.float32 scalar negative
-    input_dict = {"x": np.float32(-2.5)}
+    # Input 9: large negative value (near 0.0)
+    input_dict = {"x": float(-6.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: np.float64 scalar positive
-    input_dict = {"x": np.float64(5.4)}
+    # Input 10: very small positive value
+    input_dict = {"x": float(1e-5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: np.float64 scalar negative
-    input_dict = {"x": np.float64(-5.4)}
+    # Input 11: arbitrary positive floating value
+    input_dict = {"x": float(3.141592653589793)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: arbitrary negative floating value
+    input_dict = {"x": float(-3.141592653589793)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

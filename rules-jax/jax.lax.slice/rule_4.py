@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# start and limit indices constraints for list-based slicing (Rule 4)
+# start and limit indices must be within valid bounds for each dimension (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg2_length"] == v["arg1_ndim"], v["arg3_length"] == v["arg1_ndim"]), And([Implies(i < (v["arg1_ndim"] - 1 + 1), And(And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) <= Select(v["arg3_values"], i)), Select(v["arg3_values"], i) <= Select(v["arg1_shape"], i))) for i in range(6)]))) if n else
-          And(And(v["arg2_length"] == v["arg1_ndim"], v["arg3_length"] == v["arg1_ndim"]), And([Implies(i < (v["arg1_ndim"] - 1 + 1), And(And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) <= Select(v["arg3_values"], i)), Select(v["arg3_values"], i) <= Select(v["arg1_shape"], i))) for i in range(6)])))
+    s.add(Not(And(And(v["arg2_length"] == v["arg1_ndim"], v["arg3_length"] == v["arg1_ndim"]), And([Implies(i < (v["arg1_ndim"] - 1 + 1), And(And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= Select(v["arg3_values"], i)), Select(v["arg3_values"], i) <= Select(v["arg1_shape"], i))) for i in range(6)]))) if n else
+          And(And(v["arg2_length"] == v["arg1_ndim"], v["arg3_length"] == v["arg1_ndim"]), And([Implies(i < (v["arg1_ndim"] - 1 + 1), And(And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= Select(v["arg3_values"], i)), Select(v["arg3_values"], i) <= Select(v["arg1_shape"], i))) for i in range(6)])))
 )
 
 def rule_4_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -23,9 +23,9 @@ def rule_4_func(arg1, arg2, arg3, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
-        if not (isinstance(arg3, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
+        if not (isinstance(arg3, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
             return False
 
         # Variable declarations
@@ -49,9 +49,9 @@ def rule_4_func(arg1, arg2, arg3, solver=None, neg=False):
             arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 4
-        rule_4(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length, 'arg3_values': arg3_values, 'arg3_length': arg3_length})
+        rule_4(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_4(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length'], 'arg3_values': arg3['values'], 'arg3_length': arg3['length']}, neg)
+        rule_4(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

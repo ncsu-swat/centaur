@@ -7,32 +7,40 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# operand must have a numerical data type (Rule 28)
+# axes for a 4D tensor must only contain valid dimension indices 0 to 3 (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] > 0, v["arg1_dtype"] < 11)) if n else
-          And(v["arg1_dtype"] > 0, v["arg1_dtype"] < 11))
+    s.add(Not(If(v["arg1_ndim"] == 4, And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= 3)) for i in range(6)]), True)) if n else
+          If(v["arg1_ndim"] == 4, And([Implies(i < (v["arg2_length"] - 1 + 1), And(0 <= Select(v["arg2_values"], i), Select(v["arg2_values"], i) <= 3)) for i in range(6)]), True))
 )
 
-def rule_28_func(arg1, solver=None, neg=False):
+def rule_28_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 28
-        rule_28(solver, {'arg1_dtype': arg1_dtype})
+        rule_28(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_28(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_28(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

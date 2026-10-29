@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor must have a numeric or boolean data type, excluding string or dtype classes (Rule 30)
+# tuple of booleans must not be empty (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] < 11) if n else
-          v["arg1_dtype"] < 11)
+    s.add(Not(v["arg1_length"] > 0) if n else
+          v["arg1_length"] > 0)
 )
 
 def rule_30_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_30_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, bool) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_length = Int('arg1_length')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 30
-        rule_30(solver, {'arg1_dtype': arg1_dtype})
+        rule_30(solver, {'arg1_length': arg1_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_30(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_30(solver, {'arg1_length': arg1['length']}, neg)

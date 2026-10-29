@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# window_strides length must equal the spatial dimensions of LHS (Rule 64)
+# flat padding specification list for a 4D convolution must contain exactly 4 bound values (Rule 64)
 
 rule_64 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_length"] == v["arg1_ndim"] - 2) if n else
-          v["arg2_length"] == v["arg1_ndim"] - 2)
+    s.add(Not(If(v["arg2_ndim"] == 4, v["arg1_length"] == 4, v["arg1_length"] >= 2)) if n else
+          If(v["arg2_ndim"] == 4, v["arg1_length"] == 4, v["arg1_length"] >= 2))
 )
 
 def rule_64_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_64_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
+        arg1_length = Int('arg1_length')
+        arg2_ndim = Int('arg2_ndim')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
+        solver.add(arg1_length == len(arg1))
+        solver.add(arg2_ndim == arg2.ndim)
 
         # Constraints for rule 64
-        rule_64(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
+        rule_64(solver, {'arg1_length': arg1_length, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_64(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)
+        rule_64(solver, {'arg1_length': arg1['length'], 'arg2_ndim': arg2['ndim']}, neg)

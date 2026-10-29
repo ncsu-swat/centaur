@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the difference in the number of dimensions between the two tensors must not exceed 4 (Rule 34)
+# for floating-point arrays evaluated under equal_nan, the minimum value must not exceed the maximum value (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] >= v["arg2_ndim"], v["arg1_ndim"] - v["arg2_ndim"] <= 4, v["arg2_ndim"] - v["arg1_ndim"] <= 4)) if n else
-          If(v["arg1_ndim"] >= v["arg2_ndim"], v["arg1_ndim"] - v["arg2_ndim"] <= 4, v["arg2_ndim"] - v["arg1_ndim"] <= 4))
+    s.add(Not(If(And(And(v["arg2_value"] == True, v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8), Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1), True)) if n else
+          If(And(And(v["arg2_value"] == True, v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8), Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1), True))
 )
 
 def rule_34_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,25 @@ def rule_34_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not isinstance(arg2, bool):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
+        arg1_dtype = Int('arg1_dtype')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg2_value = Bool('arg2_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg2_value == arg2)
 
         # Constraints for rule 34
-        rule_34(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_34(solver, {'arg1_range': arg1_range, 'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_34(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_34(solver, {'arg1_range': arg1['range'], 'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)

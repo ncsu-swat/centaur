@@ -10,41 +10,49 @@ import copy
 def arcsin_inputs():
     list_of_inputs = []
 
-    # Input 1: Python int 0
-    list_of_inputs.append({"x": 0})
+    # Input 1: Zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python int 1
-    list_of_inputs.append({"x": 1})
+    # Input 2: Positive boundary value
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Python int -1
-    list_of_inputs.append({"x": -1})
+    # Input 3: Negative boundary value
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.int32 0
-    list_of_inputs.append({"x": np.int32(0)})
+    # Input 4: Small positive integer outside [-1, 1]
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.int32 1
-    list_of_inputs.append({"x": np.int32(1)})
+    # Input 5: Small negative integer outside [-1, 1]
+    input_dict = {"x": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int32 -1
-    list_of_inputs.append({"x": np.int32(-1)})
+    # Input 6: Moderate positive integer
+    input_dict = {"x": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.int64 0
-    list_of_inputs.append({"x": np.int64(0)})
+    # Input 7: Moderate negative integer
+    input_dict = {"x": -5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: np.int64 1
-    list_of_inputs.append({"x": np.int64(1)})
+    # Input 8: Larger positive integer
+    input_dict = {"x": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: np.int64 -1
-    list_of_inputs.append({"x": np.int64(-1)})
+    # Input 9: Larger negative integer
+    input_dict = {"x": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: np.int16 0
-    list_of_inputs.append({"x": np.int16(0)})
+    # Input 10: High magnitude positive integer
+    input_dict = {"x": 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: np.int8 -1
-    list_of_inputs.append({"x": np.int8(-1)})
-
-    # Input 12: Python int 2 (out of bounds but valid)
-    list_of_inputs.append({"x": 2})
+    # Input 11: High magnitude negative integer
+    input_dict = {"x": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

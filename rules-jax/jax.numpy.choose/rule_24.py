@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The choice array must have exactly one more dimension than the index array (Rule 24)
+# for a scalar index tensor, the value must be non-negative and strictly less than the number of choices in the choice tensor (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_ndim"] == v["arg1_ndim"] + 1) if n else
-          v["arg2_ndim"] == v["arg1_ndim"] + 1)
+    s.add(Not(If(And(v["arg1_ndim"] == 0, v["arg2_ndim"] >= 1), And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) < Select(v["arg2_shape"], 0)), True)) if n else
+          If(And(v["arg1_ndim"] == 0, v["arg2_ndim"] >= 1), And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) < Select(v["arg2_shape"], 0)), True))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -28,16 +28,22 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
         arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
         solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 24
-        rule_24(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_24(solver, {'arg1_range': arg1_range, 'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_24(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_24(solver, {'arg1_range': arg1['range'], 'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

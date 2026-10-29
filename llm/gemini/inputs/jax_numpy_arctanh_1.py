@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arctanh_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array within (-1, 1)
+    # Input 1: 1D array of float32 values within (-1, 1)
     x = np.array([-0.8, -0.5, 0.0, 0.5, 0.8], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float32 array with boundaries [-1, 1]
-    x = np.array([[-1.0, -0.2], [0.2, 1.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D array of float64 values
+    x = np.array([[-0.9, -0.1], [0.1, 0.9]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D float64 array within (-1, 1)
-    x = np.random.uniform(-0.99, 0.99, (2, 3, 3)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar array (float32)
+    x = np.array(0.25, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D float32 array (scalar tensor)
-    x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array of float16 values
+    x = np.zeros((2, 3, 4), dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D complex64 array
-    x = np.array([-2.0 + 0j, 3.0 + 0j, 4.0 - 1j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: Complex64 values (1D)
+    x = np.array([-2.0 + 0.0j, 3.0 + 0.0j, 4.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 2D complex128 array
-    x = np.array([[0.5 + 0.5j, -0.5 - 0.5j], [1.5 + 0j, -1.5 + 0j]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Complex128 2D array
+    x = np.array(
+        [[0.5 + 0.5j, -0.5 + 0.5j], [0.2 - 0.3j, -0.2 - 0.3j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D float32 array with negative values
-    x = np.array([-0.9, -0.7, -0.3, -0.1], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Integer array (int32) promoting to inexact dtype
+    x = np.array([-1, 0, 1], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D float32 array
-    x = np.random.uniform(-0.5, 0.5, (2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D array with random values between -0.99 and 0.99
+    x = np.linspace(-0.99, 0.99, 24, dtype=np.float32).reshape((2, 2, 2, 3))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D float16 array
-    x = np.array([-0.99, 0.0, 0.99], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Boundary and out-of-domain values producing inf and nan
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D float32 array with values outside [-1, 1]
-    x = np.array([[-2.0, -1.5], [1.5, 2.0]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Non-contiguous 2D slice
+    full_arr = np.linspace(-0.9, 0.9, 25, dtype=np.float32).reshape(5, 5)
+    x = full_arr[::2, ::2]
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arctanh_1"] = arctanh_inputs()
 

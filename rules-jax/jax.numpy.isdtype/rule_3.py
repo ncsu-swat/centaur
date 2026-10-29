@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tuple of kind strings should not contain invalid keywords (Rule 3)
+# kind string should specify a valid dtype identifier (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(Select(v["arg1_values"], i) != 0, Select(v["arg1_values"], i) != 1), Select(v["arg1_values"], i) != 2), Select(v["arg1_values"], i) != 3), Select(v["arg1_values"], i) != 4), Select(v["arg1_values"], i) != 5), Select(v["arg1_values"], i) != 6), Select(v["arg1_values"], i) != 7), Select(v["arg1_values"], i) != 8), Select(v["arg1_values"], i) != 9), Select(v["arg1_values"], i) != 10), Select(v["arg1_values"], i) != 11), Select(v["arg1_values"], i) != 12), Select(v["arg1_values"], i) != 13), Select(v["arg1_values"], i) != 14), Select(v["arg1_values"], i) != 15), Select(v["arg1_values"], i) != 16), Select(v["arg1_values"], i) != 17), Select(v["arg1_values"], i) != 18), Select(v["arg1_values"], i) != 19), Select(v["arg1_values"], i) != 20)) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(And(Select(v["arg1_values"], i) != 0, Select(v["arg1_values"], i) != 1), Select(v["arg1_values"], i) != 2), Select(v["arg1_values"], i) != 3), Select(v["arg1_values"], i) != 4), Select(v["arg1_values"], i) != 5), Select(v["arg1_values"], i) != 6), Select(v["arg1_values"], i) != 7), Select(v["arg1_values"], i) != 8), Select(v["arg1_values"], i) != 9), Select(v["arg1_values"], i) != 10), Select(v["arg1_values"], i) != 11), Select(v["arg1_values"], i) != 12), Select(v["arg1_values"], i) != 13), Select(v["arg1_values"], i) != 14), Select(v["arg1_values"], i) != 15), Select(v["arg1_values"], i) != 16), Select(v["arg1_values"], i) != 17), Select(v["arg1_values"], i) != 18), Select(v["arg1_values"], i) != 19), Select(v["arg1_values"], i) != 20)) for i in range(6)]))
+    s.add(Not(Or(v["arg1_value"] == 38, v["arg1_value"] == 39)) if n else
+          Or(v["arg1_value"] == 38, v["arg1_value"] == 39))
 )
 
 def rule_3_func(arg1, solver=None, neg=False):
@@ -19,23 +19,20 @@ def rule_3_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, str) for e in arg1)):
+        if not isinstance(arg1, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), StringSort())
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Constraints for rule 3
-        rule_3(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_3(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_3(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_3(solver, {'arg1_value': arg1['value']}, neg)

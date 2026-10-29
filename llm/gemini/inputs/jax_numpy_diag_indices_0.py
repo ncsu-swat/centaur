@@ -4,44 +4,44 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def diag_indices_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 2D case, small size
-    list_of_inputs.append({"n": int(3), "ndim": int(2)})
+    # Input 1: Basic 2D diagonal indices
+    list_of_inputs.append({"n": 3, "ndim": 2})
 
-    # Input 2: 3D case, small size
-    list_of_inputs.append({"n": int(4), "ndim": int(3)})
+    # Input 2: 3D diagonal indices
+    list_of_inputs.append({"n": 4, "ndim": 3})
 
-    # Input 3: Minimal size and dimension
-    list_of_inputs.append({"n": int(1), "ndim": int(1)})
+    # Input 3: 1D case
+    list_of_inputs.append({"n": 5, "ndim": 1})
 
-    # Input 4: Boundary case with size 0
-    list_of_inputs.append({"n": int(0), "ndim": int(2)})
+    # Input 4: 4D case with small size
+    list_of_inputs.append({"n": 2, "ndim": 4})
 
-    # Input 5: High dimensions, small size
-    list_of_inputs.append({"n": int(2), "ndim": int(5)})
+    # Input 5: n = 0 (empty diagonal)
+    list_of_inputs.append({"n": 0, "ndim": 2})
 
-    # Input 6: Large size, 2D
-    list_of_inputs.append({"n": int(100), "ndim": int(2)})
+    # Input 6: n = 1 (single element)
+    list_of_inputs.append({"n": 1, "ndim": 2})
 
-    # Input 7: Moderate size and dimensions
-    list_of_inputs.append({"n": int(5), "ndim": int(4)})
+    # Input 7: ndim = 0 (0-dimensional indexing tuple)
+    list_of_inputs.append({"n": 3, "ndim": 0})
 
-    # Input 8: 1D array diagonal indices
-    list_of_inputs.append({"n": int(8), "ndim": int(1)})
+    # Input 8: Larger n with 2D
+    list_of_inputs.append({"n": 100, "ndim": 2})
 
-    # Input 9: Symmetrical dimensions and size
-    list_of_inputs.append({"n": int(6), "ndim": int(6)})
+    # Input 9: High-dimensional array
+    list_of_inputs.append({"n": 3, "ndim": 6})
 
-    # Input 10: Moderate size, 3D
-    list_of_inputs.append({"n": int(10), "ndim": int(3)})
+    # Input 10: Larger n and 3D
+    list_of_inputs.append({"n": 16, "ndim": 3})
 
-    # Input 11: High size, 2D
-    list_of_inputs.append({"n": int(50), "ndim": int(2)})
+    # Input 11: Using np.int32
+    list_of_inputs.append({"n": int(np.int32(8)), "ndim": int(np.int32(2))})
 
     return list_of_inputs
 

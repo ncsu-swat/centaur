@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both dimensions n and m must be non-negative (Rule 9)
+# If sub-diagonal offset k is negative, rows n plus k must be non-negative to intersect the matrix (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] < 0, False, If(v["arg2_value"] < 0, False, True))) if n else
-          If(v["arg1_value"] < 0, False, If(v["arg2_value"] < 0, False, True)))
+    s.add(Not(If(v["arg2_value"] < 0, v["arg1_value"] + v["arg2_value"] >= 0, v["arg1_value"] >= 0)) if n else
+          If(v["arg2_value"] < 0, v["arg1_value"] + v["arg2_value"] >= 0, v["arg1_value"] >= 0))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):

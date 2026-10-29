@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the window size M should be a positive integer (Rule 25)
+# window size M must be non-negative if small, otherwise at least 3 for symmetric spectral windowing (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] > 0) if n else
-          v["arg1_value"] > 0)
+    s.add(Not(If(v["arg1_value"] <= 1, v["arg1_value"] >= 0, v["arg1_value"] >= 3)) if n else
+          If(v["arg1_value"] <= 1, v["arg1_value"] >= 0, v["arg1_value"] >= 3))
 )
 
 def rule_25_func(arg1, solver=None, neg=False):

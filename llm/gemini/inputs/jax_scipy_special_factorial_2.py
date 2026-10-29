@@ -4,90 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def factorial_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard python integer
-    input_dict = {
-        "n": 5,
-        "exact": False
-    }
+    # Input 1: 0! = 1
+    input_dict = {"n": 0, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Zero
-    input_dict = {
-        "n": 0,
-        "exact": False
-    }
+    # Input 2: 1! = 1
+    input_dict = {"n": 1, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Larger integer
-    input_dict = {
-        "n": 10,
-        "exact": False
-    }
+    # Input 3: 2! = 2
+    input_dict = {"n": 2, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: numpy int32
-    input_dict = {
-        "n": np.int32(6),
-        "exact": False
-    }
+    # Input 4: 3! = 6
+    input_dict = {"n": 3, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy int64
-    input_dict = {
-        "n": np.int64(12),
-        "exact": False
-    }
+    # Input 5: 4! = 24
+    input_dict = {"n": 4, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int32 another value
-    input_dict = {
-        "n": np.int32(4),
-        "exact": False
-    }
+    # Input 6: 5! = 120
+    input_dict = {"n": 5, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy int64 another value
-    input_dict = {
-        "n": np.int64(3),
-        "exact": False
-    }
+    # Input 7: 6! = 720
+    input_dict = {"n": 6, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small positive integer
-    input_dict = {
-        "n": 1,
-        "exact": False
-    }
+    # Input 8: 10!
+    input_dict = {"n": 10, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Max safe integer representation (20)
-    input_dict = {
-        "n": 20,
-        "exact": False
-    }
+    # Input 9: 15!
+    input_dict = {"n": 15, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Another python integer
-    input_dict = {
-        "n": 8,
-        "exact": False
-    }
+    # Input 10: 20!
+    input_dict = {"n": 20, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Another numpy int32
-    input_dict = {
-        "n": np.int32(15),
-        "exact": False
-    }
+    # Input 11: 30!
+    input_dict = {"n": 30, "exact": False}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative integer (computed via gamma)
+    input_dict = {"n": -1, "exact": False}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.factorial_2"] = factorial_inputs()
 

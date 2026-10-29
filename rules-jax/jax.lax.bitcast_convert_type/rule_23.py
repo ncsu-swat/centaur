@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Casting a 4-byte tensor to an 8-byte tensor requires the last dimension to be 2 (Rule 23)
+# bitcasting 1-byte tensor to a 16-byte complex128 type requires last dimension to be 16 (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(If(And((Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 7)), (Or(Or(v["arg2_value"] == 4, v["arg2_value"] == 8), v["arg2_value"] == 9))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 2), True)) if n else
-          If(And((Or(v["arg1_dtype"] == 3, v["arg1_dtype"] == 7)), (Or(Or(v["arg2_value"] == 4, v["arg2_value"] == 8), v["arg2_value"] == 9))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 2), True))
+    s.add(Not(If(And((Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 5)), v["arg2_value"] == 10), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 16), True)) if n else
+          If(And((Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 5)), v["arg2_value"] == 10), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 16), True))
 )
 
 def rule_23_func(arg1, arg2, solver=None, neg=False):
@@ -40,9 +40,9 @@ def rule_23_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 23
-        rule_23(solver, {'arg1_dtype': arg1_dtype, 'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_23(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_23(solver, {'arg1_dtype': arg1['dtype'], 'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_23(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

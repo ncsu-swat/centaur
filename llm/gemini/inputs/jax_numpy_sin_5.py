@@ -4,60 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import jax
-import numpy as np
 import copy
+import numpy as np
 
-try:
-    import jax._src.numpy.ufuncs as ufuncs
-except ImportError:
-    ufuncs = None
-
-_original_sin = jax.numpy.sin
-
-def _patched_sin(x, *args, **kwargs):
-    if isinstance(x, tuple):
-        x = np.array(x)
-    return _original_sin(x, *args, **kwargs)
-
-jax.numpy.sin = _patched_sin
-if ufuncs is not None:
-    ufuncs.sin = _patched_sin
 
 def sin_inputs():
     list_of_inputs = []
 
-    # 1. 1D float tuple
-    list_of_inputs.append({"x": (0.0, 0.5, 1.0, -1.0)})
+    # Input 1: 1D float32 array with common angles
+    x = np.array([0.0, np.pi / 6, np.pi / 4, np.pi / 3, np.pi / 2], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 2. 1D int tuple
-    list_of_inputs.append({"x": (0, 1, -2, 3)})
+    # Input 2: 1D float64 array with negative angles
+    x = np.array([-np.pi, -np.pi / 2, -np.pi / 4, 0.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 3. 2D nested float tuple
-    list_of_inputs.append({"x": ((0.0, 0.5), (1.0, 1.5))})
+    # Input 3: 1D array with single element
+    x = np.array([np.pi / 2], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 4. 3D nested float tuple
-    list_of_inputs.append({"x": (((0.1, 0.2), (0.3, 0.4)), ((0.5, 0.6), (0.7, 0.8)))})
+    # Input 4: 1D array of integers
+    x = np.array([-3, -2, -1, 0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 5. Tuple with numpy scalars
-    list_of_inputs.append({"x": (np.float32(0.1), np.float32(-0.5))})
+    # Input 5: 2D array of integers
+    x = np.array([[-3, -2, -1], [0, 1, 2]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 6. Tuple with complex numbers
-    list_of_inputs.append({"x": (1.0 + 1.0j, -2.0j)})
+    # Input 6: 2D float32 matrix
+    x = np.linspace(-np.pi, np.pi, 12, dtype=np.float32).reshape(3, 4)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 7. Tuple with booleans
-    list_of_inputs.append({"x": (True, False, True)})
+    # Input 7: 3D float32 tensor
+    x = np.ones((2, 3, 4), dtype=np.float32) * (np.pi / 4)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 8. Single-element tuple
-    list_of_inputs.append({"x": (1.5,)})
+    # Input 8: 1D boolean array
+    x = np.array([True, False, True, False], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 9. Tuple with large and small floats
-    list_of_inputs.append({"x": (1e-5, 1e5)})
+    # Input 9: 1D complex numbers array
+    x = np.array([1.0 + 1.0j, -0.5 + 2.0j, 0.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # 10. 2D nested mixed tuple
-    list_of_inputs.append({"x": ((1, 2.0), (3.0, 4))})
+    # Input 10: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 4D float32 array with extreme values
+    x = np.array([[[[1e-7]], [[-1e-7]]], [[[1e5]], [[-1e5]]]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 12: Special values (inf, -inf, nan)
+    x = np.array([np.nan, np.inf, -np.inf, 0.0, -0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sin_5"] = sin_inputs()
 

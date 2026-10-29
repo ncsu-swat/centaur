@@ -4,69 +4,80 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-class MagicTuple(tuple):
-    def __eq__(self, other):
-        return True
-    def __ne__(self, other):
-        return False
 
 def rsqrt_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, positive values
+    # Input 1: 0D scalar float32
+    x = np.array(4.0, dtype=np.float32)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
+
+    # Input 2: 1D array float32
     x = np.array([1.0, 4.0, 9.0, 16.0], dtype=np.float32)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 2: 2D float32 array
-    x = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 3: 2D array float64
+    x = np.array([[2.0, 3.0], [5.0, 7.0]], dtype=np.float64)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 3: 3D float64 array
-    x = np.random.uniform(1.0, 100.0, size=(2, 2, 2)).astype(np.float64)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 4: 3D array float32
+    x = np.random.uniform(1.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 4: 1D float16 array
-    x = np.array([0.25, 0.5, 2.0, 8.0], dtype=np.float16)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 5: 1D array complex64
+    x = np.array([1.0 + 2.0j, -3.0 + 4.0j, -2.0 - 5.0j], dtype=np.complex64)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 5: 2D complex64 array
-    x = (np.random.uniform(0.1, 5.0, size=(2, 3)) + 1j * np.random.uniform(0.1, 5.0, size=(2, 3))).astype(np.complex64)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 6: 2D array complex128
+    x = np.array(
+        [[-1.0 + 1.0j, 2.0 - 3.0j], [4.0 + 0.0j, -5.0 - 2.0j]],
+        dtype=np.complex128,
+    )
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 6: 1D complex128 array
-    x = (np.array([1.0 + 1j, 2.0 - 2j, -3.0 + 3j])).astype(np.complex128)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 7: 4D array float32
+    x = np.random.uniform(0.5, 5.0, size=(2, 2, 3, 3)).astype(np.float32)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 7: 0D float32 array (scalar)
-    x = np.array(2.0, dtype=np.float32)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 8: 1D array float16
+    x = np.array([0.25, 1.0, 4.0, 16.0], dtype=np.float16)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 8: 4D float32 array
-    x = np.random.uniform(0.5, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 9: 2D array float32 with negative values
+    x = np.array([[-1.0, 2.0], [4.0, -9.0]], dtype=np.float32)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 9: 2D float32 array with large positive values
-    x = np.array([[100.0, 10000.0], [1000000.0, 100000000.0]], dtype=np.float32)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 10: 1D array float64 large values
+    x = np.array([1e6, 1e8, 1e12], dtype=np.float64)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
-    # Input 10: 3D float32 array with very small positive values
-    x = np.array([[[1e-5, 1e-6], [1e-7, 1e-8]]], dtype=np.float32)
-    accuracy = MagicTuple()
-    list_of_inputs.append({"x": x, "accuracy": accuracy})
+    # Input 11: 3D array complex64
+    x = (np.random.randn(2, 2, 2) + 1j * np.random.randn(2, 2, 2)).astype(
+        np.complex64
+    )
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
+
+    # Input 12: 0D scalar complex128
+    x = np.array(-4.0 + 3.0j, dtype=np.complex128)
+    accuracy = ()
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": accuracy}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.rsqrt_2"] = rsqrt_inputs()
 

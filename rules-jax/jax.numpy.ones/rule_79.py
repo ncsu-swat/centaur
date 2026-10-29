@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the dtype must be a standard type, excluding string or custom np.dtype (Rule 79)
+# 6D tuple shape must have non-negative dimensions (Rule 79)
 
 rule_79 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] <= 10) if n else
-          v["arg1_value"] <= 10)
+    s.add(Not(And(v["arg1_length"] == 6, (And([Implies(i < (5 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])))) if n else
+          And(v["arg1_length"] == 6, (And([Implies(i < (5 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)]))))
 )
 
 def rule_79_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_79_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 79
-        rule_79(solver, {'arg1_value': arg1_value})
+        rule_79(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_79(solver, {'arg1_value': arg1['value']}, neg)
+        rule_79(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

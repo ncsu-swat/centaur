@@ -4,81 +4,109 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_ones_like_inputs():
+
+def ones_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float array, target shape [5], float32 dtype
-    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    dtype = np.float32
-    shape = [5]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 1: 1D array, int32, shape overridden to 1D list
+    input_dict = {
+        "a": np.array([1, 2, 3], dtype=np.int32),
+        "dtype": np.dtype(np.int32),
+        "shape": [5],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D integer array with negative values, target shape [2, 3], int32 dtype
-    a = np.array([[-1, -2], [-3, -4]], dtype=np.int32)
-    dtype = np.int32
-    shape = [2, 3]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 2: 2D array, float32, shape overridden to 2D list
+    input_dict = {
+        "a": np.random.randn(2, 3).astype(np.float32),
+        "dtype": np.dtype(np.float32),
+        "shape": [4, 2],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D bool array, target shape [1, 2, 2], bool dtype
-    a = np.array([[[True, False], [False, True]]], dtype=np.bool_)
-    dtype = np.bool_
-    shape = [1, 2, 2]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 3: 3D array with negative values, float64, shape overridden to 1D list
+    input_dict = {
+        "a": np.array(
+            [[[-1.5, -2.5], [3.0, 4.0]], [[-5.1, 6.2], [-7.3, 8.4]]],
+            dtype=np.float64,
+        ),
+        "dtype": np.dtype(np.float64),
+        "shape": [8],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 4D float64 array, target shape [2, 2, 2, 2], float64 dtype
-    a = np.random.randn(2, 1, 2, 1).astype(np.float64)
-    dtype = np.float64
-    shape = [2, 2, 2, 2]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 4: Scalar-like 0D array, bool dtype, shape overridden to 3D list
+    input_dict = {
+        "a": np.array(True, dtype=np.bool_),
+        "dtype": np.dtype(np.bool_),
+        "shape": [2, 2, 3],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 0D array (scalar), target shape [3], float32 dtype
-    a = np.array(5.0, dtype=np.float32)
-    dtype = np.float32
-    shape = [3]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 5: Complex numbers, complex64 dtype, shape overridden to 2D list
+    input_dict = {
+        "a": np.array([1.0 + 2.0j, -3.0 - 4.0j], dtype=np.complex64),
+        "dtype": np.dtype(np.complex64),
+        "shape": [3, 3],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D uint8 array, target shape [4, 4], uint8 dtype
-    a = np.array([[10, 20], [30, 40]], dtype=np.uint8)
-    dtype = np.uint8
-    shape = [4, 4]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 6: 4D array, int16 dtype, shape overridden to empty list (scalar)
+    input_dict = {
+        "a": np.zeros((2, 1, 3, 4), dtype=np.int16),
+        "dtype": np.dtype(np.int16),
+        "shape": [],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D complex array, target shape [2], complex64 dtype
-    a = np.array([1 + 2j, 3 - 4j], dtype=np.complex64)
-    dtype = np.complex64
-    shape = [2]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 7: 2D array, uint8 dtype, shape overridden to 2D list
+    input_dict = {
+        "a": np.array([[0, 255], [128, 64]], dtype=np.uint8),
+        "dtype": np.dtype(np.uint8),
+        "shape": [1, 5],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D int16 array, target shape [5, 1], int16 dtype
-    a = np.random.randint(-100, 100, size=(2, 2, 2)).astype(np.int16)
-    dtype = np.int16
-    shape = [5, 1]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 8: 1D array with negative ints, int64 dtype, shape overridden to 4D list
+    input_dict = {
+        "a": np.array([-10, -20, 0, 30], dtype=np.int64),
+        "dtype": np.dtype(np.int64),
+        "shape": [1, 2, 1, 4],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D float16 array, target shape [3, 2, 1], float16 dtype
-    a = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float16)
-    dtype = np.float16
-    shape = [3, 2, 1]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 9: 2D float array, changed to int32 dtype, shape overridden to 2D list
+    input_dict = {
+        "a": np.ones((3, 3), dtype=np.float32),
+        "dtype": np.dtype(np.int32),
+        "shape": [2, 4],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D int64 array, target shape [10], int64 dtype
-    a = np.array([1000000000, 2000000000], dtype=np.int64)
-    dtype = np.int64
-    shape = [10]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 10: 1D array, complex128 dtype, shape overridden to 3D list
+    input_dict = {
+        "a": np.array([0.0 - 1.0j, 2.5 + 0.0j], dtype=np.complex128),
+        "dtype": np.dtype(np.complex128),
+        "shape": [2, 1, 2],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 3D float array, target shape [2, 4], bool dtype
-    a = np.random.uniform(-10.0, 10.0, size=(2, 2, 2)).astype(np.float32)
-    dtype = np.bool_
-    shape = [2, 4]
-    list_of_inputs.append({"a": a, "dtype": dtype, "shape": shape})
+    # Input 11: 3D int8 array, uint32 dtype, shape overridden to 1D list
+    input_dict = {
+        "a": np.array([[[-128, 127]]], dtype=np.int8),
+        "dtype": np.dtype(np.uint32),
+        "shape": [6],
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.ones_like_3"] = jax_numpy_ones_like_inputs()
+
+generated_inputs["jax.numpy.ones_like_3"] = ones_like_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

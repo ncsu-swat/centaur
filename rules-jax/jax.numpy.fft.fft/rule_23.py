@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the transform axis is negative, it must be a valid negative index (Rule 23)
+# for 2D input array axis must be between -2 and 1 (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg2_value"] + v["arg1_ndim"] >= 0, True)) if n else
-          If(v["arg2_value"] < 0, v["arg2_value"] + v["arg1_ndim"] >= 0, True))
+    s.add(Not(If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True)) if n else
+          If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True))
 )
 
 def rule_23_func(arg1, arg2, solver=None, neg=False):

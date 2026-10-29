@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The dtype parameter must be within the valid range of supported type indices (Rule 52)
+# strictly negative floating-point scalar value (Rule 52)
 
 rule_52 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] <= 12, 0 <= v["arg1_value"])) if n else
-          And(v["arg1_value"] <= 12, 0 <= v["arg1_value"]))
+    s.add(Not(v["arg1_value"] < 0) if n else
+          v["arg1_value"] < 0)
 )
 
 def rule_52_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_52_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 52
         rule_52(solver, {'arg1_value': arg1_value})

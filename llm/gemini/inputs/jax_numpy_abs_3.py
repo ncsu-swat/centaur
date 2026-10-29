@@ -5,45 +5,48 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import copy
-import numpy as np
+import math
 
 def abs_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 3.14})
+    # Input 1: positive float
+    list_of_inputs.append({"x": 1.0})
 
-    # Input 2: Standard negative float
-    list_of_inputs.append({"x": -2.718})
+    # Input 2: negative float
+    list_of_inputs.append({"x": -1.0})
 
-    # Input 3: Zero
+    # Input 3: zero
     list_of_inputs.append({"x": 0.0})
 
-    # Input 4: Negative zero
+    # Input 4: negative zero
     list_of_inputs.append({"x": -0.0})
 
-    # Input 5: Large positive float
-    list_of_inputs.append({"x": 1e10})
+    # Input 5: positive large float
+    list_of_inputs.append({"x": 1e20})
 
-    # Input 6: Large negative float
-    list_of_inputs.append({"x": -1e10})
+    # Input 6: negative large float
+    list_of_inputs.append({"x": -1e20})
 
-    # Input 7: Small positive float
-    list_of_inputs.append({"x": 1e-10})
+    # Input 7: positive small float (subnormal range)
+    list_of_inputs.append({"x": 1e-30})
 
-    # Input 8: Small negative float
-    list_of_inputs.append({"x": -1e-10})
+    # Input 8: negative fractional float
+    list_of_inputs.append({"x": -3.141592653589793})
 
-    # Input 9: Infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 9: positive infinity
+    list_of_inputs.append({"x": float("inf")})
 
-    # Input 10: Negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 10: negative infinity
+    list_of_inputs.append({"x": float("-inf")})
 
     # Input 11: NaN
-    list_of_inputs.append({"x": float('nan')})
+    list_of_inputs.append({"x": float("nan")})
 
-    return list_of_inputs
+    # Input 12: arbitrary negative float
+    list_of_inputs.append({"x": -42.42})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
 generated_inputs["jax.numpy.abs_3"] = abs_inputs()
 

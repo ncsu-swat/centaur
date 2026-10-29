@@ -4,163 +4,142 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def histogramdd_inputs():
     list_of_inputs = []
 
-    # Input 1, valid - 2D data with float32
-    sample = np.random.randn(100, 2).astype(np.float32)
-    bins = (10, 10)
-    range_val = ((-3.0, 3.0), (-3.0, 3.0))
-    weights = np.ones(100, dtype=np.float32)
-    density = False
+    # Input 1: 1D sample, float32, density=False
+    sample = np.random.randn(50, 1).astype(np.float32)
+    weights = np.random.uniform(0.5, 1.5, size=(50,)).astype(np.float32)
     input_dict = {
         "sample": sample,
-        "bins": bins,
-        "range": range_val,
+        "bins": (10,),
+        "range": ((-3.0, 3.0),),
         "weights": weights,
-        "density": density
+        "density": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2, valid - 3D data with float32 and density=True
-    sample = np.random.randn(200, 3).astype(np.float32)
-    bins = (5, 5, 5)
-    range_val = ((-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0))
-    weights = np.random.rand(200).astype(np.float32)
-    density = True
+    # Input 2: 2D sample, float64, density=True
+    sample = np.random.uniform(0.0, 10.0, size=(100, 2)).astype(np.float64)
+    weights = np.ones((100,), dtype=np.float64)
     input_dict = {
         "sample": sample,
-        "bins": bins,
-        "range": range_val,
+        "bins": (5, 5),
+        "range": ((0.0, 10.0), (0.0, 10.0)),
         "weights": weights,
-        "density": density
+        "density": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3, valid - 1D data with float64
-    sample = np.random.randn(50, 1).astype(np.float64)
-    bins = (8,)
-    range_val = ((-4.0, 4.0),)
-    weights = np.random.rand(50).astype(np.float64)
-    density = False
-    input_dict = {
-        "sample": sample,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights,
-        "density": density
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4, valid - 4D uniform distribution
-    sample = np.random.uniform(-5.0, 5.0, (150, 4)).astype(np.float32)
-    bins = (6, 6, 6, 6)
-    range_val = ((-5.0, 5.0), (-5.0, 5.0), (-5.0, 5.0), (-5.0, 5.0))
-    weights = np.ones(150, dtype=np.float32)
-    density = True
-    input_dict = {
-        "sample": sample,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights,
-        "density": density
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5, valid - 2D data with float64 and custom weights range
-    sample = np.random.randn(80, 2).astype(np.float64)
-    bins = (12, 12)
-    range_val = ((-2.5, 2.5), (-2.5, 2.5))
-    weights = np.random.uniform(0.5, 1.5, 80).astype(np.float64)
-    density = False
-    input_dict = {
-        "sample": sample,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights,
-        "density": density
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6, valid - 3D data with asymmetric bin sizes
-    sample = np.random.randn(300, 3).astype(np.float32)
-    bins = (4, 8, 4)
-    range_val = ((-3.0, 3.0), (-1.0, 1.0), (-2.0, 2.0))
-    weights = np.random.randn(300).astype(np.float32)
-    density = True
-    input_dict = {
-        "sample": sample,
-        "bins": bins,
-        "range": range_val,
-        "weights": weights,
-        "density": density
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7, valid - 2D data with many bins
-    sample = np.random.randn(120, 2).astype(np.float32)
-    bins = (15, 10)
-    range_val = ((-4.0, 4.0), (-4.0, 4.0))
+    # Input 3: 3D sample, float32, negative and positive ranges
+    sample = np.random.randn(120, 3).astype(np.float32)
     weights = np.random.rand(120).astype(np.float32)
-    density = False
     input_dict = {
         "sample": sample,
-        "bins": bins,
-        "range": range_val,
+        "bins": (4, 4, 4),
+        "range": ((-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0)),
         "weights": weights,
-        "density": density
+        "density": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8, valid - 5D sparse binning
-    sample = np.random.randn(50, 5).astype(np.float32)
-    bins = (3, 3, 3, 3, 3)
-    range_val = ((-3.0, 3.0), (-3.0, 3.0), (-3.0, 3.0), (-3.0, 3.0), (-3.0, 3.0))
-    weights = np.ones(50, dtype=np.float32)
-    density = True
+    # Input 4: 4D sample, small bin count per dimension
+    sample = np.random.uniform(-1.0, 1.0, size=(80, 4)).astype(np.float32)
+    weights = np.random.uniform(0.1, 2.0, size=(80,)).astype(np.float32)
     input_dict = {
         "sample": sample,
-        "bins": bins,
-        "range": range_val,
+        "bins": (2, 3, 2, 3),
+        "range": ((-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0)),
         "weights": weights,
-        "density": density
+        "density": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9, valid - 2D uniform distribution with positive range
-    sample = np.random.uniform(0.0, 10.0, (100, 2)).astype(np.float32)
-    bins = (5, 5)
-    range_val = ((0.0, 10.0), (0.0, 10.0))
-    weights = np.random.rand(100).astype(np.float32)
-    density = True
+    # Input 5: 2D sample, asymmetric bins and asymmetric ranges
+    sample = np.random.randn(64, 2).astype(np.float32)
+    weights = np.ones((64,), dtype=np.float32) * 0.5
     input_dict = {
         "sample": sample,
-        "bins": bins,
-        "range": range_val,
+        "bins": (8, 4),
+        "range": ((-4.0, 4.0), (-1.0, 3.0)),
         "weights": weights,
-        "density": density
+        "density": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10, valid - 3D data with float64 and density=False
-    sample = np.random.randn(150, 3).astype(np.float64)
-    bins = (10, 10, 10)
-    range_val = ((-3.0, 3.0), (-3.0, 3.0), (-3.0, 3.0))
-    weights = np.random.rand(150).astype(np.float64)
-    density = False
+    # Input 6: 1D sample, large number of samples, density=True
+    sample = np.random.randn(500, 1).astype(np.float64)
+    weights = np.random.exponential(1.0, size=(500,)).astype(np.float64)
     input_dict = {
         "sample": sample,
-        "bins": bins,
-        "range": range_val,
+        "bins": (20,),
+        "range": ((-5.0, 5.0),),
         "weights": weights,
-        "density": density
+        "density": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D sample with non-uniform ranges
+    sample = np.random.uniform(0.0, 5.0, size=(200, 3)).astype(np.float32)
+    weights = np.random.uniform(1.0, 2.0, size=(200,)).astype(np.float32)
+    input_dict = {
+        "sample": sample,
+        "bins": (3, 5, 7),
+        "range": ((0.0, 5.0), (1.0, 4.0), (2.0, 5.0)),
+        "weights": weights,
+        "density": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 2D sample with integer-valued sample converted to float
+    sample = np.random.randint(-10, 10, size=(40, 2)).astype(np.float32)
+    weights = np.ones((40,), dtype=np.float32)
+    input_dict = {
+        "sample": sample,
+        "bins": (6, 6),
+        "range": ((-10.0, 10.0), (-10.0, 10.0)),
+        "weights": weights,
+        "density": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D sample, minimal number of bins
+    sample = np.random.randn(30, 5).astype(np.float32)
+    weights = np.random.rand(30).astype(np.float32)
+    input_dict = {
+        "sample": sample,
+        "bins": (2, 2, 2, 2, 2),
+        "range": (
+            (-2.0, 2.0),
+            (-2.0, 2.0),
+            (-2.0, 2.0),
+            (-2.0, 2.0),
+            (-2.0, 2.0),
+        ),
+        "weights": weights,
+        "density": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 2D sample, float64, zero weights included
+    sample = np.random.uniform(-5.0, 5.0, size=(75, 2)).astype(np.float64)
+    weights = np.zeros((75,), dtype=np.float64)
+    weights[:40] = 1.0
+    input_dict = {
+        "sample": sample,
+        "bins": (10, 12),
+        "range": ((-5.0, 5.0), (-5.0, 5.0)),
+        "weights": weights,
+        "density": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.histogramdd_4"] = histogramdd_inputs()
 

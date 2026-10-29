@@ -4,50 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def divmod_inputs():
     list_of_inputs = []
 
-    # Input 1: positive floats
+    # Input 1: Basic positive floats
     input_dict = {"x1": 10.0, "x2": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative dividend
+    # Input 2: Negative dividend, positive divisor
     input_dict = {"x1": -10.0, "x2": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: negative divisor
+    # Input 3: Positive dividend, negative divisor
     input_dict = {"x1": 10.0, "x2": -3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: both negative
+    # Input 4: Negative dividend and divisor
     input_dict = {"x1": -10.0, "x2": -3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: non-integer floats
-    input_dict = {"x1": 5.5, "x2": 1.5}
+    # Input 5: Zero dividend
+    input_dict = {"x1": 0.0, "x2": 5.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: zero dividend
-    input_dict = {"x1": 0.0, "x2": 5.2}
+    # Input 6: Exact division with fractional numbers
+    input_dict = {"x1": 7.5, "x2": 2.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: large dividend, small divisor
-    input_dict = {"x1": 1000.5, "x2": 0.05}
+    # Input 7: Small fractional values
+    input_dict = {"x1": 0.1234, "x2": 0.05}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: very small floats
-    input_dict = {"x1": 1e-5, "x2": 1e-6}
+    # Input 8: Negative fractional values
+    input_dict = {"x1": -23.45, "x2": 4.2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: negative dividend, small divisor
-    input_dict = {"x1": -0.5, "x2": 0.2}
+    # Input 9: Large float numbers
+    input_dict = {"x1": 1e8, "x2": 3.5e3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: pi approximation and 1.0
-    input_dict = {"x1": 3.14159, "x2": 1.0}
+    # Input 10: Dividend smaller than divisor
+    input_dict = {"x1": 2.1, "x2": 5.7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Rational approximation
+    input_dict = {"x1": 355.0, "x2": 113.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

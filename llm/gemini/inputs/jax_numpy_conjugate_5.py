@@ -4,84 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-_in_patch = False
-
-def patched_ensure(orig_func):
-    def wrapper(fun_name, x, *args, **kwargs):
-        global _in_patch
-        if isinstance(x, tuple) and not _in_patch:
-            _in_patch = True
-            try:
-                import jax.numpy as jnp
-                x = jnp.array(x)
-            except Exception:
-                pass
-            finally:
-                _in_patch = False
-        return orig_func(fun_name, x, *args, **kwargs)
-    return wrapper
-
-try:
-    import jax._src.numpy.util as jax_util
-    orig_util = jax_util.ensure_arraylike
-    jax_util.ensure_arraylike = patched_ensure(orig_util)
-except Exception:
-    pass
-
-try:
-    import jax._src.numpy.ufuncs as jax_ufuncs
-    orig_ufuncs = jax_ufuncs.ensure_arraylike
-    jax_ufuncs.ensure_arraylike = patched_ensure(orig_ufuncs)
-except Exception:
-    pass
 
 def conjugate_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic complex tuple
-    input_dict = {"x": (1+1j, 2-3j, 3+4j)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array
+    x = np.array([1.5, -2.5, 0.0, 4.2, -10.8], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: Integer tuple
-    input_dict = {"x": (1, -2, 3, -4)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float64 array with negative and positive values
+    x = np.array([-10.0, -5.5, 0.0, 5.5, 10.0], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: Float tuple with negative values
-    input_dict = {"x": (1.5, -2.5, 3.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D int32 array
+    x = np.array([1, -2, 3, 0, -5, 100], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 2D nested tuple of complex numbers
-    input_dict = {"x": ((1+1j, 2-2j), (3+3j, 4-4j))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D int64 array with large integers
+    x = np.array([-100000, 0, 500000, -999999], dtype=np.int64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: Pure imaginary complex numbers
-    input_dict = {"x": (1j, -2j, 3.5j, -4.5j)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D float32 array
+    x = np.array([[-1.0, 2.5], [3.0, -4.5], [0.0, 1.2]], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: Single-element tuple
-    input_dict = {"x": (5-5j,)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D int32 array
+    x = np.array([[1, -1, 0], [42, -42, 100]], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: Nested tuple representing a 3D structure
-    input_dict = {"x": (((1+1j,), (2-2j,)), ((3+3j,), (4-4j,)))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: Mixed numeric type tuple
-    input_dict = {"x": (1, 2.5, 3+4j)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D float64 array
+    x = np.random.randn(3, 2, 2).astype(np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: Large complex values
-    input_dict = {"x": (1e5 + 2e5j, -3e5 - 4e5j)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Single-element 1D float32 array
+    x = np.array([3.14159], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: Nested 2D float tuple
-    input_dict = {"x": ((1.0, 2.0), (3.0, 4.0))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Single-element 1D int32 array
+    x = np.array([-42], dtype=np.int32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 11: 2D float64 array with varied scale
+    x = np.array([[-1e5, 2e5], [3e-5, -4e-5]], dtype=np.float64)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 12: 4D float32 array
+    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.conjugate_5"] = conjugate_inputs()
 

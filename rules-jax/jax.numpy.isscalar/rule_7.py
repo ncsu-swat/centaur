@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# string element is valid (Rule 7)
+# valid string scalar representation (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == v["arg1_value"]) if n else
-          v["arg1_value"] == v["arg1_value"])
+    s.add(Not(Or(v["arg1_value"] == 38, v["arg1_value"] == 39)) if n else
+          Or(v["arg1_value"] == 38, v["arg1_value"] == 39))
 )
 
 def rule_7_func(arg1, solver=None, neg=False):

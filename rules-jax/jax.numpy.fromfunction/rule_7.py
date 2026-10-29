@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Permitted coordinate data types for indexing (Rule 7)
+# dtype must be an integer or floating-point type (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 1, v["arg1_value"] <= 10)) if n else
-          And(v["arg1_value"] >= 1, v["arg1_value"] <= 10))
+    s.add(Not(Or((And(1 <= v["arg1_value"], v["arg1_value"] <= 5)), (And(6 <= v["arg1_value"], v["arg1_value"] <= 8)))) if n else
+          Or((And(1 <= v["arg1_value"], v["arg1_value"] <= 5)), (And(6 <= v["arg1_value"], v["arg1_value"] <= 8))))
 )
 
 def rule_7_func(arg1, solver=None, neg=False):

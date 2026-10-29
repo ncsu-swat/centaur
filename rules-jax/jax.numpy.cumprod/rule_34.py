@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the target dtype must be a floating-point or complex type (Rule 34)
+# valid target accumulation dtype bounded between boolean and complex128 (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(And(6 <= v["arg1_value"], v["arg1_value"] <= 10)) if n else
-          And(6 <= v["arg1_value"], v["arg1_value"] <= 10))
+    s.add(Not(If(v["arg1_value"] >= 9, v["arg1_value"] <= 10, v["arg1_value"] >= 0)) if n else
+          If(v["arg1_value"] >= 9, v["arg1_value"] <= 10, v["arg1_value"] >= 0))
 )
 
 def rule_34_func(arg1, solver=None, neg=False):

@@ -4,68 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def expand_dims_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, expand at start
-    array = np.random.randn(5).astype(np.float32)
+    # Input 1: 0-D array expanded to 1-D
+    array = np.array(3.14, dtype=np.float32)
     dimensions = (0,)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 2: 1D array, expand at end
-    array = np.random.randn(5).astype(np.float32)
+    # Input 2: 1-D array expanded at the beginning
+    array = np.arange(5, dtype=np.int32)
+    dimensions = (0,)
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 3: 1-D array expanded at the end
+    array = np.arange(10, dtype=np.float64)
     dimensions = (1,)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 3: 2D array, insert multiple dimensions
-    array = np.random.randn(2, 3).astype(np.float32)
+    # Input 4: 1-D array expanded at multiple positions
+    array = np.array([True, False, True], dtype=np.bool_)
+    dimensions = (0, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 5: 2-D array expanded in the middle
+    array = np.ones((3, 4), dtype=np.float32)
+    dimensions = (1,)
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 6: 2-D array expanded at both ends
+    array = np.zeros((2, 5), dtype=np.int64)
     dimensions = (0, 3)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 4: 2D array, insert multiple dimensions adjacent
-    array = np.random.randn(2, 3).astype(np.float64)
-    dimensions = (1, 2)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 5: Scalar (0D array), expand to 1D
-    array = np.array(42.0).astype(np.int32)
-    dimensions = (0,)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 6: 2D array, negative dimension index
-    array = np.random.randn(4, 4).astype(np.int64)
-    dimensions = (-1,)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 7: 2D array, multiple negative dimension indices
-    array = np.random.choice([True, False], size=(2, 2)).astype(np.bool_)
-    dimensions = (-3, -1)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 8: 3D array, insert multiple dimensions
-    array = np.random.randn(5, 5, 5).astype(np.float32)
+    # Input 7: 3-D array with complex numbers expanded at multiple dimensions
+    array = np.random.randn(2, 3, 4).astype(np.complex64)
     dimensions = (1, 3)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 9: 1D array, insert many dimensions (complex)
-    array = (np.random.randn(2) + 1j * np.random.randn(2)).astype(np.complex64)
-    dimensions = (0, 1, 3)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    # Input 8: 3-D array expanded with empty dimensions tuple
+    array = np.ones((2, 2, 2), dtype=np.uint8)
+    dimensions = ()
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 10: 2D array, mix of positive and negative indices
-    array = np.random.randn(3, 2).astype(np.float32)
-    dimensions = (0, -1)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    # Input 9: 4-D array expanded at multiple positions
+    array = np.random.randn(2, 3, 2, 4).astype(np.float32)
+    dimensions = (0, 2, 5)
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 11: 3D array, highly sparse dimension expansion
-    array = np.random.randn(1, 2, 3).astype(np.float32)
-    dimensions = (0, 2, 4, 6)
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    # Input 10: 2-D array expanded at consecutive dimensions
+    array = np.arange(12, dtype=np.int16).reshape((3, 4))
+    dimensions = (1, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 11: 0-D array expanded to 3-D
+    array = np.array(42, dtype=np.int32)
+    dimensions = (0, 1, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.expand_dims_2"] = expand_dims_inputs()
 

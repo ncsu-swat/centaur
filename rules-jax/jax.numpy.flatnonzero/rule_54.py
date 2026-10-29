@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor fill_value must be a scalar, and input tensor must be numeric or boolean (Rule 54)
+# size is non-negative and fill_value tuple of int is length 1 with valid sentinel (Rule 54)
 
 rule_54 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_dtype"] <= 10, v["arg2_value"] >= 0), v["arg3_ndim"] == 0)) if n else
-          And(And(v["arg1_dtype"] <= 10, v["arg2_value"] >= 0), v["arg3_ndim"] == 0))
+    s.add(Not(If(v["arg2_value"] > 0, And(And(v["arg1_ndim"] >= 0, v["arg3_length"] == 1), Select(v["arg3_values"], 0) >= -1), And(v["arg2_value"] == 0, v["arg3_length"] == 1))) if n else
+          If(v["arg2_value"] > 0, And(And(v["arg1_ndim"] >= 0, v["arg3_length"] == 1), Select(v["arg3_values"], 0) >= -1), And(v["arg2_value"] == 0, v["arg3_length"] == 1)))
 )
 
 def rule_54_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -25,24 +25,27 @@ def rule_54_func(arg1, arg2, arg3, solver=None, neg=False):
             return False
         if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
-        if not isinstance(arg3, np.ndarray):
+        if not (isinstance(arg3, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
         arg2_value = Int('arg2_value')
-        arg3_ndim = Int('arg3_ndim')
+        arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_value == int(arg2))
-        solver.add(arg3_ndim == arg3.ndim)
+        solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 54
-        rule_54(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value, 'arg3_ndim': arg3_ndim})
+        rule_54(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_54(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value'], 'arg3_ndim': arg3['ndim']}, neg)
+        rule_54(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

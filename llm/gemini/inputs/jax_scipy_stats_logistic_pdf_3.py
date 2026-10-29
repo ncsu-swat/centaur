@@ -8,55 +8,57 @@ import copy
 import numpy as np
 
 
-def jax_scipy_stats_logistic_pdf_inputs():
+def logistic_pdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic standard logistic
-    input_dict = {"x": 0, "loc": 0, "scale": 1}
+    # Input 1: Standard logistic distribution at x=0
+    input_dict = {"x": int(0), "loc": int(0), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive x, standard scale
-    input_dict = {"x": 2, "loc": 0, "scale": 1}
+    # Input 2: Positive x, standard loc and scale
+    input_dict = {"x": int(1), "loc": int(0), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative x, standard scale
-    input_dict = {"x": -2, "loc": 0, "scale": 1}
+    # Input 3: Negative x, standard loc and scale
+    input_dict = {"x": int(-1), "loc": int(0), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Shifted loc
-    input_dict = {"x": 3, "loc": 3, "scale": 1}
+    # Input 4: Positive loc and scale > 1
+    input_dict = {"x": int(5), "loc": int(2), "scale": int(3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large scale
-    input_dict = {"x": 5, "loc": 0, "scale": 10}
+    # Input 5: Negative loc and negative x
+    input_dict = {"x": int(-5), "loc": int(-2), "scale": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative loc, scale > 1
-    input_dict = {"x": -1, "loc": -5, "scale": 2}
+    # Input 6: x equals loc
+    input_dict = {"x": int(10), "loc": int(10), "scale": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: All positive integers
-    input_dict = {"x": 10, "loc": 5, "scale": 5}
+    # Input 7: x at 0 with positive loc
+    input_dict = {"x": int(0), "loc": int(5), "scale": int(4)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large scale, x at loc
-    input_dict = {"x": 10, "loc": 10, "scale": 100}
+    # Input 8: Negative x and positive loc
+    input_dict = {"x": int(-10), "loc": int(10), "scale": int(5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative x and loc
-    input_dict = {"x": -10, "loc": -10, "scale": 3}
+    # Input 9: Large integer values
+    input_dict = {"x": int(100), "loc": int(0), "scale": int(10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Custom integer parameters
-    input_dict = {"x": 12, "loc": -4, "scale": 8}
+    # Input 10: Positive x and negative loc with prime scale
+    input_dict = {"x": int(42), "loc": int(-42), "scale": int(7)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative x, positive loc, scale of 2
+    input_dict = {"x": int(-3), "loc": int(3), "scale": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
 
-generated_inputs["jax.scipy.stats.logistic.pdf_3"] = (
-    jax_scipy_stats_logistic_pdf_inputs()
-)
+generated_inputs["jax.scipy.stats.logistic.pdf_3"] = logistic_pdf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

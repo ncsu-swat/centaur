@@ -4,101 +4,81 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-# Monkeypatch both jax_util and jax_poly to ensure our patch is applied
-# even if polynomial.py already imported ensure_arraylike.
-try:
-    import jax._src.numpy.util as jax_util
-    import jax._src.numpy.polynomial as jax_poly
-    
-    orig_ensure_arraylike = jax_util.ensure_arraylike
-
-    def patched_ensure_arraylike(fun_name, *args):
-        import jax.numpy as jnp
-        new_args = tuple(jnp.array(arg) if isinstance(arg, tuple) else arg for arg in args)
-        return orig_ensure_arraylike(fun_name, *new_args)
-
-    jax_util.ensure_arraylike = patched_ensure_arraylike
-    jax_poly.ensure_arraylike = patched_ensure_arraylike
-except Exception:
-    pass
 
 def polyint_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic first-order integration
+    # Input 1: Basic 1D float32 array, 1st order integration, single constant
     p = np.array([12.0, 12.0, 6.0], dtype=np.float32)
     m = 1
-    k = (4.0,)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    k = np.array([0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 2: Second-order integration
-    p = np.array([1.0, -2.0, 3.0], dtype=np.float32)
-    m = 2
-    k = (4.0, 5.0)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: First-order with integer array
-    p = np.array([1, 2, 3, 4], dtype=np.int32)
+    # Input 2: 1D float32 array, 1st order integration, non-zero constant
+    p = np.array([3.0, -2.0, 1.0], dtype=np.float32)
     m = 1
-    k = (0.0,)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    k = np.array([4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 4: Third-order integration with float64
-    p = np.array([5.5, -2.3], dtype=np.float64)
+    # Input 3: Float64 array with negative coefficients, 1st order integration
+    p = np.array([-5.0, 0.0, 2.5, -1.2], dtype=np.float64)
+    m = 1
+    k = np.array([-2.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 4: Integer array, 1st order integration, integer constant
+    p = np.array([1, -4, 6], dtype=np.int32)
+    m = 1
+    k = np.array([2], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 5: 2nd order integration, 2 constants
+    p = np.array([12.0, 12.0, 6.0], dtype=np.float32)
+    m = 2
+    k = np.array([4.0, 5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 6: 2nd order integration, scalar constant broadcasted
+    p = np.array([6.0, -3.0, 2.0], dtype=np.float64)
+    m = 2
+    k = np.array([1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 7: Complex valued polynomial coefficients
+    p = np.array([1.0 + 2.0j, -3.0 + 0.5j, 4.0 - 1.0j], dtype=np.complex64)
+    m = 1
+    k = np.array([1.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
+
+    # Input 8: 3rd order integration with 3 constants
+    p = np.array([24.0, -12.0, 6.0, 2.0], dtype=np.float32)
     m = 3
-    k = (1.0, 2.0, 3.0)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    k = np.array([1.0, -1.0, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 5: First-order negative constant
-    p = np.array([0.0, 0.0, 1.0], dtype=np.float32)
+    # Input 9: Single-element polynomial (constant polynomial)
+    p = np.array([5.0], dtype=np.float32)
     m = 1
-    k = (-1.5,)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    k = np.array([-3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 6: Second-order negative constants with float64
-    p = np.array([-10.0, 20.0, -30.0, 40.0], dtype=np.float64)
+    # Input 10: Higher-degree polynomial with 2nd order integration
+    p = np.array([5.0, -4.0, 3.0, -2.0, 1.0, 0.0], dtype=np.float64)
     m = 2
-    k = (-1.0, -2.0)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    k = np.array([0.0, 0.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
-    # Input 7: Fourth-order integration
-    p = np.array([1.0, -1.0], dtype=np.float32)
+    # Input 11: 4th order integration with single broadcasted constant
+    p = np.array([24.0, 0.0, -6.0], dtype=np.float32)
     m = 4
-    k = (1.0, 2.0, 3.0, 4.0)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: First-order float32 with zero
-    p = np.array([0.5, 1.5, 2.5], dtype=np.float32)
-    m = 1
-    k = (0.0,)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Second-order decimal constants
-    p = np.array([9.0, 8.0, 7.0, 6.0, 5.0], dtype=np.float32)
-    m = 2
-    k = (0.1, 0.2)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Third-order mixed sign constants
-    p = np.array([-1.2, 3.4], dtype=np.float64)
-    m = 3
-    k = (-0.5, 0.5, -0.5)
-    input_dict = {"p": p, "m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    k = np.array([0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"p": p, "m": m, "k": k}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.polyint_4"] = polyint_inputs()
 

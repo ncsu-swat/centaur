@@ -4,38 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
-import jax._src.numpy.util as jax_util
-import jax._src.numpy.ufuncs as jax_ufuncs
+import numpy as np
 
-orig_promote_args = jax_util.promote_args
-
-def patched_promote_args(fun_name, *args):
-    new_args = tuple(jnp.array(arg) if isinstance(arg, tuple) else arg for arg in args)
-    return orig_promote_args(fun_name, *new_args)
-
-jax_util.promote_args = patched_promote_args
-if hasattr(jax_ufuncs, 'promote_args'):
-    jax_ufuncs.promote_args = patched_promote_args
 
 def asinh_inputs():
     list_of_inputs = []
 
-    list_of_inputs.append({"x": (0.0, 0.5, 1.0)})
-    list_of_inputs.append({"x": (-1.0, -0.5, 0.0)})
-    list_of_inputs.append({"x": (1, 2, 3)})
-    list_of_inputs.append({"x": ((1.0, 2.0), (3.0, 4.0))})
-    list_of_inputs.append({"x": ((-1.0, -2.0), (-3.0, -4.0))})
-    list_of_inputs.append({"x": (10.0, 100.0)})
-    list_of_inputs.append({"x": (((0.1, 0.2),), ((0.3, 0.4),))})
-    list_of_inputs.append({"x": (1.5,)})
-    list_of_inputs.append({"x": (0.0,)})
-    list_of_inputs.append({"x": (-5.0, 5.0)})
+    # Input 1: 1D array of float32 values
+    input_dict = {"x": np.array([0.0, 1.0, -1.0, 2.0, -2.0], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 1D array with wider range
+    input_dict = {
+        "x": np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D array of float32
+    input_dict = {
+        "x": np.array([[1.0, -2.0, 3.0], [-4.0, 5.0, -6.0]], dtype=np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 1D array of integer values
+    input_dict = {"x": np.array([-10, -1, 0, 1, 10], dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Single element 1D array
+    input_dict = {"x": np.array([0.5], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D array of floats
+    input_dict = {
+        "x": np.linspace(-3.0, 3.0, 8, dtype=np.float32).reshape(2, 2, 2)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Large positive and negative values
+    input_dict = {
+        "x": np.array([-1e4, -1e2, 0.0, 1e2, 1e4], dtype=np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Very small values near zero
+    input_dict = {
+        "x": np.array([-1e-4, -1e-6, 0.0, 1e-6, 1e-4], dtype=np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Positive values only
+    input_dict = {"x": np.array([0.1, 0.5, 1.0, 2.5, 10.0], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Negative values only
+    input_dict = {
+        "x": np.array([-10.0, -2.5, -1.0, -0.5, -0.1], dtype=np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D column vector
+    input_dict = {"x": np.array([[-2.5], [0.0], [2.5]], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asinh_5"] = asinh_inputs()
 

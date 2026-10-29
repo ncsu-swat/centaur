@@ -4,56 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
-import jax._src.numpy.ufuncs as ufuncs
+import numpy as np
 
-orig_degrees = jnp.degrees
-
-def patched_degrees(x, *args, **kwargs):
-    if isinstance(x, list):
-        x = jnp.array(x)
-    return orig_degrees(x, *args, **kwargs)
-
-jnp.degrees = patched_degrees
-ufuncs.degrees = patched_degrees
 
 def degrees_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive radian angles
-    list_of_inputs.append({"x": [0.0, 0.5, 1.0, 1.5707963267948966, 3.141592653589793]})
+    # Input 1: 1D float32 array
+    x = np.array([0.0, np.pi / 4, np.pi / 2, np.pi], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: Negative radian angles
-    list_of_inputs.append({"x": [-3.141592653589793, -1.5707963267948966, -0.5, 0.0]})
+    # Input 2: 1D float64 array with negative values
+    x = np.array([-np.pi, -np.pi / 2, 0.0, np.pi], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D list of floats
-    list_of_inputs.append({"x": [[0.0, 0.7853981633974483], [1.5707963267948966, 3.141592653589793]]})
+    # Input 3: 2D float32 array (2x3)
+    x = np.array(
+        [[0.0, np.pi / 6, np.pi / 4], [np.pi / 3, np.pi / 2, np.pi]],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D list of integers
-    list_of_inputs.append({"x": [0, 1, 2, 3, 4]})
+    # Input 4: 2D float64 array (3x2) with mixed signs
+    x = np.array(
+        [[-np.pi, np.pi], [-np.pi / 2, np.pi / 2], [-np.pi / 4, np.pi / 4]],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 2D list of integers
-    list_of_inputs.append({"x": [[1, 2], [3, 4]]})
+    # Input 5: 3D float32 array (2x2x2)
+    x = np.array(
+        [
+            [[0.0, np.pi / 2], [np.pi, 2 * np.pi]],
+            [[-np.pi / 2, -np.pi], [3 * np.pi / 2, -2 * np.pi]],
+        ],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 3D list of floats
-    list_of_inputs.append({"x": [[[0.0, 0.1], [0.2, 0.3]], [[0.4, 0.5], [0.6, 0.7]]]})
+    # Input 6: 1D float32 array with special values
+    x = np.array([np.nan, np.inf, -np.inf, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Single element list
-    list_of_inputs.append({"x": [3.141592653589793]})
+    # Input 7: 1D float64 array with small and large values
+    x = np.array([1e-7, -1e-7, 1e5, -1e5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: List with special float values
-    list_of_inputs.append({"x": [float('nan'), float('inf'), float('-inf'), 0.0]})
+    # Input 8: 1D single-element array
+    x = np.array([np.pi], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: List with very small float values
-    list_of_inputs.append({"x": [1e-10, -1e-10, 5e-8]})
+    # Input 9: 1D float32 array with various values
+    x = np.array([-1.0, 1.0, -2.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Standard float angles
-    list_of_inputs.append({"x": [1.0, 2.0, 3.0, 4.0]})
+    # Input 10: 1D empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 4D float32 array (1x2x1x2)
+    x = np.array([[[[0.0, np.pi]], [[-np.pi, np.pi / 2]]]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.degrees_4"] = degrees_inputs()
 

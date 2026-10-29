@@ -4,90 +4,47 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def gennorm_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: standard normal case (beta = 2, which corresponds to standard normal-like shape)
-    input_dict = {
-        "x": 0.0,
-        "beta": 2.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Standard normal equivalent (beta = 2.0) at mean
+    list_of_inputs.append(copy.deepcopy({"x": 0.0, "beta": 2.0}))
 
-    # Input 2: Laplace-like shape (beta = 1) with positive x
-    input_dict = {
-        "x": 1.0,
-        "beta": 1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Laplace distribution equivalent (beta = 1.0), positive x
+    list_of_inputs.append(copy.deepcopy({"x": 1.0, "beta": 1.0}))
 
-    # Input 3: Laplace-like shape (beta = 1) with negative x
-    input_dict = {
-        "x": -1.0,
-        "beta": 1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Negative x with beta = 2.0
+    list_of_inputs.append(copy.deepcopy({"x": -1.5, "beta": 2.0}))
 
-    # Input 4: Heavy-tailed shape (beta < 1) with positive x
-    input_dict = {
-        "x": 0.5,
-        "beta": 0.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Heavy-tailed distribution (beta < 1)
+    list_of_inputs.append(copy.deepcopy({"x": 2.5, "beta": 0.5}))
 
-    # Input 5: Heavy-tailed shape (beta < 1) with negative x
-    input_dict = {
-        "x": -0.5,
-        "beta": 0.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Platykurtic / lighter-tailed distribution (beta > 2)
+    list_of_inputs.append(copy.deepcopy({"x": -3.0, "beta": 5.0}))
 
-    # Input 6: Light-tailed shape (beta > 2) with positive x
-    input_dict = {
-        "x": 2.5,
-        "beta": 5.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Non-integer beta between 1 and 2
+    list_of_inputs.append(copy.deepcopy({"x": 0.75, "beta": 1.5}))
 
-    # Input 7: Light-tailed shape (beta > 2) with negative x
-    input_dict = {
-        "x": -2.5,
-        "beta": 5.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Small positive beta, small negative x
+    list_of_inputs.append(copy.deepcopy({"x": -0.1, "beta": 0.25}))
 
-    # Input 8: Very small beta value
-    input_dict = {
-        "x": 0.1,
-        "beta": 0.1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Large positive x with beta = 3.0
+    list_of_inputs.append(copy.deepcopy({"x": 10.0, "beta": 3.0}))
 
-    # Input 9: Large beta value
-    input_dict = {
-        "x": 1.5,
-        "beta": 10.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large negative x with standard normal shape
+    list_of_inputs.append(copy.deepcopy({"x": -10.0, "beta": 2.0}))
 
-    # Input 10: Large positive x, beta = 2.0
-    input_dict = {
-        "x": 10.0,
-        "beta": 2.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Approaching uniform distribution (large beta)
+    list_of_inputs.append(copy.deepcopy({"x": 0.0, "beta": 10.0}))
 
-    # Input 11: Large negative x, beta = 2.0
-    input_dict = {
-        "x": -10.0,
-        "beta": 2.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Small positive x close to zero
+    list_of_inputs.append(copy.deepcopy({"x": 1e-4, "beta": 2.5}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.gennorm.cdf_2"] = gennorm_cdf_inputs()
 

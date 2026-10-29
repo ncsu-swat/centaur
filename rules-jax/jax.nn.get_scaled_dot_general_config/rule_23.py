@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# mode parameter must be selected from a set of supported quantization operations (Rule 23)
+# if global_scale is 2-dimensional, both dimensions must be singleton axes (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 9), v["arg1_value"] == 7), v["arg1_value"] == 8)) if n else
-          Or(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 9), v["arg1_value"] == 7), v["arg1_value"] == 8))
+    s.add(Not(If(v["arg1_ndim"] == 2, And(Select(v["arg1_shape"], 0) == 1, Select(v["arg1_shape"], 1) == 1), v["arg1_ndim"] <= 1)) if n else
+          If(v["arg1_ndim"] == 2, And(Select(v["arg1_shape"], 0) == 1, Select(v["arg1_shape"], 1) == 1), v["arg1_ndim"] <= 1))
 )
 
 def rule_23_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_23_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 23
-        rule_23(solver, {'arg1_value': arg1_value})
+        rule_23(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_23(solver, {'arg1_value': arg1['value']}, neg)
+        rule_23(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

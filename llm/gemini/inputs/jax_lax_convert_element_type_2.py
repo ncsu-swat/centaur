@@ -4,92 +4,96 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def convert_element_type_inputs():
     list_of_inputs = []
 
-    # Input 1: 0-D integer scalar, to float32
+    # Input 1: positive integer to float32
     input_dict = {
-        "operand": np.array(42, dtype=np.int32),
-        "new_dtype": np.dtype(np.float32)
+        "operand": 42,
+        "new_dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1-D integer array with negative values, to float64
+    # Input 2: negative integer to float32
     input_dict = {
-        "operand": np.array([-10, 0, 10, 20], dtype=np.int32),
-        "new_dtype": np.dtype(np.float64)
+        "operand": -10,
+        "new_dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2-D int16 array, to int32
+    # Input 3: zero to int32
     input_dict = {
-        "operand": np.array([[1, 2], [3, 4]], dtype=np.int16),
-        "new_dtype": np.dtype(np.int32)
+        "operand": 0,
+        "new_dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3-D int8 array, to float32
+    # Input 4: positive integer to bool
     input_dict = {
-        "operand": np.array([[[1, -2], [3, -4]], [[5, -6], [7, -8]]], dtype=np.int8),
-        "new_dtype": np.dtype(np.float32)
+        "operand": 1,
+        "new_dtype": np.dtype(np.bool_),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1-D int64 array, to int8
+    # Input 5: zero to bool
     input_dict = {
-        "operand": np.array([100, 200, 300], dtype=np.int64),
-        "new_dtype": np.dtype(np.int8)
+        "operand": 0,
+        "new_dtype": np.dtype(np.bool_),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2-D uint32 array, to float16
+    # Input 6: large positive integer to int64
     input_dict = {
-        "operand": np.array([[10, 20], [30, 40]], dtype=np.uint32),
-        "new_dtype": np.dtype(np.float16)
+        "operand": 1000000,
+        "new_dtype": np.dtype(np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1-D int32 array, to bool
+    # Input 7: negative integer to int16
     input_dict = {
-        "operand": np.array([0, 1, 2, 0], dtype=np.int32),
-        "new_dtype": np.dtype(np.bool_)
+        "operand": -300,
+        "new_dtype": np.dtype(np.int16),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar int64, to float32
+    # Input 8: small integer to uint8
     input_dict = {
-        "operand": np.int64(-999),
-        "new_dtype": np.dtype(np.float32)
+        "operand": 255,
+        "new_dtype": np.dtype(np.uint8),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4-D uint8 array, to int32
+    # Input 9: integer to complex64
     input_dict = {
-        "operand": np.ones((2, 2, 2, 2), dtype=np.uint8) * 255,
-        "new_dtype": np.dtype(np.int32)
+        "operand": 7,
+        "new_dtype": np.dtype(np.complex64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1-D int32 array (large values), to float64
+    # Input 10: negative integer to float64
     input_dict = {
-        "operand": np.array([2147483647, -2147483648], dtype=np.int32),
-        "new_dtype": np.dtype(np.float64)
+        "operand": -9999,
+        "new_dtype": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 2-D int16 array with large dimensions, to uint32
+    # Input 11: integer to uint32
     input_dict = {
-        "operand": np.zeros((10, 10), dtype=np.int16),
-        "new_dtype": np.dtype(np.uint32)
+        "operand": 123456,
+        "new_dtype": np.dtype(np.uint32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.convert_element_type_2"] = convert_element_type_inputs()
+
+generated_inputs["jax.lax.convert_element_type_2"] = (
+    convert_element_type_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

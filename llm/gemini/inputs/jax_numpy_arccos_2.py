@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arccos_inputs():
     list_of_inputs = []
@@ -14,47 +15,52 @@ def arccos_inputs():
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive boundary
+    # Input 2: Positive upper boundary
     input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative boundary
+    # Input 3: Negative lower boundary
     input_dict = {"x": -1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Positive mid-value
+    # Input 4: Positive common angle value (cos(pi/3) = 0.5)
     input_dict = {"x": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative mid-value
+    # Input 5: Negative common angle value (cos(2pi/3) = -0.5)
     input_dict = {"x": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Approx pi/4 cos value
-    input_dict = {"x": 0.70710678}
+    # Input 6: Positive sqrt(2)/2
+    input_dict = {"x": 0.7071067811865476}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Approx negative pi/4 cos value
-    input_dict = {"x": -0.70710678}
+    # Input 7: Negative sqrt(2)/2
+    input_dict = {"x": -0.7071067811865476}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small positive value
-    input_dict = {"x": 0.1}
+    # Input 8: Positive sqrt(3)/2
+    input_dict = {"x": 0.8660254037844386}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small negative value
-    input_dict = {"x": -0.1}
+    # Input 9: Negative sqrt(3)/2
+    input_dict = {"x": -0.8660254037844386}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Value close to 1
-    input_dict = {"x": 0.999}
+    # Input 10: Arbitrary small positive float
+    input_dict = {"x": 0.123456}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Value close to -1
-    input_dict = {"x": -0.999}
+    # Input 11: Arbitrary negative float
+    input_dict = {"x": -0.42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Near boundary float
+    input_dict = {"x": 0.999999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arccos_2"] = arccos_inputs()
 

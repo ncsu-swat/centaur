@@ -4,68 +4,94 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tile_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D integer array with negative values
-    operand = np.array([-1, 0, 1, 2], dtype=np.int32)
-    reps = [3]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 2: 2D float32 array
-    operand = np.random.randn(2, 3).astype(np.float32)
-    reps = [2, 4]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 3: 3D int16 array
-    operand = np.arange(8, dtype=np.int16).reshape((2, 2, 2))
-    reps = [1, 3, 2]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 4: 4D float64 array
-    operand = np.random.randn(1, 2, 1, 3).astype(np.float64)
-    reps = [2, 1, 3, 1]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 5: 2D boolean array
-    operand = np.array([[True, False], [False, True]], dtype=np.bool_)
-    reps = [3, 3]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 6: 1D large repeat float32
-    operand = np.array([0.5, -0.5], dtype=np.float32)
-    reps = [10]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 7: 3D complex array
-    operand = (np.random.randn(2, 1, 2) + 1j * np.random.randn(2, 1, 2)).astype(np.complex64)
-    reps = [2, 4, 1]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 8: 5D array with singletons
-    operand = np.ones((1, 1, 1, 1, 1), dtype=np.float32)
-    reps = [2, 2, 2, 2, 2]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 9: Large 2D array
-    operand = np.random.randn(50, 50).astype(np.float32)
-    reps = [1, 2]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 10: 3D int64 array
-    operand = np.array([[[-5]], [[10]]], dtype=np.int64)
-    reps = [2, 3, 4]
-    list_of_inputs.append({"operand": operand, "reps": reps})
-
-    # Input 11: 1D array tiled 0 times (empty output)
+    # Input 1: 1D array, int32
     operand = np.array([1, 2, 3], dtype=np.int32)
-    reps = [0]
-    list_of_inputs.append({"operand": operand, "reps": reps})
+    reps = [3]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 2: 2D array, float32, negative values
+    operand = np.array([[-1.5, 2.0], [0.5, -3.2]], dtype=np.float32)
+    reps = [2, 3]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 3: 0D array (scalar tensor), int64
+    operand = np.array(42, dtype=np.int64)
+    reps = []
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 4: 3D array, float64
+    operand = np.random.randn(2, 3, 4).astype(np.float64)
+    reps = [1, 2, 1]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 5: 1D boolean array
+    operand = np.array([True, False, True], dtype=np.bool_)
+    reps = [4]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 6: 4D array, complex64
+    operand = (
+        np.random.randn(1, 2, 1, 3) + 1j * np.random.randn(1, 2, 1, 3)
+    ).astype(np.complex64)
+    reps = [2, 1, 3, 1]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 7: 2D array with 1 repetition along all dimensions
+    operand = np.arange(12, dtype=np.int16).reshape(3, 4)
+    reps = [1, 1]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 8: 2D array with reps containing 0
+    operand = np.ones((2, 2), dtype=np.float32)
+    reps = [0, 2]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 9: 5D array, uint8
+    operand = np.zeros((1, 1, 2, 1, 2), dtype=np.uint8)
+    reps = [2, 3, 1, 2, 1]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 10: 2D column vector tiled horizontally and vertically
+    operand = np.array([[-10], [20], [-30]], dtype=np.int32)
+    reps = [2, 5]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
+
+    # Input 11: 3D array with zeros in reps
+    operand = np.random.randn(3, 1, 2).astype(np.float32)
+    reps = [2, 0, 3]
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "reps": list(reps)})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.tile_2"] = tile_inputs()
 

@@ -4,63 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def greater_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float array, positive integer
-    x = 5
-    y = np.array([1.0, 6.0, 5.0, 4.5, 10.2], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 1: 1D int32 array, positive integer scalar
+    input_dict = {
+        "x": 5,
+        "y": np.array([1, 5, 10, -2, 0], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D integer array, zero integer
-    x = 0
-    y = np.array([[-1, 2, 0], [3, -4, 5]], dtype=np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 2: 2D float32 array, zero scalar
+    input_dict = {
+        "x": 0,
+        "y": np.array([[-1.5, 0.0], [2.3, -0.1]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D random float array, negative integer
-    x = -10
-    y = np.random.uniform(-20, 0, size=(2, 3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 3: 1D negative integer scalar with int64 array
+    input_dict = {
+        "x": -3,
+        "y": np.array([-5, -3, -1, 0, 2], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Scalar tensor, positive integer
-    x = 42
-    y = np.array(42, dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 4: 3D float64 array
+    input_dict = {
+        "x": 10,
+        "y": np.arange(24, dtype=np.float64).reshape((2, 3, 4)),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D integer array with large values, large integer
-    x = 1000
-    y = np.array([500, 1500, 1000, 2000, 100], dtype=np.int64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 5: 0D array (scalar tensor)
+    input_dict = {
+        "x": 42,
+        "y": np.array(42, dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D random integer array, positive integer
-    x = 3
-    y = np.random.randint(-5, 10, size=(2, 2, 2, 2)).astype(np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 6: 4D uint8 array
+    input_dict = {
+        "x": 128,
+        "y": np.random.randint(0, 256, size=(2, 2, 3, 3), dtype=np.uint8),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float16 array, negative integer
-    x = -1
-    y = np.array([-2.5, -1.0, 0.5, 1.5], dtype=np.float16)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 7: Empty 1D array
+    input_dict = {
+        "x": 1,
+        "y": np.array([], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D float64 array, positive integer
-    x = 15
-    y = np.random.uniform(10, 20, size=(3, 3)).astype(np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 8: 2D boolean array
+    input_dict = {
+        "x": 1,
+        "y": np.array([[True, False], [False, True]], dtype=np.bool_),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D array with broadcast shape, negative integer
-    x = -5
-    y = np.random.randint(-10, 10, size=(4, 1, 5)).astype(np.int32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 9: Large integer with int64 array
+    input_dict = {
+        "x": 1000000,
+        "y": np.array([999999, 1000000, 1000001], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array of zeros and ones, zero integer
-    x = 0
-    y = np.array([0, 1, 0, 1, 1, 0], dtype=np.int8)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 10: 1D array with special float values (inf, -inf, nan)
+    input_dict = {
+        "x": 0,
+        "y": np.array([-np.inf, -1.0, 0.0, 1.0, np.inf, np.nan], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 5D array
+    input_dict = {
+        "x": -10,
+        "y": np.ones((1, 2, 1, 3, 2), dtype=np.int16),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.greater_5"] = greater_inputs()
 

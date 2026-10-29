@@ -4,113 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def put_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {
-        "a": np.zeros(5, dtype=np.int32),
-        "ind": np.array([0, 2, 4], dtype=np.int32),
-        "v": np.array([10, 20, 30], dtype=np.int32),
-        "mode": "clip",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D integer array, basic indices
+    a = np.zeros(5, dtype=np.int32)
+    ind = np.array([0, 2, 4], dtype=np.int32)
+    v = np.array([10, 20, 30], dtype=np.int32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "clip", "inplace": False}
+    )
 
-    # Input 2
-    input_dict = {
-        "a": np.zeros(5, dtype=np.int32),
-        "ind": np.array([0, 2, 6], dtype=np.int32),
-        "v": np.array([10, 20, 30], dtype=np.int32),
-        "mode": "clip",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float array, wrap mode
+    a = np.ones(6, dtype=np.float32)
+    ind = np.array([1, 3, 5], dtype=np.int32)
+    v = np.array([-1.5, 2.5, -3.5], dtype=np.float32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "wrap", "inplace": False}
+    )
 
-    # Input 3
-    input_dict = {
-        "a": np.zeros(5, dtype=np.int32),
-        "ind": np.array([0, 2, 6], dtype=np.int32),
-        "v": np.array([10, 20, 30], dtype=np.int32),
-        "mode": "wrap",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float64 array, clip mode
+    a = np.zeros((3, 4), dtype=np.float64)
+    ind = np.array([0, 5, 11], dtype=np.int64)
+    v = np.array([1.1, 2.2, 3.3], dtype=np.float64)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "clip", "inplace": False}
+    )
 
-    # Input 4
-    input_dict = {
-        "a": np.zeros((3, 5), dtype=np.float32),
-        "ind": np.array([0, 7, 14], dtype=np.int32),
-        "v": np.array([10.0, 20.0, 30.0], dtype=np.float32),
-        "mode": "clip",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D int64 array, wrap mode
+    a = np.arange(12, dtype=np.int64).reshape((4, 3))
+    ind = np.array([2, 6, 10], dtype=np.int32)
+    v = np.array([99, 100, 101], dtype=np.int64)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "wrap", "inplace": False}
+    )
 
-    # Input 5
-    input_dict = {
-        "a": np.zeros((3, 5), dtype=np.float32),
-        "ind": np.array([1, 2, 3, 4], dtype=np.int32),
-        "v": np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float32),
-        "mode": "wrap",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float32 array
+    a = np.zeros((2, 3, 4), dtype=np.float32)
+    ind = np.array([0, 7, 15, 23], dtype=np.int32)
+    v = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "clip", "inplace": False}
+    )
 
-    # Input 6
-    input_dict = {
-        "a": np.zeros((2, 2, 2), dtype=np.float64),
-        "ind": np.array([0, 3, 7], dtype=np.int32),
-        "v": np.array([1.1, 2.2, 3.3], dtype=np.float64),
-        "mode": "clip",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D boolean array
+    a = np.zeros(8, dtype=bool)
+    ind = np.array([0, 3, 6], dtype=np.int32)
+    v = np.array([True, True, True], dtype=bool)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "wrap", "inplace": False}
+    )
 
-    # Input 7
-    input_dict = {
-        "a": np.ones(10, dtype=np.float32),
-        "ind": np.array([1, 3, 5, 7, 9], dtype=np.int32),
-        "v": np.array([-1.0, -2.0, -3.0, -4.0, -5.0], dtype=np.float32),
-        "mode": "clip",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D float32 array
+    a = np.zeros((4, 4), dtype=np.float32)
+    ind = np.array([1, 5, 9, 13], dtype=np.int32)
+    v = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "clip", "inplace": False}
+    )
 
-    # Input 8
-    input_dict = {
-        "a": np.array([1, 2, 3, 4], dtype=np.int64),
-        "ind": np.array([0, 1], dtype=np.int32),
-        "v": np.array([9, 9], dtype=np.int64),
-        "mode": "wrap",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Single index replacement
+    a = np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)
+    ind = np.array([2], dtype=np.int32)
+    v = np.array([999.0], dtype=np.float32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "wrap", "inplace": False}
+    )
 
-    # Input 9
-    input_dict = {
-        "a": np.ones((4, 4), dtype=np.float32),
-        "ind": np.array([15], dtype=np.int32),
-        "v": np.array([99.9], dtype=np.float32),
-        "mode": "clip",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D int32 array
+    a = np.zeros((2, 2, 2, 2), dtype=np.int32)
+    ind = np.array([0, 1, 3, 5], dtype=np.int32)
+    v = np.array([10, 20, 30, 40], dtype=np.int32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "clip", "inplace": False}
+    )
 
-    # Input 10
-    input_dict = {
-        "a": np.array([10, 20, 30, 40, 50, 60], dtype=np.int32),
-        "ind": np.array([2, 4], dtype=np.int32),
-        "v": np.array([0, 0], dtype=np.int32),
-        "mode": "wrap",
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D int32 array with multiple updates
+    a = np.ones(10, dtype=np.int32)
+    ind = np.array([0, 4, 8], dtype=np.int32)
+    v = np.array([100, 200, 300], dtype=np.int32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "clip", "inplace": False}
+    )
+
+    # Input 11: 2D int32 array with negative values
+    a = np.zeros((3, 3), dtype=np.int32)
+    ind = np.array([1, 4, 7], dtype=np.int32)
+    v = np.array([-10, -20, -30], dtype=np.int32)
+    list_of_inputs.append(
+        {"a": a, "ind": ind, "v": v, "mode": "wrap", "inplace": False}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.put_2"] = put_inputs()
 

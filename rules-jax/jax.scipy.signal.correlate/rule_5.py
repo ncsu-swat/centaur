@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# precision tuple length constraint (Rule 5)
+# inputs must have at least one dimension (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] == 2) if n else
-          v["arg1_length"] == 2)
+    s.add(Not(v["arg1_ndim"] >= 1) if n else
+          v["arg1_ndim"] >= 1)
 )
 
 def rule_5_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_5_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all(isinstance(e, str) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 5
-        rule_5(solver, {'arg1_length': arg1_length})
+        rule_5(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_5(solver, {'arg1_length': arg1['length']}, neg)
+        rule_5(solver, {'arg1_ndim': arg1['ndim']}, neg)

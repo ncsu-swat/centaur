@@ -285,8 +285,16 @@ def introduce_negatives(input_dict, signature, lib="torch", rng=np.random.defaul
             new_input = copy.deepcopy(input_dict)
             new_input[arg] = none_replacements[domain]
         elif domain in ["tensor", "tensor_list", "integer", "float"]:
-            new_input = copy.deepcopy(input_dict)
-            new_input[arg] = new_input[arg] * -1
+            val = input_dict[arg]
+            # unsigned/bool arrays can't represent negatives -- `* -1` overflows; skip them
+            if hasattr(val, "dtype") and getattr(val.dtype, "kind", "") in ("u", "b"):
+                new_input = None
+            else:
+                new_input = copy.deepcopy(input_dict)
+                try:
+                    new_input[arg] = new_input[arg] * -1
+                except (OverflowError, TypeError, ValueError):
+                    new_input = None
         elif domain in ["list", "tuple"]:
             new_input = copy.deepcopy(input_dict)
             for i, entry in enumerate(new_input[arg]):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# for 2D input arrays, the axis must be in the range [-2, 1] (Rule 34)
+# negative axis magnitude cannot exceed tensor rank (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 2, Or(Or(Or(v["arg2_value"] == 0, v["arg2_value"] == 1), v["arg2_value"] == 0 - 1), v["arg2_value"] == 0 - 2), True)) if n else
-          If(v["arg1_ndim"] == 2, Or(Or(Or(v["arg2_value"] == 0, v["arg2_value"] == 1), v["arg2_value"] == 0 - 1), v["arg2_value"] == 0 - 2), True))
+    s.add(Not(If(v["arg2_value"] < 0, 0 - v["arg2_value"] <= v["arg1_ndim"], True)) if n else
+          If(v["arg2_value"] < 0, 0 - v["arg2_value"] <= v["arg1_ndim"], True))
 )
 
 def rule_34_func(arg1, arg2, solver=None, neg=False):

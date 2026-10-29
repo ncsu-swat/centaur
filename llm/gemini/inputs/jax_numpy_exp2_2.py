@@ -4,46 +4,21 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def exp2_inputs():
     list_of_inputs = []
 
-    # Input 1: Small positive python integer
-    list_of_inputs.append({"x": 3})
+    values = [0, 1, -1, 2, -2, 5, -5, 10, -10, 16, -16, 30]
 
-    # Input 2: Small negative python integer
-    list_of_inputs.append({"x": -2})
-
-    # Input 3: Zero python integer
-    list_of_inputs.append({"x": 0})
-
-    # Input 4: Positive np.int32 scalar
-    list_of_inputs.append({"x": np.int32(5)})
-
-    # Input 5: Negative np.int64 scalar
-    list_of_inputs.append({"x": np.int64(-4)})
-
-    # Input 6: Small positive np.int16 scalar
-    list_of_inputs.append({"x": np.int16(8)})
-
-    # Input 7: Negative np.int8 scalar
-    list_of_inputs.append({"x": np.int8(-1)})
-
-    # Input 8: Another positive np.int32 scalar
-    list_of_inputs.append({"x": np.int32(6)})
-
-    # Input 9: Another negative np.int64 scalar
-    list_of_inputs.append({"x": np.int64(-12)})
-
-    # Input 10: Larger positive python integer
-    list_of_inputs.append({"x": 10})
-
-    # Input 11: Larger negative python integer
-    list_of_inputs.append({"x": -8})
+    for val in values:
+        input_dict = {"x": int(val)}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.exp2_2"] = exp2_inputs()
 

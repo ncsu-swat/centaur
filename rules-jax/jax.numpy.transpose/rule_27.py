@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Each axis in the list parameter must be a valid dimension index of the input tensor (Rule 27)
+# for a 3-dimensional tensor, the sum of elements in a valid 3-axis permutation list must equal 3 (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)]))
+    s.add(Not(If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 3), Select(v["arg2_values"], 0) + Select(v["arg2_values"], 1) + Select(v["arg2_values"], 2) == 3, True)) if n else
+          If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 3), Select(v["arg2_values"], 0) + Select(v["arg2_values"], 1) + Select(v["arg2_values"], 2) == 3, True))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_27_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

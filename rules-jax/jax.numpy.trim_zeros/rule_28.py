@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# integer axis must be within the valid range of dimensions (Rule 28)
+# for a 2-dimensional array, the axis integer must be 0, 1, -1, or -2 (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(v["arg2_value"] + v["arg1_ndim"] >= 0, v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(And(v["arg1_ndim"] == 2, (Or(Or(Or(v["arg2_value"] == 0, v["arg2_value"] == 1), v["arg2_value"] == -1), v["arg2_value"] == -2)))) if n else
+          And(v["arg1_ndim"] == 2, (Or(Or(Or(v["arg2_value"] == 0, v["arg2_value"] == 1), v["arg2_value"] == -1), v["arg2_value"] == -2))))
 )
 
 def rule_28_func(arg1, arg2, solver=None, neg=False):

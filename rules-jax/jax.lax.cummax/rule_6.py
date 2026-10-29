@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the operand is 1-dimensional, the axis must be 0 or -1 (Rule 6)
+# axis should be a valid dimension index of the operand tensor (Rule 6)
 
 rule_6 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == 0 - 1), True)) if n else
-          If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == 0 - 1), True))
+    s.add(Not(And(-1 * v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"] - 1)) if n else
+          And(-1 * v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"] - 1))
 )
 
 def rule_6_func(arg1, arg2, solver=None, neg=False):

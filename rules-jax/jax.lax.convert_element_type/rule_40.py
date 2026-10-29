@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# prevent out-of-range integer values when casting to int8 (Rule 40)
+# when casting numeric scalar to 64-bit integer, value must be within 64-bit signed integer limits (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] == 1, And(v["arg1_value"] >= -128, v["arg1_value"] <= 127), And(0 <= v["arg2_value"], v["arg2_value"] <= 10))) if n else
-          If(v["arg2_value"] == 1, And(v["arg1_value"] >= -128, v["arg1_value"] <= 127), And(0 <= v["arg2_value"], v["arg2_value"] <= 10)))
+    s.add(Not(If(v["arg2_value"] == 4, And(v["arg1_value"] >= -9223372036854775808, v["arg1_value"] <= 9223372036854775807), True)) if n else
+          If(v["arg2_value"] == 4, And(v["arg1_value"] >= -9223372036854775808, v["arg1_value"] <= 9223372036854775807), True))
 )
 
 def rule_40_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,16 @@ def rule_40_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 40

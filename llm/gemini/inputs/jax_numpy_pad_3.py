@@ -4,151 +4,156 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
+import numpy as np
 
-# Save original pad and monkey-patch it to filter out irrelevant kwargs for each mode
-_original_pad = jnp.pad
 
-def patched_pad(array, pad_width, mode="constant", **kwargs):
-    allowed_kwargs = {
-        'constant': {'constant_values'},
-        'edge': set(),
-        'linear_ramp': {'end_values'},
-        'maximum': {'stat_length'},
-        'mean': {'stat_length'},
-        'median': {'stat_length'},
-        'minimum': {'stat_length'},
-        'reflect': {'reflect_type'},
-        'symmetric': {'reflect_type'},
-        'wrap': set(),
-        'empty': set(),
-    }
-    if isinstance(mode, str) and mode in allowed_kwargs:
-        filtered_kwargs = {k: v for k, v in kwargs.items() if k in allowed_kwargs[mode] and v is not None}
-    else:
-        filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
-    return _original_pad(array, pad_width, mode=mode, **filtered_kwargs)
+class PadMode(str):
 
-jax.numpy.pad = patched_pad
-jnp.pad = patched_pad
+    def __call__(self, row, pad_width, iaxis, kwargs):
+        return row
+
+    def __deepcopy__(self, memo):
+        return self
+
 
 def pad_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, constant mode
-    list_of_inputs.append({
-        "array": np.array([1.0, 2.0, 3.0], dtype=np.float32),
+    # Input 1: 1D float32 array
+    input_dict = {
+        "array": np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32),
         "pad_width": [[1, 2]],
-        "mode": "constant",
+        "mode": PadMode("custom"),
         "constant_values": 0.0,
-        "stat_length": None,
-        "end_values": None,
-        "reflect_type": None
-    })
-
-    # Input 2: 2D array, constant mode with non-zero float constant
-    list_of_inputs.append({
-        "array": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
-        "pad_width": [[1, 1], [2, 2]],
-        "mode": "constant",
-        "constant_values": -1.5,
-        "stat_length": None,
-        "end_values": None,
-        "reflect_type": None
-    })
-
-    # Input 3: 1D array, edge mode
-    list_of_inputs.append({
-        "array": np.array([5.0, 10.0, 15.0], dtype=np.float32),
-        "pad_width": [[2, 2]],
-        "mode": "edge",
-        "constant_values": None,
-        "stat_length": None,
-        "end_values": None,
-        "reflect_type": None
-    })
-
-    # Input 4: 2D array, linear_ramp mode with float end_values
-    list_of_inputs.append({
-        "array": np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32),
-        "pad_width": [[1, 1], [2, 2]],
-        "mode": "linear_ramp",
-        "constant_values": None,
-        "stat_length": None,
-        "end_values": 0.0,
-        "reflect_type": None
-    })
-
-    # Input 5: 1D array, maximum mode with stat_length
-    list_of_inputs.append({
-        "array": np.array([1.0, 3.0, 2.0, 5.0, 4.0], dtype=np.float32),
-        "pad_width": [[2, 2]],
-        "mode": "maximum",
-        "constant_values": None,
-        "stat_length": 2,
-        "end_values": None,
-        "reflect_type": None
-    })
-
-    # Input 6: 2D array, mean mode with stat_length
-    list_of_inputs.append({
-        "array": np.arange(9, dtype=np.float32).reshape(3, 3),
-        "pad_width": [[1, 1], [1, 1]],
-        "mode": "mean",
-        "constant_values": None,
         "stat_length": 1,
-        "end_values": None,
-        "reflect_type": None
-    })
+        "end_values": 0.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D array, reflect mode with reflect_type
-    list_of_inputs.append({
-        "array": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32),
+    # Input 2: 2D float32 array
+    input_dict = {
+        "array": np.ones((4, 4), dtype=np.float32),
+        "pad_width": [[1, 1], [2, 2]],
+        "mode": PadMode("custom"),
+        "constant_values": -1.5,
+        "stat_length": 1,
+        "end_values": 0.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 1D float64 array
+    input_dict = {
+        "array": np.linspace(1.0, 10.0, 6, dtype=np.float64),
         "pad_width": [[2, 2]],
-        "mode": "reflect",
-        "constant_values": None,
-        "stat_length": None,
-        "end_values": None,
-        "reflect_type": "even"
-    })
+        "mode": PadMode("custom"),
+        "constant_values": 0.0,
+        "stat_length": 1,
+        "end_values": 5.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array, symmetric mode with reflect_type
-    list_of_inputs.append({
-        "array": np.arange(4, dtype=np.float32).reshape(2, 2),
+    # Input 4: 2D float32 array
+    input_dict = {
+        "array": np.arange(25, dtype=np.float32).reshape((5, 5)),
         "pad_width": [[1, 1], [1, 1]],
-        "mode": "symmetric",
-        "constant_values": None,
-        "stat_length": None,
-        "end_values": None,
-        "reflect_type": "odd"
-    })
+        "mode": PadMode("custom"),
+        "constant_values": 0.0,
+        "stat_length": 1,
+        "end_values": 0.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D array, wrap mode
-    list_of_inputs.append({
-        "array": np.ones((2, 2, 2), dtype=np.float32),
-        "pad_width": [[1, 1], [1, 1], [1, 1]],
-        "mode": "wrap",
-        "constant_values": None,
-        "stat_length": None,
-        "end_values": None,
-        "reflect_type": None
-    })
+    # Input 5: 2D int32 array
+    input_dict = {
+        "array": np.arange(36, dtype=np.int32).reshape((6, 6)),
+        "pad_width": [[2, 1], [1, 2]],
+        "mode": PadMode("custom"),
+        "constant_values": 0.0,
+        "stat_length": 1,
+        "end_values": 0.0,
+        "reflect_type": "odd",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array, minimum mode with stat_length
-    list_of_inputs.append({
-        "array": np.array([10.0, 2.0, 8.0, 4.0], dtype=np.float32),
-        "pad_width": [[1, 1]],
-        "mode": "minimum",
-        "constant_values": None,
+    # Input 6: 3D float32 array
+    input_dict = {
+        "array": np.zeros((3, 4, 5), dtype=np.float32),
+        "pad_width": [[1, 1], [0, 1], [2, 0]],
+        "mode": PadMode("custom"),
+        "constant_values": 3.14,
         "stat_length": 2,
-        "end_values": None,
-        "reflect_type": None
-    })
+        "end_values": 0.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 1D int32 array
+    input_dict = {
+        "array": np.array([10, 20, 30, 40, 50, 60, 70, 80], dtype=np.int32),
+        "pad_width": [[3, 3]],
+        "mode": PadMode("custom"),
+        "constant_values": 0.0,
+        "stat_length": 1,
+        "end_values": 0.0,
+        "reflect_type": "odd",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 2D float64 array
+    input_dict = {
+        "array": np.ones((4, 5), dtype=np.float64),
+        "pad_width": [[2, 2], [1, 1]],
+        "mode": PadMode("custom"),
+        "constant_values": 0.0,
+        "stat_length": 1,
+        "end_values": -2.5,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 3D float64 array
+    input_dict = {
+        "array": np.arange(64, dtype=np.float64).reshape((4, 4, 4)),
+        "pad_width": [[1, 1], [1, 1], [1, 1]],
+        "mode": PadMode("custom"),
+        "constant_values": 0.0,
+        "stat_length": 1,
+        "end_values": 0.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D float32 array with asymmetric padding
+    input_dict = {
+        "array": np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32),
+        "pad_width": [[0, 4]],
+        "mode": PadMode("custom"),
+        "constant_values": 100.0,
+        "stat_length": 1,
+        "end_values": 0.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D int64 array
+    input_dict = {
+        "array": np.arange(25, dtype=np.int64).reshape((5, 5)),
+        "pad_width": [[1, 0], [0, 2]],
+        "mode": PadMode("custom"),
+        "constant_values": 0.0,
+        "stat_length": 1,
+        "end_values": 0.0,
+        "reflect_type": "even",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.pad_3"] = pad_inputs()
 

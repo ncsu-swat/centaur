@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def selu_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 tensor with positive and negative values
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    # Input 1: 1D array of float32 with negative and positive values
+    x = np.array([-2.0, -0.5, 0.0, 0.5, 2.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: 2D float32 tensor (matrix)
+    # Input 2: 2D array of float32 standard normal
     x = np.random.randn(3, 4).astype(np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: 3D float32 tensor
-    x = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 3: 0D scalar array of float64
+    x = np.array(-1.5, dtype=np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 4D float32 tensor
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    # Input 4: 3D array of float64
+    x = np.random.randn(2, 3, 5).astype(np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: float64 tensor for high precision
-    x = np.random.randn(5).astype(np.float64)
+    # Input 5: 4D array of float16
+    x = np.random.randn(2, 2, 3, 3).astype(np.float16)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: float16 tensor
-    x = np.random.randn(4, 4).astype(np.float16)
+    # Input 6: 1D array with all zeros
+    x = np.zeros((10,), dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: 0-dimensional tensor (scalar array)
-    x = np.array(-1.5, dtype=np.float32)
+    # Input 7: 1D array with all negative values
+    x = -np.abs(np.random.randn(8).astype(np.float32)) - 0.1
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: Tensor with only negative values
-    x = -np.abs(np.random.randn(5, 5)).astype(np.float32)
+    # Input 8: 1D array with all positive values
+    x = np.abs(np.random.randn(8).astype(np.float32)) + 0.1
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: Tensor with only positive values
-    x = np.abs(np.random.randn(5, 5)).astype(np.float32)
+    # Input 9: 5D array
+    x = np.random.randn(1, 2, 2, 2, 2).astype(np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: All zeros tensor
-    x = np.zeros((3, 3), dtype=np.float32)
+    # Input 10: 2D array with large positive and negative values
+    x = np.array([[-100.0, -10.0, -1.0], [1.0, 10.0, 100.0]], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 11: Large dimension tensor
-    x = np.random.randn(10, 10, 10).astype(np.float32)
+    # Input 11: Empty array
+    x = np.array([], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.selu"] = selu_inputs()
 

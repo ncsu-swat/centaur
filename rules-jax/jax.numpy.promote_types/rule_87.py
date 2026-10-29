@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both dtype arguments must be valid indices checked conditionally (Rule 87)
+# promotion between single-precision and double-precision complex dtypes (Rule 87)
 
 rule_87 = lambda s, v, n=False: (
-    s.add(Not(And((If(v["arg1_value"] >= 0, v["arg1_value"] <= 10, False)), (If(v["arg2_value"] >= 0, v["arg2_value"] <= 10, False)))) if n else
-          And((If(v["arg1_value"] >= 0, v["arg1_value"] <= 10, False)), (If(v["arg2_value"] >= 0, v["arg2_value"] <= 10, False))))
+    s.add(Not(Or((And(v["arg1_value"] == 9, v["arg2_value"] == 10)), (And(v["arg1_value"] == 10, v["arg2_value"] == 9)))) if n else
+          Or((And(v["arg1_value"] == 9, v["arg2_value"] == 10)), (And(v["arg1_value"] == 10, v["arg2_value"] == 9))))
 )
 
 def rule_87_func(arg1, arg2, solver=None, neg=False):

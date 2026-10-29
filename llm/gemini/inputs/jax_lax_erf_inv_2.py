@@ -4,8 +4,8 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def erf_inv_inputs():
     list_of_inputs = []
@@ -14,47 +14,48 @@ def erf_inv_inputs():
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive mid-range value
+    # Input 2: Positive value
     input_dict = {"x": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative mid-range value
+    # Input 3: Negative value
     input_dict = {"x": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 4: Small positive value
-    input_dict = {"x": 0.1}
+    input_dict = {"x": 1e-4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 5: Small negative value
-    input_dict = {"x": -0.1}
+    input_dict = {"x": -1e-4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large positive value close to 1
-    input_dict = {"x": 0.9}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Large negative value close to -1
-    input_dict = {"x": -0.9}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Value very close to 1
+    # Input 6: Close to 1.0
     input_dict = {"x": 0.99}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Value very close to -1
+    # Input 7: Close to -1.0
     input_dict = {"x": -0.99}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Standard float value
+    # Input 8: Another positive fraction
     input_dict = {"x": 0.25}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Standard negative float value
+    # Input 9: Another negative fraction
     input_dict = {"x": -0.75}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
+    # Input 10: Value close to zero
+    input_dict = {"x": 0.12345}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative value close to zero
+    input_dict = {"x": -0.12345}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
     return list_of_inputs
+
 
 generated_inputs["jax.lax.erf_inv_2"] = erf_inv_inputs()
 

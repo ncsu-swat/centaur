@@ -4,46 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def deg2rad_inputs():
     list_of_inputs = []
 
     # Input 1: Zero degrees
-    list_of_inputs.append(copy.deepcopy({"x": 0}))
+    list_of_inputs.append({"x": int(0)})
 
-    # Input 2: Right angle
-    list_of_inputs.append(copy.deepcopy({"x": 90}))
+    # Input 2: Right angle (positive)
+    list_of_inputs.append({"x": int(90)})
 
     # Input 3: Straight angle
-    list_of_inputs.append(copy.deepcopy({"x": 180}))
+    list_of_inputs.append({"x": int(180)})
 
-    # Input 4: Full rotation
-    list_of_inputs.append(copy.deepcopy({"x": 360}))
+    # Input 4: Full circle
+    list_of_inputs.append({"x": int(360)})
 
     # Input 5: Negative right angle
-    list_of_inputs.append(copy.deepcopy({"x": -90}))
+    list_of_inputs.append({"x": int(-90)})
 
     # Input 6: Negative straight angle
-    list_of_inputs.append(copy.deepcopy({"x": -180}))
+    list_of_inputs.append({"x": int(-180)})
 
     # Input 7: Acute angle
-    list_of_inputs.append(copy.deepcopy({"x": 45}))
+    list_of_inputs.append({"x": int(45)})
 
-    # Input 8: Two full rotations
-    list_of_inputs.append(copy.deepcopy({"x": 720}))
+    # Input 8: Acute angle (30 degrees)
+    list_of_inputs.append({"x": int(30)})
 
-    # Input 9: Negative full rotation
-    list_of_inputs.append(copy.deepcopy({"x": -360}))
+    # Input 9: Large angle (multiple rotations)
+    list_of_inputs.append({"x": int(720)})
 
-    # Input 10: NumPy int32 scalar representing 30 degrees
-    list_of_inputs.append(copy.deepcopy({"x": np.int32(30)}))
+    # Input 10: Negative large angle
+    list_of_inputs.append({"x": int(-360)})
 
-    # Input 11: NumPy int64 scalar representing -45 degrees
-    list_of_inputs.append(copy.deepcopy({"x": np.int64(-45)}))
+    # Input 11: Three-quarter circle
+    list_of_inputs.append({"x": int(270)})
+
+    # Input 12: Negative acute angle
+    list_of_inputs.append({"x": int(-45)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.deg2rad_3"] = deg2rad_inputs()
 

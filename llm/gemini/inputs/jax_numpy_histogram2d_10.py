@@ -4,126 +4,242 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_histogram2d_inputs():
+
+def histogram2d_inputs():
     list_of_inputs = []
 
-    # 1. Small size, float32, positive values, density=False
-    x = np.array([1.5, 2.5, 3.5], dtype=np.float32)
-    y = np.array([4.5, 5.5, 6.5], dtype=np.float32)
-    bins = np.array([[1.0, 2.0, 3.0, 4.0], [4.0, 5.0, 6.0, 7.0]], dtype=np.float32)
-    range_val = ((1.0, 4.0), (4.0, 7.0))
-    weights = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    # Input 1: Basic float32 arrays, uniform binning, density=False
+    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    y = np.array([2.0, 3.0, 4.0, 5.0, 6.0], dtype=np.float32)
+    bins = np.array(
+        [[0.0, 2.0, 4.0, 6.0], [1.0, 3.0, 5.0, 7.0]], dtype=np.float32
+    )
+    rng = ((0.0, 6.0), (1.0, 7.0))
+    weights = np.ones(5, dtype=np.float32)
     density = False
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # 2. Medium size, float64, positive/negative values, density=True
-    x = np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float64)
-    y = np.array([-2.0, -1.0, 0.0, 1.0], dtype=np.float64)
-    bins = np.array([[-2.0, 0.0, 2.0, 4.0], [-3.0, 0.0, 3.0, 6.0]], dtype=np.float64)
-    range_val = ((-2.0, 4.0), (-3.0, 6.0))
-    weights = np.array([0.5, 0.5, 1.5, 2.5], dtype=np.float64)
+    # Input 2: Float64 arrays with negative values, density=True
+    x = np.array([-3.5, -1.2, 0.0, 1.5, 4.2], dtype=np.float64)
+    y = np.array([-2.1, -0.5, 1.1, 2.3, 3.8], dtype=np.float64)
+    bins = np.array(
+        [[-5.0, -2.0, 1.0, 5.0], [-3.0, 0.0, 2.0, 5.0]], dtype=np.float64
+    )
+    rng = ((-5.0, 5.0), (-3.0, 5.0))
+    weights = np.array([0.5, 1.0, 1.5, 2.0, 2.5], dtype=np.float64)
     density = True
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # 3. Large size, float32, random values, density=False
+    # Input 3: Int32 input arrays, non-uniform bins, density=False
+    x = np.array([0, 10, 20, 30, 40, 50], dtype=np.int32)
+    y = np.array([5, 15, 25, 35, 45, 55], dtype=np.int32)
+    bins = np.array(
+        [[0.0, 15.0, 35.0, 60.0], [0.0, 20.0, 40.0, 70.0]], dtype=np.float32
+    )
+    rng = ((0.0, 60.0), (0.0, 70.0))
+    weights = np.array([1.0, 2.0, 0.5, 1.5, 3.0, 0.0], dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
+
+    # Input 4: Large random sample, density=True
     np.random.seed(42)
-    x = np.random.uniform(0, 10, 100).astype(np.float32)
-    y = np.random.uniform(0, 10, 100).astype(np.float32)
-    bins = np.array([np.linspace(0, 10, 11), np.linspace(0, 10, 11)], dtype=np.float32)
-    range_val = ((0.0, 10.0), (0.0, 10.0))
+    x = np.random.randn(200).astype(np.float32)
+    y = np.random.randn(200).astype(np.float32)
+    bins = np.stack(
+        [
+            np.linspace(-3.0, 3.0, 11, dtype=np.float32),
+            np.linspace(-3.0, 3.0, 11, dtype=np.float32),
+        ]
+    )
+    rng = ((-3.0, 3.0), (-3.0, 3.0))
+    weights = np.random.uniform(0.1, 1.0, size=200).astype(np.float32)
+    density = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
+
+    # Input 5: Single bin in each dimension (minimal edges), density=False
+    x = np.array([0.5, 0.2, 0.8], dtype=np.float32)
+    y = np.array([0.1, 0.9, 0.4], dtype=np.float32)
+    bins = np.array([[0.0, 1.0], [0.0, 1.0]], dtype=np.float32)
+    rng = ((0.0, 1.0), (0.0, 1.0))
+    weights = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
+
+    # Input 6: Symmetric grid binning, density=True
+    x = np.linspace(-10.0, 10.0, 50, dtype=np.float64)
+    y = np.linspace(0.0, 100.0, 50, dtype=np.float64)
+    bins = np.stack(
+        [
+            np.linspace(-10.0, 10.0, 6, dtype=np.float64),
+            np.linspace(0.0, 100.0, 6, dtype=np.float64),
+        ]
+    )
+    rng = ((-10.0, 10.0), (0.0, 100.0))
+    weights = np.full(50, 0.02, dtype=np.float64)
+    density = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
+
+    # Input 7: Int64 arrays and weights, density=False
+    x = np.array([100, 200, 300, 400], dtype=np.int64)
+    y = np.array([500, 600, 700, 800], dtype=np.int64)
+    bins = np.array([[50, 250, 450], [450, 650, 850]], dtype=np.float64)
+    rng = ((50.0, 450.0), (450.0, 850.0))
+    weights = np.array([10, 20, 30, 40], dtype=np.int64)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
+
+    # Input 8: Data with negative weights, density=False
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    y = np.array([-4.0, -2.0, 0.0, 2.0, 4.0], dtype=np.float32)
+    bins = np.array(
+        [[-3.0, -1.0, 1.0, 3.0], [-5.0, -1.0, 2.0, 5.0]], dtype=np.float32
+    )
+    rng = ((-3.0, 3.0), (-5.0, 5.0))
+    weights = np.array([-1.0, 2.0, -3.0, 4.0, -5.0], dtype=np.float32)
+    density = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
+
+    # Input 9: Fine grid binning with 100 points, density=True
+    np.random.seed(123)
+    x = np.random.exponential(scale=2.0, size=100).astype(np.float32)
+    y = np.random.exponential(scale=3.0, size=100).astype(np.float32)
+    bins = np.stack(
+        [
+            np.linspace(0.0, 10.0, 21, dtype=np.float32),
+            np.linspace(0.0, 15.0, 21, dtype=np.float32),
+        ]
+    )
+    rng = ((0.0, 10.0), (0.0, 15.0))
     weights = np.ones(100, dtype=np.float32)
-    density = False
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
-
-    # 4. Small size, int32 x/y, float32 weights, density=True
-    x = np.array([1, 2, 3, 4], dtype=np.int32)
-    y = np.array([5, 6, 7, 8], dtype=np.int32)
-    bins = np.array([[0, 2, 4, 6], [4, 6, 8, 10]], dtype=np.float32)
-    range_val = ((0.0, 6.0), (4.0, 10.0))
-    weights = np.array([1.2, 2.3, 3.4, 4.5], dtype=np.float32)
     density = True
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
-    # 5. Different bin lengths for x and y, density=False
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    y = np.array([2.0, 4.0, 6.0], dtype=np.float32)
-    bins = np.array([[0.0, 2.0, 4.0, 6.0], [0.0, 3.0, 6.0, 9.0]], dtype=np.float32)
-    range_val = ((0.0, 6.0), (0.0, 9.0))
-    weights = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    # Input 10: Repeated/duplicate values spanning exact bin boundaries, density=False
+    x = np.array([0.0, 0.0, 1.0, 1.0, 2.0, 2.0], dtype=np.float64)
+    y = np.array([0.0, 1.0, 0.0, 1.0, 0.0, 1.0], dtype=np.float64)
+    bins = np.array([[0.0, 1.0, 2.0], [0.0, 1.0, 2.0]], dtype=np.float64)
+    rng = ((0.0, 2.0), (0.0, 2.0))
+    weights = np.array([1.5, 2.5, 3.5, 4.5, 5.5, 6.5], dtype=np.float64)
     density = False
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
-
-    # 6. Negative coordinates, negative weights, density=True
-    x = np.array([-10.0, -20.0, -30.0], dtype=np.float32)
-    y = np.array([-5.0, -15.0, -25.0], dtype=np.float32)
-    bins = np.array([[-40.0, -25.0, -10.0], [-30.0, -15.0, 0.0]], dtype=np.float32)
-    range_val = ((-40.0, -10.0), (-30.0, 0.0))
-    weights = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    density = True
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
-
-    # 7. Single element arrays
-    x = np.array([1.5], dtype=np.float32)
-    y = np.array([2.5], dtype=np.float32)
-    bins = np.array([[0.0, 2.0, 4.0], [0.0, 2.0, 4.0]], dtype=np.float32)
-    range_val = ((0.0, 4.0), (0.0, 4.0))
-    weights = np.array([10.0], dtype=np.float32)
-    density = False
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
-
-    # 8. Extremely small values, density=True
-    x = np.array([1e-5, 2e-5, 3e-5], dtype=np.float32)
-    y = np.array([1e-5, 3e-5, 5e-5], dtype=np.float32)
-    bins = np.array([[0.0, 2e-5, 4e-5], [0.0, 3e-5, 6e-5]], dtype=np.float32)
-    range_val = ((0.0, 4e-5), (0.0, 6e-5))
-    weights = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    density = True
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
-
-    # 9. Large integers, density=False
-    x = np.array([1000, 2000, 3000], dtype=np.int64)
-    y = np.array([2000, 4000, 6000], dtype=np.int64)
-    bins = np.array([[0, 1500, 3500], [0, 3000, 7000]], dtype=np.float64)
-    range_val = ((0.0, 3500.0), (0.0, 7000.0))
-    weights = np.array([0.1, 0.2, 0.3], dtype=np.float64)
-    density = False
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
-
-    # 10. Random normal values, density=True
-    x = np.random.normal(0, 1, 50).astype(np.float32)
-    y = np.random.normal(0, 1, 50).astype(np.float32)
-    bins = np.array([np.linspace(-3, 3, 7), np.linspace(-3, 3, 7)], dtype=np.float32)
-    range_val = ((-3.0, 3.0), (-3.0, 3.0))
-    weights = np.abs(np.random.normal(1, 0.1, 50)).astype(np.float32)
-    density = True
-    list_of_inputs.append({
-        "x": x, "y": y, "bins": bins, "range": range_val, "weights": weights, "density": density
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "x": x,
+                "y": y,
+                "bins": bins,
+                "range": rng,
+                "weights": weights,
+                "density": density,
+            }
+        )
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.histogram2d_10"] = jax_numpy_histogram2d_inputs()
+
+generated_inputs["jax.numpy.histogram2d_10"] = histogram2d_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

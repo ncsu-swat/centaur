@@ -4,74 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def heaviside_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, standard case
+    # Input 1: 1D float32 array with negative, zero, and positive values
     x1 = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
     x2 = 0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D float64 array
-    x1 = np.array([[-1.5, 0.0], [0.0, 2.5]], dtype=np.float64)
+    # Input 2: 1D float64 array with non-zero integer x2
+    x1 = np.array([-5.5, 0.0, 3.2, -0.1, 0.0, 4.4], dtype=np.float64)
     x2 = 1
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: 3D int32 array
-    x1 = np.array([[[-1, 0], [1, -2]], [[2, 0], [-3, 4]]], dtype=np.int32)
-    x2 = 5
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D int64 array with negative x2
-    x1 = np.array([0, 0, 0, 1, -1], dtype=np.int64)
-    x2 = -1
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Large 2D float32 array with random numbers and zeros
-    x1 = np.random.uniform(-10, 10, size=(10, 10)).astype(np.float32)
-    x1[x1 < -8] = 0.0  # Introduce exact zeros
+    # Input 3: 2D integer array
+    x1 = np.array([[-2, 0, 3], [5, -1, 0]], dtype=np.int32)
     x2 = 2
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: 4D float32 array
-    x1 = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    x2 = 0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D float32 array with negative integer x2
+    x1 = np.random.randn(3, 4).astype(np.float32)
+    x2 = -1
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: 1D float32 array with all zeros
-    x1 = np.zeros((10,), dtype=np.float32)
-    x2 = 1
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float32 array
+    x1 = np.linspace(-3.0, 3.0, 24, dtype=np.float32).reshape(2, 3, 4)
+    x2 = 5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: 0D array (scalar tensor)
-    x1 = np.array(0.0, dtype=np.float32)
-    x2 = 42
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D float64 array, negative values
-    x1 = np.random.uniform(-5.0, -0.1, size=(5, 5)).astype(np.float64)
-    x2 = -3
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 3D float32 array, all positive values
-    x1 = np.array([[[1.0, 2.0], [3.0, 4.0]]], dtype=np.float32)
+    # Input 6: 4D float64 array
+    x1 = np.zeros((2, 2, 2, 2), dtype=np.float64)
     x2 = 10
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 7: 1D int64 array with all zeros
+    x1 = np.array([0, 0, 0, 0], dtype=np.int64)
+    x2 = -3
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 8: 1D float16 array
+    x1 = np.array([-1.5, 0.0, 1.5], dtype=np.float16)
+    x2 = 1
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 9: 2D float32 array with single element
+    x1 = np.array([[0.0]], dtype=np.float32)
+    x2 = 42
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 5D float32 array
+    x1 = np.random.uniform(-10.0, 10.0, size=(1, 2, 1, 3, 2)).astype(
+        np.float32
+    )
+    x2 = 0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.heaviside_3"] = heaviside_inputs()
 

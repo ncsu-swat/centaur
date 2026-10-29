@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Both inputs must be floating-point tensors (Rule 11)
+# distribution inputs x and c must be non-complex numbers (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8)) if n else
-          And(And(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8), 6 <= v["arg2_dtype"]), v["arg2_dtype"] <= 8))
+    s.add(Not(And(v["arg1_dtype"] < 9, v["arg2_dtype"] < 9)) if n else
+          And(v["arg1_dtype"] < 9, v["arg2_dtype"] < 9))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):

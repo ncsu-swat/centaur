@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input tensor must have a valid non-string and non-dtype data type (Rule 13)
+# tensor must have a complex data type: complex64 or complex128 (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] < 11) if n else
-          v["arg1_dtype"] < 11)
+    s.add(Not(And(9 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
+          And(9 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
 )
 
 def rule_13_func(arg1, solver=None, neg=False):

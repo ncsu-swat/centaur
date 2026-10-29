@@ -4,133 +4,177 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def take_along_axis_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array, valid indices, axis=0
-    arr = np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float32)
-    indices = np.array([0, 2, 4], dtype=np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 0,
-        "mode": "fill",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 1D array with negative/out-of-bounds indices, clip mode, axis=0
-    arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    indices = np.array([-1, 0, 3], dtype=np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 0,
-        "mode": "clip",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 2D array, axis=1, mode="fill"
+    # Input 1: 2D float array, axis 0, fill mode
     arr = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    indices = np.array([[0, 2], [1, 0]], dtype=np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 1,
-        "mode": "fill",
-        "fill_value": -1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    indices = np.array([[1, 0, 0]], dtype=np.int32)
+    axis = 0
+    mode = "fill"
+    fill_value = 0.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
-    # Input 4: 2D float64 array, axis=0, with out of bounds and fill with NaN
-    arr = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    indices = np.array([[1, 0], [2, 1]], dtype=np.int64)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 0,
-        "mode": "fill",
-        "fill_value": float('nan')
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float array, axis 1, clip mode
+    arr = np.array([[10.0, 20.0, 30.0], [40.0, 50.0, 60.0]], dtype=np.float64)
+    indices = np.array([[2, 0], [1, 2]], dtype=np.int64)
+    axis = 1
+    mode = "clip"
+    fill_value = -1.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
-    # Input 5: 2D array with negative axis (-1)
-    arr = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    indices = np.array([[2, 1], [0, 2]], dtype=np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": -1,
-        "mode": "fill",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array, axis 0, fill mode with out-of-bounds index
+    arr = np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float32)
+    indices = np.array([3, 0, 10, -1], dtype=np.int32)
+    axis = 0
+    mode = "fill"
+    fill_value = float(np.nan)
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
-    # Input 6: 3D array, axis=2, fill mode
-    arr = np.random.randn(2, 3, 4).astype(np.float32)
-    indices = np.random.randint(0, 4, size=(2, 3, 2)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 2,
-        "mode": "fill",
-        "fill_value": 99.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D array, negative axis (-1), clip mode
+    arr = np.arange(24, dtype=np.float32).reshape(2, 3, 4)
+    indices = np.zeros((2, 3, 2), dtype=np.int32)
+    axis = -1
+    mode = "clip"
+    fill_value = 0.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
-    # Input 7: 3D array, axis=0, with broadcasting on indices
-    arr = np.random.randn(3, 2, 2).astype(np.float32)
-    indices = np.random.randint(0, 3, size=(1, 2, 2)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 0,
-        "mode": "fill",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array, axis 1, fill mode with custom fill_value
+    arr = np.random.randn(3, 4, 5).astype(np.float64)
+    indices = np.random.randint(0, 4, size=(3, 2, 5)).astype(np.int64)
+    axis = 1
+    mode = "fill"
+    fill_value = -999.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
-    # Input 8: 3D array, axis=1, clip mode
-    arr = np.random.randn(2, 4, 3).astype(np.float32)
-    indices = np.random.randint(-1, 5, size=(2, 2, 3)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 1,
-        "mode": "clip",
-        "fill_value": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D array, axis 2, fill mode
+    arr = np.ones((2, 2, 4, 3), dtype=np.float32)
+    indices = np.zeros((2, 2, 3, 3), dtype=np.int32)
+    axis = 2
+    mode = "fill"
+    fill_value = 1.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
-    # Input 9: Float arr with out of bounds, fill_value negative
-    arr = np.array([[10., 20.], [30., 40.]], dtype=np.float32)
-    indices = np.array([[2, 1], [0, -1]], dtype=np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": 1,
-        "mode": "fill",
-        "fill_value": -999.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D array, axis -2, clip mode
+    arr = np.array([[-1.0, -2.0], [-3.0, -4.0], [-5.0, -6.0]], dtype=np.float32)
+    indices = np.array([[2, 0], [1, 1]], dtype=np.int32)
+    axis = -2
+    mode = "clip"
+    fill_value = 0.5
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
-    # Input 10: 4D array, negative axis=-2
-    arr = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    indices = np.random.randint(0, 2, size=(2, 2, 2, 2)).astype(np.int32)
-    input_dict = {
-        "arr": arr,
-        "indices": indices,
-        "axis": -2,
-        "mode": "fill",
-        "fill_value": 1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Broadcasting along non-axis dimensions
+    arr = np.arange(12, dtype=np.float32).reshape(3, 4)
+    indices = np.array([[0, 1, 2]], dtype=np.int32)
+    axis = 1
+    mode = "fill"
+    fill_value = 0.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
+
+    # Input 9: 3D array, axis 0, clip mode with negative indices
+    arr = np.arange(8, dtype=np.float64).reshape(2, 2, 2)
+    indices = np.array(
+        [[[-1, 0], [1, -2]], [[0, 1], [-1, 0]]], dtype=np.int64
+    )
+    axis = 0
+    mode = "clip"
+    fill_value = 42.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
+
+    # Input 10: 1D array, axis -1, clip mode
+    arr = np.linspace(-5.0, 5.0, 10, dtype=np.float64)
+    indices = np.array([0, 9, 4, 2], dtype=np.int64)
+    axis = -1
+    mode = "clip"
+    fill_value = 0.0
+    list_of_inputs.append(
+        {
+            "arr": arr,
+            "indices": indices,
+            "axis": axis,
+            "mode": mode,
+            "fill_value": fill_value,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.take_along_axis_1"] = take_along_axis_inputs()
 

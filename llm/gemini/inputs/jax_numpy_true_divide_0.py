@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def true_divide_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D float32 arrays
-    x1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    x2 = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 1: 1D float32 arrays of same shape
+    x1 = np.array([10.0, -20.0, 30.5], dtype=np.float32)
+    x2 = np.array([2.0, 4.0, -5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D float64 arrays with negative values
-    x1 = np.array([[-1.0, 2.0], [-3.0, 4.0]], dtype=np.float64)
-    x2 = np.array([[2.0, -2.0], [2.0, -2.0]], dtype=np.float64)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 2: 2D integer arrays (true_divide outputs floats)
+    x1 = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    x2 = np.array([[2, 4], [6, 8]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: 3D float32 and 1D float32 (Broadcasting)
-    x1 = np.random.randn(2, 3, 4).astype(np.float32)
-    x2 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 3: Broadcasting 1D to 2D
+    x1 = np.random.randn(3, 4).astype(np.float64)
+    x2 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: Integer arrays (int32)
-    x1 = np.array([10, 20, 30], dtype=np.int32)
-    x2 = np.array([3, 4, 5], dtype=np.int32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 4: 0D scalar arrays
+    x1 = np.array(15.0, dtype=np.float32)
+    x2 = np.array(3.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: Complex arrays (complex64)
-    x1 = np.array([1 + 2j, 3 - 4j], dtype=np.complex64)
-    x2 = np.array([2j, 1 - 1j], dtype=np.complex64)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 5: Complex numbers
+    x1 = np.array([1.0 + 2.0j, 3.0 - 4.0j], dtype=np.complex64)
+    x2 = np.array([2.0 - 1.0j, 1.0 + 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: 1-element 0D arrays (scalars represented as arrays)
-    x1 = np.array(5.0, dtype=np.float32)
-    x2 = np.array(2.0, dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 6: 3D float arrays
+    x1 = np.random.uniform(1.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    x2 = np.random.uniform(1.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: 4D float32 arrays
-    x1 = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    x2 = np.ones((2, 2, 2, 2), dtype=np.float32) * 5.0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 7: Broadcasting with leading unit dimension
+    x1 = np.random.uniform(5.0, 20.0, size=(1, 4)).astype(np.float32)
+    x2 = np.random.uniform(1.0, 5.0, size=(3, 1)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Mixed types - x1 is float32, x2 is int32
-    x1 = np.array([1.5, 2.5, 3.5], dtype=np.float32)
-    x2 = np.array([2, 2, 2], dtype=np.int32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 8: Unsigned integer types
+    x1 = np.array([100, 200, 250], dtype=np.uint8)
+    x2 = np.array([2, 5, 10], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Large values, float64
-    x1 = np.array([1e10, -2e10], dtype=np.float64)
-    x2 = np.array([3e5, 4e5], dtype=np.float64)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 9: Mixed float64 and float32 via array types (x1 float64, x2 float32)
+    x1 = np.array([[-3.0, 9.0], [12.0, -15.0]], dtype=np.float64)
+    x2 = np.array([[1.5, 3.0], [4.0, 5.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Broadcasting 1D and 2D arrays
-    x1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    x2 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 10: 4D tensor division
+    x1 = np.random.uniform(1.0, 10.0, size=(2, 2, 3, 3)).astype(np.float32)
+    x2 = np.random.uniform(0.5, 2.0, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: Unsigned integers (uint8)
-    x1 = np.array([10, 20, 30], dtype=np.uint8)
-    x2 = np.array([3, 3, 3], dtype=np.uint8)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 11: Boolean arrays
+    x1 = np.array([True, False, True], dtype=np.bool_)
+    x2 = np.array([True, True, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.true_divide"] = true_divide_inputs()
 

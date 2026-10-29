@@ -7,35 +7,39 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# elements in the axis tuple must be unique to avoid redundant reduction (Rule 5)
+# where condition array must have boolean dtype and broadcastable number of dimensions (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg1_length"] - 1 + 1), If(i != j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j), True)) for j in range(6)])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg1_length"] - 1 + 1), If(i != j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j), True)) for j in range(6)])) for i in range(6)]))
+    s.add(Not(And(v["arg2_dtype"] == 0, v["arg2_ndim"] <= v["arg1_ndim"])) if n else
+          And(v["arg2_dtype"] == 0, v["arg2_ndim"] <= v["arg1_ndim"]))
 )
 
-def rule_5_func(arg1, solver=None, neg=False):
+def rule_5_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 5
-        rule_5(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_5(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_5(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_5(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg2_dtype': arg2['dtype']}, neg)

@@ -4,54 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import jax.numpy as jnp
 import copy
+import numpy as np
 
-_original_sign = jnp.sign
 
-def mocked_sign(x, *args, **kwargs):
-    if isinstance(x, tuple):
-        x = jnp.asarray(x)
-    return _original_sign(x, *args, **kwargs)
-
-jnp.sign = mocked_sign
-
-def jax_numpy_sign_inputs():
+def sign_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D tuple of integers
-    list_of_inputs.append({"x": (0, -1, 2, -3, 4)})
+    # Input 1: 1D float array with positive, negative, and zero values
+    x = np.array([0.0, -3.0, 7.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D tuple of floats with negative zero
-    list_of_inputs.append({"x": (-1.5, 0.0, 2.3, -0.0, 9.9)})
+    # Input 2: 1D integer array
+    x = np.array([1, -5, 0, 12, -99], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D tuple of complex numbers
-    list_of_inputs.append({"x": (1 + 1j, -3 + 4j, -5j, 0 + 0j)})
+    # Input 3: 2D float array
+    x = np.array([[1.0, -2.0], [0.0, 4.5]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 2D tuple of integers
-    list_of_inputs.append({"x": ((1, -2), (-3, 4))})
+    # Input 4: Single-element float array
+    x = np.array([-1.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 2D tuple of floats
-    list_of_inputs.append({"x": ((-0.5, 0.5), (1.5, -1.5), (0.0, -0.0))})
+    # Input 5: Single-element int array
+    x = np.array([42], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 3D tuple of integers
-    list_of_inputs.append({"x": (((1, -1), (2, -2)), ((3, -3), (4, -4)))})
+    # Input 6: 3D nested array of integers
+    x = np.array([[[1, -1], [0, 2]], [[-3, 4], [5, -6]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Tuple with large and small float values
-    list_of_inputs.append({"x": (1e-20, -1e20, 0.0, -1.0, 1.0)})
+    # Input 7: Small and large magnitude floats
+    x = np.array([1e-5, -1e-5, 1e5, -1e5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Single-element tuple
-    list_of_inputs.append({"x": (-999.99,)})
+    # Input 8: 1D float array with negative, zero, positive
+    x = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D tuple of complex numbers
-    list_of_inputs.append({"x": ((1 - 1j, -2 + 2j), (3j, -4j))})
+    # Input 9: 2D array with alternating signs
+    x = np.array([[0.5, -0.5, 1.5], [-1.5, 2.5, -2.5]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D tuple of integers with 10 elements
-    list_of_inputs.append({"x": (1, 2, 3, 4, 5, -5, -4, -3, -2, -1)})
+    # Input 10: 1D integers with large spread
+    x = np.array([100, -200, 300, -400, 500], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Simple 3-element integer array
+    x = np.array([-1, 0, 1], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sign_5"] = jax_numpy_sign_inputs()
+
+generated_inputs["jax.numpy.sign_5"] = sign_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

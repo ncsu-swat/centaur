@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isrealobj_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array
-    x = np.array([-1.5, 0.0, 2.3], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 0D scalar float32 array
+    x = np.array(3.14, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D int32 array
-    x = np.array([[1, -2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D integer array with negative values
+    x = np.array([-5, 0, 10, -20], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D complex64 array
-    x = np.array([[[1+2j, 2], [3, 4]]], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D float64 array
+    x = np.array([[-1.5, 2.5], [0.0, -4.2]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D float64 array (scalar-like)
-    x = np.array(3.14159, dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D complex64 array
+    x = np.array([1.0 + 2.0j, -3.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D complex128 array
-    x = np.array([0j, 1+0j], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 2D complex128 array
+    x = np.array([[0.0 + 1.0j, 2.0 - 3.0j], [-1.0 + 0.0j, 4.0 + 5.0j]], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D boolean array
-    x = np.ones((2, 2, 2, 2), dtype=np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Boolean array
+    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D float16 array
-    x = np.random.randn(5, 5).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 3D uint8 array
+    x = np.zeros((2, 3, 4), dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 3D uint8 array
-    x = np.arange(24, dtype=np.uint8).reshape((2, 3, 4))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Empty array
+    x = np.empty((0, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D int64 array with negative values
-    x = np.array([-10, -20, -30, 40], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 4D float16 array
+    x = np.ones((2, 2, 2, 2), dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D float32 array
-    x = np.zeros((1, 2, 1, 3, 1), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 0D complex array
+    x = np.array(1.0 + 0.0j, dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D int64 array
+    x = np.array([1000000000000, -2000000000000], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isrealobj_1"] = isrealobj_inputs()
 

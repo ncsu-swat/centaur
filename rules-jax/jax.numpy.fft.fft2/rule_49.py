@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axes elements of tuple axes must be within the valid range of tensor dimension (Rule 49)
+# axes tuple allows negative indices within negative rank to rank minus 1 (Rule 49)
 
 rule_49 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(And(v["arg2_length"] == 2, Select(v["arg2_values"], 0) >= 0 - v["arg1_ndim"]), Select(v["arg2_values"], 0) < v["arg1_ndim"]), Select(v["arg2_values"], 1) >= 0 - v["arg1_ndim"]), Select(v["arg2_values"], 1) < v["arg1_ndim"])) if n else
-          And(And(And(And(v["arg2_length"] == 2, Select(v["arg2_values"], 0) >= 0 - v["arg1_ndim"]), Select(v["arg2_values"], 0) < v["arg1_ndim"]), Select(v["arg2_values"], 1) >= 0 - v["arg1_ndim"]), Select(v["arg2_values"], 1) < v["arg1_ndim"]))
+    s.add(Not(And(And(And(And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), -1 * v["arg1_ndim"] <= Select(v["arg2_values"], 0)), Select(v["arg2_values"], 0) <= v["arg1_ndim"] - 1), -1 * v["arg1_ndim"] <= Select(v["arg2_values"], 1)), Select(v["arg2_values"], 1) <= v["arg1_ndim"] - 1)) if n else
+          And(And(And(And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), -1 * v["arg1_ndim"] <= Select(v["arg2_values"], 0)), Select(v["arg2_values"], 0) <= v["arg1_ndim"] - 1), -1 * v["arg1_ndim"] <= Select(v["arg2_values"], 1)), Select(v["arg2_values"], 1) <= v["arg1_ndim"] - 1))
 )
 
 def rule_49_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_49_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 49
-        rule_49(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_49(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_49(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_49(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

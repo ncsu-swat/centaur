@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For 16-bit signed integer tensors, the minimum value must be greater than -32768 to prevent negation overflow (Rule 52)
+# integer scalar input is bounded between 0 and 99 (Rule 52)
 
 rule_52 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_dtype"] == 2, Select(v["arg1_range"], 0) > -32768, True)) if n else
-          If(v["arg1_dtype"] == 2, Select(v["arg1_range"], 0) > -32768, True))
+    s.add(Not(And(v["arg1_value"] >= 0, v["arg1_value"] < 100)) if n else
+          And(v["arg1_value"] >= 0, v["arg1_value"] < 100))
 )
 
 def rule_52_func(arg1, solver=None, neg=False):
@@ -19,23 +19,20 @@ def rule_52_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 52
-        rule_52(solver, {'arg1_dtype': arg1_dtype, 'arg1_range': arg1_range})
+        rule_52(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_52(solver, {'arg1_dtype': arg1['dtype'], 'arg1_range': arg1['range']}, neg)
+        rule_52(solver, {'arg1_value': arg1['value']}, neg)

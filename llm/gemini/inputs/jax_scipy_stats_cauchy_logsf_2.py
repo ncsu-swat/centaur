@@ -4,65 +4,97 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_stats_cauchy_logsf_inputs():
+
+def cauchy_logsf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard Cauchy, 1D array
+    # Input 1: 1D array, standard Cauchy
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    input_dict = {"x": x, "loc": 0.0, "scale": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    loc = 0.0
+    scale = 1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 2: Non-standard 1D array, positive loc, scale > 1
-    x = np.array([-10.0, 0.0, 10.0, 20.0], dtype=np.float32)
-    input_dict = {"x": x, "loc": 5.0, "scale": 2.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D array with float64, non-zero loc and scale
+    x = np.array([[-5.0, -2.5], [0.0, 2.5]], dtype=np.float64)
+    loc = 1.5
+    scale = 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 3: 2D array, float64, negative loc, small scale
-    x = np.array([[-1.0, 0.0], [1.0, 2.0]], dtype=np.float64)
-    input_dict = {"x": x, "loc": -1.0, "scale": 0.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 3D array, small scale
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    loc = -1.0
+    scale = 0.5
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 4: 3D array, large scale
-    x = np.random.uniform(-50, 50, (2, 2, 2)).astype(np.float32)
-    input_dict = {"x": x, "loc": 10.0, "scale": 20.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Scalar tensor (0D array)
+    x = np.array(3.14, dtype=np.float32)
+    loc = 0.0
+    scale = 1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 5: 1D array with float64, extreme values
-    x = np.array([-1000.0, -100.0, 100.0, 1000.0], dtype=np.float64)
-    input_dict = {"x": x, "loc": 0.0, "scale": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Large positive values in x
+    x = np.array([10.0, 100.0, 1000.0], dtype=np.float64)
+    loc = 0.0
+    scale = 1.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 6: 4D array, standard parameters
-    x = np.random.randn(2, 3, 2, 2).astype(np.float32)
-    input_dict = {"x": x, "loc": 0.0, "scale": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Large negative values in x
+    x = np.array([-1000.0, -100.0, -10.0], dtype=np.float64)
+    loc = 5.0
+    scale = 3.5
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 7: 1D array, very small scale
-    x = np.array([-0.1, 0.0, 0.1], dtype=np.float32)
-    input_dict = {"x": x, "loc": 0.0, "scale": 0.01}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D array
+    x = np.ones((2, 2, 2, 2), dtype=np.float32) * 0.5
+    loc = 0.5
+    scale = 1.2
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 8: 2D array, negative loc, scale > 1
-    x = np.random.uniform(-5, 5, (3, 3)).astype(np.float32)
-    input_dict = {"x": x, "loc": -3.5, "scale": 4.2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Integer tensor
+    x = np.array([-3, -1, 0, 2, 5], dtype=np.int32)
+    loc = 0.0
+    scale = 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 9: 5D array (high dimension), float32
-    x = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    input_dict = {"x": x, "loc": 1.5, "scale": 0.8}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Large scale parameter
+    x = np.linspace(-10.0, 10.0, 15, dtype=np.float32)
+    loc = -2.5
+    scale = 50.0
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
-    # Input 10: 1D array, loc and scale are floats
-    x = np.array([-5.0, -2.5, 2.5, 5.0], dtype=np.float32)
-    input_dict = {"x": x, "loc": -1.2, "scale": 3.14}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D array with extreme negative loc
+    x = np.array([[-100.0, 0.0], [50.0, 200.0]], dtype=np.float64)
+    loc = -50.0
+    scale = 0.1
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "loc": float(loc), "scale": float(scale)})
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.cauchy.logsf_2"] = jax_scipy_stats_cauchy_logsf_inputs()
+
+generated_inputs["jax.scipy.stats.cauchy.logsf_2"] = cauchy_logsf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

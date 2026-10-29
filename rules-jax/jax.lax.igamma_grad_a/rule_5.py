@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# parameter 'a' must contain strictly positive values (Rule 5)
+# parameter x must have non-negative values (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) > 0) if n else
-          Select(v["arg1_range"], 0) > 0)
+    s.add(Not(Select(v["arg1_range"], 0) >= 0) if n else
+          Select(v["arg1_range"], 0) >= 0)
 )
 
 def rule_5_func(arg1, solver=None, neg=False):

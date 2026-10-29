@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor must have an integer or boolean data type (Rule 3)
+# input tensor dtype must not be floating-point or complex (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] <= 5) if n else
-          v["arg1_dtype"] <= 5)
+    s.add(Not(v["arg1_dtype"] < 6) if n else
+          v["arg1_dtype"] < 6)
 )
 
 def rule_3_func(arg1, solver=None, neg=False):

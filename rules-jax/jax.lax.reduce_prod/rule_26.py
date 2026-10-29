@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axes as a list must contain unique elements (Rule 26)
+# two reduction axes specified as a list must not be identical (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg1_length"] - 1 + 1), If(i != j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j), True)) for j in range(6)])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg1_length"] - 1 + 1), If(i != j, Select(v["arg1_values"], i) != Select(v["arg1_values"], j), True)) for j in range(6)])) for i in range(6)]))
+    s.add(Not(If(v["arg1_length"] == 2, Select(v["arg1_values"], 0) != Select(v["arg1_values"], 1), True)) if n else
+          If(v["arg1_length"] == 2, Select(v["arg1_values"], 0) != Select(v["arg1_values"], 1), True))
 )
 
 def rule_26_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_26_func(arg1, solver=None, neg=False):
             arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 26
-        rule_26(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_26(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_26(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_26(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

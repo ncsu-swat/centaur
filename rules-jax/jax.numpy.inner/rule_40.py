@@ -7,32 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# precision string parameter must be valid (Rule 40)
+# accumulation into float32 string type requires floating-point tensor inputs (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 37, v["arg1_value"] == 5)) if n else
-          Or(v["arg1_value"] == 37, v["arg1_value"] == 5))
+    s.add(Not(If(v["arg2_value"] == 38, And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), True)) if n else
+          If(v["arg2_value"] == 38, And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8), True))
 )
 
-def rule_40_func(arg1, solver=None, neg=False):
+def rule_40_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_dtype = Int('arg1_dtype')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 40
-        rule_40(solver, {'arg1_value': arg1_value})
+        rule_40(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_40(solver, {'arg1_value': arg1['value']}, neg)
+        rule_40(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both arguments are JAX dtypes represented as valid indices (Rule 46)
+# int32 dtype subtyping hierarchy constraint (Rule 46)
 
 rule_46 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg1_value"] >= 0, v["arg1_value"] < 13), v["arg2_value"] >= 0), v["arg2_value"] < 13)) if n else
-          And(And(And(v["arg1_value"] >= 0, v["arg1_value"] < 13), v["arg2_value"] >= 0), v["arg2_value"] < 13))
+    s.add(Not(If(v["arg1_value"] == 3, Or((And(3 <= v["arg2_value"], v["arg2_value"] <= 4)), v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12))) if n else
+          If(v["arg1_value"] == 3, Or((And(3 <= v["arg2_value"], v["arg2_value"] <= 4)), v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12)))
 )
 
 def rule_46_func(arg1, arg2, solver=None, neg=False):

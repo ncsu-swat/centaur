@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The values of the input evaluation points x must be at most 1 (Rule 9)
+# evaluation points x must have values strictly positive and at most 1 (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 1) <= 1) if n else
-          Select(v["arg1_range"], 1) <= 1)
+    s.add(Not(And(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) <= 1)) if n else
+          And(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) <= 1))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):

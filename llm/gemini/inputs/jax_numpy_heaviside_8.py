@@ -4,80 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def heaviside_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar int and scalar float
-    input_dict = {
-        "x1": np.int32(0),
-        "x2": np.float32(0.5)
-    }
+    # Input 1: zero x1 with standard 0.5 float
+    input_dict = {"x1": 0, "x2": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D int array and scalar float
-    input_dict = {
-        "x1": np.array([-2, -1, 0, 1, 2], dtype=np.int32),
-        "x2": np.float32(0.5)
-    }
+    # Input 2: negative x1 with 0.5 float
+    input_dict = {"x1": -1, "x2": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D int array and 1D float array (same shape)
-    input_dict = {
-        "x1": np.array([-5, 0, 5], dtype=np.int64),
-        "x2": np.array([0.1, 0.2, 0.3], dtype=np.float64)
-    }
+    # Input 3: positive x1 with 0.5 float
+    input_dict = {"x1": 1, "x2": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D int array and scalar float
-    input_dict = {
-        "x1": np.array([[-1, 0], [1, 2]], dtype=np.int32),
-        "x2": np.float32(0.75)
-    }
+    # Input 4: zero x1 with 1.0 float
+    input_dict = {"x1": 0, "x2": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D int array and 1D float array (broadcasting)
-    input_dict = {
-        "x1": np.array([[-3, 0, 3], [4, -1, 0]], dtype=np.int32),
-        "x2": np.array([0.2, 0.5, 0.8], dtype=np.float32)
-    }
+    # Input 5: negative x1 with zero float
+    input_dict = {"x1": -5, "x2": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D int array and 3D float array
-    input_dict = {
-        "x1": np.random.randint(-5, 5, size=(2, 2, 2)).astype(np.int32),
-        "x2": np.random.uniform(0.0, 1.0, size=(2, 2, 2)).astype(np.float32)
-    }
+    # Input 6: positive x1 with negative float
+    input_dict = {"x1": 10, "x2": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large arrays with int64 and float64
-    input_dict = {
-        "x1": np.random.randint(-100, 100, size=(10, 10)).astype(np.int64),
-        "x2": np.random.random((10, 10)).astype(np.float64)
-    }
+    # Input 7: zero x1 with negative float
+    input_dict = {"x1": 0, "x2": -1.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D int array (zeros only) and 1D float array
-    input_dict = {
-        "x1": np.zeros(5, dtype=np.int32),
-        "x2": np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float32)
-    }
+    # Input 8: zero x1 with fractional float
+    input_dict = {"x1": 0, "x2": 0.75}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D int array and 2D float array (broadcasting with size 1)
-    input_dict = {
-        "x1": np.array([[-1, 0, 1]], dtype=np.int32),
-        "x2": np.array([[0.5], [0.6]], dtype=np.float32)
-    }
+    # Input 9: large negative x1 with positive float
+    input_dict = {"x1": -100, "x2": 2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D int array and scalar float
-    input_dict = {
-        "x1": np.random.randint(-10, 10, size=(2, 2, 2, 2)).astype(np.int8),
-        "x2": np.float32(1.0)
-    }
+    # Input 10: large positive x1 with zero float
+    input_dict = {"x1": 42, "x2": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: zero x1 with infinity float
+    input_dict = {"x1": 0, "x2": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: zero x1 with NaN float
+    input_dict = {"x1": 0, "x2": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

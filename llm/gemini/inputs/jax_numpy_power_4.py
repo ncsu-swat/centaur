@@ -4,65 +4,101 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_power_inputs():
+
+def power_inputs():
     list_of_inputs = []
 
-    # Input 1: positive base, 1D integer exponent array
-    x1 = 2
-    x2 = np.array([0, 1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 1: positive integer base, 1D integer exponent array
+    input_dict = {
+        "x1": 2,
+        "x2": np.array([0, 1, 2, 3, 4], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: positive base, 2D integer exponent array
-    x1 = 3
-    x2 = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 2: positive integer base, 2D integer exponent array
+    input_dict = {
+        "x1": 3,
+        "x2": np.array([[1, 2], [3, 0]], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: positive base, 1D float32 exponent array
-    x1 = 5
-    x2 = np.array([0.5, 1.0, 1.5, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 3: negative integer base, 1D integer exponent array
+    input_dict = {
+        "x1": -2,
+        "x2": np.array([1, 2, 3, 4, 5], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: negative base, 1D integer exponent array
-    x1 = -2
-    x2 = np.array([1, 2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 4: positive integer base, 1D float32 exponent array
+    input_dict = {
+        "x1": 10,
+        "x2": np.array([0.0, 1.0, 2.0, 3.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: large base, 3D float32 random exponent array
-    x1 = 10
-    x2 = np.random.uniform(0, 3, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 5: positive integer base, 2D fractional float exponent array
+    input_dict = {
+        "x1": 4,
+        "x2": np.array([[0.5, 1.5], [2.0, 2.5]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: positive base, 1D int64 random exponent array
-    x1 = 4
-    x2 = np.random.randint(0, 6, size=(5,)).astype(np.int64)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 6: zero base, 1D positive integer exponent array
+    input_dict = {
+        "x1": 0,
+        "x2": np.array([1, 2, 3, 4], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: zero base, 1D float32 exponent array
-    x1 = 0
-    x2 = np.array([1, 2, 3], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 7: base 1, 3D float64 exponent array
+    input_dict = {
+        "x1": 1,
+        "x2": np.random.randn(2, 3, 4).astype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: base 1, 2D float64 random exponent array
-    x1 = 1
-    x2 = np.random.randn(2, 2).astype(np.float64)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 8: positive integer base, 0D scalar tensor exponent
+    input_dict = {
+        "x1": 5,
+        "x2": np.array(3, dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: negative base, 2D int64 exponent array
-    x1 = -1
-    x2 = np.array([[1, 2], [3, 4]], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 9: -1 base with alternating even/odd integer exponent array
+    input_dict = {
+        "x1": -1,
+        "x2": np.arange(10, dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: positive base, float fractional exponents
-    x1 = 8
-    x2 = np.array([0.333, 0.5], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": copy.deepcopy(x2)})
+    # Input 10: positive integer base, 4D integer exponent array
+    input_dict = {
+        "x1": 2,
+        "x2": np.ones((2, 2, 2, 2), dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: positive integer base, 1D float array with negative exponents
+    input_dict = {
+        "x1": 3,
+        "x2": np.array([-1.0, -2.0, 0.5], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: positive integer base, 2D int32 exponent array
+    input_dict = {
+        "x1": 7,
+        "x2": np.zeros((3, 1), dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.power_4"] = jax_numpy_power_inputs()
+
+generated_inputs["jax.numpy.power_4"] = power_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -4,113 +4,135 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def einsum_inputs():
     list_of_inputs = []
 
-    # Input 1: Trace of a 2D square matrix
+    # Input 1: Trace of a square matrix
+    subscripts = "ii->"
+    operands = np.arange(16, dtype=np.int32).reshape(4, 4) - 5
     input_dict = {
-        "subscripts": "ii->",
-        "operands": np.random.randn(4, 4).astype(np.float32),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "auto",
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype("float32")
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Diagonal of a 2D square matrix
+    # Input 2: Matrix transpose
+    subscripts = "ij->ji"
+    operands = np.random.randn(3, 7).astype(np.float32)
     input_dict = {
-        "subscripts": "ii->i",
-        "operands": np.random.randn(5, 5).astype(np.float32),
-        "optimize": "greedy",
-        "precision": "HIGH",
-        "preferred_element_type": np.dtype("float32")
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Transpose of a 2D matrix
-    input_dict = {
-        "subscripts": "ij->ji",
-        "operands": np.random.randn(3, 5).astype(np.float64),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "optimal",
-        "precision": "HIGHEST",
-        "preferred_element_type": np.dtype("float64")
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Sum of a 1D vector
+    # Input 3: Diagonal extraction
+    subscripts = "ii->i"
+    operands = np.random.randn(5, 5).astype(np.float64)
     input_dict = {
-        "subscripts": "i->",
-        "operands": np.random.randn(10).astype(np.float32),
-        "optimize": "auto",
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype("float32")
+        "subscripts": subscripts,
+        "operands": operands,
+        "optimize": "greedy",
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Sum along columns of a 2D matrix
+    # Input 4: Sum along axis
+    subscripts = "...j->..."
+    operands = np.random.randn(4, 3, 2).astype(np.float32)
     input_dict = {
-        "subscripts": "ij->j",
-        "operands": np.random.randn(4, 6).astype(np.float32),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "eager",
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype("float32")
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Sum along rows of a 2D matrix
+    # Input 5: Sum of 1D vector
+    subscripts = "i->"
+    operands = np.array([-1, 0, 2, 4, 8], dtype=np.int64)
     input_dict = {
-        "subscripts": "ij->i",
-        "operands": np.random.randint(-10, 10, size=(5, 3)).astype(np.int32),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "auto",
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype("int32")
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Transpose of a 3D tensor
+    # Input 6: Higher-dimensional transpose/permutation
+    subscripts = "ijkl->ljik"
+    operands = np.random.randn(2, 3, 4, 5).astype(np.float32)
     input_dict = {
-        "subscripts": "ijk->kij",
-        "operands": np.random.randn(2, 3, 4).astype(np.float32),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "optimal",
-        "precision": "HIGH",
-        "preferred_element_type": np.dtype("float32")
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Sum all elements of a 2D matrix
+    # Input 7: Partial trace (contracting two dimensions of 3D tensor)
+    subscripts = "ijj->i"
+    operands = np.random.randn(3, 4, 4).astype(np.float64)
     input_dict = {
-        "subscripts": "ij->",
-        "operands": np.random.randn(4, 4).astype(np.float32),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "greedy",
-        "precision": "HIGHEST",
-        "preferred_element_type": np.dtype("float32")
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Permute axes of a 4D tensor
+    # Input 8: Batch trace with ellipsis
+    subscripts = "...ii->..."
+    operands = np.random.randn(2, 3, 4, 4).astype(np.float32)
     input_dict = {
-        "subscripts": "ijkl->ljki",
-        "operands": np.random.randn(2, 2, 3, 3).astype(np.float32),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "auto",
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype("float32")
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Sum one dimension of a 3D tensor
+    # Input 9: Identity-like copy / view
+    subscripts = "ij->ij"
+    operands = np.random.randn(6, 6).astype(np.float32)
     input_dict = {
-        "subscripts": "ijk->ik",
-        "operands": np.random.randn(2, 4, 3).astype(np.float32),
+        "subscripts": subscripts,
+        "operands": operands,
         "optimize": "auto",
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype("float32")
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Multi-axis reduction to scalar
+    subscripts = "ijk->"
+    operands = np.random.randn(2, 3, 4).astype(np.float64)
+    input_dict = {
+        "subscripts": subscripts,
+        "operands": operands,
+        "optimize": "optimal",
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.einsum_1"] = einsum_inputs()
 

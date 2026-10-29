@@ -4,65 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_tan_inputs():
+
+def tan_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, positive and negative values
+    # Input 1: 1D float32 array with positive and negative values
     x = np.array([-1.5, -0.5, 0.0, 0.5, 1.5], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
     # Input 2: 2D float64 array
-    x = np.random.uniform(-1.0, 1.0, size=(3, 3)).astype(np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    x = np.array([[-1.0, 0.25], [0.75, -0.25]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 3: 3D float32 array
-    x = np.random.normal(0.0, 2.0, size=(2, 2, 2)).astype(np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D scalar float32 array
+    x = np.array(0.42, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 4: 1D complex64 array
-    x = np.array([1.0 + 1.0j, -1.0 - 2.0j], dtype=np.complex64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float16 array
+    x = np.random.uniform(-1.0, 1.0, size=(2, 3, 4)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 5: 2D complex128 array
-    x = (np.random.randn(2, 3) + 1j * np.random.randn(2, 3)).astype(np.complex128)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D complex64 array
+    x = np.array([0.5 + 0.5j, -0.5 + 1.0j, 1.0 - 0.5j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 6: 4D float32 array
-    x = np.random.uniform(-0.5, 0.5, size=(1, 2, 2, 1)).astype(np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D complex128 array
+    x = np.array(
+        [[0.1 - 0.2j, -0.3 + 0.4j], [0.5 + 0.0j, -0.6 - 0.7j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 7: 0D (scalar-like) float32 array
-    x = np.array(0.785398, dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D float32 array
+    x = np.random.uniform(-1.2, 1.2, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 8: 2D float32 array with negative values
-    x = np.array([[-10.0, -5.0], [-2.0, -1.0]], dtype=np.float32)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D float32 array containing zeros and small values
+    x = np.array([0.0, -0.0, 1e-5, -1e-5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 9: 3D complex64 array
-    x = (np.random.uniform(-1.0, 1.0, size=(2, 1, 3)) + 1j * np.random.uniform(-1.0, 1.0, size=(2, 1, 3))).astype(np.complex64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D float32 array
+    x = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
-    # Input 10: 1D float64 array with larger range
-    x = np.linspace(-3.0, 3.0, 10).astype(np.float64)
-    input_dict = {"x": x, "accuracy": None}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float32 array with negative and positive values
+    x = np.array([[-0.785, 0.785], [-0.5, 0.5]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
+
+    # Input 11: 3D complex64 array
+    x = (
+        np.random.uniform(-1.0, 1.0, size=(2, 2, 3))
+        + 1j * np.random.uniform(-1.0, 1.0, size=(2, 2, 3))
+    ).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "accuracy": None}))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.tan_1"] = jax_lax_tan_inputs()
+
+generated_inputs["jax.lax.tan_1"] = tan_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

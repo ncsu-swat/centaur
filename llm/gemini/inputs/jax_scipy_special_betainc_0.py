@@ -4,83 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def betainc_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays of float32
-    a = np.array([0.5, 1.0, 2.0, 5.0], dtype=np.float32)
-    b = np.array([0.5, 1.0, 2.0, 5.0], dtype=np.float32)
-    x = np.array([0.1, 0.3, 0.5, 0.8], dtype=np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalars, float32
+    a = np.array(0.5, dtype=np.float32)
+    b = np.array(1.5, dtype=np.float32)
+    x = np.array(0.3, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 2: 2D arrays, float32
-    a = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
-    b = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
-    x = np.random.uniform(0.0, 1.0, size=(3, 3)).astype(np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D arrays, float32
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    b = np.array([3.0, 2.0, 1.0], dtype=np.float32)
+    x = np.array([0.1, 0.5, 0.9], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 3: float64 arrays
-    a = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float64)
-    b = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float64)
+    # Input 3: 2D arrays, float64
+    a = np.array([[0.5, 1.0], [2.0, 4.0]], dtype=np.float64)
+    b = np.array([[1.5, 2.5], [3.5, 0.5]], dtype=np.float64)
     x = np.array([[0.2, 0.4], [0.6, 0.8]], dtype=np.float64)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 4: 0D arrays (scalars in tensor wrapper)
-    a = np.array(2.0, dtype=np.float32)
-    b = np.array(3.0, dtype=np.float32)
-    x = np.array(0.5, dtype=np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Broadcasting (3, 1) and (1, 4)
+    a = np.array([[1.0], [2.0], [3.0]], dtype=np.float32)
+    b = np.array([[0.5, 1.5, 2.5, 3.5]], dtype=np.float32)
+    x = np.full((3, 4), 0.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 5: Broadcasting - a is column, b is row, x is 2D
-    a = np.array([[0.5], [1.5], [2.5]], dtype=np.float32)
-    b = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
-    x = np.array([[0.1, 0.2, 0.3], [0.4, 0.5, 0.6], [0.7, 0.8, 0.9]], dtype=np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Boundary values of x (0 and 1)
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+    b = np.array([1.0, 2.0, 3.0], dtype=np.float64)
+    x = np.array([0.0, 0.5, 1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 6: Broadcasting - x is a single element array
-    a = np.random.uniform(1.0, 5.0, size=(4, 2)).astype(np.float32)
-    b = np.random.uniform(1.0, 5.0, size=(4, 2)).astype(np.float32)
-    x = np.array([0.5], dtype=np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D arrays, float32
+    a = np.random.uniform(0.1, 5.0, size=(2, 3, 4)).astype(np.float32)
+    b = np.random.uniform(0.1, 5.0, size=(2, 3, 4)).astype(np.float32)
+    x = np.random.uniform(0.0, 1.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 7: Small parameters a and b
-    a = np.random.uniform(0.01, 0.1, size=(5,)).astype(np.float32)
-    b = np.random.uniform(0.01, 0.1, size=(5,)).astype(np.float32)
-    x = np.random.uniform(0.1, 0.9, size=(5,)).astype(np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Large parameters
+    a = np.array([10.0, 50.0, 100.0], dtype=np.float64)
+    b = np.array([15.0, 40.0, 80.0], dtype=np.float64)
+    x = np.array([0.3, 0.6, 0.9], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 8: Large parameters a and b
-    a = np.random.uniform(50.0, 100.0, size=(2, 2)).astype(np.float64)
-    b = np.random.uniform(50.0, 100.0, size=(2, 2)).astype(np.float64)
-    x = np.random.uniform(0.1, 0.9, size=(2, 2)).astype(np.float64)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Small parameter values (near zero)
+    a = np.array([1e-3, 1e-2, 0.1], dtype=np.float32)
+    b = np.array([1e-2, 1e-1, 0.2], dtype=np.float32)
+    x = np.array([0.05, 0.15, 0.25], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 9: Edge cases of x (0.0 and 1.0)
-    a = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    b = np.array([3.0, 3.0, 3.0], dtype=np.float32)
-    x = np.array([0.0, 0.5, 1.0], dtype=np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Scalar broadcasting with 2D tensor
+    a = np.array(2.0, dtype=np.float64)
+    b = np.array(5.0, dtype=np.float64)
+    x = np.linspace(0.1, 0.9, 6, dtype=np.float64).reshape((2, 3))
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
-    # Input 10: High-dimensional array (3D)
-    a = np.ones((2, 3, 4), dtype=np.float32) * 3.0
-    b = np.ones((2, 3, 4), dtype=np.float32) * 4.0
-    x = np.random.uniform(0.1, 0.9, size=(2, 3, 4)).astype(np.float32)
-    input_dict = {"a": a, "b": b, "x": x}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D tensors, float32
+    a = np.random.uniform(0.5, 3.0, size=(2, 1, 3, 2)).astype(np.float32)
+    b = np.random.uniform(0.5, 3.0, size=(2, 1, 3, 2)).astype(np.float32)
+    x = np.random.uniform(0.1, 0.9, size=(2, 1, 3, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"a": a, "b": b, "x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.betainc"] = betainc_inputs()
 

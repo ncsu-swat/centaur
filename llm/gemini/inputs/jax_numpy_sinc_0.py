@@ -7,52 +7,60 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
-def jax_numpy_sinc_inputs():
+
+def sinc_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array with negative, zero, and positive values
-    x = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D array with positive and negative floats, including zero
+    x = np.array([-1.0, -0.5, 0.0, 0.5, 1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array
-    x = np.random.uniform(-5.0, 5.0, size=(3, 3)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 3: 3D float32 array
-    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: 1D int32 array (to test promotion)
-    x = np.array([-3, -2, -1, 0, 1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: 0D array (scalar)
+    # Input 2: Scalar (0-D array) float
     x = np.array(0.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D float32 array
-    x = np.random.uniform(-1.0, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array of float64 values
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D float32 array with very small values close to zero
-    x = np.array([-1e-15, -1e-30, 0.0, 1e-30, 1e-15], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D array of integers (will be promoted to inexact type)
+    x = np.array([-3, -2, -1, 0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float32 array with larger values
-    x = np.array([-100.0, -50.0, 50.0, 100.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D array
+    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D int16 array
-    x = np.array([[-10, 0], [10, 20]], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D array
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float32 array with infinities and nan
-    x = np.array([-np.inf, np.nan, np.inf], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Float16 array
+    x = np.array([-2.5, -1.0, 0.0, 1.5, 3.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: Complex64 array
+    x = np.array([1.0 + 2.0j, -0.5 + 0.5j, 0.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: Complex128 2D array
+    x = (np.random.randn(2, 3) + 1j * np.random.randn(2, 3)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: Array with large values (positive and negative)
+    x = np.array([-1e5, -100.0, 0.0, 100.0, 1e5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Empty array (0-length dimension)
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.sinc"] = jax_numpy_sinc_inputs()
+
+generated_inputs["jax.numpy.sinc"] = sinc_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

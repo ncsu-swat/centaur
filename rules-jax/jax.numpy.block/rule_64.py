@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The dimensionality of the block-assembled tensor must be between 1 and 5 (Rule 64)
+# input tensor dimensionality is bounded between 1 and 4 (Rule 64)
 
 rule_64 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 5)) if n else
-          And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 5))
+    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 4)) if n else
+          And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 4))
 )
 
 def rule_64_func(arg1, solver=None, neg=False):

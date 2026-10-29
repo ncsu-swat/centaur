@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensors must have matching floating-point dtypes (Rule 5)
+# real and imaginary components must share the same floating-point data type (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
     s.add(Not(And(And(v["arg1_dtype"] == v["arg2_dtype"], v["arg1_dtype"] >= 6), v["arg1_dtype"] <= 8)) if n else

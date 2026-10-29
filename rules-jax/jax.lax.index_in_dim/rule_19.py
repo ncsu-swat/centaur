@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis parameter must be a valid axis index (Rule 19)
+# axis must map to an existing dimension index whether positive or negative (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] > 0, 0 <= v["arg2_value"]), v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(And(v["arg1_ndim"] > 0, 0 <= v["arg2_value"]), v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(Or([And(i < (v["arg1_ndim"] - 1 + 1), Or(v["arg2_value"] == i, v["arg2_value"] + v["arg1_ndim"] == i)) for i in range(6)])) if n else
+          Or([And(i < (v["arg1_ndim"] - 1 + 1), Or(v["arg2_value"] == i, v["arg2_value"] + v["arg1_ndim"] == i)) for i in range(6)]))
 )
 
 def rule_19_func(arg1, arg2, solver=None, neg=False):

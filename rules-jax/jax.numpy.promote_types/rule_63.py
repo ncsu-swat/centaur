@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Identity constraint for dtype parameters (Rule 63)
+# complex128 dtype promoted with float64 dtype (Rule 63)
 
 rule_63 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg2_value"], v["arg1_value"] != v["arg2_value"])) if n else
-          If(v["arg1_value"] == v["arg2_value"], v["arg1_value"] == v["arg2_value"], v["arg1_value"] != v["arg2_value"]))
+    s.add(Not(And(v["arg1_value"] == 10, v["arg2_value"] == 8)) if n else
+          And(v["arg1_value"] == 10, v["arg2_value"] == 8))
 )
 
 def rule_63_func(arg1, arg2, solver=None, neg=False):

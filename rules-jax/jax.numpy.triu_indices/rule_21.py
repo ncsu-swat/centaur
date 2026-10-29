@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension constraints when sub-diagonal offset is omitted (Rule 21)
+# offset k includes at least the top-right corner element of the array (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] < 0, False, v["arg2_value"] >= 0)) if n else
-          If(v["arg1_value"] < 0, False, v["arg2_value"] >= 0))
+    s.add(Not(And(v["arg2_value"] > 0, v["arg1_value"] <= v["arg2_value"] - 1)) if n else
+          And(v["arg2_value"] > 0, v["arg1_value"] <= v["arg2_value"] - 1))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# recall target must be in the range (0, 1] (Rule 4)
+# recall_target must be in the range (0, 1] (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
     s.add(Not(And(v["arg1_value"] > 0, v["arg1_value"] <= 1)) if n else

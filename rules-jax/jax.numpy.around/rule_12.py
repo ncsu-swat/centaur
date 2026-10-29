@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The decimals parameter must be within a safe numeric range to prevent extreme values and overflow (Rule 12)
+# decimals parameter should be within standard precision limits (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -30, v["arg1_value"] <= 30)) if n else
-          And(v["arg1_value"] >= -30, v["arg1_value"] <= 30))
+    s.add(Not(And(v["arg1_value"] >= -16, v["arg1_value"] <= 16)) if n else
+          And(v["arg1_value"] >= -16, v["arg1_value"] <= 16))
 )
 
 def rule_12_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_12_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Int('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 12
         rule_12(solver, {'arg1_value': arg1_value})

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# float inputs must satisfy the domain constraint of inverse cosine to produce real-valued outputs (Rule 18)
+# for real-valued tensors, elements must fall within [-1, 1] to prevent NaN generation (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(1 - v["arg1_value"] * v["arg1_value"] >= 0) if n else
-          1 - v["arg1_value"] * v["arg1_value"] >= 0)
+    s.add(Not(If(v["arg1_dtype"] <= 8, And(Select(v["arg1_range"], 0) >= -1, Select(v["arg1_range"], 1) <= 1), True)) if n else
+          If(v["arg1_dtype"] <= 8, And(Select(v["arg1_range"], 0) >= -1, Select(v["arg1_range"], 1) <= 1), True))
 )
 
 def rule_18_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_18_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_dtype = Int('arg1_dtype')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_value': arg1_value})
+        rule_18(solver, {'arg1_range': arg1_range, 'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_value': arg1['value']}, neg)
+        rule_18(solver, {'arg1_range': arg1['range'], 'arg1_dtype': arg1['dtype']}, neg)

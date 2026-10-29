@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input tensor must have a real-valued numeric data type, excluding boolean, complex, and string (Rule 43)
+# tensor data type must be a non-complex real representation (Rule 43)
 
 rule_43 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 9), v["arg1_dtype"] != 10), v["arg1_dtype"] != 11), v["arg1_dtype"] != 12)) if n else
-          And(And(And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 9), v["arg1_dtype"] != 10), v["arg1_dtype"] != 11), v["arg1_dtype"] != 12))
+    s.add(Not(v["arg1_dtype"] < 9) if n else
+          v["arg1_dtype"] < 9)
 )
 
 def rule_43_func(arg1, solver=None, neg=False):

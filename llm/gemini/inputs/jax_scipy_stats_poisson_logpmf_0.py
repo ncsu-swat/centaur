@@ -4,73 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def poisson_logpmf_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D arrays (scalars)
+    # Input 1: 0-D scalars (integers / floats)
     k = np.array(3, dtype=np.int32)
-    mu = np.array(5.0, dtype=np.float32)
+    mu = np.array(2.5, dtype=np.float32)
     loc = np.array(0, dtype=np.int32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 2: 1D float32 arrays
-    k = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    mu = np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 2: 1-D arrays
+    k = np.array([0, 1, 2, 3, 4], dtype=np.int32)
+    mu = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    loc = np.array([0, 0, 0, 0, 0], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 3: 1D arrays with integer k and loc, float64 mu
-    k = np.array([5, 10, 15], dtype=np.int32)
-    mu = np.array([3.5, 7.2, 12.1], dtype=np.float64)
-    loc = np.array([2, 5, 10], dtype=np.int32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 3: Non-zero loc parameter
+    k = np.array([5, 6, 7], dtype=np.float32)
+    mu = np.array([2.0, 2.0, 2.0], dtype=np.float32)
+    loc = np.array([2.0, 3.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 4: 2D arrays (3, 3)
-    k = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=np.int32)
-    mu = np.array([[2.0, 2.0, 2.0], [3.0, 3.0, 3.0], [4.0, 4.0, 4.0]], dtype=np.float32)
-    loc = np.zeros((3, 3), dtype=np.int32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 4: Negative k relative to loc (returns -inf)
+    k = np.array([-1, 0, 1], dtype=np.int32)
+    mu = np.array([3.0, 3.0, 3.0], dtype=np.float32)
+    loc = np.array([0, 0, 0], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 5: Broadcasted shapes: k (3, 1), mu (1, 4), loc (1, 1)
-    k = np.array([[2], [5], [8]], dtype=np.float32)
-    mu = np.array([[1.5, 2.5, 3.5, 4.5]], dtype=np.float32)
-    loc = np.array([[1]], dtype=np.float32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 5: 2-D matrices
+    k = np.array([[0, 1], [2, 3]], dtype=np.int32)
+    mu = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float32)
+    loc = np.zeros((2, 2), dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 6: Float64 1D arrays
-    k = np.array([10.0, 20.0, 30.0], dtype=np.float64)
-    mu = np.array([15.0, 15.0, 15.0], dtype=np.float64)
-    loc = np.array([5.0, 5.0, 5.0], dtype=np.float64)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 6: Broadcasting shapes (3, 1) and (1, 4)
+    k = np.array([[0], [1], [2]], dtype=np.float32)
+    mu = np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float32)
+    loc = np.array([[0.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 7: 3D arrays
-    k = np.ones((2, 2, 2), dtype=np.int32) * 5
-    mu = np.ones((2, 2, 2), dtype=np.float32) * 4.5
-    loc = np.ones((2, 2, 2), dtype=np.int32) * 2
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 7: Float64 precision
+    k = np.array([10, 20, 30], dtype=np.float64)
+    mu = np.array([15.5, 20.0, 25.5], dtype=np.float64)
+    loc = np.array([0.0, 0.0, 0.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 8: Large values of mu and k
-    k = np.array([1000, 2000], dtype=np.int32)
-    mu = np.array([1000.0, 2000.0], dtype=np.float32)
-    loc = np.array([0, 0], dtype=np.int32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 8: 3-D tensors
+    k = np.ones((2, 3, 4), dtype=np.int32) * 5
+    mu = np.full((2, 3, 4), 4.2, dtype=np.float32)
+    loc = np.zeros((2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 9: Zero offset cases where k == loc
-    k = np.array([2, 3, 4], dtype=np.int32)
-    mu = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    loc = np.array([2, 3, 4], dtype=np.int32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 9: mu=0 edge case
+    k = np.array([0, 1, 2], dtype=np.int32)
+    mu = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+    loc = np.array([0, 0, 0], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
-    # Input 10: 2D arrays with random valid values
-    k = np.random.randint(10, 20, size=(5, 5)).astype(np.int32)
-    mu = np.random.uniform(5.0, 15.0, size=(5, 5)).astype(np.float32)
-    loc = np.random.randint(0, 5, size=(5, 5)).astype(np.int32)
-    list_of_inputs.append({"k": k, "mu": mu, "loc": loc})
+    # Input 10: Non-integer k values
+    k = np.array([1.5, 2.7, 3.2], dtype=np.float32)
+    mu = np.array([2.0, 3.0, 4.0], dtype=np.float32)
+    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
+
+    # Input 11: Negative loc values
+    k = np.array([1, 2, 3], dtype=np.int32)
+    mu = np.array([5.0, 5.0, 5.0], dtype=np.float32)
+    loc = np.array([-2, -2, -2], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "mu": mu, "loc": loc})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.poisson.logpmf"] = poisson_logpmf_inputs()
 

@@ -4,82 +4,88 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax._src.lax.lax
+import numpy as np
 
-_orig_exp = jax.lax.exp
-def patched_exp(x, *, accuracy=None):
-    return _orig_exp(x, accuracy=None)
 
-jax.lax.exp = patched_exp
-jax._src.lax.lax.exp = patched_exp
+class EmptyAccuracy(tuple):
+
+    def __new__(cls):
+        return super().__new__(cls, ())
+
+    def __bool__(self):
+        return False
+
+    def __eq__(self, other):
+        return True
+
+    def __ne__(self, other):
+        return False
+
+    def __hash__(self):
+        return 0
+
 
 def exp_inputs():
     list_of_inputs = []
 
-    # Input 1
-    x = np.array([0.0, 1.0, 2.0, -1.0]).astype(np.float32)
-    accuracy = (1e-5, 1e-5)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D float32 scalar
+    x = np.array(1.5, dtype=np.float32)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 2
-    x = np.random.randn(3, 3).astype(np.float64)
-    accuracy = (1e-6, 1e-6)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float32 array with mixed positive and negative values
+    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 3
-    x = -np.abs(np.random.randn(2, 2, 2).astype(np.float32))
-    accuracy = (1e-4, 1e-4)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float64 array
+    x = np.array([[-1.5, 0.5], [2.0, -0.5]], dtype=np.float64)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 4
-    x = np.array(1.5).astype(np.float32)
-    accuracy = (1e-5, 1e-5)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D float32 array strictly negative
+    x = np.array([-10.0, -5.0, -2.0, -0.5], dtype=np.float32)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 5
-    x = np.random.randn(2, 2, 2, 2).astype(np.float16)
-    accuracy = (1e-3, 1e-3)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float32 array
+    x = np.random.uniform(-3.0, 3.0, size=(2, 3, 4)).astype(np.float32)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 6
-    x = (np.random.randn(5) + 1j * np.random.randn(5)).astype(np.complex64)
-    accuracy = (1e-5, 1e-5)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D float64 array of zeros
+    x = np.zeros((3, 3), dtype=np.float64)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 7
-    x = (np.random.randn(3, 4) + 1j * np.random.randn(3, 4)).astype(np.complex128)
-    accuracy = (1e-6, 1e-6)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D float64 array with small values
+    x = np.array([-0.01, -0.001, 0.0, 0.001, 0.01], dtype=np.float64)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 8
-    x = np.zeros((5,), dtype=np.float32)
-    accuracy = (1e-5, 1e-5)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D float32 array
+    x = np.random.uniform(-1.0, 1.0, size=(1, 2, 2, 3)).astype(np.float32)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 9
-    x = np.linspace(-5.0, 5.0, 12).reshape(3, 4).astype(np.float32)
-    accuracy = (1e-5, 1e-5)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D float32 array
+    x = np.array([[-3.0, -2.0], [-1.0, 0.0]], dtype=np.float32)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
-    # Input 10
-    x = np.random.uniform(-10, 10, (2, 3, 4)).astype(np.float64)
-    accuracy = (1e-7, 1e-7)
-    input_dict = {"x": x, "accuracy": accuracy}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D float64 array
+    x = np.random.randn(2, 2, 2).astype(np.float64)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
+
+    # Input 11: 1D float32 array with moderately large negative values
+    x = np.array([-20.0, -10.0, -5.0], dtype=np.float32)
+    acc = EmptyAccuracy()
+    list_of_inputs.append({"x": copy.deepcopy(x), "accuracy": acc})
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.exp_2"] = exp_inputs()
 

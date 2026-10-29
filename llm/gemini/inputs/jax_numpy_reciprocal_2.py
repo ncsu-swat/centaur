@@ -4,46 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def reciprocal_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
-    list_of_inputs.append({"x": 2.0})
+    # Input 1: Basic positive float
+    input_dict = {"x": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative float
-    list_of_inputs.append({"x": -5.0})
+    # Input 2: Unit float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: decimal float less than 1
-    list_of_inputs.append({"x": 0.25})
+    # Input 3: Negative float
+    input_dict = {"x": -4.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: negative decimal float
-    list_of_inputs.append({"x": -0.125})
+    # Input 4: Positive fraction
+    input_dict = {"x": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: large float
-    list_of_inputs.append({"x": 10000.0})
+    # Input 5: Negative fraction
+    input_dict = {"x": -0.125}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: small float
-    list_of_inputs.append({"x": 1e-6})
+    # Input 6: Zero (results in inf)
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Euler's number as float
-    list_of_inputs.append({"x": float(np.e)})
+    # Input 7: Negative zero (results in -inf)
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Pi as float
-    list_of_inputs.append({"x": float(np.pi)})
+    # Input 8: Very small positive float
+    input_dict = {"x": 1e-7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Float infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 9: Very large positive float
+    input_dict = {"x": 1e8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Float negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 10: Transcendental number float (pi)
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Zero float
-    list_of_inputs.append({"x": 0.0})
+    # Input 11: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.reciprocal_2"] = reciprocal_inputs()
 

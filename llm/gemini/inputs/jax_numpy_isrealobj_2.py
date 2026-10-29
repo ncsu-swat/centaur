@@ -4,43 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isrealobj_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic integer 0
-    list_of_inputs.append({"x": 0})
+    # Input 1: zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive integer
-    list_of_inputs.append({"x": 42})
+    # Input 2: positive small integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative integer
-    list_of_inputs.append({"x": -100})
+    # Input 3: negative small integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large integer
-    list_of_inputs.append({"x": 1234567890})
+    # Input 4: positive two-digit integer
+    input_dict = {"x": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy int32 scalar
-    list_of_inputs.append({"x": np.int32(15)})
+    # Input 5: negative two-digit integer
+    input_dict = {"x": -99}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int64 scalar
-    list_of_inputs.append({"x": np.int64(-9999)})
+    # Input 6: larger positive integer
+    input_dict = {"x": 1024}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy uint8 scalar
-    list_of_inputs.append({"x": np.uint8(255)})
+    # Input 7: larger negative integer
+    input_dict = {"x": -2048}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy int16 scalar
-    list_of_inputs.append({"x": np.int16(32000)})
+    # Input 8: max 32-bit signed integer
+    input_dict = {"x": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Negative numpy int8 scalar
-    list_of_inputs.append({"x": np.int8(-128)})
+    # Input 9: min 32-bit signed integer
+    input_dict = {"x": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Another positive integer
-    list_of_inputs.append({"x": 100000})
+    # Input 10: large positive 64-bit integer
+    input_dict = {"x": 9223372036854775807}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: large negative 64-bit integer
+    input_dict = {"x": -9223372036854775808}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isrealobj_2"] = isrealobj_inputs()
 

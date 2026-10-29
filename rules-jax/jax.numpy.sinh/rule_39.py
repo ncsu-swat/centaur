@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor rank must not exceed 4 for standard array operations (Rule 39)
+# tensor rank restricted to common multidimensional tensor dimensionality (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 4) if n else
-          v["arg1_ndim"] <= 4)
+    s.add(Not(And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 6)) if n else
+          And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 6))
 )
 
 def rule_39_func(arg1, solver=None, neg=False):

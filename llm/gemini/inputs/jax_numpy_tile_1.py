@@ -10,62 +10,62 @@ import copy
 def tile_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D integer array, reps = 2
+    # Input 1: 1D integer array
     A = np.array([1, 2, 3], dtype=np.int32)
     reps = 2
-    list_of_inputs.append({"A": A, "reps": reps})
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    # Input 2: 2D float32 array, reps = 3
-    A = np.random.randn(2, 3).astype(np.float32)
+    # Input 2: 1D float array with negative values
+    A = np.array([-1.5, 0.0, 2.5], dtype=np.float32)
     reps = 3
-    list_of_inputs.append({"A": A, "reps": reps})
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    # Input 3: 3D float64 array with negative values, reps = 1
-    A = np.random.uniform(-10.0, 10.0, size=(2, 2, 2)).astype(np.float64)
-    reps = 1
-    list_of_inputs.append({"A": A, "reps": reps})
-
-    # Input 4: 1D float32 array, reps = 0
-    A = np.array([0.5, -0.5, 1.5], dtype=np.float32)
-    reps = 0
-    list_of_inputs.append({"A": A, "reps": reps})
-
-    # Input 5: 4D int8 array, reps = 2
-    A = np.random.randint(-5, 5, size=(1, 2, 1, 3)).astype(np.int8)
+    # Input 3: 2D float64 array
+    A = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
     reps = 2
-    list_of_inputs.append({"A": A, "reps": reps})
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    # Input 6: 2D boolean array, reps = 4
-    A = np.array([[True, False], [False, True]], dtype=bool)
+    # Input 4: 2D array with reps=1 (identity tiling)
+    A = np.arange(6, dtype=np.int64).reshape(2, 3)
+    reps = 1
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
+
+    # Input 5: 3D boolean array
+    A = np.array([[[True, False], [False, True]]], dtype=np.bool_)
     reps = 4
-    list_of_inputs.append({"A": A, "reps": reps})
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    # Input 7: 1D complex array, reps = 2
-    A = np.array([1 + 2j, 3 - 4j], dtype=np.complex64)
-    reps = 2
-    list_of_inputs.append({"A": A, "reps": reps})
-
-    # Input 8: 0D array (scalar), reps = 3
-    A = np.array(42)
+    # Input 6: 0D scalar array
+    A = np.array(42.0, dtype=np.float32)
     reps = 3
-    list_of_inputs.append({"A": A, "reps": reps})
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    # Input 9: Large 2D float32 array, reps = 5
-    A = np.random.randn(10, 10).astype(np.float32)
+    # Input 7: 4D complex array
+    A = np.ones((2, 1, 3, 2), dtype=np.complex64)
+    reps = 2
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
+
+    # Input 8: reps = 0 resulting in zero-size dimension
+    A = np.array([10, 20, 30], dtype=np.int32)
+    reps = 0
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
+
+    # Input 9: 2D int16 array with large reps
+    A = np.array([[-5, -10], [15, 20]], dtype=np.int16)
     reps = 5
-    list_of_inputs.append({"A": A, "reps": reps})
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    # Input 10: 3D int16 array, reps = 10
-    A = np.random.randint(0, 100, size=(2, 1, 3)).astype(np.int16)
-    reps = 10
-    list_of_inputs.append({"A": A, "reps": reps})
+    # Input 10: 1D empty array
+    A = np.empty((0,), dtype=np.float32)
+    reps = 3
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    # Input 11: 1D uint8 array, reps = 1
-    A = np.array([255, 128, 0], dtype=np.uint8)
-    reps = 1
-    list_of_inputs.append({"A": A, "reps": reps})
+    # Input 11: 3D uint8 array
+    A = np.random.randint(0, 255, size=(2, 3, 4), dtype=np.uint8)
+    reps = 2
+    list_of_inputs.append({"A": copy.deepcopy(A), "reps": reps})
 
-    return [copy.deepcopy(x) for x in list_of_inputs]
+    return list_of_inputs
 
 generated_inputs["jax.numpy.tile_1"] = tile_inputs()
 

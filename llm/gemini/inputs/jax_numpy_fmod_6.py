@@ -4,7 +4,6 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def fmod_inputs():
@@ -26,28 +25,36 @@ def fmod_inputs():
     input_dict = {"x1": -5.0, "x2": -2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Decimal values
-    input_dict = {"x1": 1.5, "x2": 0.4}
+    # Input 5: Non-integer floats
+    input_dict = {"x1": 10.5, "x2": 3.2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Divisible values
+    # Input 6: Dividend is zero
+    input_dict = {"x1": 0.0, "x2": 4.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Dividend smaller than divisor
+    input_dict = {"x1": 2.5, "x2": 5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Exact division
     input_dict = {"x1": 9.0, "x2": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large float dividend
-    input_dict = {"x1": 1000000.0, "x2": 3.0}
+    # Input 9: Fractional divisor
+    input_dict = {"x1": -0.75, "x2": 0.25}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Zero dividend
-    input_dict = {"x1": 0.0, "x2": 5.0}
+    # Input 10: Large dividend
+    input_dict = {"x1": 1e6, "x2": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Floating point values (pi approximation)
-    input_dict = {"x1": 3.14159, "x2": 1.57}
+    # Input 11: Small scale floats
+    input_dict = {"x1": 1e-4, "x2": 3e-5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Very small floats
-    input_dict = {"x1": 1.234e-5, "x2": 1.0e-6}
+    # Input 12: Arbitrary float values
+    input_dict = {"x1": 123.456, "x2": 7.89}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

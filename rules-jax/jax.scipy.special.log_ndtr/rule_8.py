@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The series_order parameter must be a positive integer no greater than 30 (Rule 8)
+# series_order must be a positive integer between 1 and 30 (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg1_value"] <= 30, False)) if n else
-          If(v["arg1_value"] > 0, v["arg1_value"] <= 30, False))
+    s.add(Not(And(1 <= v["arg1_value"], v["arg1_value"] <= 30)) if n else
+          And(1 <= v["arg1_value"], v["arg1_value"] <= 30))
 )
 
 def rule_8_func(arg1, solver=None, neg=False):

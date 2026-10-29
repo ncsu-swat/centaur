@@ -7,17 +7,16 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# k must be positive and less than or equal to the size of the operand along the specified axis (Rule 27)
+# for 3D operand, axis must be within the range [-3, 2] (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] > 0, (If(v["arg3_value"] >= 0, v["arg2_value"] <= Select(v["arg1_shape"], v["arg3_value"]), v["arg2_value"] <= Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"]))))) if n else
-          And(v["arg2_value"] > 0, (If(v["arg3_value"] >= 0, v["arg2_value"] <= Select(v["arg1_shape"], v["arg3_value"]), v["arg2_value"] <= Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"])))))
+    s.add(Not(And(And(v["arg1_ndim"] == 3, v["arg2_value"] >= -3), v["arg2_value"] <= 2)) if n else
+          And(And(v["arg1_ndim"] == 3, v["arg2_value"] >= -3), v["arg2_value"] <= 2))
 )
 
-def rule_27_func(arg1, arg2, arg3, solver=None, neg=False):
+def rule_27_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
-    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
@@ -25,27 +24,20 @@ def rule_27_func(arg1, arg2, arg3, solver=None, neg=False):
             return False
         if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
-        if not (isinstance(arg3, (int, np.integer)) and not isinstance(arg3, bool)):
-            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_value = Int('arg2_value')
-        arg3_value = Int('arg3_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        for i in range(arg1.ndim):
-            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
         solver.add(arg2_value == int(arg2))
-        solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
+        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)
+        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)

@@ -4,63 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def divmod_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays of int32 (positive values)
-    x1 = np.array([10, 20, 30], dtype=np.int32)
-    x2 = np.array([3, 4, 7], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 1: Basic positive integers
+    input_dict = {"x1": 10, "x2": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D arrays of int32 (negative values)
-    x1 = np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5], dtype=np.int32)
-    x2 = np.array([3] * 11, dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: Evenly divisible integers
+    input_dict = {"x1": 20, "x2": 4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D arrays of int64
-    x1 = np.array([[15, 25], [35, 45]], dtype=np.int64)
-    x2 = np.array([[4, 6], [8, 10]], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 3: Negative dividend
+    input_dict = {"x1": -15, "x2": 4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Broadcasting (2D x 1D) of int32
-    x1 = np.array([[12, 13, 14], [15, 16, 17]], dtype=np.int32)
-    x2 = np.array([5, 6, 7], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 4: Negative divisor
+    input_dict = {"x1": 15, "x2": -4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Scalar divisor (int)
-    x1 = np.array([100, 200, 300], dtype=np.int32)
-    x2 = np.array(7, dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 5: Both negative
+    input_dict = {"x1": -25, "x2": -6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D arrays of int16
-    x1 = np.random.randint(-100, 100, size=(2, 2, 2), dtype=np.int16)
-    x2 = np.random.randint(1, 10, size=(2, 2, 2), dtype=np.int16)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: Zero dividend
+    input_dict = {"x1": 0, "x2": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large int64 values
-    x1 = np.array([100000000000, 200000000000], dtype=np.int64)
-    x2 = np.array([3000000000, 4000000000], dtype=np.int64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: Dividend smaller than divisor
+    input_dict = {"x1": 3, "x2": 8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: int8 values with negative and positive elements
-    x1 = np.array([-10, -20, 30, 40], dtype=np.int8)
-    x2 = np.array([3, -4, 5, -6], dtype=np.int8)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: Larger integers
+    input_dict = {"x1": 1000000, "x2": 7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D arrays, int32
-    x1 = np.ones((2, 2, 2, 2), dtype=np.int32) * 50
-    x2 = np.ones((2, 2, 2, 2), dtype=np.int32) * 11
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 9: Divisor is 1
+    input_dict = {"x1": -42, "x2": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Broadcasting with different dimensions (3, 1) and (1, 3)
-    x1 = np.array([[10], [20], [30]], dtype=np.int32)
-    x2 = np.array([[3, 4, 5]], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 10: Divisor is -1
+    input_dict = {"x1": 50, "x2": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Powers of two
+    input_dict = {"x1": 1024, "x2": 64}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.divmod_6"] = divmod_inputs()
 

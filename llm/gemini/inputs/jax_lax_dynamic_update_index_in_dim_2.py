@@ -4,139 +4,152 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def dynamic_update_index_in_dim_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D array update with 1D update array
-    operand = np.zeros(6, dtype=np.float32)
-    update = np.array([1.0], dtype=np.float32)
+    # Input 1: 1D float32 array, 0D scalar update, axis 0
+    operand = np.zeros((6,), dtype=np.float32)
+    update = np.array(1.5, dtype=np.float32)
     index = np.array(2, dtype=np.int32)
     input_dict = {
         "operand": operand,
         "update": update,
         "index": index,
         "axis": 0,
-        "allow_negative_indices": True
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array, scalar update, negative index
-    operand = np.zeros(6, dtype=np.float32)
-    update = np.array(1.0, dtype=np.float32)
-    index = np.array(-2, dtype=np.int32)
+    # Input 2: 1D float32 array, 1D update with size 1, negative index
+    operand = np.ones((5,), dtype=np.float32)
+    update = np.array([42.0], dtype=np.float32)
+    index = np.array(-1, dtype=np.int32)
     input_dict = {
         "operand": operand,
         "update": update,
         "index": index,
         "axis": 0,
-        "allow_negative_indices": True
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D array, update along axis 0
+    # Input 3: 2D float32 array, 1D update matching dimension along axis 0
     operand = np.zeros((4, 4), dtype=np.float32)
-    update = np.ones(4, dtype=np.float32)
+    update = np.ones((4,), dtype=np.float32)
+    index = np.array(1, dtype=np.int64)
+    input_dict = {
+        "operand": operand,
+        "update": update,
+        "index": index,
+        "axis": 0,
+        "allow_negative_indices": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D float64 array, 2D update with size 1 along axis 0
+    operand = np.zeros((4, 5), dtype=np.float64)
+    update = np.ones((1, 3), dtype=np.float64)
+    index = np.array(3, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "update": update,
+        "index": index,
+        "axis": 0,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D int32 array, update along axis 1
+    operand = np.zeros((3, 6), dtype=np.int32)
+    update = np.full((3,), 7, dtype=np.int32)
+    index = np.array(2, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "update": update,
+        "index": index,
+        "axis": 1,
+        "allow_negative_indices": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D float32 array, 2D update along axis 1
+    operand = np.zeros((2, 5, 3), dtype=np.float32)
+    update = np.ones((2, 3), dtype=np.float32)
+    index = np.array(-2, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "update": update,
+        "index": index,
+        "axis": 1,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D int64 array, 3D update with shape (2, 1, 4) along axis 1
+    operand = np.zeros((2, 3, 4), dtype=np.int64)
+    update = np.ones((2, 1, 4), dtype=np.int64)
+    index = np.array(0, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "update": update,
+        "index": index,
+        "axis": 1,
+        "allow_negative_indices": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4D float32 array, 3D update along axis 3
+    operand = np.zeros((2, 2, 2, 4), dtype=np.float32)
+    update = np.ones((2, 2, 2), dtype=np.float32)
+    index = np.array(3, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "update": update,
+        "index": index,
+        "axis": 3,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D bool array, 0D boolean update
+    operand = np.array([False, False, False, False], dtype=np.bool_)
+    update = np.array(True, dtype=np.bool_)
+    index = np.array(2, dtype=np.int32)
+    input_dict = {
+        "operand": operand,
+        "update": update,
+        "index": index,
+        "axis": 0,
+        "allow_negative_indices": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 2D complex64 array, 2D update
+    operand = np.zeros((3, 3), dtype=np.complex64)
+    update = np.array([[1.0 + 2.0j, 2.0 + 0.0j]], dtype=np.complex64)
     index = np.array(1, dtype=np.int32)
     input_dict = {
         "operand": operand,
         "update": update,
         "index": index,
         "axis": 0,
-        "allow_negative_indices": True
+        "allow_negative_indices": False,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array, update along axis 1, negative index disallowed
-    operand = np.zeros((4, 4), dtype=np.float32)
-    update = np.ones(4, dtype=np.float32)
-    index = np.array(3, dtype=np.int32)
-    input_dict = {
-        "operand": operand,
-        "update": update,
-        "index": index,
-        "axis": 1,
-        "allow_negative_indices": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 3D array, update along axis 1
-    operand = np.zeros((2, 3, 4), dtype=np.float32)
-    update = np.ones((2, 4), dtype=np.float32)
-    index = np.array(2, dtype=np.int32)
-    input_dict = {
-        "operand": operand,
-        "update": update,
-        "index": index,
-        "axis": 1,
-        "allow_negative_indices": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 3D array, update along axis 2 with negative index
-    operand = np.zeros((2, 3, 4), dtype=np.float32)
-    update = np.ones((2, 3), dtype=np.float32)
-    index = np.array(-1, dtype=np.int32)
-    input_dict = {
-        "operand": operand,
-        "update": update,
-        "index": index,
-        "axis": 2,
-        "allow_negative_indices": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 4D array, float64 type
-    operand = np.zeros((2, 2, 2, 2), dtype=np.float64)
-    update = np.ones((2, 2, 2), dtype=np.float64)
-    index = np.array(0, dtype=np.int64)
-    input_dict = {
-        "operand": operand,
-        "update": update,
-        "index": index,
-        "axis": 3,
-        "allow_negative_indices": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Out of bounds index (to be clipped)
-    operand = np.zeros(5, dtype=np.float32)
-    update = np.array([5.0], dtype=np.float32)
+    # Input 11: Out-of-bounds index that gets clamped
+    operand = np.zeros((5,), dtype=np.float32)
+    update = np.array([99.0], dtype=np.float32)
     index = np.array(10, dtype=np.int32)
     input_dict = {
         "operand": operand,
         "update": update,
         "index": index,
         "axis": 0,
-        "allow_negative_indices": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Integer array operand
-    operand = np.zeros((3, 3), dtype=np.int32)
-    update = np.ones(3, dtype=np.int32) * 9
-    index = np.array(1, dtype=np.int32)
-    input_dict = {
-        "operand": operand,
-        "update": update,
-        "index": index,
-        "axis": 1,
-        "allow_negative_indices": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D array, update shape with extra dimension of size 1
-    operand = np.zeros((4, 4), dtype=np.float32)
-    update = np.ones((1, 4), dtype=np.float32)
-    index = np.array(2, dtype=np.int32)
-    input_dict = {
-        "operand": operand,
-        "update": update,
-        "index": index,
-        "axis": 0,
-        "allow_negative_indices": True
+        "allow_negative_indices": True,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 

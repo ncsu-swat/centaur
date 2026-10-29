@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input tensor must have a real numeric data type, either integer or floating-point, excluding complex, boolean, and other non-numeric types (Rule 13)
+# tensor dimensionality should be between 1 and 4 (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(Or((And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 5)), (And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8)))) if n else
-          Or((And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 5)), (And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 8))))
+    s.add(Not(And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 4)) if n else
+          And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 4))
 )
 
 def rule_13_func(arg1, solver=None, neg=False):
@@ -24,15 +24,15 @@ def rule_13_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 13
-        rule_13(solver, {'arg1_dtype': arg1_dtype})
+        rule_13(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_13(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_13(solver, {'arg1_ndim': arg1['ndim']}, neg)

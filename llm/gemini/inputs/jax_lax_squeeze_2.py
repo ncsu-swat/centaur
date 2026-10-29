@@ -4,68 +4,94 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def squeeze_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 3D array, squeeze 1st dimension
-    array = np.random.randn(1, 4, 5).astype(np.float32)
+    # Input 1: 1D array squeezed to 0D
+    array = np.array([3.14], dtype=np.float32)
     dimensions = [0]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 2: Simple 3D array, squeeze 2nd dimension
-    array = np.random.randn(3, 1, 5).astype(np.float32)
+    # Input 2: 2D array, squeeze first dimension
+    array = np.random.randn(1, 5).astype(np.float32)
+    dimensions = [0]
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 3: 2D array, squeeze second dimension
+    array = np.random.randint(0, 10, size=(4, 1), dtype=np.int32)
     dimensions = [1]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 3: Simple 3D array, squeeze 3rd dimension with negative index
-    array = np.random.randn(3, 4, 1).astype(np.float32)
-    dimensions = [-1]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 4: Squeeze multiple dimensions
-    array = np.random.randn(1, 2, 1, 4).astype(np.float32)
-    dimensions = [0, 2]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 5: Squeeze all dimensions of a 1x1x1 array
-    array = np.random.randn(1, 1, 1).astype(np.float32)
+    # Input 4: 3D array, squeeze multiple dimensions
+    array = np.random.randn(1, 1, 1).astype(np.float64)
     dimensions = [0, 1, 2]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 6: float64 array, single dimension squeeze
-    array = np.random.randn(5, 1).astype(np.float64)
-    dimensions = [1]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    # Input 5: 4D array, squeeze alternating size-1 dimensions
+    array = np.random.randn(2, 1, 3, 1).astype(np.float32)
+    dimensions = [1, 3]
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 7: int32 array, squeeze multiple dimensions with negative indexes
-    array = np.random.randint(0, 10, size=(1, 3, 1)).astype(np.int32)
-    dimensions = [0, -1]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    # Input 6: 5D array, squeeze subset of size-1 dimensions
+    array = np.zeros((1, 4, 1, 5, 1), dtype=np.int64)
+    dimensions = [0, 2]
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
-    # Input 8: bool array, complex squeeze
-    array = (np.random.randn(1, 1, 2, 1, 3) > 0).astype(np.bool_)
-    dimensions = [0, 1, 3]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 9: Large number of dimensions
-    array = np.random.randn(1, 2, 1, 2, 1, 2, 1).astype(np.float32)
-    dimensions = [0, 2, 4, 6]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 10: Squeeze a single dimension in a high-dimensional int64 array
-    array = np.random.randint(-100, 100, size=(10, 1, 10, 10)).astype(np.int64)
-    dimensions = [1]
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
-
-    # Input 11: Empty list of dimensions (valid, squeeze nothing)
-    array = np.random.randn(1, 3, 1).astype(np.float32)
+    # Input 7: Empty dimensions list (no-op squeeze)
+    array = np.random.randn(2, 3).astype(np.float32)
     dimensions = []
-    list_of_inputs.append({"array": array, "dimensions": dimensions})
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 8: 2D boolean array, squeeze single dimension
+    array = np.array([[True], [False]], dtype=np.bool_)
+    dimensions = [1]
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 9: 3D complex array, squeeze middle dimension
+    array = (np.random.randn(5, 1, 2) + 1j * np.random.randn(5, 1, 2)).astype(
+        np.complex64
+    )
+    dimensions = [1]
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 10: 4D uint8 array, squeeze non-consecutive dimensions
+    array = np.ones((1, 1, 1, 1), dtype=np.uint8)
+    dimensions = [0, 2]
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
+
+    # Input 11: 3D int16 array, squeeze trailing dimensions
+    array = np.arange(6, dtype=np.int16).reshape(6, 1, 1)
+    dimensions = [1, 2]
+    list_of_inputs.append(
+        copy.deepcopy({"array": array, "dimensions": dimensions})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.squeeze_2"] = squeeze_inputs()
 

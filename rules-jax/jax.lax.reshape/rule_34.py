@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# reshaping 2D tensor to 1D with list new_sizes preserves size (Rule 34)
+# reshaping a 3D tensor to a 1D list shape must preserve the total number of elements (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == 2, v["arg2_length"] == 1), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) == Select(v["arg2_values"], 0), True)) if n else
-          If(And(v["arg1_ndim"] == 2, v["arg2_length"] == 1), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) == Select(v["arg2_values"], 0), True))
+    s.add(Not(If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 1), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) == Select(v["arg2_values"], 0), True)) if n else
+          If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 1), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) == Select(v["arg2_values"], 0), True))
 )
 
 def rule_34_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_34_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 34
-        rule_34(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_34(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_34(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_34(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

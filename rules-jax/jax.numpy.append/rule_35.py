@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the dimensions of both tensors along the append axis must be positive (Rule 35)
+# for 3D arrays appending along negative axis -2, dimensions 0 and 2 must match (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] == v["arg2_ndim"], (If(v["arg3_value"] < 0, And(Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"]) > 0, Select(v["arg2_shape"], v["arg3_value"] + v["arg2_ndim"]) > 0), And(Select(v["arg1_shape"], v["arg3_value"]) > 0, Select(v["arg2_shape"], v["arg3_value"]) > 0))))) if n else
-          And(v["arg1_ndim"] == v["arg2_ndim"], (If(v["arg3_value"] < 0, And(Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"]) > 0, Select(v["arg2_shape"], v["arg3_value"] + v["arg2_ndim"]) > 0), And(Select(v["arg1_shape"], v["arg3_value"]) > 0, Select(v["arg2_shape"], v["arg3_value"]) > 0)))))
+    s.add(Not(If(And(And(v["arg1_ndim"] == 3, v["arg2_ndim"] == 3), v["arg3_value"] == -2), And(Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0), Select(v["arg1_shape"], 2) == Select(v["arg2_shape"], 2)), True)) if n else
+          If(And(And(v["arg1_ndim"] == 3, v["arg2_ndim"] == 3), v["arg3_value"] == -2), And(Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0), Select(v["arg1_shape"], 2) == Select(v["arg2_shape"], 2)), True))
 )
 
 def rule_35_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -46,9 +46,9 @@ def rule_35_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 35
-        rule_35(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim, 'arg3_value': arg3_value})
+        rule_35(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_35(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim'], 'arg3_value': arg3['value']}, neg)
+        rule_35(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_value': arg3['value']}, neg)

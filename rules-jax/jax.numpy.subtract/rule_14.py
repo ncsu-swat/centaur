@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# subtracting a float scalar within a safe range from a numeric tensor (Rule 14)
+# trailing dimension compatibility for broadcasting a 1D tensor against an arbitrary tensor (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_dtype"] <= 10, v["arg2_value"] < 1000000.0), v["arg2_value"] > -1000000.0)) if n else
-          And(And(v["arg1_dtype"] <= 10, v["arg2_value"] < 1000000.0), v["arg2_value"] > -1000000.0))
+    s.add(Not(If(And(v["arg2_ndim"] == 1, v["arg1_ndim"] >= 1), Or(Or(Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg2_shape"], 0), Select(v["arg2_shape"], 0) == 1), Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 1), True)) if n else
+          If(And(v["arg2_ndim"] == 1, v["arg1_ndim"] >= 1), Or(Or(Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg2_shape"], 0), Select(v["arg2_shape"], 0) == 1), Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 1), True))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,28 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        arg2_value = Real('arg2_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == arg2)
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_14(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_14(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

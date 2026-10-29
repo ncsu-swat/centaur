@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input tensor elements must be within the valid domain [-1, 1] of the inverse error function (Rule 26)
+# input tensor elements represent non-negative probabilities bounded by 1 (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(And(-1 <= Select(v["arg1_range"], 0), Select(v["arg1_range"], 1) <= 1)) if n else
-          And(-1 <= Select(v["arg1_range"], 0), Select(v["arg1_range"], 1) <= 1))
+    s.add(Not(And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) <= 1)) if n else
+          And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) <= 1))
 )
 
 def rule_26_func(arg1, solver=None, neg=False):

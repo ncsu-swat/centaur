@@ -4,53 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def expm1_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
-    input_dict = {"x": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: negative float
-    input_dict = {"x": -1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero
+    # Input 1: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: small positive float (close to zero)
-    input_dict = {"x": 1e-4}
+    # Input 2: Positive integer-valued float
+    input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: small negative float (close to zero)
-    input_dict = {"x": -1e-4}
+    # Input 3: Negative integer-valued float
+    input_dict = {"x": -1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: larger positive float
-    input_dict = {"x": 5.5}
+    # Input 4: Small positive value
+    input_dict = {"x": 1e-5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: larger negative float
-    input_dict = {"x": -10.2}
+    # Input 5: Small negative value
+    input_dict = {"x": -1e-5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: very small positive float
-    input_dict = {"x": 1e-12}
+    # Input 6: Very small positive value near machine precision
+    input_dict = {"x": 1e-10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: very small negative float
-    input_dict = {"x": -1e-12}
+    # Input 7: Moderate positive float
+    input_dict = {"x": 2.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: float with pi value
-    input_dict = {"x": 3.141592653589793}
+    # Input 8: Moderate negative float
+    input_dict = {"x": -2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large positive float
+    input_dict = {"x": 15.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Large negative float
+    input_dict = {"x": -20.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Fractional float
+    input_dict = {"x": 0.123456}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.expm1_2"] = expm1_inputs()
 

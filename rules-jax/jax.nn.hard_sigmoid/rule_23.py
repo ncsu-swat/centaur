@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input tensor x is not a scalar, its first dimension size must be at least 1 (Rule 23)
+# tensor is either a scalar or a non-empty 1D vector (Rule 23)
 
 rule_23 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) >= 1, True)) if n else
-          If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) >= 1, True))
+    s.add(Not(Or(v["arg1_ndim"] == 0, (And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0)))) if n else
+          Or(v["arg1_ndim"] == 0, (And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) > 0))))
 )
 
 def rule_23_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_23_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 23
-        rule_23(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_23(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_23(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_23(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

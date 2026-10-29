@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# valid axis and start values for tensors of rank 2 or higher (Rule 22)
+# joint boundary constraints on roll axis and target start position (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(And(And((v["arg1_ndim"] >= 2), (If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0))), (If(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"], v["arg3_value"] + v["arg1_ndim"] >= 0)))) if n else
-          And(And((v["arg1_ndim"] >= 2), (If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0))), (If(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"], v["arg3_value"] + v["arg1_ndim"] >= 0))))
+    s.add(Not(And(And(And(v["arg1_ndim"] - v["arg2_value"] >= 1, v["arg1_ndim"] + v["arg2_value"] >= 0), v["arg1_ndim"] - v["arg3_value"] >= 0), v["arg1_ndim"] + v["arg3_value"] >= 0)) if n else
+          And(And(And(v["arg1_ndim"] - v["arg2_value"] >= 1, v["arg1_ndim"] + v["arg2_value"] >= 0), v["arg1_ndim"] - v["arg3_value"] >= 0), v["arg1_ndim"] + v["arg3_value"] >= 0))
 )
 
 def rule_22_func(arg1, arg2, arg3, solver=None, neg=False):

@@ -4,113 +4,151 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tensordot_inputs():
     list_of_inputs = []
 
-    # Input 1: float32, 3D and 3D arrays, default precision
+    # Input 1: 2D arrays, 1 contraction axis (matrix multiplication)
+    a = np.random.randn(3, 4).astype(np.float32)
+    b = np.random.randn(4, 5).astype(np.float32)
     input_dict = {
-        "a": np.random.randn(2, 3, 4).astype(np.float32),
-        "b": np.random.randn(3, 4, 5).astype(np.float32),
+        "a": a,
+        "b": b,
+        "axes": [[1], [0]],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 3D arrays, 2 contraction axes
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    b = np.random.randn(3, 4, 5).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
         "axes": [[1, 2], [0, 1]],
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: float32, 2D and 2D arrays (matrix multiplication equivalent), high precision
-    input_dict = {
-        "a": np.random.randn(2, 2).astype(np.float32),
-        "b": np.random.randn(2, 3).astype(np.float32),
-        "axes": [[1], [0]],
         "precision": "high",
-        "preferred_element_type": np.dtype(np.float32)
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: float64, 3D and 3D arrays, highest precision
+    # Input 3: 3D arrays with highest precision
+    a = np.random.randn(4, 5, 2).astype(np.float32)
+    b = np.random.randn(5, 2, 6).astype(np.float32)
     input_dict = {
-        "a": np.random.randn(4, 3, 2).astype(np.float64),
-        "b": np.random.randn(2, 3, 5).astype(np.float64),
-        "axes": [[2, 1], [0, 1]],
+        "a": a,
+        "b": b,
+        "axes": [[1, 2], [0, 1]],
         "precision": "highest",
-        "preferred_element_type": np.dtype(np.float64)
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: int32 with negative values, summing over different axes
+    # Input 4: 1D arrays (dot product)
+    a = np.random.randn(10).astype(np.float32)
+    b = np.random.randn(10).astype(np.float32)
     input_dict = {
-        "a": np.random.randint(-10, 10, size=(5, 5)).astype(np.int32),
-        "b": np.random.randint(-10, 10, size=(5, 5)).astype(np.int32),
-        "axes": [[0], [1]],
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: float32, high-dimensional arrays, contracting 3 dimensions
-    input_dict = {
-        "a": np.random.randn(1, 2, 3, 4).astype(np.float32),
-        "b": np.random.randn(4, 3, 2, 1).astype(np.float32),
-        "axes": [[1, 2, 3], [2, 1, 0]],
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: float64, 2D arrays, high precision, returning float64 result
-    input_dict = {
-        "a": np.random.randn(3, 4).astype(np.float64),
-        "b": np.random.randn(4, 2).astype(np.float64),
-        "axes": [[1], [0]],
-        "precision": "high",
-        "preferred_element_type": np.dtype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: int32, 1D arrays (dot product equivalent)
-    input_dict = {
-        "a": np.random.randint(-5, 5, size=(10,)).astype(np.int32),
-        "b": np.random.randint(-5, 5, size=(10,)).astype(np.int32),
+        "a": a,
+        "b": b,
         "axes": [[0], [0]],
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.int32)
+        "precision": "fastest",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: float32, different dimensions, highest precision
+    # Input 5: 4D tensors contracted along multiple non-consecutive axes
+    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    b = np.random.randn(3, 6, 5, 7).astype(np.float32)
     input_dict = {
-        "a": np.random.randn(2, 3, 2).astype(np.float32),
-        "b": np.random.randn(3, 2, 4).astype(np.float32),
-        "axes": [[1, 2], [0, 1]],
-        "precision": "highest",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: float32, 3D tensors, high precision
-    input_dict = {
-        "a": np.random.randn(3, 3, 3).astype(np.float32),
-        "b": np.random.randn(3, 3, 3).astype(np.float32),
-        "axes": [[2], [0]],
+        "a": a,
+        "b": b,
+        "axes": [[1, 3], [0, 2]],
         "precision": "high",
-        "preferred_element_type": np.dtype(np.float32)
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: float64, asymmetric shapes, default precision
+    # Input 6: Integer arrays with int32 accumulation
+    a = np.random.randint(-10, 10, size=(4, 6), dtype=np.int32)
+    b = np.random.randint(-10, 10, size=(6, 3), dtype=np.int32)
     input_dict = {
-        "a": np.random.randn(4, 5).astype(np.float64),
-        "b": np.random.randn(5, 6).astype(np.float64),
+        "a": a,
+        "b": b,
         "axes": [[1], [0]],
         "precision": "default",
-        "preferred_element_type": np.dtype(np.float64)
+        "preferred_element_type": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Float16 inputs with float32 accumulation
+    a = np.random.randn(3, 5).astype(np.float16)
+    b = np.random.randn(5, 4).astype(np.float16)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axes": [[1], [0]],
+        "precision": "float32",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Negative axis indexing
+    a = np.random.randn(3, 4, 5).astype(np.float32)
+    b = np.random.randn(2, 5, 4).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axes": [[-2, -1], [-1, -2]],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Complex numbers with complex64 dtype
+    a = (np.random.randn(2, 3) + 1j * np.random.randn(2, 3)).astype(
+        np.complex64
+    )
+    b = (np.random.randn(3, 4) + 1j * np.random.randn(3, 4)).astype(
+        np.complex64
+    )
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axes": [[1], [0]],
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.complex64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D contraction using 1D list of axes
+    a = np.random.randn(4, 5).astype(np.float32)
+    b = np.random.randn(5, 6).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axes": [1, 0],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 5D tensors with single axis contraction
+    a = np.random.randn(2, 2, 3, 2, 4).astype(np.float32)
+    b = np.random.randn(4, 2, 3).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "b": b,
+        "axes": [[-1], [0]],
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.tensordot_2"] = tensordot_inputs()
 

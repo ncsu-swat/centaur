@@ -4,46 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def iscomplexobj_inputs():
     list_of_inputs = []
 
-    # Input 1
-    list_of_inputs.append({"x": 0})
+    # Input 1: Zero
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
-    list_of_inputs.append({"x": 1})
+    # Input 2: Positive small integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
-    list_of_inputs.append({"x": -1})
+    # Input 3: Negative small integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    list_of_inputs.append({"x": 100})
+    # Input 4: Standard positive integer
+    input_dict = {"x": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5
-    list_of_inputs.append({"x": -100})
+    # Input 5: Standard negative integer
+    input_dict = {"x": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
-    list_of_inputs.append({"x": 5000})
+    # Input 6: Large 32-bit positive integer boundary
+    input_dict = {"x": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
-    list_of_inputs.append({"x": -5000})
+    # Input 7: Large 32-bit negative integer boundary
+    input_dict = {"x": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
-    list_of_inputs.append({"x": 1234567})
+    # Input 8: Medium positive integer
+    input_dict = {"x": 65535}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
-    list_of_inputs.append({"x": -1234567})
+    # Input 9: Large positive 64-bit integer
+    input_dict = {"x": 1000000000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
-    list_of_inputs.append({"x": 2147483647})
+    # Input 10: Large negative 64-bit integer
+    input_dict = {"x": -1000000000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11
-    list_of_inputs.append({"x": -2147483648})
+    # Input 11: Odd positive integer
+    input_dict = {"x": 9999}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.iscomplexobj_3"] = iscomplexobj_inputs()
 

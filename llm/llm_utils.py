@@ -146,6 +146,72 @@ class OAChatWrapper:
 
         return Response(text=response_text, usage=usage)
     
+class BedrockChatWrapper:
+    """Minimal Amazon Bedrock (Converse API) chat client with the same
+    send_message(prompt) -> Response interface as OAChatWrapper.
+
+    Auth: relies on the standard AWS credential chain, including the Bedrock
+    API key via env var AWS_BEARER_TOKEN_BEDROCK. Model id comes from
+    BEDROCK_MODEL (e.g. 'qwen.qwen3-coder-30b-a3b-v1:0', 'deepseek.v3.2').
+    Maintains conversation history so rulegen's feedback follow-ups work.
+    """
+    DEFAULT_REGION = "us-east-1"
+    RETRYABLE = {"ThrottlingException", "ServiceUnavailableException",
+                 "ModelTimeoutException", "InternalServerException"}
+
+    def __init__(self, model=None, region=None, max_tokens=None):
+        import boto3
+        from botocore.config import Config
+
+        self.model = model or os.getenv("BEDROCK_MODEL")
+        if not self.model:
+            raise ValueError("BEDROCK_MODEL env var is not set")
+        self.max_tokens = int(max_tokens or os.getenv("BEDROCK_MAX_TOKENS", "4096"))
+        region = (region or os.getenv("AWS_REGION")
+                  or os.getenv("AWS_DEFAULT_REGION") or self.DEFAULT_REGION)
+        cfg = Config(retries={"max_attempts": 10, "mode": "adaptive"})
+        self.client = boto3.client("bedrock-runtime", region_name=region, config=cfg)
+        self._messages = []
+
+    def send_message(self, prompt):
+        import time
+        from botocore.exceptions import ClientError
+
+        self._messages.append({"role": "user", "content": [{"text": prompt}]})
+        resp = None
+        last_err = None
+        for attempt in range(6):
+            try:
+                resp = self.client.converse(
+                    modelId=self.model,
+                    messages=self._messages,
+                    inferenceConfig={"maxTokens": self.max_tokens},
+                )
+                break
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if code in self.RETRYABLE:
+                    last_err = e
+                    time.sleep(min(2 ** attempt, 30))
+                    continue
+                raise
+        if resp is None:
+            raise last_err
+
+        parts = resp.get("output", {}).get("message", {}).get("content", [])
+        text = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+        self._messages.append({"role": "assistant", "content": [{"text": text}]})
+
+        u = resp.get("usage", {}) or {}
+        usage = {}
+        if u.get("inputTokens") is not None:
+            usage["input_tokens"] = u["inputTokens"]
+        if u.get("outputTokens") is not None:
+            usage["output_tokens"] = u["outputTokens"]
+        if u.get("totalTokens") is not None:
+            usage["total_tokens"] = u["totalTokens"]
+        return Response(text=text, usage=usage)
+
 def extract_code_from_response(response, llm="gemini"):
     # Use regular expression to find the code block within the markdown
     try:

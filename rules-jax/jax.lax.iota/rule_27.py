@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# size must be non-negative and dtype must be a valid numeric or boolean type (Rule 27)
+# float16 iota size should not exceed maximum exactly representable integer (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] <= 10, v["arg2_value"] >= 0)) if n else
-          And(v["arg1_value"] <= 10, v["arg2_value"] >= 0))
+    s.add(Not(If(v["arg1_value"] == 6, And(0 <= v["arg2_value"], v["arg2_value"] <= 65504), v["arg2_value"] >= 0)) if n else
+          If(v["arg1_value"] == 6, And(0 <= v["arg2_value"], v["arg2_value"] <= 65504), v["arg2_value"] >= 0))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):

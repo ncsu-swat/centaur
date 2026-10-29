@@ -4,55 +4,16 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def tanh_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar positive integer (Python int)
-    input_dict = {"x": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    integers = [0, 1, -1, 2, -2, 5, -5, 10, -10, 42, -100, 1000]
 
-    # Input 2: Scalar negative integer (np.int32)
-    input_dict = {"x": np.int32(-10)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 1D array of int32
-    input_dict = {"x": np.array([-3, -1, 0, 1, 3], dtype=np.int32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D array of int64 with negative and positive values
-    input_dict = {"x": np.array([0, 1, -1, 2, -2], dtype=np.int64)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 2D array of int16
-    input_dict = {"x": np.array([[-5, 5], [10, -10]], dtype=np.int16)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D array of int8
-    input_dict = {"x": np.array([[1, 2, 3], [-1, -2, -3]], dtype=np.int8)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 3D array of int32
-    input_dict = {"x": np.arange(-4, 4, dtype=np.int32).reshape(2, 2, 2)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Scalar zero (np.int64)
-    input_dict = {"x": np.int64(0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 1D array with random integers in range [-100, 100)
-    input_dict = {"x": np.random.randint(-100, 100, size=(20,), dtype=np.int32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 4D array of int32
-    input_dict = {"x": np.random.randint(-10, 10, size=(2, 2, 2, 2), dtype=np.int32)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11: 1D array of uint8 (unsigned integer)
-    input_dict = {"x": np.array([0, 5, 10, 20], dtype=np.uint8)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    for val in integers:
+        input_dict = {"x": val}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

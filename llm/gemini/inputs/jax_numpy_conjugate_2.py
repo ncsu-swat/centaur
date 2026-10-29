@@ -4,54 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def conjugate_inputs():
     list_of_inputs = []
 
-    # Input 1: Python int
-    input_dict = {"x": 5}
+    # Input 1: zero
+    input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python negative int
-    input_dict = {"x": -10}
+    # Input 2: positive small integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: np.int32 scalar
-    input_dict = {"x": np.int32(42)}
+    # Input 3: negative small integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.int64 scalar
-    input_dict = {"x": np.int64(-999)}
+    # Input 4: standard positive integer
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D array of int32
-    input_dict = {"x": np.array([1, -2, 3, -4], dtype=np.int32)}
+    # Input 5: standard negative integer
+    input_dict = {"x": -100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array of int64
-    input_dict = {"x": np.array([[1, 2], [-3, -4]], dtype=np.int64)}
+    # Input 6: larger positive integer
+    input_dict = {"x": 1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D array of int16
-    input_dict = {"x": np.ones((2, 3, 4), dtype=np.int16) * -5}
+    # Input 7: larger negative integer
+    input_dict = {"x": -999999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D array of uint8
-    input_dict = {"x": np.array([0, 128, 255], dtype=np.uint8)}
+    # Input 8: int32 max
+    input_dict = {"x": 2147483647}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D array of int8
-    input_dict = {"x": np.zeros((2, 2, 2, 2), dtype=np.int8)}
+    # Input 9: int32 min
+    input_dict = {"x": -2147483648}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 0D array of int32
-    input_dict = {"x": np.array(-15, dtype=np.int32)}
+    # Input 10: 8-bit unsigned boundary
+    input_dict = {"x": 255}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Empty array of int64
-    input_dict = {"x": np.array([], dtype=np.int64)}
+    # Input 11: 8-bit signed boundary
+    input_dict = {"x": -128}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

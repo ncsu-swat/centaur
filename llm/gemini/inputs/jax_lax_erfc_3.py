@@ -4,49 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def erfc_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
-    list_of_inputs.append({"x": 0.5})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative float
-    list_of_inputs.append({"x": -0.5})
+    # Input 2: Positive float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: zero float
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Negative float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: large positive float
-    list_of_inputs.append({"x": 5.0})
+    # Input 4: Small positive float
+    input_dict = {"x": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: large negative float
-    list_of_inputs.append({"x": -5.0})
+    # Input 5: Small negative float
+    input_dict = {"x": -0.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: positive np.float32 scalar
-    list_of_inputs.append({"x": np.float32(1.23)})
+    # Input 6: Larger positive float
+    input_dict = {"x": 3.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: negative np.float32 scalar
-    list_of_inputs.append({"x": np.float32(-1.23)})
+    # Input 7: Larger negative float
+    input_dict = {"x": -3.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: positive np.float64 scalar
-    list_of_inputs.append({"x": np.float64(3.14159)})
+    # Input 8: Very small positive float
+    input_dict = {"x": 1e-4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: negative np.float64 scalar
-    list_of_inputs.append({"x": np.float64(-3.14159)})
+    # Input 9: Very small negative float
+    input_dict = {"x": -1e-4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: small positive float
-    list_of_inputs.append({"x": 1e-6})
+    # Input 10: Asymptotic positive float
+    input_dict = {"x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: small negative float
-    list_of_inputs.append({"x": -1e-6})
+    # Input 11: Asymptotic negative float
+    input_dict = {"x": -10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 12: np.float32 zero scalar
-    list_of_inputs.append({"x": np.float32(0.0)})
+    # Input 12: Float representation of pi/2
+    input_dict = {"x": 1.5707963267948966}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.erfc_3"] = erfc_inputs()
 

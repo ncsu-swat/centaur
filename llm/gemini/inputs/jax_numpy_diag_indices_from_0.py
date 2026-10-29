@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def diag_indices_from_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array of shape (2, 2), int32
-    arr = np.arange(4, dtype=np.int32).reshape(2, 2)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 1: 2D square matrix of float32
+    arr = np.zeros((3, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 2: 2D array of shape (3, 3), float32
-    arr = np.random.randn(3, 3).astype(np.float32)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 2: 2D square matrix of int32 with negative values
+    arr = np.array([[-1, 2], [3, -4]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 3: 2D array of shape (10, 10), int64
-    arr = np.zeros((10, 10), dtype=np.int64)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 3: 3D array with equal dimensions (2, 2, 2)
+    arr = np.ones((2, 2, 2), dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 4: 3D array of shape (2, 2, 2), float64
-    arr = np.random.randn(2, 2, 2).astype(np.float64)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 4: 4D array with equal dimensions (3, 3, 3, 3)
+    arr = np.arange(81, dtype=np.int64).reshape((3, 3, 3, 3))
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 5: 3D array of shape (4, 4, 4), int32
-    arr = np.ones((4, 4, 4), dtype=np.int32)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 5: 2D matrix of shape (1, 1)
+    arr = np.array([[42.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 6: 4D array of shape (3, 3, 3, 3), float32
-    arr = np.random.randn(3, 3, 3, 3).astype(np.float32)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 6: 3D array of shape (1, 1, 1) with bool dtype
+    arr = np.array([[[True]]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 7: 2D array of shape (1, 1), int32
-    arr = np.array([[5]], dtype=np.int32)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 7: 2D complex array of shape (4, 4)
+    arr = np.eye(4, dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 8: 5D array of shape (2, 2, 2, 2, 2), float32
-    arr = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 8: 5D array of shape (2, 2, 2, 2, 2)
+    arr = np.zeros((2, 2, 2, 2, 2), dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 9: 3D array of shape (5, 5, 5), int64
-    arr = np.ones((5, 5, 5), dtype=np.int64)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 9: 2D array of shape (10, 10) float16
+    arr = np.random.randn(10, 10).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
-    # Input 10: 2D array of shape (100, 100), float32
-    arr = np.random.randn(100, 100).astype(np.float32)
-    list_of_inputs.append({"arr": copy.deepcopy(arr)})
+    # Input 10: 3D array of shape (4, 4, 4) with int16
+    arr = np.arange(64, dtype=np.int16).reshape((4, 4, 4))
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
+
+    # Input 11: 2D array of shape (0, 0)
+    arr = np.empty((0, 0), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arr": arr}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.diag_indices_from"] = diag_indices_from_inputs()
 

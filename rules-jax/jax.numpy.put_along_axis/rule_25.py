@@ -7,32 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Indices must contain integer types only (Rule 25)
+# inplace must be False and mode must be an allowed indexing mode (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(Or(v["arg1_dtype"] == 1, v["arg1_dtype"] == 2), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4), v["arg1_dtype"] == 5)) if n else
-          Or(Or(Or(Or(v["arg1_dtype"] == 1, v["arg1_dtype"] == 2), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4), v["arg1_dtype"] == 5))
+    s.add(Not(If(v["arg1_value"] == False, Or(Or(Or(v["arg2_value"] == 33, v["arg2_value"] == 34), v["arg2_value"] == 35), v["arg2_value"] == 36), False)) if n else
+          If(v["arg1_value"] == False, Or(Or(Or(v["arg2_value"] == 33, v["arg2_value"] == 34), v["arg2_value"] == 35), v["arg2_value"] == 36), False))
 )
 
-def rule_25_func(arg1, solver=None, neg=False):
+def rule_25_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not isinstance(arg1, bool):
+            return False
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_value = Bool('arg1_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_value == arg1)
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 25
-        rule_25(solver, {'arg1_dtype': arg1_dtype})
+        rule_25(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_25(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_25(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

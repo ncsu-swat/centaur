@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# preferred_element_type must be a valid datatype index (Rule 24)
+# subscripts restricted to valid binary einsum equations to prevent invalid character error (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 0, v["arg1_value"] <= 12)) if n else
-          And(v["arg1_value"] >= 0, v["arg1_value"] <= 12))
+    s.add(Not(Or(v["arg1_value"] == 2, v["arg1_value"] == 3)) if n else
+          Or(v["arg1_value"] == 2, v["arg1_value"] == 3))
 )
 
 def rule_24_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_24_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Constraints for rule 24
         rule_24(solver, {'arg1_value': arg1_value})

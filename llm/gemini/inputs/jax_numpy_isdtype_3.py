@@ -5,82 +5,46 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import numpy as np
-import copy
+
 
 def isdtype_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {
-        "dtype": np.dtype('int32'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: float32
+    list_of_inputs.append({"dtype": np.dtype(np.float32), "kind": ()})
 
-    # Input 2
-    input_dict = {
-        "dtype": np.dtype('int64'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: float64
+    list_of_inputs.append({"dtype": np.dtype(np.float64), "kind": ()})
 
-    # Input 3
-    input_dict = {
-        "dtype": np.dtype('float32'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: int32
+    list_of_inputs.append({"dtype": np.dtype(np.int32), "kind": ()})
 
-    # Input 4
-    input_dict = {
-        "dtype": np.dtype('float64'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: int64
+    list_of_inputs.append({"dtype": np.dtype(np.int64), "kind": ()})
 
-    # Input 5
-    input_dict = {
-        "dtype": np.dtype('bool'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: bool
+    list_of_inputs.append({"dtype": np.dtype(np.bool_), "kind": ()})
 
-    # Input 6
-    input_dict = {
-        "dtype": np.dtype('complex64'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: uint8
+    list_of_inputs.append({"dtype": np.dtype(np.uint8), "kind": ()})
 
-    # Input 7
-    input_dict = {
-        "dtype": np.dtype('complex128'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: uint32
+    list_of_inputs.append({"dtype": np.dtype(np.uint32), "kind": ()})
 
-    # Input 8
-    input_dict = {
-        "dtype": np.dtype('uint8'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: complex64
+    list_of_inputs.append({"dtype": np.dtype(np.complex64), "kind": ()})
 
-    # Input 9
-    input_dict = {
-        "dtype": np.dtype('int16'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: complex128
+    list_of_inputs.append({"dtype": np.dtype(np.complex128), "kind": ()})
 
-    # Input 10
-    input_dict = {
-        "dtype": np.dtype('float16'),
-        "kind": ()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: int16
+    list_of_inputs.append({"dtype": np.dtype(np.int16), "kind": ()})
+
+    # Input 11: uint16
+    list_of_inputs.append({"dtype": np.dtype(np.uint16), "kind": ()})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isdtype_3"] = isdtype_inputs()
 

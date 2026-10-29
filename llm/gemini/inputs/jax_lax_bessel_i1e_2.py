@@ -4,41 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def bessel_i1e_inputs():
     list_of_inputs = []
 
-    # Input 1: positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 2: Small positive float
+    input_dict = {"x": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: zero
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Small negative float
+    input_dict = {"x": -0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: small positive float
-    list_of_inputs.append({"x": 1e-5})
+    # Input 4: Moderate positive float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: small negative float
-    list_of_inputs.append({"x": -1e-5})
+    # Input 5: Moderate negative float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: large positive float
-    list_of_inputs.append({"x": 100.0})
+    # Input 6: Larger positive float
+    input_dict = {"x": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: large negative float
-    list_of_inputs.append({"x": -100.0})
+    # Input 7: Larger negative float
+    input_dict = {"x": -10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: float value 0.5
-    list_of_inputs.append({"x": 0.5})
+    # Input 8: Very small positive float
+    input_dict = {"x": 1e-4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: float value pi
-    list_of_inputs.append({"x": 3.141592653589793})
+    # Input 9: Very small negative float
+    input_dict = {"x": -1e-4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: float value e
-    list_of_inputs.append({"x": 2.718281828459045})
+    # Input 10: Very large positive float
+    input_dict = {"x": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Very large negative float
+    input_dict = {"x": -100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Arbitrary float value
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

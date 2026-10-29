@@ -4,68 +4,76 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def slogdet_inputs():
     list_of_inputs = []
 
-    # Input 1: float32, 2x2 matrix, LU method
+    # Input 1: 2D square matrix float32, method 'lu'
     a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    input_dict = {"a": a, "method": "lu"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append({"a": a, "method": "lu"})
 
-    # Input 2: float32, 3x3 matrix with zero elements, QR method
-    a = np.array([[1.0, 0.0, 5.0], [2.0, 1.0, 6.0], [3.0, 4.0, 0.0]], dtype=np.float32)
-    input_dict = {"a": a, "method": "qr"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D square matrix float32, method 'qr'
+    a = np.array([[2.0, -1.0], [1.0, 3.0]], dtype=np.float32)
+    list_of_inputs.append({"a": a, "method": "qr"})
 
-    # Input 3: float64, 4x4 matrix, LU method
-    a = np.random.randn(4, 4).astype(np.float64)
-    input_dict = {"a": a, "method": "lu"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D square matrix float64 with negative determinant
+    a = np.array(
+        [[1.0, 2.0, 3.0], [0.0, -4.0, 5.0], [6.0, 0.0, 1.0]], dtype=np.float64
+    )
+    list_of_inputs.append({"a": a, "method": "lu"})
 
-    # Input 4: float64, 5x5 matrix, QR method
-    a = np.random.randn(5, 5).astype(np.float64)
-    input_dict = {"a": a, "method": "qr"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D complex64 matrix, method 'lu'
+    a = np.array([[1.0 + 2.0j, -1.0j], [0.5, 2.0 - 1.0j]], dtype=np.complex64)
+    list_of_inputs.append({"a": a, "method": "lu"})
 
-    # Input 5: float32, batched 3D array (2, 3, 3), LU method
-    a = np.random.randn(2, 3, 3).astype(np.float32)
-    input_dict = {"a": a, "method": "lu"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D complex128 matrix, method 'lu'
+    a = np.array(
+        [[2.0 + 1.0j, 0.0, -1.0j], [1.0j, 1.0 - 1.0j, 2.0], [0.0, 3.0j, -1.0]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append({"a": a, "method": "lu"})
 
-    # Input 6: float64, batched 3D array (4, 2, 2), QR method
-    a = np.random.randn(4, 2, 2).astype(np.float64)
-    input_dict = {"a": a, "method": "qr"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D batched square matrices float32, method 'lu'
+    a = np.random.randn(3, 4, 4).astype(np.float32)
+    list_of_inputs.append({"a": a, "method": "lu"})
 
-    # Input 7: float32, 1x1 matrix, LU method
-    a = np.array([[5.0]], dtype=np.float32)
-    input_dict = {"a": a, "method": "lu"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D batched square matrices float64, method 'qr'
+    a = np.random.randn(5, 2, 2).astype(np.float64)
+    list_of_inputs.append({"a": a, "method": "qr"})
 
-    # Input 8: float64, 1x1 matrix with a negative value, QR method
-    a = np.array([[-3.5]], dtype=np.float64)
-    input_dict = {"a": a, "method": "qr"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D batched matrices float32, method 'lu'
+    a = np.random.randn(2, 3, 3, 3).astype(np.float32)
+    list_of_inputs.append({"a": a, "method": "lu"})
 
-    # Input 9: float32, higher dimension batch (2, 2, 4, 4), LU method
-    a = np.random.randn(2, 2, 4, 4).astype(np.float32)
-    input_dict = {"a": a, "method": "lu"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1x1 scalar-like matrix float32, method 'lu'
+    a = np.array([[-5.5]], dtype=np.float32)
+    list_of_inputs.append({"a": a, "method": "lu"})
 
-    # Input 10: float64, larger 10x10 matrix, QR method
-    a = np.random.randn(10, 10).astype(np.float64)
-    input_dict = {"a": a, "method": "qr"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 5x5 Identity matrix float32, method 'qr'
+    a = np.eye(5, dtype=np.float32)
+    list_of_inputs.append({"a": a, "method": "qr"})
 
-    # Input 11: complex64, 2x2 complex matrix, LU method
-    a = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
-    input_dict = {"a": a, "method": "lu"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 4x4 matrix with negative and zero values float64, method 'qr'
+    a = np.array(
+        [
+            [-2.0, 0.0, 1.0, 4.0],
+            [1.0, -3.0, 0.0, -1.0],
+            [0.0, 2.0, -1.0, 3.0],
+            [-1.0, 4.0, 2.0, 0.0],
+        ],
+        dtype=np.float64,
+    )
+    list_of_inputs.append({"a": a, "method": "qr"})
+
+    # Input 12: 5D batched square matrices float32, method 'qr'
+    a = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
+    list_of_inputs.append({"a": a, "method": "qr"})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.slogdet"] = slogdet_inputs()
 

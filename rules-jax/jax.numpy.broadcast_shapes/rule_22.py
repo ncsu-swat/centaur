@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# broadcast compatibility of a list of integers and a tuple of integers (Rule 22)
+# broadcasting a multi-dimensional tuple shape with a 1D tuple shape requires compatible trailing dimensions (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg2_length"] - 1 + 1), If(v["arg1_length"] - 1 - i == v["arg2_length"] - 1 - j, (Or(Or(Select(v["arg1_values"], i) == Select(v["arg2_values"], j), Select(v["arg1_values"], i) == 1), Select(v["arg2_values"], j) == 1)), True)) for j in range(6)])) for i in range(6)])) if n else
-          And([Implies(i < (v["arg1_length"] - 1 + 1), And([Implies(j < (v["arg2_length"] - 1 + 1), If(v["arg1_length"] - 1 - i == v["arg2_length"] - 1 - j, (Or(Or(Select(v["arg1_values"], i) == Select(v["arg2_values"], j), Select(v["arg1_values"], i) == 1), Select(v["arg2_values"], j) == 1)), True)) for j in range(6)])) for i in range(6)]))
+    s.add(Not(If(And(v["arg2_length"] == 1, v["arg1_length"] >= 1), Or(Or(Select(v["arg1_values"], v["arg1_length"] - 1) == Select(v["arg2_values"], 0), Select(v["arg1_values"], v["arg1_length"] - 1) == 1), Select(v["arg2_values"], 0) == 1), True)) if n else
+          If(And(v["arg2_length"] == 1, v["arg1_length"] >= 1), Or(Or(Select(v["arg1_values"], v["arg1_length"] - 1) == Select(v["arg2_values"], 0), Select(v["arg1_values"], v["arg1_length"] - 1) == 1), Select(v["arg2_values"], 0) == 1), True))
 )
 
 def rule_22_func(arg1, arg2, solver=None, neg=False):
@@ -20,7 +20,7 @@ def rule_22_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
         if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
@@ -41,9 +41,9 @@ def rule_22_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 22
-        rule_22(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_22(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_22(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_22(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

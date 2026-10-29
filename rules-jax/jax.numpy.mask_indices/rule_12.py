@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# static size of the output arrays must be bounded by the total elements in the n x n array (Rule 12)
+# size of nonzero elements is bounded by matrix size n * n (Rule 12)
 
 rule_12 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_value"] <= v["arg1_value"] * v["arg1_value"]) if n else
-          v["arg2_value"] <= v["arg1_value"] * v["arg1_value"])
+    s.add(Not(If(v["arg1_value"] == 0, v["arg2_value"] == 0, And(0 <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"] * v["arg1_value"]))) if n else
+          If(v["arg1_value"] == 0, v["arg2_value"] == 0, And(0 <= v["arg2_value"], v["arg2_value"] <= v["arg1_value"] * v["arg1_value"])))
 )
 
 def rule_12_func(arg1, arg2, solver=None, neg=False):

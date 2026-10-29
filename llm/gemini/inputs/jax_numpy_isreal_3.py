@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isreal_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive float
-    input_dict = {"x": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative float
-    input_dict = {"x": -2.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero
+    # Input 1: zero float
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Infinity
-    input_dict = {"x": float('inf')}
+    # Input 2: positive float
+    input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative Infinity
-    input_dict = {"x": float('-inf')}
+    # Input 3: negative float
+    input_dict = {"x": -1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: NaN (Not a Number)
-    input_dict = {"x": float('nan')}
+    # Input 4: positive decimal float
+    input_dict = {"x": 3.141592653589793}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Numpy float32
-    input_dict = {"x": float(np.float32(3.14))}
+    # Input 5: negative decimal float
+    input_dict = {"x": -2.718281828459045}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Numpy float64
-    input_dict = {"x": float(np.float64(-0.0001))}
+    # Input 6: very small positive float
+    input_dict = {"x": 1e-10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small scientific notation float
-    input_dict = {"x": 1.23e-5}
+    # Input 7: very large negative float
+    input_dict = {"x": -1e10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger float value
-    input_dict = {"x": 987654.321}
+    # Input 8: positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: NaN float
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: extremely large float
+    input_dict = {"x": 1e300}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: subnormal-scale small float
+    input_dict = {"x": 1e-300}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isreal_3"] = isreal_inputs()
 

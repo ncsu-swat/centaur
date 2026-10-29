@@ -4,55 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cosh_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D array (scalar) float32
+    # 1. 0-D scalar float32 array
     x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array float32 with positive, negative, and zero values
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 2. 1-D float64 array with positive and negative values
+    x = np.array([-3.0, -1.5, 0.0, 1.5, 3.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D array float64
-    x = np.random.randn(3, 4).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 3. 2-D integer array
+    x = np.array([[1, -2, 3], [0, 4, -5]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D array float32
-    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 4. 2-D float16 array
+    x = np.random.uniform(-2.0, 2.0, size=(4, 4)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D array complex64
-    x = np.array([1.0 + 1.0j, -2.0 - 3.0j, 0.5j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 5. 3-D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 2D array complex128
-    real = np.random.randn(2, 2)
-    imag = np.random.randn(2, 2)
-    x = (real + 1j * imag).astype(np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 6. 1-D complex64 array
+    x = np.array([1.0 + 2.0j, -0.5 - 1.5j, 0.0 + 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D array with very small values
-    x = np.array([1e-15, -1e-15, 0.0], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 7. 2-D complex128 array
+    x = np.array(
+        [[1.0 - 1.0j, 2.0 + 3.0j], [-2.0 + 0.5j, 0.0 + 0.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D array float32
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 8. 4-D float32 array
+    x = np.random.uniform(-1.0, 1.0, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D array containing Inf and NaN
-    x = np.array([np.inf, -np.inf, np.nan], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 9. 1-D boolean array
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D array float16
-    x = np.array([[0.1, -0.2], [0.3, -0.4]], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # 10. 1-D int64 array with zero and small values
+    x = np.array([0, -10, 10, -5, 5], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # 11. Empty array
+    x = np.empty((0, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cosh_1"] = cosh_inputs()
 

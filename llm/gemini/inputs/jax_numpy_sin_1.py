@@ -4,57 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def sin_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with common trigonometric angles (pi multiples)
-    x = np.array([0.0, np.pi/4, np.pi/2, np.pi, 2*np.pi], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with common angles
+    x = np.array([0.0, np.pi / 6, np.pi / 4, np.pi / 2, np.pi], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array with positive and negative random values
-    x = np.random.uniform(-10.0, 10.0, size=(3, 5)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with negative values
+    x = np.array([-np.pi, -np.pi / 2, -np.pi / 4, 0.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 0D float32 scalar-like array
-    x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D float32 array
+    x = np.random.randn(3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float32 array representing a batch of spatial grids
-    x = np.random.randn(2, 4, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D float64 array
+    x = np.random.uniform(-2 * np.pi, 2 * np.pi, size=(2, 3, 5)).astype(
+        np.float64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D int32 array (promotes to float)
+    # Input 5: 0D scalar array
+    x = np.array(np.pi / 3, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 6: Integer array (promoted to inexact type by JAX)
     x = np.array([-2, -1, 0, 1, 2], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D float16 array for lower precision testing
-    x = np.random.uniform(-1.0, 1.0, size=(2, 2, 3, 3)).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Float16 array
+    x = np.array([-1.5, -0.5, 0.0, 0.5, 1.5], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D complex64 array (trigonometric functions support complex inputs)
-    x = np.array([1.0 + 1.0j, -2.0 - 0.5j, 0.0 + 3.0j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Complex64 array
+    x = np.array([1.0 + 2.0j, -0.5 + 0.5j, 0.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float64 array with extremely large and small values
-    x = np.array([-1e10, -1e-5, 0.0, 1e-5, 1e10], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Complex128 2D array
+    x = np.array(
+        [[1.0j, 2.0 - 1.0j], [-1.0 + 0.0j, 0.5 + 0.5j]], dtype=np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D int64 array (large integer types)
-    x = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 4D array
+    x = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D float32 array with higher dimensions
-    x = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 11: 1D float32 array containing special values (NaN, Inf)
-    x = np.array([np.nan, np.inf, -np.inf, 0.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sin_1"] = sin_inputs()
 

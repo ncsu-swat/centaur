@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For tensors with more than 3 dimensions, batch dimensions at index 1 must match, otherwise batch dimensions at index 0 must match (Rule 44)
+# batch size at dimension 0 must match and be at least 1 (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] > 3, Select(v["arg1_shape"], 1) == Select(v["arg2_shape"], 1), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0))) if n else
-          If(v["arg1_ndim"] > 3, Select(v["arg1_shape"], 1) == Select(v["arg2_shape"], 1), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0)))
+    s.add(Not(And(Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0), Select(v["arg1_shape"], 0) >= 1)) if n else
+          And(Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0), Select(v["arg1_shape"], 0) >= 1))
 )
 
 def rule_44_func(arg1, arg2, solver=None, neg=False):
@@ -27,21 +27,19 @@ def rule_44_func(arg1, arg2, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
         arg1_shape = Array('arg1_shape', IntSort(), IntSort())
         arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
         for i in range(arg1.ndim):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
         for i in range(arg2.ndim):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 44
-        rule_44(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape})
+        rule_44(solver, {'arg1_shape': arg1_shape, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_44(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape']}, neg)
+        rule_44(solver, {'arg1_shape': arg1['shape'], 'arg2_shape': arg2['shape']}, neg)

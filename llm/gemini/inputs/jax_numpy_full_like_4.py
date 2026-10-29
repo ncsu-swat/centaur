@@ -4,83 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def full_like_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32 array, fill with True, convert to float32, change shape
-    a = np.random.randn(2, 2).astype(np.float32)
-    fill_value = True
-    dtype = np.dtype('float32')
-    shape = (3, 3)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 1
+    input_dict = {
+        "a": np.zeros((3, 3), dtype=np.float32),
+        "fill_value": True,
+        "dtype": np.dtype(np.bool_),
+        "shape": (3, 3),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 3D int32 array, fill with False, convert to int64, smaller shape
-    a = np.random.randint(-10, 10, size=(3, 4, 5)).astype(np.int32)
-    fill_value = False
-    dtype = np.dtype('int64')
-    shape = (2, 2)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 2
+    input_dict = {
+        "a": np.ones((5,), dtype=np.int32),
+        "fill_value": False,
+        "dtype": np.dtype(np.int32),
+        "shape": (4,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D bool array, fill with True, convert to bool, larger shape
-    a = np.array([True, False, True], dtype=bool)
-    fill_value = True
-    dtype = np.dtype('bool')
-    shape = (10,)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 3
+    input_dict = {
+        "a": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64),
+        "fill_value": True,
+        "dtype": np.dtype(np.float32),
+        "shape": (2, 3),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D float64 array, fill with False, convert to float64, reshaped
-    a = np.random.rand(1, 5).astype(np.float64)
-    fill_value = False
-    dtype = np.dtype('float64')
-    shape = (5, 1)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 4
+    input_dict = {
+        "a": np.arange(8, dtype=np.int64).reshape((2, 2, 2)),
+        "fill_value": False,
+        "dtype": np.dtype(np.float64),
+        "shape": (2, 4),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D int16 array, fill with True, convert to int16, reduce dimension
-    a = np.zeros((1, 2, 3, 4), dtype=np.int16)
-    fill_value = True
-    dtype = np.dtype('int16')
-    shape = (2, 3, 4)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 5
+    input_dict = {
+        "a": np.array(42, dtype=np.int32),
+        "fill_value": True,
+        "dtype": np.dtype(np.int8),
+        "shape": (),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 0D float32 array, fill with True, convert to float32, 1D shape
-    a = np.array(1.5, dtype=np.float32)
-    fill_value = True
-    dtype = np.dtype('float32')
-    shape = (1,)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 6
+    input_dict = {
+        "a": np.zeros((1, 4, 1), dtype=np.uint8),
+        "fill_value": True,
+        "dtype": np.dtype(np.uint8),
+        "shape": (2, 2, 2),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D float32 array, fill with False, convert to complex64, different shape
-    a = np.random.randn(5, 5).astype(np.float32)
-    fill_value = False
-    dtype = np.dtype('complex64')
-    shape = (2, 5)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 7
+    input_dict = {
+        "a": np.empty((0,), dtype=np.float32),
+        "fill_value": False,
+        "dtype": np.dtype(np.bool_),
+        "shape": (0,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D uint8 array, fill with True, convert to uint8, 3D shape
-    a = np.array([[1]], dtype=np.uint8)
-    fill_value = True
-    dtype = np.dtype('uint8')
-    shape = (4, 4, 4)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 8
+    input_dict = {
+        "a": np.ones((2, 3, 4, 5), dtype=np.float32),
+        "fill_value": True,
+        "dtype": np.dtype(np.complex64),
+        "shape": (1, 2, 3),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D float32 array, fill with False, convert to float16, 3D shape
-    a = np.random.rand(2, 3, 2, 3).astype(np.float32)
-    fill_value = False
-    dtype = np.dtype('float16')
-    shape = (1, 1, 1)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 9
+    input_dict = {
+        "a": np.array([-1, 0, 1], dtype=np.int16),
+        "fill_value": False,
+        "dtype": np.dtype(np.int64),
+        "shape": (6,),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D negative int32 array, fill with True, convert to int32, larger 1D shape
-    a = np.array([-1, -2, -3], dtype=np.int32)
-    fill_value = True
-    dtype = np.dtype('int32')
-    shape = (6,)
-    list_of_inputs.append({"a": a, "fill_value": fill_value, "dtype": dtype, "shape": shape})
+    # Input 10
+    input_dict = {
+        "a": np.array([[True, False], [False, True]], dtype=np.bool_),
+        "fill_value": True,
+        "dtype": np.dtype(np.uint32),
+        "shape": (3, 1),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.full_like_4"] = full_like_inputs()
 

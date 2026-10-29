@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the axes list is empty, the input tensor must be 0-dimensional (Rule 37)
+# axes list length must be positive when tensor has positive rank, and zero otherwise (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_length"] == 0, v["arg1_ndim"] == 0, True)) if n else
-          If(v["arg2_length"] == 0, v["arg1_ndim"] == 0, True))
+    s.add(Not(If(v["arg1_ndim"] > 0, v["arg2_length"] > 0, v["arg2_length"] == 0)) if n else
+          If(v["arg1_ndim"] > 0, v["arg2_length"] > 0, v["arg2_length"] == 0))
 )
 
 def rule_37_func(arg1, arg2, solver=None, neg=False):

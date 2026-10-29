@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ones_inputs():
     list_of_inputs = []
 
-    # Input 1: Float32, small shape
-    input_dict = {"shape": 5, "dtype": np.float32}
+    # Input 1: shape=0, float32
+    input_dict = {"shape": 0, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Float64, medium shape
-    input_dict = {"shape": 10, "dtype": np.float64}
+    # Input 2: shape=1, int32
+    input_dict = {"shape": 1, "dtype": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Int32, larger shape
-    input_dict = {"shape": 100, "dtype": np.int32}
+    # Input 3: shape=2, bool
+    input_dict = {"shape": 2, "dtype": np.dtype(np.bool_)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Int64, minimal shape
-    input_dict = {"shape": 1, "dtype": np.int64}
+    # Input 4: shape=5, float64
+    input_dict = {"shape": 5, "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Bool, small shape
-    input_dict = {"shape": 8, "dtype": np.bool_}
+    # Input 5: shape=7, int16
+    input_dict = {"shape": 7, "dtype": np.dtype(np.int16)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Complex64
-    input_dict = {"shape": 12, "dtype": np.complex64}
+    # Input 6: shape=10, int64
+    input_dict = {"shape": 10, "dtype": np.dtype(np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Complex128
-    input_dict = {"shape": 3, "dtype": np.complex128}
+    # Input 7: shape=16, complex64
+    input_dict = {"shape": 16, "dtype": np.dtype(np.complex64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Int16
-    input_dict = {"shape": 15, "dtype": np.int16}
+    # Input 8: shape=32, uint8
+    input_dict = {"shape": 32, "dtype": np.dtype(np.uint8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: UInt32
-    input_dict = {"shape": 25, "dtype": np.uint32}
+    # Input 9: shape=64, int8
+    input_dict = {"shape": 64, "dtype": np.dtype(np.int8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Int8
-    input_dict = {"shape": 50, "dtype": np.int8}
+    # Input 10: shape=100, complex128
+    input_dict = {"shape": 100, "dtype": np.dtype(np.complex128)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: shape=128, uint32
+    input_dict = {"shape": 128, "dtype": np.dtype(np.uint32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ones_1"] = ones_inputs()
 

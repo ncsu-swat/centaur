@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Weights shape compatibility when axis is an integer (Rule 4)
+# weights shape must match a's shape or correspond to the 1D dimension at axis to prevent mismatch errors (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
-    s.add(Not(Or(Or((And(v["arg3_ndim"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == Select(v["arg1_shape"], i)) for i in range(6)])))), (And(And(v["arg2_value"] >= 0, v["arg3_ndim"] == 1), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"])))), (And(And(v["arg2_value"] < 0, v["arg3_ndim"] == 1), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"]))))) if n else
-          Or(Or((And(v["arg3_ndim"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == Select(v["arg1_shape"], i)) for i in range(6)])))), (And(And(v["arg2_value"] >= 0, v["arg3_ndim"] == 1), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"])))), (And(And(v["arg2_value"] < 0, v["arg3_ndim"] == 1), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"])))))
+    s.add(Not(Or((And(v["arg3_ndim"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == Select(v["arg1_shape"], i)) for i in range(6)])))), (And(v["arg3_ndim"] == 1, (If(v["arg2_value"] >= 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"]), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"]))))))) if n else
+          Or((And(v["arg3_ndim"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg3_shape"], i) == Select(v["arg1_shape"], i)) for i in range(6)])))), (And(v["arg3_ndim"] == 1, (If(v["arg2_value"] >= 0, Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"]), Select(v["arg3_shape"], 0) == Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"])))))))
 )
 
 def rule_4_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -46,9 +46,9 @@ def rule_4_func(arg1, arg2, arg3, solver=None, neg=False):
             arg3_shape = Store(arg3_shape, i, arg3.shape[i])
 
         # Constraints for rule 4
-        rule_4(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_shape': arg3_shape, 'arg3_ndim': arg3_ndim})
+        rule_4(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_ndim': arg3_ndim, 'arg3_shape': arg3_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_4(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_shape': arg3['shape'], 'arg3_ndim': arg3['ndim']}, neg)
+        rule_4(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_ndim': arg3['ndim'], 'arg3_shape': arg3['shape']}, neg)

@@ -4,103 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gamma_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 arrays
-    input_dict = {
-        "x": np.array([1.0, 2.0, 3.0], dtype=np.float32),
-        "a": np.array([1.5, 2.5, 3.5], dtype=np.float32),
-        "loc": np.array([0.0, 0.5, 1.0], dtype=np.float32),
-        "scale": np.array([1.0, 1.5, 2.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0-D scalar arrays
+    x = np.array(2.5, dtype=np.float32)
+    a = np.array(1.5, dtype=np.float32)
+    loc = np.array(0.0, dtype=np.float32)
+    scale = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 2: Scalar-like 0D float64 arrays
-    input_dict = {
-        "x": np.array(2.5, dtype=np.float64),
-        "a": np.array(3.0, dtype=np.float64),
-        "loc": np.array(0.0, dtype=np.float64),
-        "scale": np.array(1.0, dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1-D arrays
+    x = np.array([0.5, 1.0, 2.0, 3.5], dtype=np.float32)
+    a = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    loc = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+    scale = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 3: 2D arrays with random values
-    input_dict = {
-        "x": np.random.uniform(0.1, 5.0, size=(2, 3)).astype(np.float32),
-        "a": np.random.uniform(0.5, 3.0, size=(2, 3)).astype(np.float32),
-        "loc": np.zeros((2, 3), dtype=np.float32),
-        "scale": np.ones((2, 3), dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Float64 precision
+    x = np.array([1.2, 3.4, 5.6], dtype=np.float64)
+    a = np.array([2.5, 3.0, 1.5], dtype=np.float64)
+    loc = np.array([0.5, 1.0, 2.0], dtype=np.float64)
+    scale = np.array([2.0, 1.5, 0.5], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 4: Negative x values to test boundary conditions
-    input_dict = {
-        "x": np.array([-1.0, -0.5, 0.0], dtype=np.float32),
-        "a": np.array([1.0, 1.0, 1.0], dtype=np.float32),
-        "loc": np.array([0.0, 0.0, 0.0], dtype=np.float32),
-        "scale": np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Negative loc and negative x (with x > loc)
+    x = np.array([-1.5, -0.5, 0.5, 2.0], dtype=np.float32)
+    a = np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32)
+    loc = np.array([-3.0, -2.0, -1.0, 0.0], dtype=np.float32)
+    scale = np.array([1.5, 1.5, 1.5, 1.5], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 5: Broadcasting compatibility test
-    input_dict = {
-        "x": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32),
-        "a": np.array([2.0], dtype=np.float32),
-        "loc": np.array([[0.0, 0.0]], dtype=np.float32),
-        "scale": np.array([[1.0], [2.0]], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: x values below loc (CDF evaluates to 0)
+    x = np.array([-5.0, 0.0, 0.5], dtype=np.float32)
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    loc = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    scale = np.array([2.0, 2.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 6: Large positive x values (high probability region)
-    input_dict = {
-        "x": np.array([10.0, 100.0], dtype=np.float64),
-        "a": np.array([2.0, 2.0], dtype=np.float64),
-        "loc": np.array([0.0, 0.0], dtype=np.float64),
-        "scale": np.array([1.0, 1.0], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2-D matrices
+    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    a = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float32)
+    loc = np.array([[0.0, 0.5], [1.0, 1.5]], dtype=np.float32)
+    scale = np.array([[1.0, 2.0], [0.5, 1.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 7: Small shape parameters (a < 1)
-    input_dict = {
-        "x": np.array([0.1, 0.5, 1.0], dtype=np.float32),
-        "a": np.array([0.1, 0.5, 0.9], dtype=np.float32),
-        "loc": np.array([0.0, 0.0, 0.0], dtype=np.float32),
-        "scale": np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Broadcasting dimensions
+    x = np.ones((4, 1), dtype=np.float32) * 3.0
+    a = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
+    loc = np.zeros((1, 1), dtype=np.float32)
+    scale = np.array([[0.5, 1.0, 2.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 8: Location shifted distribution (x > loc)
-    input_dict = {
-        "x": np.array([5.0, 6.0, 7.0], dtype=np.float32),
-        "a": np.array([2.0, 2.0, 2.0], dtype=np.float32),
-        "loc": np.array([4.0, 4.0, 4.0], dtype=np.float32),
-        "scale": np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3-D tensors
+    x = np.full((2, 3, 4), 2.5, dtype=np.float32)
+    a = np.full((2, 3, 4), 1.8, dtype=np.float32)
+    loc = np.full((2, 3, 4), 0.2, dtype=np.float32)
+    scale = np.full((2, 3, 4), 0.8, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 9: 3D float32 arrays
-    input_dict = {
-        "x": np.ones((2, 2, 2), dtype=np.float32) * 3.0,
-        "a": np.ones((2, 2, 2), dtype=np.float32) * 2.0,
-        "loc": np.zeros((2, 2, 2), dtype=np.float32),
-        "scale": np.ones((2, 2, 2), dtype=np.float32) * 0.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Small fractional shape parameters
+    x = np.array([0.01, 0.1, 1.0], dtype=np.float32)
+    a = np.array([0.1, 0.2, 0.5], dtype=np.float32)
+    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
+    scale = np.array([0.1, 0.5, 1.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
-    # Input 10: Diverse scale values
-    input_dict = {
-        "x": np.array([1.0, 1.0], dtype=np.float32),
-        "a": np.array([3.0, 3.0], dtype=np.float32),
-        "loc": np.array([0.0, 0.0], dtype=np.float32),
-        "scale": np.array([0.1, 10.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Large parameter values
+    x = np.array([50.0, 100.0, 200.0], dtype=np.float64)
+    a = np.array([20.0, 50.0, 80.0], dtype=np.float64)
+    loc = np.array([10.0, 20.0, 30.0], dtype=np.float64)
+    scale = np.array([5.0, 10.0, 20.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
+
+    # Input 11: 4-D arrays
+    x = np.ones((2, 2, 2, 2), dtype=np.float32) * 4.0
+    a = np.ones((2, 2, 2, 2), dtype=np.float32) * 2.0
+    loc = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    scale = np.ones((2, 2, 2, 2), dtype=np.float32) * 1.5
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "a": a, "loc": loc, "scale": scale})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.gamma.cdf"] = gamma_cdf_inputs()
 

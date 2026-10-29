@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The values of the input tensor should be within a stable numerical limit to prevent intermediate exponentiation overflow in float32 (Rule 45)
+# 2D input tensor is a square matrix (Rule 45)
 
 rule_45 = lambda s, v, n=False: (
-    s.add(Not(And(Select(v["arg1_range"], 0) > -88.0, Select(v["arg1_range"], 1) < 88.0)) if n else
-          And(Select(v["arg1_range"], 0) > -88.0, Select(v["arg1_range"], 1) < 88.0))
+    s.add(Not(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1))) if n else
+          And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) == Select(v["arg1_shape"], 1)))
 )
 
 def rule_45_func(arg1, solver=None, neg=False):
@@ -24,16 +24,18 @@ def rule_45_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 45
-        rule_45(solver, {'arg1_range': arg1_range})
+        rule_45(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_45(solver, {'arg1_range': arg1['range']}, neg)
+        rule_45(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

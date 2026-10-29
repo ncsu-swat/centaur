@@ -4,93 +4,177 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def extract_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D array, size matches condition, some padding
-    condition = np.array([True, False, True, False, True], dtype=bool)
-    arr = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
+    # Input 1: 1D int32 array, matching 1D boolean mask
+    arr = np.array([1, 2, 3, 4, 5, 6], dtype=np.int32)
+    condition = arr % 2 == 0
+    size = 6
+    fill_value = np.array(0, dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
+
+    # Input 2: 2D float32 array, matching 2D boolean mask
+    arr = np.array([[-1.5, 2.3, 0.0], [4.1, -5.2, 6.7]], dtype=np.float32)
+    condition = arr > 0
     size = 5
     fill_value = np.array(-1.0, dtype=np.float32)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
 
-    # Input 2: Int array, size less than total array size
-    condition = np.array([False, True, False, True], dtype=bool)
-    arr = np.array([10, 20, 30, 40], dtype=np.int32)
-    size = 3
-    fill_value = np.array(0, dtype=np.int32)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Multi-dimensional condition and arr (which get flattened), size is max allowed
-    condition = np.array([[True, False], [False, True]], dtype=bool)
-    arr = np.array([[1.1, 2.2], [3.3, 4.4]], dtype=np.float32)
+    # Input 3: 1D int64 array with integer condition (evaluates truthiness)
+    arr = np.array([-10, 20, -30, 40, 50], dtype=np.int64)
+    condition = np.array([1, 0, 1, 0, 1], dtype=np.int32)
     size = 4
-    fill_value = np.array(9.9, dtype=np.float32)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    fill_value = np.array(999, dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
 
-    # Input 4: Condition size > arr size (truncated), size matches truncated size
-    condition = np.array([True, True, True, True, True], dtype=bool)
-    arr = np.array([-1.0, -2.0, -3.0], dtype=np.float64)
+    # Input 4: 3D float64 array, 1D condition (mismatched size, condition smaller)
+    arr = np.arange(24, dtype=np.float64).reshape((2, 3, 4))
+    condition = np.array([True, False, True, True], dtype=bool)
     size = 3
-    fill_value = np.array(-9.0, dtype=np.float64)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    fill_value = np.array(np.nan, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
 
-    # Input 5: Arr size > condition size (truncated), size matches truncated size
-    condition = np.array([True, False], dtype=bool)
-    arr = np.array([100, 200, 300, 400], dtype=np.int64)
+    # Input 5: 1D uint8 array, condition larger than array (truncation)
+    arr = np.array([10, 20, 30], dtype=np.uint8)
+    condition = np.array(
+        [True, False, True, True, False, True, False], dtype=bool
+    )
     size = 2
-    fill_value = np.array(-1, dtype=np.int64)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Float64 inputs, no elements matching, all padded
-    condition = np.array([False, False, False], dtype=bool)
-    arr = np.array([1.5, 2.5, 3.5], dtype=np.float64)
-    size = 2
-    fill_value = np.array(0.0, dtype=np.float64)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Multi-dimensional with shape mismatch (flattened), size within truncated limit
-    condition = np.ones((3, 2), dtype=bool)
-    arr = np.arange(12, dtype=np.int32).reshape(4, 3)
-    size = 6
-    fill_value = np.array(-999, dtype=np.int32)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Size is smaller than the number of extracted elements (truncates the output)
-    condition = np.array([True, True, True, True], dtype=bool)
-    arr = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    size = 2
-    fill_value = np.array(0.0, dtype=np.float32)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Large arrays with uint8, size within limit
-    condition = np.array([True, False, True, False] * 25, dtype=bool)
-    arr = np.arange(100, dtype=np.uint8)
-    size = 60
     fill_value = np.array(255, dtype=np.uint8)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
 
-    # Input 10: Int16 type, negative values, size within limit
-    condition = np.array([True, True, False, False, True], dtype=bool)
-    arr = np.array([-10, -20, -30, -40, -50], dtype=np.int16)
+    # Input 6: 2D complex64 array with complex condition checking real part
+    arr = np.array([[1 + 2j, -2 + 0j], [3 - 1j, -4 - 3j]], dtype=np.complex64)
+    condition = arr.real > 0
     size = 4
+    fill_value = np.array(0.0 + 0.0j, dtype=np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
+
+    # Input 7: 1D float32 array, all condition elements False
+    arr = np.array([1.1, 2.2, 3.3, 4.4], dtype=np.float32)
+    condition = np.zeros(arr.shape, dtype=bool)
+    size = 4
+    fill_value = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
+
+    # Input 8: 1D int16 array, all condition elements True
+    arr = np.array([100, 200, 300], dtype=np.int16)
+    condition = np.ones(arr.shape, dtype=bool)
+    size = 3
     fill_value = np.array(-1, dtype=np.int16)
-    input_dict = {"condition": condition, "arr": arr, "size": size, "fill_value": fill_value}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
+
+    # Input 9: 4D int32 array, size smaller than extracted count
+    arr = np.arange(16, dtype=np.int32).reshape((2, 2, 2, 2))
+    condition = arr >= 0
+    size = 2
+    fill_value = np.array(0, dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
+
+    # Input 10: 1D float32 array with size=1
+    arr = np.array([0.5, -0.5, 1.5, -1.5], dtype=np.float32)
+    condition = arr < 0
+    size = 1
+    fill_value = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "condition": condition,
+                "arr": arr,
+                "size": size,
+                "fill_value": fill_value,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.extract"] = extract_inputs()
 

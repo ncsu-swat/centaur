@@ -4,71 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
+import numpy as np
 
-# Monkeypatch JAX to automatically convert list inputs to JAX arrays at the ufunc entry point
-try:
-    import jax._src.numpy.util as jax_util
-    import jax._src.numpy.ufuncs as jax_ufuncs
-    orig_promote_args_inexact = jax_util.promote_args_inexact
-
-    def custom_promote_args_inexact(fun_name, *args):
-        new_args = tuple(jnp.asarray(arg) if isinstance(arg, list) else arg for arg in args)
-        return orig_promote_args_inexact(fun_name, *new_args)
-
-    jax_util.promote_args_inexact = custom_promote_args_inexact
-    jax_ufuncs.promote_args_inexact = custom_promote_args_inexact
-except Exception:
-    pass
 
 def sin_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float list
-    input_dict = {"x": [0.0, np.pi/4, np.pi/2, np.pi]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array with standard float values
+    x = np.array([0.0, np.pi / 4, np.pi / 2, np.pi], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: List with negative values
-    input_dict = {"x": [-np.pi, -np.pi/2, -np.pi/4]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array of integers including negative values
+    x = np.array([-3, -2, -1, 0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: List of integers
-    input_dict = {"x": [0, 1, 2, 3]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array of floats
+    x = np.array([[0.0, 0.5, 1.0], [-0.5, -1.0, -1.5]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 2D list (matrix)
-    input_dict = {"x": [[0.0, np.pi/6], [np.pi/3, np.pi/2]]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D single-element array
+    x = np.array([np.pi / 3], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: List with booleans
-    input_dict = {"x": [True, False, True]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D float64 array with negative and positive multiples of pi
+    x = np.array([-np.pi, -np.pi / 2, 0.0, np.pi / 2, np.pi], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: List of complex numbers
-    input_dict = {"x": [1.0 + 1.0j, -2.0 - 0.5j]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array of floats
+    x = np.arange(24, dtype=np.float32).reshape((2, 3, 4)) * (np.pi / 12)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 3D nested list
-    input_dict = {"x": [[[0.0, 0.1], [0.2, 0.3]], [[0.4, 0.5], [0.6, 0.7]]]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D complex array
+    x = np.array([1.0 + 2.0j, -1.0 - 1.0j, 0.5j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Single element list
-    input_dict = {"x": [1.57079]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D boolean array
+    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Large list
-    large_list = np.linspace(-10.0, 10.0, 50).tolist()
-    input_dict = {"x": large_list}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 1D array with small and large values
+    x = np.array([1e-7, -1e-7, 1e5, -1e5, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: List with inf and nan
-    input_dict = {"x": [float('inf'), float('-inf'), float('nan'), 0.0]}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D array of floats
+    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sin_4"] = sin_inputs()
 

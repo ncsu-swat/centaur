@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both inputs must be valid dtype indices (Rule 89)
+# promotion between half-precision float16 and double-precision float64 dtypes (Rule 89)
 
 rule_89 = lambda s, v, n=False: (
-    s.add(Not(And((If(v["arg1_value"] <= 10, v["arg1_value"] >= 0, False)), (If(v["arg2_value"] <= 10, v["arg2_value"] >= 0, False)))) if n else
-          And((If(v["arg1_value"] <= 10, v["arg1_value"] >= 0, False)), (If(v["arg2_value"] <= 10, v["arg2_value"] >= 0, False))))
+    s.add(Not(Or((And(v["arg1_value"] == 6, v["arg2_value"] == 8)), (And(v["arg1_value"] == 8, v["arg2_value"] == 6)))) if n else
+          Or((And(v["arg1_value"] == 6, v["arg2_value"] == 8)), (And(v["arg1_value"] == 8, v["arg2_value"] == 6))))
 )
 
 def rule_89_func(arg1, arg2, solver=None, neg=False):

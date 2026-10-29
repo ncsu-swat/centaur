@@ -4,49 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cosh_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0.0})
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Small positive float
-    list_of_inputs.append({"x": 0.5})
+    # Input 2: Positive standard float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Small negative float
-    list_of_inputs.append({"x": -0.5})
+    # Input 3: Negative standard float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Standard positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 4: Small positive float
+    input_dict = {"x": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Standard negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 5: Small negative float
+    input_dict = {"x": -0.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 6: Larger positive float
-    list_of_inputs.append({"x": 10.0})
+    input_dict = {"x": 10.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 7: Larger negative float
-    list_of_inputs.append({"x": -10.0})
+    input_dict = {"x": -10.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very small float
-    list_of_inputs.append({"x": 1e-6})
+    # Input 8: Value of pi
+    input_dict = {"x": float(np.pi)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Pi float
-    list_of_inputs.append({"x": 3.141592653589793})
+    # Input 9: Very small float close to zero
+    input_dict = {"x": 1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative Pi float
-    list_of_inputs.append({"x": -3.141592653589793})
+    # Input 10: Negative float close to zero
+    input_dict = {"x": -1e-6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Large magnitude float
-    list_of_inputs.append({"x": 50.0})
+    # Input 11: Moderate positive float
+    input_dict = {"x": 42.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 12: Negative large magnitude float
-    list_of_inputs.append({"x": -50.0})
+    # Input 12: Moderate negative float
+    input_dict = {"x": -42.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cosh_2"] = cosh_inputs()
 

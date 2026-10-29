@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# negative_slope as a float must be within a standard non-negative fractional range (Rule 13)
+# Float negative_slope is strictly positive and less than 1 (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 0.0, v["arg1_value"] < 1.0)) if n else
-          And(v["arg1_value"] >= 0.0, v["arg1_value"] < 1.0))
+    s.add(Not(And(v["arg1_value"] > 0, v["arg1_value"] < 1)) if n else
+          And(v["arg1_value"] > 0, v["arg1_value"] < 1))
 )
 
 def rule_13_func(arg1, solver=None, neg=False):

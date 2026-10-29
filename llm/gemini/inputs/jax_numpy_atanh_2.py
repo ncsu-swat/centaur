@@ -4,7 +4,6 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def atanh_inputs():
@@ -14,48 +13,44 @@ def atanh_inputs():
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float
+    # Input 2: Positive float in range
     input_dict = {"x": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
+    # Input 3: Negative float in range
     input_dict = {"x": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Close to 1
-    input_dict = {"x": 0.999}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Close to -1
-    input_dict = {"x": -0.999}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Small positive float
+    # Input 4: Small positive float
     input_dict = {"x": 1e-4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small negative float
+    # Input 5: Small negative float
     input_dict = {"x": -1e-4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Another positive float
+    # Input 6: Near upper boundary
+    input_dict = {"x": 0.99}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Near lower boundary
+    input_dict = {"x": -0.99}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Boundary 1.0
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Boundary -1.0
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Typical float value
     input_dict = {"x": 0.25}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Another negative float
-    input_dict = {"x": -0.25}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: High precision float
-    input_dict = {"x": 0.123456789}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 11: Numpy float64 scalar
-    input_dict = {"x": np.float64(0.8)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 12: Numpy float32 scalar
-    input_dict = {"x": np.float32(-0.8)}
+    # Input 11: Negative typical float value
+    input_dict = {"x": -0.75}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

@@ -4,65 +4,68 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_imag_inputs():
+
+def imag_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D complex64 array (standard case)
-    val = np.array([1 + 2j, 3 - 4j, 5 + 0j], dtype=np.complex64)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D complex64 array
+    val = np.array([1.0 + 2.0j, -3.0 + 4.5j, 0.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 2: 2D complex128 array
-    val = np.array([[1j, 2 - 3j], [-4j, 5 + 6j]], dtype=np.complex128)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D complex128 array with negative/zero/inf/nan
+    val = np.array(
+        [[1.0 - 5.0j, np.nan + 2.0j], [-np.inf + 0.0j, 3.5 - np.inf * 1j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 3: 1D float32 array (real numbers only, should yield 0s)
-    val = np.array([-1.5, 0.0, 3.14], dtype=np.float32)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 0D scalar array (complex64)
+    val = np.array(4.0 - 7.0j, dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 4: 3D complex64 array
-    val = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D real float32 array
+    val = np.array([-2.5, 0.0, 3.14, -100.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 5: 0D complex64 array (scalar wrapped in array)
-    val = np.array(3 - 7j, dtype=np.complex64)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D complex64 array
+    val = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 6: 2D int32 array (integers, should yield 0s)
-    val = np.array([[1, -2], [3, 4]], dtype=np.int32)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D integer array (int32)
+    val = np.array([[1, -2, 3], [0, 5, -6]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 7: 4D complex128 array with random values
-    val = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex128)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Empty 1D complex array
+    val = np.array([], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 8: 1D complex64 array with purely imaginary numbers
-    val = np.array([5j, -2.5j, 0j, 11j], dtype=np.complex64)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D float64 array
+    val = np.random.randn(1, 2, 2, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 9: 2D float64 array
-    val = np.array([[1.1, 2.2, -3.3], [4.4, -5.5, 6.6]], dtype=np.float64)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D int64 array
+    val = np.array([[10, -20], [-30, 40]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
-    # Input 10: 1D complex128 array with large/small values
-    val = np.array([1e10 + 2e10j, 1e-10 - 2e-10j], dtype=np.complex128)
-    input_dict = {"val": val}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 0D float64 scalar array
+    val = np.array(-42.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"val": val}))
+
+    # Input 11: 3D complex128 array
+    val = (np.random.randn(2, 2, 2) + 1j * np.random.randn(2, 2, 2)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"val": val}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.imag_1"] = jax_numpy_imag_inputs()
+
+generated_inputs["jax.numpy.imag_1"] = imag_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

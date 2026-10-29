@@ -4,8 +4,8 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def cos_inputs():
     list_of_inputs = []
@@ -13,37 +13,37 @@ def cos_inputs():
     # Input 1: Zero
     list_of_inputs.append({"x": 0.0})
 
-    # Input 2: Positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 2: Positive pi / 2
+    list_of_inputs.append({"x": float(np.pi / 2)})
 
-    # Input 3: Negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 3: Positive pi
+    list_of_inputs.append({"x": float(np.pi)})
 
-    # Input 4: Approximation of pi
-    list_of_inputs.append({"x": 3.141592653589793})
+    # Input 4: Negative angle
+    list_of_inputs.append({"x": float(-np.pi / 4)})
 
-    # Input 5: Approximation of -pi
-    list_of_inputs.append({"x": -3.141592653589793})
-
-    # Input 6: Fractional positive float
-    list_of_inputs.append({"x": 0.5})
-
-    # Input 7: Fractional negative float
-    list_of_inputs.append({"x": -0.5})
-
-    # Input 8: Larger positive float
-    list_of_inputs.append({"x": 100.0})
-
-    # Input 9: Larger negative float
-    list_of_inputs.append({"x": -100.0})
-
-    # Input 10: Very small float
+    # Input 5: Small positive float
     list_of_inputs.append({"x": 1e-6})
 
-    # Input 11: Very large float
-    list_of_inputs.append({"x": 1e6})
+    # Input 6: Large positive float
+    list_of_inputs.append({"x": 1e4})
 
-    return list_of_inputs
+    # Input 7: Arbitrary negative float
+    list_of_inputs.append({"x": -2.718281828})
+
+    # Input 8: Two pi
+    list_of_inputs.append({"x": float(2 * np.pi)})
+
+    # Input 9: Negative zero
+    list_of_inputs.append({"x": -0.0})
+
+    # Input 10: 3 * pi / 2
+    list_of_inputs.append({"x": float(3 * np.pi / 2)})
+
+    # Input 11: High magnitude negative float
+    list_of_inputs.append({"x": -12345.6789})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
 generated_inputs["jax.numpy.cos_2"] = cos_inputs()
 

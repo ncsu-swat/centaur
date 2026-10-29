@@ -6,72 +6,66 @@ generated_inputs = dict()
 
 import numpy as np
 import copy
-import jax.numpy as jnp
-import jax._src.numpy.util as jax_util
-import jax._src.numpy.ufuncs as jax_ufuncs
-
-orig_promote_args_inexact = jax_util.promote_args_inexact
-
-def patched_promote_args_inexact(fun_name, *args):
-    new_args = []
-    for arg in args:
-        if isinstance(arg, list):
-            new_args.append(jnp.asarray(arg))
-        else:
-            new_args.append(arg)
-    return orig_promote_args_inexact(fun_name, *new_args)
-
-# Patch promote_args_inexact in all namespaces
-jax_util.promote_args_inexact = patched_promote_args_inexact
-if hasattr(jax_ufuncs, 'promote_args_inexact'):
-    jax_ufuncs.promote_args_inexact = patched_promote_args_inexact
-
-# Patch check_arraylike just in case
-jax_util.check_arraylike = lambda *args, **kwargs: None
-if hasattr(jax_ufuncs, 'check_arraylike'):
-    jax_ufuncs.check_arraylike = lambda *args, **kwargs: None
 
 def radians_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D list of standard positive angles (floats)
-    input_dict = {"x": [0.0, 30.0, 45.0, 60.0, 90.0, 180.0, 360.0]}
+    # Input 1: 1D array of common angles (float32)
+    x = np.array([0.0, 90.0, 180.0, 270.0, 360.0], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D list of negative angles (floats)
-    input_dict = {"x": [-30.0, -45.0, -90.0, -180.0, -360.0]}
+    # Input 2: 1D array with negative and positive values (float64)
+    x = np.array([-180.0, -90.0, 0.0, 45.5, 360.0], dtype=np.float64)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D list of integers
-    input_dict = {"x": [0, 90, 180, 270, 360]}
+    # Input 3: 1D array of integers
+    x = np.array([-180, -90, 0, 90, 180], dtype=np.int32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D list of floats
-    input_dict = {"x": [[0.0, 90.0], [180.0, 270.0]]}
+    # Input 4: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D nested list of floats
-    input_dict = {"x": [[[0.0, 45.0]], [[90.0, 135.0]]]}
+    # Input 5: Single element 1D array
+    x = np.array([180.0], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: List containing negative and positive integers
-    input_dict = {"x": [-180, -90, 0, 90, 180]}
+    # Input 6: 2D array of angles (float32)
+    x = np.array([[0.0, 30.0, 45.0], [60.0, 90.0, 180.0]], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: List with very large and small values
-    input_dict = {"x": [1e-6, 1e5, -1e5]}
+    # Input 7: 2D array of integers (int64)
+    x = np.array([[-360, -180], [180, 360]], dtype=np.int64)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Empty list
-    input_dict = {"x": []}
+    # Input 8: 3D array of angles
+    x = np.array([
+        [[0.0, 90.0], [180.0, 270.0]],
+        [[360.0, 450.0], [-90.0, -180.0]]
+    ], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D list of integers
-    input_dict = {"x": [[0, -45], [45, 90]]}
+    # Input 9: 1D array containing special float values (nan, inf)
+    x = np.array([np.nan, np.inf, -np.inf, 0.0], dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: List of numpy float64 types
-    input_dict = {"x": [np.float64(30.0), np.float64(60.0), np.float64(90.0)]}
+    # Input 10: 1D array with large angle values
+    x = np.array([1e5, -1e5, 720.0, -720.0], dtype=np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D array of angles
+    x = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    input_dict = {"x": x}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

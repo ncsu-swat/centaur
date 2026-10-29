@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ceil_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with mixed positive and negative floats
-    x = np.array([-1.5, -0.5, 0.0, 0.5, 1.5, 2.7], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with positive and negative numbers
+    x = np.array([-1.7, -1.5, -0.2, 0.0, 0.2, 1.5, 1.7, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array with positive values
-    x = np.array([[1.2, 2.3, 3.9], [4.1, 5.5, 6.8]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D float64 array
+    x = np.array([[-3.4, 2.1, 0.0], [5.9, -0.01, -10.8]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 0D (scalar) float32 array
-    x = np.array(-3.14, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar array (tensor)
+    x = np.array(4.25, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float32 array with random values
-    x = np.random.uniform(-10.0, 10.0, (2, 3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D float32 array
+    x = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D int32 array (integer arrays are valid inputs)
-    x = np.array([-5, -1, 0, 2, 10], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D float16 array
+    x = np.array([-2.5, -0.5, 0.5, 2.5], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 2D float16 array
-    x = np.array([[0.1, -0.1], [10.9, -10.9]], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 2D integer array (int32)
+    x = np.array([[-5, 0], [3, 10]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D float32 array with small fractional values
-    x = np.random.uniform(-1.0, 1.0, (2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D unsigned integer array (uint8)
+    x = np.array([0, 1, 10, 255], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float64 array containing very large and very small values
-    x = np.array([-1e10, -1e-10, 1e-10, 1e10], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D float32 array
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D int64 array
-    x = np.array([[100, -200], [300, -400]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Array with inf and nan values
+    x = np.array([-np.inf, -1.5, 0.0, np.nan, np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D float32 array with exact integer values represented as floats
-    x = np.array([-3.0, -0.0, 0.0, 5.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D boolean array
+    x = np.array([True, False, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 12: 1D int64 array with extreme values
+    x = np.array([-9223372036854775807, -1, 0, 1, 9223372036854775806], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ceil"] = ceil_inputs()
 

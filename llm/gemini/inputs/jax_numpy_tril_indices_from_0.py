@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tril_indices_from_inputs():
     list_of_inputs = []
 
-    # Input 1: Square matrix, k=0
-    arr = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {"arr": arr, "k": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Square matrix with default-like k=0
+    arr = np.zeros((3, 3), dtype=np.float32)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 2: Square matrix, k > 0
-    arr = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {"arr": arr, "k": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Square matrix with positive k
+    arr = np.ones((4, 4), dtype=np.int32)
+    k = 1
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 3: Square matrix, k < 0
-    arr = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {"arr": arr, "k": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Square matrix with negative k
+    arr = np.arange(25, dtype=np.int64).reshape((5, 5))
+    k = -2
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 4: Rectangular matrix (wide), k=0
-    arr = np.random.randn(3, 5).astype(np.float32)
-    input_dict = {"arr": arr, "k": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Rectangular matrix (more columns than rows) with positive k
+    arr = np.empty((3, 6), dtype=np.float64)
+    k = 2
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 5: Rectangular matrix (tall), k=0
-    arr = np.random.randn(5, 3).astype(np.float32)
-    input_dict = {"arr": arr, "k": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Rectangular matrix (more rows than columns) with negative k
+    arr = np.zeros((6, 3), dtype=np.bool_)
+    k = -1
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 6: Rectangular matrix, k > 0
-    arr = np.random.randn(4, 6).astype(np.float32)
-    input_dict = {"arr": arr, "k": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1x1 matrix with k=0
+    arr = np.array([[42.0]], dtype=np.float32)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 7: Rectangular matrix, k < 0
-    arr = np.random.randn(6, 4).astype(np.float32)
-    input_dict = {"arr": arr, "k": -2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Complex matrix with k larger than dimension
+    arr = np.ones((3, 3), dtype=np.complex64)
+    k = 5
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 8: Larger square matrix, k large negative
-    arr = np.random.randn(10, 10).astype(np.float32)
-    input_dict = {"arr": arr, "k": -5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Matrix with negative k smaller than -dimension
+    arr = np.zeros((4, 4), dtype=np.float32)
+    k = -10
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 9: Larger square matrix, k large positive
-    arr = np.random.randn(10, 10).astype(np.float32)
-    input_dict = {"arr": arr, "k": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Non-square matrix with k=0
+    arr = np.ones((2, 5), dtype=np.uint8)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 10: Minimal size 1x1, k=0
-    arr = np.random.randn(1, 1).astype(np.float32)
-    input_dict = {"arr": arr, "k": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Matrix with 0 rows or columns
+    arr = np.zeros((0, 0), dtype=np.int32)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 11: Integer array with out-of-bounds positive k
-    arr = np.zeros((4, 4), dtype=np.int32)
-    input_dict = {"arr": arr, "k": 10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 12: Boolean array with out-of-bounds negative k
-    arr = np.ones((4, 4), dtype=bool)
-    input_dict = {"arr": arr, "k": -10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Larger matrix with positive k
+    arr = np.eye(10, dtype=np.float32)
+    k = 3
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.tril_indices_from"] = tril_indices_from_inputs()
 

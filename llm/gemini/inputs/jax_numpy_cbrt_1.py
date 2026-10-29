@@ -4,53 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cbrt_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with positive, negative, and zero values
-    x = np.array([-8.0, -1.0, 0.0, 1.0, 8.0, 27.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with positive and negative values
+    x = np.array([-27.0, -8.0, -1.0, 0.0, 1.0, 8.0, 27.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array with positive values
-    x = np.random.uniform(1.0, 1000.0, (3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D integer array (int32)
+    x = np.array([[216, 125, 64], [-27, -8, -1]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D int32 array (JAX/NumPy converts int to float during cbrt)
-    x = np.array([[[1, -1], [27, -27]], [[64, -64], [125, -125]]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar array (float64)
+    x = np.array(-64.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D int16 array
-    x = np.array([64, 125, 216, 343, 512], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D float64 array with random values
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 0D (scalar-like) float32 array
-    x = np.array(-27.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 4D float32 array
+    x = np.random.uniform(-100, 100, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: Large 2D float32 array with random values
-    x = np.random.uniform(-10000.0, 10000.0, (50, 50)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D float16 array
+    x = np.array([0.125, 0.0, -0.125, 1000.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D float32 array
-    x = np.random.uniform(-10.0, 10.0, (2, 3, 4, 5)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float32 array containing special values (zeros, inf, nan)
-    x = np.array([0.0, -0.0, np.inf, -np.inf, np.nan], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 2D unsigned integer array (uint8)
+    x = np.array([[0, 1, 8], [27, 64, 125]], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D int64 array
-    x = np.random.randint(-1000, 1000, size=(5, 5)).astype(np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 1D array with special float values (inf, -inf, nan)
+    x = np.array([np.inf, -np.inf, np.nan, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D float32 array with some dimensions of size 1
-    x = np.random.uniform(1.0, 100.0, (1, 2, 1, 3, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 2D int64 array with large integers
+    x = np.array(
+        [[1000000000, -1000000000], [8000000, -8000000]], dtype=np.int64
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D boolean array
+    x = np.array([True, False, True], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cbrt_1"] = cbrt_inputs()
 

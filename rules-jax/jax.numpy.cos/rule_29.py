@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input float angle in radians should be within [-2pi, 2pi] range for standard computations (Rule 29)
+# tensor has 16-bit or 32-bit floating-point data type (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -6.283, v["arg1_value"] < 6.283)) if n else
-          And(v["arg1_value"] > -6.283, v["arg1_value"] < 6.283))
+    s.add(Not(Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7)) if n else
+          Or(v["arg1_dtype"] == 6, v["arg1_dtype"] == 7))
 )
 
 def rule_29_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_29_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 29
-        rule_29(solver, {'arg1_value': arg1_value})
+        rule_29(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_29(solver, {'arg1_value': arg1['value']}, neg)
+        rule_29(solver, {'arg1_dtype': arg1['dtype']}, neg)

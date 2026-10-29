@@ -7,37 +7,32 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# 3D convolution kernel layouts require 5-dimensional input tensor (Rule 33)
+# the number of excluded argument positions in a list must not exceed 32 (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg2_value"] == 23, v["arg2_value"] == 24), v["arg1_ndim"] == 5, True)) if n else
-          If(Or(v["arg2_value"] == 23, v["arg2_value"] == 24), v["arg1_ndim"] == 5, True))
+    s.add(Not(And(v["arg1_length"] >= 0, v["arg1_length"] <= 32)) if n else
+          And(v["arg1_length"] >= 0, v["arg1_length"] <= 32))
 )
 
-def rule_33_func(arg1, arg2, solver=None, neg=False):
+def rule_33_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
-            return False
-        if not isinstance(arg2, str):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        arg1_length = Int('arg1_length')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 33
-        rule_33(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_33(solver, {'arg1_length': arg1_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_33(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_33(solver, {'arg1_length': arg1['length']}, neg)

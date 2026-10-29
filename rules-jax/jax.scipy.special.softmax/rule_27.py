@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the input tensor is one-dimensional, the tuple axis must have length one and target the only available dimension (Rule 27)
+# full reduction over all axes using an ordered tuple of all dimensions (Rule 27)
 
 rule_27 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, And(v["arg2_length"] == 1, (Or(Select(v["arg2_values"], 0) == 0, Select(v["arg2_values"], 0) == 0 - 1))), True)) if n else
-          If(v["arg1_ndim"] == 1, And(v["arg2_length"] == 1, (Or(Select(v["arg2_values"], 0) == 0, Select(v["arg2_values"], 0) == 0 - 1))), True))
+    s.add(Not(And(v["arg2_length"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg2_values"], i) == i) for i in range(6)])))) if n else
+          And(v["arg2_length"] == v["arg1_ndim"], (And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg2_values"], i) == i) for i in range(6)]))))
 )
 
 def rule_27_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_27_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 27
-        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_27(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_27(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

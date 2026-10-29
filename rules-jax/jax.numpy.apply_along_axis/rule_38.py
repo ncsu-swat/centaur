@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the reduction function is mean, the input tensor must have a floating-point or complex data type (Rule 38)
+# softmax along an axis requires real floating-point tensor (Rule 38)
 
 rule_38 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 9, And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 10), True)) if n else
-          If(v["arg1_value"] == 9, And(v["arg2_dtype"] >= 6, v["arg2_dtype"] <= 10), True))
+    s.add(Not(If(v["arg1_value"] == 13, Or(Or(v["arg2_dtype"] == 6, v["arg2_dtype"] == 7), v["arg2_dtype"] == 8), True)) if n else
+          If(v["arg1_value"] == 13, Or(Or(v["arg2_dtype"] == 6, v["arg2_dtype"] == 7), v["arg2_dtype"] == 8), True))
 )
 
 def rule_38_func(arg1, arg2, solver=None, neg=False):

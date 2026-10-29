@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ldexp_inputs():
     list_of_inputs = []
 
-    # 1D float32 input with positive integer exponent
-    x1 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    x2 = 2
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # 2D float64 input with negative integer exponent
-    x1 = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float64)
-    x2 = -1
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # 3D float32 input with zero exponent
-    x1 = np.ones((2, 2, 2), dtype=np.float32) * -5.0
-    x2 = 0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # 1D float16 input with larger integer exponent
-    x1 = np.array([0.1, 0.5, 0.9], dtype=np.float16)
-    x2 = 10
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # 4D random float32 input
-    x1 = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    # Input 1: 1D float32 array, positive exponent
+    x1 = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     x2 = 3
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # 0D float32 input (scalar tensor)
-    x1 = np.array(3.14, dtype=np.float32)
+    # Input 2: 2D float32 array, negative exponent
+    x1 = np.array([[1.0, 2.0], [4.0, 8.0]], dtype=np.float32)
     x2 = -2
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # 2D float32 input with special values
-    x1 = np.array([[np.inf, -np.inf], [np.nan, 0.0]], dtype=np.float32)
-    x2 = 1
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    # Input 3: 1D float64 array, zero exponent
+    x1 = np.array([-1.5, 0.0, 2.5, 10.0], dtype=np.float64)
+    x2 = 0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # 1D float64 input
-    x1 = np.array([10.0, 20.0, 30.0], dtype=np.float64)
+    # Input 4: 3D float32 array, positive exponent
+    x1 = np.ones((2, 3, 4), dtype=np.float32)
     x2 = 5
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # 2D uniform float32 input with negative exponent
-    x1 = np.random.uniform(-10, 10, (3, 3)).astype(np.float32)
-    x2 = -5
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # 5D float32 input
-    x1 = np.random.randn(1, 2, 1, 2, 1).astype(np.float32)
+    # Input 5: 0D scalar array float32, positive exponent
+    x1 = np.array(3.5, dtype=np.float32)
     x2 = 4
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 6: 2D float64 array with negative numbers, negative exponent
+    x1 = np.array([[-10.0, -20.0], [-30.0, -40.0]], dtype=np.float64)
+    x2 = -3
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 7: 4D float32 array, small positive exponent
+    x1 = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    x2 = 1
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 8: 1D float64 array with subnormals/small values, positive exponent
+    x1 = np.array([1e-10, 1e-5, 1e-2], dtype=np.float64)
+    x2 = 10
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 9: 2D float32 array, larger negative exponent
+    x1 = np.array([[1024.0, 2048.0], [4096.0, 8192.0]], dtype=np.float32)
+    x2 = -10
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 1D float32 array with mixed signs and zeros, positive exponent
+    x1 = np.array([-5.0, -0.0, 0.0, 5.0], dtype=np.float32)
+    x2 = 2
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: 3D float64 array, negative exponent
+    x1 = np.full((3, 2, 1), 64.0, dtype=np.float64)
+    x2 = -6
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ldexp_2"] = ldexp_inputs()
 

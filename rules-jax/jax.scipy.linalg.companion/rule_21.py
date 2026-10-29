@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# polynomial coefficient tensor must not be of boolean or string type (Rule 21)
+# polynomial coefficients tensor should have standard float32 or float64 data type (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 11)) if n else
-          And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 11))
+    s.add(Not(Or(v["arg1_dtype"] == 7, v["arg1_dtype"] == 8)) if n else
+          Or(v["arg1_dtype"] == 7, v["arg1_dtype"] == 8))
 )
 
 def rule_21_func(arg1, solver=None, neg=False):

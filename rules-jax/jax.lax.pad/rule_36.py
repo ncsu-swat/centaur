@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the padding value is a non-zero float, the operand tensor must have a floating-point or complex data type (Rule 36)
+# operand and padding_value are both complex tensors with matching dtypes (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] != 0.0, And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), True)) if n else
-          If(v["arg2_value"] != 0.0, And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10), True))
+    s.add(Not(And(And(v["arg1_dtype"] == v["arg2_dtype"], 9 <= v["arg1_dtype"]), v["arg1_dtype"] <= 10)) if n else
+          And(And(v["arg1_dtype"] == v["arg2_dtype"], 9 <= v["arg1_dtype"]), v["arg1_dtype"] <= 10))
 )
 
 def rule_36_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,22 @@ def rule_36_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_dtype = Int('arg1_dtype')
-        arg2_value = Real('arg2_value')
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
         solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == arg2)
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 36
-        rule_36(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_36(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_36(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_36(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)

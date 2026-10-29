@@ -4,53 +4,85 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def asinh_inputs():
     list_of_inputs = []
 
     # Input 1: 1D array of positive floats
-    input_dict = {"x": np.array([1.0, 2.0, 3.5, 4.2], dtype=np.float32)}
+    input_dict = {"x": np.array([0.0, 1.0, 2.5, 10.0], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of negative and positive integers
-    input_dict = {"x": np.array([-5, -2, 0, 3, 8], dtype=np.int32)}
+    # Input 2: 1D array of negative floats
+    input_dict = {"x": np.array([-0.5, -1.0, -2.0, -100.0], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array of small float values
-    input_dict = {"x": np.array([1e-5, -2e-5, 3e-4], dtype=np.float64)}
+    # Input 3: 1D array of mixed integers
+    input_dict = {"x": np.array([-5, -1, 0, 1, 5, 20], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 4: 2D array of floats
-    input_dict = {"x": np.array([[1.0, -2.0], [3.0, 4.0]], dtype=np.float32)}
+    input_dict = {
+        "x": np.array([[-1.0, 0.0, 1.0], [2.0, -3.0, 4.0]], dtype=np.float32)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D array of integers
-    input_dict = {"x": np.array([[-10, 20], [30, -40]], dtype=np.int64)}
+    # Input 5: 3D array of floats
+    input_dict = {
+        "x": np.array(
+            [
+                [[0.1, -0.2], [0.3, 0.4]],
+                [[-0.5, 0.6], [-0.7, 0.8]],
+            ],
+            dtype=np.float32,
+        )
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D array of floats
-    input_dict = {"x": np.array([[[0.1, 0.2], [0.3, 0.4]], [[-0.5, -0.6], [-0.7, -0.8]]], dtype=np.float32)}
+    # Input 6: 1D array of booleans
+    input_dict = {"x": np.array([True, False, True, True], dtype=bool)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Single-element array
-    input_dict = {"x": np.array([0.0], dtype=np.float32)}
+    # Input 7: 1D array of complex numbers
+    input_dict = {
+        "x": np.array(
+            [1.0 + 2.0j, -1.0 - 0.5j, 0.0 + 1.0j, 3.0 + 0.0j],
+            dtype=np.complex64,
+        )
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large float values
-    input_dict = {"x": np.array([1000.0, -5000.0, 10000.0], dtype=np.float32)}
+    # Input 8: 2D array of complex numbers
+    input_dict = {
+        "x": np.array(
+            [[1.0j, -1.0j], [2.0 + 3.0j, -4.0 - 5.0j]],
+            dtype=np.complex128,
+        )
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D array with float16
-    input_dict = {"x": np.array([1.0, -2.5, 3.0, -4.8], dtype=np.float16)}
+    # Input 9: Single-element 1D array
+    input_dict = {"x": np.array([42.0], dtype=np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array with single row
-    input_dict = {"x": np.array([[-1.5, 2.5, -3.5]], dtype=np.float32)}
+    # Input 10: 2D array of integers
+    input_dict = {"x": np.array([[0, -10], [100, -1000]], dtype=np.int64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D array with large values
+    input_dict = {
+        "x": np.array([1e-4, 1e-2, 1e2, 1e4], dtype=np.float64)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Empty 1D array
+    input_dict = {"x": np.array([], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.asinh_4"] = asinh_inputs()
 

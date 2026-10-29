@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For 1D tensor, a list axis must have length 1 and contain 0 or -1 (Rule 39)
+# axes in a tuple are strictly increasing and bounded by tensor rank (Rule 39)
 
 rule_39 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, And(v["arg2_length"] == 1, (Or(Select(v["arg2_values"], 0) == 0, Select(v["arg2_values"], 0) == -1))), True)) if n else
-          If(v["arg1_ndim"] == 1, And(v["arg2_length"] == 1, (Or(Select(v["arg2_values"], 0) == 0, Select(v["arg2_values"], 0) == -1))), True))
+    s.add(Not(And(And(v["arg2_length"] >= 2, (And([Implies(i < (v["arg2_length"] - 2 + 1), Select(v["arg2_values"], i) < Select(v["arg2_values"], i + 1)) for i in range(6)]))), Select(v["arg2_values"], v["arg2_length"] - 1) < v["arg1_ndim"])) if n else
+          And(And(v["arg2_length"] >= 2, (And([Implies(i < (v["arg2_length"] - 2 + 1), Select(v["arg2_values"], i) < Select(v["arg2_values"], i + 1)) for i in range(6)]))), Select(v["arg2_values"], v["arg2_length"] - 1) < v["arg1_ndim"]))
 )
 
 def rule_39_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_39_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
@@ -38,9 +38,9 @@ def rule_39_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 39
-        rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_39(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_39(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_39(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

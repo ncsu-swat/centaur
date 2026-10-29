@@ -4,63 +4,73 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def greater_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array and positive integer
-    x = np.array([1.5, 2.3, 0.5, -1.2], dtype=np.float32)
-    y = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 2: 2D float64 array with negative values and negative integer
-    x = np.array([[-1.5, -2.0, -0.5], [-3.1, 4.2, -5.0]], dtype=np.float64)
-    y = -2
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 3: 3D int32 array and zero
-    x = np.random.randint(-10, 10, size=(2, 2, 2)).astype(np.int32)
+    # Input 1: 1D int32 array, zero threshold
+    x = np.array([-5, 0, 3, -1, 10], dtype=np.int32)
     y = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 1D int64 array with large values and large integer
-    x = np.array([1000000, 2000000, 3000000], dtype=np.int64)
-    y = 1500000
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 2: 2D float32 array, positive integer threshold
+    x = np.random.randn(3, 4).astype(np.float32) * 5
+    y = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 4D float32 array and positive integer
-    x = np.random.randn(2, 3, 2, 2).astype(np.float32) * 10
+    # Input 3: 3D int64 array, negative integer threshold
+    x = np.arange(-12, 12, dtype=np.int64).reshape((2, 3, 4))
+    y = -5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 4: 0D scalar array, positive integer
+    x = np.array(7, dtype=np.int32)
     y = 5
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 0D float32 array (scalar array) and integer
-    x = np.array(5.5, dtype=np.float32)
-    y = 5
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 5: 4D float64 array, zero threshold
+    x = np.random.randn(2, 2, 3, 3).astype(np.float64)
+    y = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: 2D int16 array and negative integer
-    x = np.array([[-5, -4], [-3, -2]], dtype=np.int16)
-    y = -3
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 6: 1D uint8 array, mid-range threshold
+    x = np.array([0, 50, 100, 150, 200, 255], dtype=np.uint8)
+    y = 128
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 3D float16 array and integer
-    x = np.random.uniform(-100, 100, size=(2, 2, 3)).astype(np.float16)
-    y = 50
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 7: 2D int16 array with large range, negative threshold
+    x = np.array([[-300, 150], [0, -50], [500, -1000]], dtype=np.int16)
+    y = -100
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: 1D uint8 array and integer
-    x = np.array([0, 127, 255], dtype=np.uint8)
-    y = 127
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 8: 5D float32 array, positive threshold
+    x = np.ones((1, 2, 1, 3, 2), dtype=np.float32) * 3.5
+    y = 3
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 5D int8 array and small integer
-    x = np.random.randint(-5, 5, size=(1, 2, 2, 1, 3)).astype(np.int8)
+    # Input 9: 1D float16 array, threshold equal to an element
+    x = np.array([-1.5, 0.0, 1.0, 4.0, 4.0, 10.5], dtype=np.float16)
+    y = 4
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 2D int8 array, boundary values
+    x = np.array([[-128, -1], [0, 127]], dtype=np.int8)
+    y = -1
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 3D float32 array with special values
+    x = np.array(
+        [[[np.nan, np.inf], [-np.inf, 5.0]], [[0.0, -0.0], [10.0, -10.0]]],
+        dtype=np.float32,
+    )
     y = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.greater_3"] = greater_inputs()
 

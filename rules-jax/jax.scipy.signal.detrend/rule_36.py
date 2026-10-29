@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the size of the input data tensor along the detrend axis must be at least 2 to support linear detrending (Rule 36)
+# for a 3D input tensor detrending along axis 1, the dimension size must be at least two (Rule 36)
 
 rule_36 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 0, (If(v["arg2_value"] < v["arg1_ndim"], Select(v["arg1_shape"], v["arg2_value"]) >= 2, True)), (If(v["arg2_value"] + v["arg1_ndim"] >= 0, Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"]) >= 2, True)))) if n else
-          If(v["arg2_value"] >= 0, (If(v["arg2_value"] < v["arg1_ndim"], Select(v["arg1_shape"], v["arg2_value"]) >= 2, True)), (If(v["arg2_value"] + v["arg1_ndim"] >= 0, Select(v["arg1_shape"], v["arg2_value"] + v["arg1_ndim"]) >= 2, True))))
+    s.add(Not(If(And(v["arg1_ndim"] == 3, v["arg2_value"] == 1), Select(v["arg1_shape"], 1) >= 2, True)) if n else
+          If(And(v["arg1_ndim"] == 3, v["arg2_value"] == 1), Select(v["arg1_shape"], 1) >= 2, True))
 )
 
 def rule_36_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_36_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 36
-        rule_36(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_36(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_36(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_36(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

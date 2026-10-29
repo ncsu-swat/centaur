@@ -4,73 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def triu_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D square matrix, float32, k=0
-    m = np.random.randn(5, 5).astype(np.float32)
+    # Input 1: Basic 2D float square matrix, k=0
+    m = np.arange(9, dtype=np.float32).reshape(3, 3)
     k = 0
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 2: 2D square matrix, int32, k=1
-    m = np.random.randint(-10, 10, size=(4, 4)).astype(np.int32)
+    # Input 2: 2D rectangular matrix (more rows than columns), k=1
+    m = np.random.randn(5, 3).astype(np.float64)
     k = 1
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 3: 2D square matrix, float64, k=-1
-    m = np.random.randn(6, 6).astype(np.float64)
+    # Input 3: 2D rectangular matrix (more columns than rows), negative k
+    m = np.arange(12, dtype=np.int32).reshape(3, 4)
     k = -1
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 4: 3D array, float32, k=0
-    m = np.random.randn(2, 3, 3).astype(np.float32)
+    # Input 4: 3D batched tensor, k=0
+    m = np.random.randn(2, 4, 4).astype(np.float32)
     k = 0
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 5: 3D array, int64, k=2
-    m = np.random.randint(-100, 100, size=(3, 4, 4)).astype(np.int64)
-    k = 2
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D non-square matrix (tall), float32, k=-2
-    m = np.random.randn(8, 4).astype(np.float32)
+    # Input 5: 3D batched tensor with negative k
+    m = np.arange(24, dtype=np.int64).reshape(2, 3, 4)
     k = -2
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 7: 2D non-square matrix (wide), float32, k=3
-    m = np.random.randn(3, 7).astype(np.float32)
-    k = 3
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D tensor, positive k
+    m = np.random.randn(2, 3, 5, 5).astype(np.float32)
+    k = 2
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 8: 4D array, bool, k=-1
-    m = np.random.choice([True, False], size=(2, 2, 4, 4))
+    # Input 7: Boolean array, k=0
+    m = np.array(
+        [[True, False, True], [False, True, False], [True, True, True]],
+        dtype=bool,
+    )
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
+
+    # Input 8: Complex array, negative k
+    m = (np.random.randn(4, 4) + 1j * np.random.randn(4, 4)).astype(
+        np.complex64
+    )
     k = -1
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 9: 2D array, float32, large positive k
-    m = np.random.randn(5, 5).astype(np.float32)
+    # Input 9: Large k exceeding matrix dimensions (results in all zeros)
+    m = np.ones((3, 3), dtype=np.float32)
     k = 10
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
-    # Input 10: 3D array, int32, large negative k
-    m = np.random.randint(-5, 5, size=(2, 5, 5)).astype(np.int32)
+    # Input 10: Negative k covering entire matrix (leaves full matrix)
+    m = np.ones((3, 3), dtype=np.int32)
     k = -10
-    input_dict = {"m": m, "k": k}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
+
+    # Input 11: 2x2 integer matrix with k=0
+    m = np.array([[1, 2], [3, 4]], dtype=np.int16)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"m": m, "k": k}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.triu"] = triu_inputs()
 

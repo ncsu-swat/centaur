@@ -4,59 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_lax_le_inputs():
+def lax_le_inputs():
     list_of_inputs = []
 
-    # Input 1: positive standard Python integers
-    input_dict = {"x": 5, "y": 10}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: reversed order positive standard Python integers
-    input_dict = {"x": 10, "y": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: negative standard Python integers
-    input_dict = {"x": -15, "y": -5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: equal standard Python integers
+    # Input 1: Equal zeros
     input_dict = {"x": 0, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy int32 scalars
-    input_dict = {"x": np.int32(100), "y": np.int32(200)}
+    # Input 2: Strictly less (positive)
+    input_dict = {"x": 1, "y": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int64 scalars, negative values
-    input_dict = {"x": np.int64(-50), "y": np.int64(-100)}
+    # Input 3: Strictly greater (positive)
+    input_dict = {"x": 5, "y": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy int32 scalars, equal values
-    input_dict = {"x": np.int32(50), "y": np.int32(50)}
+    # Input 4: Negative numbers (less than)
+    input_dict = {"x": -10, "y": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: another set of standard Python integers
-    input_dict = {"x": 127, "y": 127}
+    # Input 5: Negative numbers (greater than)
+    input_dict = {"x": -5, "y": -10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: large standard Python integers
-    input_dict = {"x": 123456789, "y": 987654321}
+    # Input 6: Negative and positive
+    input_dict = {"x": -100, "y": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy int32 scalars with negative bounds
-    input_dict = {"x": np.int32(-32000), "y": np.int32(32000)}
+    # Input 7: Positive and negative
+    input_dict = {"x": 100, "y": -100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: mix of positive and negative, python ints
-    input_dict = {"x": -42, "y": 42}
+    # Input 8: Equal positive numbers
+    input_dict = {"x": 42, "y": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large integers (x > y)
+    input_dict = {"x": 1000000, "y": 999999}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Large negative integers (x > y)
+    input_dict = {"x": -999999, "y": -1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Zero and negative
+    input_dict = {"x": 0, "y": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative and zero
+    input_dict = {"x": -1, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.le_2"] = jax_lax_le_inputs()
+generated_inputs["jax.lax.le_2"] = lax_le_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

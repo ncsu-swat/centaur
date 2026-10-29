@@ -4,97 +4,117 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def logsf_inputs():
+
+def truncnorm_logsf_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays, float32, standard symmetric bounds
-    x = np.array([0.0, 0.5, -0.5], dtype=np.float32)
-    a = np.array([-2.0, -2.0, -2.0], dtype=np.float32)
-    b = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    loc = np.array([0.0, 0.0, 0.0], dtype=np.float32)
-    scale = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 1: 0D scalar arrays, standard interval [-1, 1]
+    input_dict = {
+        "x": np.array(0.0, dtype=np.float32),
+        "a": np.array(-1.0, dtype=np.float32),
+        "b": np.array(1.0, dtype=np.float32),
+        "loc": np.array(0.0, dtype=np.float32),
+        "scale": np.array(1.0, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 0D arrays (scalars as tensors), float32, asymmetric bounds
-    x = np.array(1.5, dtype=np.float32)
-    a = np.array(-1.0, dtype=np.float32)
-    b = np.array(2.0, dtype=np.float32)
-    loc = np.array(1.0, dtype=np.float32)
-    scale = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 2: 1D arrays, float32, simple standard normal truncated to [0, 2]
+    input_dict = {
+        "x": np.array([0.2, 0.5, 1.0, 1.8], dtype=np.float32),
+        "a": np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        "b": np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32),
+        "loc": np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        "scale": np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D arrays, float64, mixed bounds and locations
-    x = np.array([[0.0, 1.0], [-1.0, 2.0]], dtype=np.float64)
-    a = np.array([[-2.0, -3.0], [-1.5, -2.5]], dtype=np.float64)
-    b = np.array([[2.0, 3.0], [1.5, 2.5]], dtype=np.float64)
-    loc = np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float64)
-    scale = np.array([[1.0, 1.5], [0.8, 1.2]], dtype=np.float64)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 3: 1D arrays, float64, non-zero loc and non-unit scale
+    input_dict = {
+        "x": np.array([3.5, 4.0, 5.2], dtype=np.float64),
+        "a": np.array([-1.5, -1.5, -1.5], dtype=np.float64),
+        "b": np.array([2.5, 2.5, 2.5], dtype=np.float64),
+        "loc": np.array([4.0, 4.0, 4.0], dtype=np.float64),
+        "scale": np.array([2.0, 2.0, 2.0], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D arrays, float32, shape (2, 2, 2)
-    shape_3d = (2, 2, 2)
-    x = np.random.uniform(-1.0, 1.0, size=shape_3d).astype(np.float32)
-    a = np.full(shape_3d, -2.0, dtype=np.float32)
-    b = np.full(shape_3d, 2.0, dtype=np.float32)
-    loc = np.zeros(shape_3d, dtype=np.float32)
-    scale = np.ones(shape_3d, dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 4: 2D arrays, both a and b strictly positive
+    input_dict = {
+        "x": np.array([[1.2, 1.5], [2.0, 2.8]], dtype=np.float32),
+        "a": np.array([[1.0, 1.0], [1.0, 1.0]], dtype=np.float32),
+        "b": np.array([[3.0, 3.0], [3.0, 3.0]], dtype=np.float32),
+        "loc": np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float32),
+        "scale": np.array([[1.0, 1.0], [1.0, 1.0]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Broadcasting test, mixing 1D and 2D shapes
-    x = np.array([0.0, 0.5], dtype=np.float32)  # shape (2,)
-    a = np.array([[-1.0], [-2.0]], dtype=np.float32)  # shape (2, 1)
-    b = np.array([[1.0], [2.0]], dtype=np.float32)  # shape (2, 1)
-    loc = np.array([0.0], dtype=np.float32)  # shape (1,)
-    scale = np.array([1.0], dtype=np.float32)  # shape (1,)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 5: 2D arrays, both a and b strictly negative
+    input_dict = {
+        "x": np.array([[-2.5, -2.0], [-1.8, -1.2]], dtype=np.float32),
+        "a": np.array([[-3.0, -3.0], [-3.0, -3.0]], dtype=np.float32),
+        "b": np.array([[-1.0, -1.0], [-1.0, -1.0]], dtype=np.float32),
+        "loc": np.array([[0.0, 0.0], [0.0, 0.0]], dtype=np.float32),
+        "scale": np.array([[1.0, 1.0], [1.0, 1.0]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative bounds (entirely negative truncated normal distribution)
-    x = np.array([-11.0], dtype=np.float32)
-    a = np.array([-5.0], dtype=np.float32)
-    b = np.array([-2.0], dtype=np.float32)
-    loc = np.array([-10.0], dtype=np.float32)
-    scale = np.array([0.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 6: Broadcasting shapes (x is (3, 1), bounds are (1, 4))
+    input_dict = {
+        "x": np.array([[-0.5], [0.0], [0.5]], dtype=np.float32),
+        "a": np.array([[-2.0, -1.5, -1.0, -0.8]], dtype=np.float32),
+        "b": np.array([[0.8, 1.0, 1.5, 2.0]], dtype=np.float32),
+        "loc": np.array([[0.0]], dtype=np.float32),
+        "scale": np.array([[1.0]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large bounds approximating standard normal, float64
-    x = np.array([0.0], dtype=np.float64)
-    a = np.array([-10.0], dtype=np.float64)
-    b = np.array([10.0], dtype=np.float64)
-    loc = np.array([0.0], dtype=np.float64)
-    scale = np.array([1.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 7: 3D arrays, float64
+    input_dict = {
+        "x": np.full((2, 2, 2), 0.5, dtype=np.float64),
+        "a": np.full((2, 2, 2), -2.0, dtype=np.float64),
+        "b": np.full((2, 2, 2), 2.0, dtype=np.float64),
+        "loc": np.full((2, 2, 2), 0.0, dtype=np.float64),
+        "scale": np.full((2, 2, 2), 0.5, dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Highly asymmetric positive-only bounds
-    x = np.array([3.0], dtype=np.float32)
-    a = np.array([2.0], dtype=np.float32)
-    b = np.array([5.0], dtype=np.float32)
-    loc = np.array([0.0], dtype=np.float32)
-    scale = np.array([1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 8: x values outside the support range (evaluating tails)
+    input_dict = {
+        "x": np.array([-5.0, -2.5, 0.0, 2.5, 5.0], dtype=np.float32),
+        "a": np.array([-2.0, -2.0, -2.0, -2.0, -2.0], dtype=np.float32),
+        "b": np.array([2.0, 2.0, 2.0, 2.0, 2.0], dtype=np.float32),
+        "loc": np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32),
+        "scale": np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Tiny scale parameter (narrow distribution)
-    x = np.array([0.0001], dtype=np.float32)
-    a = np.array([-1.0], dtype=np.float32)
-    b = np.array([1.0], dtype=np.float32)
-    loc = np.array([0.0], dtype=np.float32)
-    scale = np.array([0.001], dtype=np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 9: Varying bounds per element in 1D array
+    input_dict = {
+        "x": np.array([0.1, 1.2, -0.3], dtype=np.float32),
+        "a": np.array([-1.0, 0.5, -2.0], dtype=np.float32),
+        "b": np.array([1.0, 2.5, -0.1], dtype=np.float32),
+        "loc": np.array([0.0, 1.0, -1.0], dtype=np.float32),
+        "scale": np.array([0.5, 1.5, 2.0], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D arrays, float32, randomized bounds with shape (1, 3, 2, 2)
-    shape_4d = (1, 3, 2, 2)
-    a = np.random.uniform(-3.0, -1.0, size=shape_4d).astype(np.float32)
-    b = np.random.uniform(1.0, 3.0, size=shape_4d).astype(np.float32)
-    loc = np.random.uniform(-1.0, 1.0, size=shape_4d).astype(np.float32)
-    scale = np.random.uniform(0.5, 2.0, size=shape_4d).astype(np.float32)
-    x = np.random.uniform(-1.0, 1.0, size=shape_4d).astype(np.float32)
-    list_of_inputs.append({"x": x, "a": a, "b": b, "loc": loc, "scale": scale})
+    # Input 10: Multi-dimensional array with varying locations and scales
+    input_dict = {
+        "x": np.array([[10.0, 12.0], [8.0, 15.0]], dtype=np.float64),
+        "a": np.array([[-2.0, -1.0], [-3.0, 0.0]], dtype=np.float64),
+        "b": np.array([[1.0, 2.0], [0.5, 3.0]], dtype=np.float64),
+        "loc": np.array([[10.0, 10.0], [10.0, 10.0]], dtype=np.float64),
+        "scale": np.array([[3.0, 2.0], [1.5, 4.0]], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.truncnorm.logsf"] = logsf_inputs()
+
+generated_inputs["jax.scipy.stats.truncnorm.logsf"] = truncnorm_logsf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

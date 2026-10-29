@@ -4,53 +4,64 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def clz_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D scalar, int32
-    x = np.array(5, dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D int32 array with positive, negative, and zero
+    x = np.array([0, 1, -1, 2, 16, -16, 1024], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array, int32, positive values
-    x = np.array([0, 1, 2, 4, 8, 16, 1024], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D int32 array
+    x = np.array([[0, 1, 2], [1073741824, 65536, 255]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D array, int32, mixed positive and negative
-    x = np.array([[-1, 0, 1], [-128, 127, 64]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar int64 array
+    x = np.array(42, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D array, int64
-    x = np.array([0, 1, -1, 9223372036854775807, -9223372036854775808], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D int32 array
+    x = np.array(
+        [[[-32768, -1], [0, 1]], [[256, 1024], [16384, 32767]]],
+        dtype=np.int32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D array, int64, random values
-    x = np.random.randint(-1000, 1000, size=(2, 3, 4), dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D int64 array powers of 2
+    x = np.array([1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D array, int32
-    x = np.random.randint(-100, 100, size=(2, 2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D int32 array
+    x = np.arange(-8, 8, dtype=np.int32).reshape((2, 2, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D array, int64, all zeros
-    x = np.zeros((5, 5), dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D int64 array with extreme values
+    x = np.array(
+        [[0, 1], [np.iinfo(np.int64).min, np.iinfo(np.int64).max]],
+        dtype=np.int64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 3D array, int32
-    x = np.array([[[100, -200], [300, -400]], [[500, -600], [700, -800]]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D int32 array with extreme values
+    x = np.array(
+        [np.iinfo(np.int32).min, -1, 0, 1, np.iinfo(np.int32).max],
+        dtype=np.int32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 5D array, int32
-    x = np.random.randint(-10, 10, size=(1, 2, 1, 3, 2), dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Empty 2D int32 array
+    x = np.empty((0, 4), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D array, int64, large size
-    x = np.random.randint(-10000, 10000, size=(10, 10), dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 5D int64 array
+    x = np.ones((1, 2, 1, 3, 2), dtype=np.int64) * 128
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.clz"] = clz_inputs()
 

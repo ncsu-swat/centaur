@@ -4,65 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_special_factorial_inputs():
+
+def factorial_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D tensor (scalar array), float32
-    n = np.array(5.0, dtype=np.float32)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0D scalar int32
+    n = np.array(5, dtype=np.int32)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 2: 1D tensor, float32
-    n = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array int32
+    n = np.array([0, 1, 2, 3, 4, 5], dtype=np.int32)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 3: 1D tensor, int32
-    n = np.array([0, 1, 5, 10, 15], dtype=np.int32)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array int64
+    n = np.array([5, 10, 15, 20], dtype=np.int64)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 4: 2D tensor, float64
-    n = np.array([[1.5, 2.5], [3.5, 4.5]], dtype=np.float64)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D array float32
+    n = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 5: 3D tensor, int64
-    n = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int64)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array float64
+    n = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 6: 1D tensor with negative floats (non-integers)
-    n = np.array([-0.5, -1.5, -2.5], dtype=np.float32)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D array int32
+    n = np.arange(8, dtype=np.int32).reshape(2, 2, 2)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 7: 4D tensor, float32
-    n = np.random.uniform(0.0, 10.0, size=(2, 2, 2, 2)).astype(np.float32)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1D array with negative non-integers
+    n = np.array([-0.5, 0.5, 1.2], dtype=np.float32)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 8: 1D tensor, small positive values
-    n = np.array([0.1, 0.2, 0.3], dtype=np.float32)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2D array of zeros
+    n = np.zeros((3, 3), dtype=np.float32)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 9: 1D tensor, mix of zeros and integers
-    n = np.array([0, 10, 20], dtype=np.int32)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D array float32
+    n = np.random.uniform(0.1, 5.0, size=(2, 1, 3, 2)).astype(np.float32)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
-    # Input 10: 2D tensor, random float64
-    n = np.random.uniform(1.0, 5.0, size=(3, 3)).astype(np.float64)
-    input_dict = {"n": n, "exact": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Empty 1D array
+    n = np.array([], dtype=np.float32)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
+
+    # Input 11: 1D array float64 with larger values
+    n = np.array([10.0, 20.0, 30.0], dtype=np.float64)
+    exact = False
+    list_of_inputs.append(copy.deepcopy({"n": n, "exact": exact}))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.special.factorial_1"] = jax_scipy_special_factorial_inputs()
+
+generated_inputs["jax.scipy.special.factorial_1"] = factorial_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

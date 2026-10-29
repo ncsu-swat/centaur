@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Union type of int and str for both parameters (Rule 57)
+# complex64 dtype promoted with float32 string specifier (Rule 57)
 
 rule_57 = lambda s, v, n=False: (
-    s.add(Not(And((Or(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), v["arg1_value"] == 0)), (Or(Or(v["arg2_value"] == 38, v["arg2_value"] == 39), v["arg2_value"] == 0)))) if n else
-          And((Or(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), v["arg1_value"] == 0)), (Or(Or(v["arg2_value"] == 38, v["arg2_value"] == 39), v["arg2_value"] == 0))))
+    s.add(Not(And(v["arg1_value"] == 9, v["arg2_value"] == 38)) if n else
+          And(v["arg1_value"] == 9, v["arg2_value"] == 38))
 )
 
 def rule_57_func(arg1, arg2, solver=None, neg=False):
@@ -20,15 +20,19 @@ def rule_57_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, str)):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
-        if not ((isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)) or isinstance(arg2, str)):
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Int('arg1_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 57
         rule_57(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})

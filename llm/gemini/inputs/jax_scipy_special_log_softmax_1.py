@@ -4,65 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_scipy_special_log_softmax_inputs():
+
+def log_softmax_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, axis 0
-    x = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    input_dict = {"x": x, "axis": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, axis=0
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 2: 2D float32 array, axis -1
+    # Input 2: 1D array, negative axis
+    x = np.array([-1.5, 0.0, 1.5, 2.5], dtype=np.float32)
+    axis = -1
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
+
+    # Input 3: 2D array, axis=1
+    x = np.random.randn(3, 5).astype(np.float32)
+    axis = 1
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
+
+    # Input 4: 2D array, axis=0
     x = np.random.randn(4, 6).astype(np.float32)
-    input_dict = {"x": x, "axis": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 3: 2D float64 array, axis 0
-    x = np.random.randn(8, 8).astype(np.float64)
-    input_dict = {"x": x, "axis": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array float64, axis=-1
+    x = np.random.randn(5, 5).astype(np.float64)
+    axis = -1
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 4: 3D float32 array, axis 1
+    # Input 6: 3D array, axis=2
     x = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"x": x, "axis": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 5: 4D float32 array, axis 2
-    x = np.random.randn(2, 2, 5, 5).astype(np.float32)
-    input_dict = {"x": x, "axis": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array, negative axis=-2
+    x = np.random.randn(2, 4, 3).astype(np.float32)
+    axis = -2
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 6: 1D array with negative values, axis 0
-    x = np.array([-10.0, -5.0, 0.0, 5.0, 10.0], dtype=np.float32)
-    input_dict = {"x": x, "axis": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D array, axis=3
+    x = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    axis = 3
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 7: 3D float64 array with wide range of values, axis -1
-    x = np.random.uniform(-50.0, 50.0, size=(2, 3, 3)).astype(np.float64)
-    input_dict = {"x": x, "axis": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D array float64, axis=0
+    x = np.random.randn(3, 2, 2, 2).astype(np.float64)
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 8: 2D float32 array, axis 1
-    x = np.random.randn(16, 32).astype(np.float32)
-    input_dict = {"x": x, "axis": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float16 array, axis=1
+    x = np.random.randn(4, 8).astype(np.float16)
+    axis = 1
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 9: 5D float32 array, axis -2
-    x = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
-    input_dict = {"x": x, "axis": -2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Array with extreme negative values
+    x = np.array([-1000.0, -500.0, -100.0, 0.0], dtype=np.float32)
+    axis = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
-    # Input 10: 2D float32 array with very small values, axis 0
-    x = np.random.uniform(1e-7, 1e-4, size=(5, 5)).astype(np.float32)
-    input_dict = {"x": x, "axis": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 12: 5D array, axis=4
+    x = np.random.randn(2, 1, 2, 1, 3).astype(np.float32)
+    axis = 4
+    list_of_inputs.append(copy.deepcopy({"x": x, "axis": axis}))
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.special.log_softmax_1"] = jax_scipy_special_log_softmax_inputs()
+
+generated_inputs["jax.scipy.special.log_softmax_1"] = log_softmax_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

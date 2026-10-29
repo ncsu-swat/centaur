@@ -4,106 +4,87 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 import jax.numpy as jnp
+import numpy as np
+
 
 class CallableStr(str):
-    def __new__(cls, value, func):
-        obj = super().__new__(cls, value)
-        obj.func = func
-        return obj
-    def __call__(self, *args, **kwargs):
-        return self.func(*args, **kwargs)
-    def __reduce__(self):
-        return (CallableStr, (str(self), self.func))
 
-def jax_numpy_apply_over_axes_inputs():
+    def __call__(self, a, *args, **kwargs):
+        fn = getattr(jnp, str(self), None)
+        if fn is None:
+            fn = getattr(np, str(self))
+        return fn(a, *args, **kwargs)
+
+
+def apply_over_axes_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, sum over axis 0
-    input_dict = {
-        "func": CallableStr("sum", jnp.sum),
-        "a": np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32),
-        "axes": [0]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D integer array, single axis sum
+    a = np.arange(6, dtype=np.int32).reshape(2, 3)
+    axes = [0]
+    func = CallableStr("sum")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 2: 3D float32 array, mean over axes 0 and 2
-    input_dict = {
-        "func": CallableStr("mean", jnp.mean),
-        "a": np.random.randn(2, 3, 4).astype(np.float32),
-        "axes": [0, 2]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float array, single axis min
+    a = np.array([[1.5, -2.3, 3.1], [4.0, -0.5, 6.2]], dtype=np.float32)
+    axes = [1]
+    func = CallableStr("min")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 3: 3D float64 array, max over axis 1
-    input_dict = {
-        "func": CallableStr("max", jnp.max),
-        "a": np.arange(24).reshape(2, 3, 4).astype(np.float64),
-        "axes": [1]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D integer array, multiple axes prod
+    a = np.array([[1, 2], [3, 4]], dtype=np.int64)
+    axes = [0, 1]
+    func = CallableStr("prod")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 4: 2D int64 array with negative values, min over axes 0 and 1
-    input_dict = {
-        "func": CallableStr("min", jnp.min),
-        "a": np.random.randint(-10, 10, size=(5, 5)).astype(np.int64),
-        "axes": [0, 1]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float array, multiple axes max
+    a = np.random.randn(2, 4, 3).astype(np.float32)
+    axes = [1, 2]
+    func = CallableStr("max")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 5: 3D float32 array, product over axis 2
-    input_dict = {
-        "func": CallableStr("prod", jnp.prod),
-        "a": np.array([[[1.0, 2.0], [3.0, 4.0]]], dtype=np.float32),
-        "axes": [2]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float64 array with negative values, axes 0 and 2 sum
+    a = np.random.uniform(-10.0, 10.0, size=(3, 3, 3)).astype(np.float64)
+    axes = [0, 2]
+    func = CallableStr("sum")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 6: 4D float32 array, std over axes 1 and 3
-    input_dict = {
-        "func": CallableStr("std", jnp.std),
-        "a": np.random.uniform(0.1, 1.0, size=(2, 2, 2, 2)).astype(np.float32),
-        "axes": [1, 3]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D float array, axis 0 mean
+    a = np.linspace(-5.0, 5.0, 10, dtype=np.float32)
+    axes = [0]
+    func = CallableStr("mean")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 7: 2D float64 array, variance over axis 0
-    input_dict = {
-        "func": CallableStr("var", jnp.var),
-        "a": np.random.randn(3, 3).astype(np.float64),
-        "axes": [0]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D float array, axes 0 and 3 mean
+    a = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    axes = [0, 3]
+    func = CallableStr("mean")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 8: 2D boolean array, logical AND (all) over axis 1
-    input_dict = {
-        "func": CallableStr("all", jnp.all),
-        "a": np.array([[True, False], [True, True]], dtype=bool),
-        "axes": [1]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D float32 array, axis 1 prod
+    a = np.random.uniform(0.5, 2.0, size=(2, 3, 2)).astype(np.float32)
+    axes = [1]
+    func = CallableStr("prod")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 9: 3D boolean array, logical OR (any) over axes 0 and 2
-    input_dict = {
-        "func": CallableStr("any", jnp.any),
-        "a": np.array([[[False, False], [True, False]]], dtype=bool),
-        "axes": [0, 2]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D integer array, axis 2 prod
+    a = np.random.randint(1, 5, size=(2, 2, 3, 2), dtype=np.int32)
+    axes = [2]
+    func = CallableStr("prod")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
-    # Input 10: 1D float32 array, sum over axis 0
-    input_dict = {
-        "func": CallableStr("sum", jnp.sum),
-        "a": np.ones((10,), dtype=np.float32),
-        "axes": [0]
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D float64 array, axes 0 and 1 min
+    a = np.random.randn(4, 3, 2).astype(np.float64)
+    axes = [0, 1]
+    func = CallableStr("min")
+    list_of_inputs.append(copy.deepcopy({"func": func, "a": a, "axes": axes}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.apply_over_axes_1"] = jax_numpy_apply_over_axes_inputs()
+
+generated_inputs["jax.numpy.apply_over_axes_1"] = apply_over_axes_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

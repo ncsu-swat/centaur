@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# indices_or_sections as an integer must be a positive divisor of the splitting dimension size of ary (Rule 40)
+# for non-empty depth axis, number of sections must evenly divide depth (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] >= 3, And(v["arg2_value"] >= 1, Select(v["arg1_shape"], 2) % v["arg2_value"] == 0), False)) if n else
-          If(v["arg1_ndim"] >= 3, And(v["arg2_value"] >= 1, Select(v["arg1_shape"], 2) % v["arg2_value"] == 0), False))
+    s.add(Not(And(And(v["arg1_ndim"] >= 3, v["arg2_value"] > 0), (If(Select(v["arg1_shape"], 2) > 0, Select(v["arg1_shape"], 2) % v["arg2_value"] == 0, True)))) if n else
+          And(And(v["arg1_ndim"] >= 3, v["arg2_value"] > 0), (If(Select(v["arg1_shape"], 2) > 0, Select(v["arg1_shape"], 2) % v["arg2_value"] == 0, True))))
 )
 
 def rule_40_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_40_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 40
-        rule_40(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_40(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_40(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_40(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def vonmises_logpdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays (float32)
-    x = np.array([-1.5, -0.5, 0.0, 0.5, 1.5], dtype=np.float32)
-    kappa = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
-
-    # Input 2: 1D arrays with float64 and different kappa values
-    x = np.array([-np.pi, -np.pi/2, 0.0, np.pi/2, np.pi], dtype=np.float64)
-    kappa = np.array([0.1, 0.5, 1.0, 2.0, 5.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "kappa": kappa})
-
-    # Input 3: 2D arrays (3x3)
-    x = np.random.uniform(-np.pi, np.pi, size=(3, 3)).astype(np.float32)
-    kappa = np.random.uniform(0.1, 10.0, size=(3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
-
-    # Input 4: Scalar arrays (0D)
+    # Input 1: 0D scalars, float32
     x = np.array(0.5, dtype=np.float32)
-    kappa = np.array(2.0, dtype=np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
+    kappa = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
 
-    # Input 5: Broad-casting case, 2D 'x' and 1D 'kappa'
-    x = np.random.uniform(-np.pi, np.pi, size=(2, 4)).astype(np.float32)
-    kappa = np.array([0.5, 1.5, 2.5, 3.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
+    # Input 2: 1D arrays with matching shapes
+    x = np.array([-np.pi, -np.pi / 2, 0.0, np.pi / 2, np.pi], dtype=np.float32)
+    kappa = np.array([0.5, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
 
-    # Input 6: Broad-casting case, 1D 'x' and 2D 'kappa'
-    x = np.array([-1.0, 0.0, 1.0], dtype=np.float32)
-    kappa = np.random.uniform(1.0, 5.0, size=(3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
+    # Input 3: float64 precision
+    x = np.array([0.1, 0.2, 0.3], dtype=np.float64)
+    kappa = np.array([1.5, 2.5, 3.5], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
 
-    # Input 7: High dimensions (3D arrays)
+    # Input 4: kappa = 0 (uniform on circle)
+    x = np.linspace(-np.pi, np.pi, 7, dtype=np.float32)
+    kappa = np.zeros(7, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
+
+    # Input 5: 2D arrays
+    x = np.random.uniform(-np.pi, np.pi, size=(3, 4)).astype(np.float32)
+    kappa = np.random.uniform(0.1, 5.0, size=(3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
+
+    # Input 6: Broadcasting (1D kappa broadcast against 2D x)
+    x = np.random.uniform(-np.pi, np.pi, size=(4, 5)).astype(np.float32)
+    kappa = np.array([0.5, 1.0, 1.5, 2.0, 2.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
+
+    # Input 7: Broadcasting (scalar-like 1D kappa broadcast against 3D x)
+    x = np.random.uniform(-np.pi, np.pi, size=(2, 3, 4)).astype(np.float64)
+    kappa = np.array([2.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
+
+    # Input 8: High concentration kappa values
+    x = np.array([0.0, 0.01, -0.01], dtype=np.float32)
+    kappa = np.array([50.0, 100.0, 200.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
+
+    # Input 9: 3D arrays with matching shapes
     x = np.random.uniform(-np.pi, np.pi, size=(2, 2, 2)).astype(np.float32)
-    kappa = np.random.uniform(0.1, 3.0, size=(2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
+    kappa = np.random.uniform(0.5, 10.0, size=(2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
 
-    # Input 8: kappa = 0 (uniform distribution)
-    x = np.linspace(-np.pi, np.pi, 5, dtype=np.float32)
-    kappa = np.zeros(5, dtype=np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
+    # Input 10: Negative and positive angles beyond [-pi, pi]
+    x = np.array([-3 * np.pi, -2 * np.pi, 2 * np.pi, 3 * np.pi], dtype=np.float32)
+    kappa = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
 
-    # Input 9: Large kappa values (high concentration)
-    x = np.array([-0.1, 0.0, 0.1], dtype=np.float64)
-    kappa = np.array([100.0, 200.0, 300.0], dtype=np.float64)
-    list_of_inputs.append({"x": x, "kappa": kappa})
-
-    # Input 10: x values outside the standard [-pi, pi] interval (periodicity test)
-    x = np.array([-3*np.pi, -2*np.pi, 2*np.pi, 3*np.pi], dtype=np.float32)
-    kappa = np.array([1.5, 1.5, 1.5, 1.5], dtype=np.float32)
-    list_of_inputs.append({"x": x, "kappa": kappa})
-
-    # Input 11: Single element array with float64
-    x = np.array([1.23], dtype=np.float64)
-    kappa = np.array([0.88], dtype=np.float64)
-    list_of_inputs.append({"x": x, "kappa": kappa})
+    # Input 11: Empty array handling
+    x = np.array([], dtype=np.float32)
+    kappa = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "kappa": kappa}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.vonmises.logpdf_1"] = vonmises_logpdf_inputs()
 

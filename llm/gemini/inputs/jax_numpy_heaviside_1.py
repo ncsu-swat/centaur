@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def heaviside_inputs():
     list_of_inputs = []
 
     # Input 1: 1D float32 arrays of same shape
-    x1 = np.array([-1.5, 0.0, 2.0], dtype=np.float32)
-    x2 = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    x1 = np.array([-1.5, 0.0, 2.3, -0.1, 0.0, 5.0], dtype=np.float32)
+    x2 = np.array([0.5, 0.5, 0.5, 0.5, 0.5, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D float64 arrays with negative, positive and zero values
-    x1 = np.array([[-2.0, 0.0], [1.0, -1.0]], dtype=np.float64)
-    x2 = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float64)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 2: 2D float64 arrays with zeros, positives, and negatives
+    x1 = np.array([[-2.0, 0.0, 3.0], [5.0, -1.0, 0.0]], dtype=np.float64)
+    x2 = np.array([[0.0, 0.5, 1.0], [1.0, 0.0, 0.5]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: Broadcasting 0D array (scalar array) for x2
-    x1 = np.array([[-3.0, 0.0, 5.0]], dtype=np.float32)
-    x2 = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 3: 0D arrays (scalars wrapped in np.array)
+    x1 = np.array(0.0, dtype=np.float32)
+    x2 = np.array(0.75, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: Broadcasting 1D array for x2 and 2D array for x1
-    x1 = np.array([[1.0, 0.0, -1.0], [0.0, 2.0, -2.0]], dtype=np.float32)
-    x2 = np.array([0.1, 0.2, 0.3], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 4: Broadcasting 2D array and 1D array
+    x1 = np.array([[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0]], dtype=np.float32)
+    x2 = np.array([0.25, 0.5, 0.75], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     # Input 5: Integer arrays (int32)
-    x1 = np.array([-5, 0, 10], dtype=np.int32)
-    x2 = np.array([1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    x1 = np.array([-5, -1, 0, 0, 1, 10], dtype=np.int32)
+    x2 = np.array([1, 1, 1, 2, 2, 2], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     # Input 6: 3D float32 arrays
-    x1 = np.random.uniform(-5, 5, (2, 2, 2)).astype(np.float32)
-    x2 = np.random.uniform(0, 1, (2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    x1 = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    x2 = np.full((2, 3, 4), 0.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: Float16 arrays
-    x1 = np.array([-10.0, 0.0, 10.0], dtype=np.float16)
-    x2 = np.array([0.75, 0.75, 0.75], dtype=np.float16)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 7: Broadcasting with different dimensions (3, 1) and (1, 4)
+    x1 = np.array([[-2.0], [0.0], [1.5]], dtype=np.float32)
+    x2 = np.array([[0.1, 0.2, 0.3, 0.4]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Broadcasting (1, 3) and (3, 1) shapes
-    x1 = np.array([[-1.0, 0.0, 1.0]], dtype=np.float32)
-    x2 = np.array([[0.1], [0.2], [0.3]], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 8: Float16 arrays
+    x1 = np.array([-1.0, 0.0, 1.0], dtype=np.float16)
+    x2 = np.array([0.5, 0.5, 0.5], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Int64 arrays
-    x1 = np.array([[-10, 0], [0, 10]], dtype=np.int64)
-    x2 = np.array([[5, 6], [7, 8]], dtype=np.int64)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 9: 4D arrays
+    x1 = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    x2 = np.ones((2, 2, 2, 2), dtype=np.float32) * 0.5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: 4D arrays
-    x1 = np.random.uniform(-10, 10, (1, 2, 2, 1)).astype(np.float32)
-    x2 = np.random.uniform(0, 1, (1, 2, 2, 1)).astype(np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 10: Array with inf and -inf values
+    x1 = np.array([-np.inf, -1.0, 0.0, 1.0, np.inf], dtype=np.float32)
+    x2 = np.array([0.5, 0.5, 0.5, 0.5, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: Mixed integer and float types via broadcasting (0D x2 with 2D x1)
+    x1 = np.array([[10, -10], [0, 0]], dtype=np.int64)
+    x2 = np.array(0.5, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.heaviside_1"] = heaviside_inputs()
 

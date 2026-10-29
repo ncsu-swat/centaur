@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The destination dtype can be specified as a valid dtype index or a valid dtype string (Rule 48)
+# copy parameter must be a valid boolean (Rule 48)
 
 rule_48 = lambda s, v, n=False: (
-    s.add(Not(Or((Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), (And(v["arg1_value"] >= 0, v["arg1_value"] <= 10)))) if n else
-          Or((Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), (And(v["arg1_value"] >= 0, v["arg1_value"] <= 10))))
+    s.add(Not(Or(v["arg1_value"] == True, v["arg1_value"] == False)) if n else
+          Or(v["arg1_value"] == True, v["arg1_value"] == False))
 )
 
 def rule_48_func(arg1, solver=None, neg=False):
@@ -19,13 +19,15 @@ def rule_48_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)) or isinstance(arg1, str)):
+        if not isinstance(arg1, bool):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_value = Bool('arg1_value')
 
         # Value assignments
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 48
         rule_48(solver, {'arg1_value': arg1_value})

@@ -4,83 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bernoulli_logpmf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard 1D arrays with default float32/int32
-    k = np.array([0, 1, 0, 1], dtype=np.int32)
-    p = np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float32)
-    loc = np.array([0, 0, 0, 0], dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 0D arrays (scalar representation)
+    # Input 1: 0D scalars
     k = np.array(1, dtype=np.int32)
-    p = np.array(0.3, dtype=np.float32)
+    p = np.array(0.7, dtype=np.float32)
     loc = np.array(0, dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
 
-    # Input 3: Float type for 'k'
-    k = np.array([0.0, 1.0], dtype=np.float32)
-    p = np.array([0.2, 0.8], dtype=np.float32)
-    loc = np.array([0.0, 0.0], dtype=np.float32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D arrays with k = 0
+    k = np.array([0, 1, 0, 1], dtype=np.int32)
+    p = np.array([0.2, 0.5, 0.8, 0.1], dtype=np.float32)
+    loc = np.array([0, 0, 0, 0], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
 
-    # Input 4: 2D arrays
+    # Input 3: Non-zero loc, float64
+    k = np.array([2.0, 3.0], dtype=np.float64)
+    p = np.array([0.4, 0.6], dtype=np.float64)
+    loc = np.array([2.0, 2.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
+
+    # Input 4: Negative loc
+    k = np.array([-1, 0, -1], dtype=np.int32)
+    p = np.array([0.3, 0.3, 0.3], dtype=np.float32)
+    loc = np.array([-1, -1, -1], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
+
+    # Input 5: 2D arrays
     k = np.array([[0, 1], [1, 0]], dtype=np.int32)
-    p = np.array([[0.4, 0.6], [0.1, 0.9]], dtype=np.float32)
-    loc = np.array([[0, 0], [0, 0]], dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    p = np.array([[0.1, 0.9], [0.5, 0.5]], dtype=np.float32)
+    loc = np.zeros((2, 2), dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
 
-    # Input 5: Boolean 'k' array
-    k = np.array([True, False, True], dtype=bool)
-    p = np.array([0.7, 0.7, 0.7], dtype=np.float32)
-    loc = np.array([0, 0, 0], dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Broadcasting shapes
-    k = np.array([0, 1, 2], dtype=np.int32)
-    p = np.array([[0.5], [0.3]], dtype=np.float32)
+    # Input 6: Broadcasting p across k
+    k = np.array([[0, 1, 0], [1, 1, 0]], dtype=np.int32)
+    p = np.array([0.2, 0.5, 0.8], dtype=np.float32)
     loc = np.array([0], dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
 
-    # Input 7: Non-zero location (shift)
-    k = np.array([1, 2, 3], dtype=np.int32)
-    p = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-    loc = np.array([1, 1, 1], dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Values of k outside the support {loc, loc + 1}
+    k = np.array([0, 1, 2, -1], dtype=np.float32)
+    p = np.array([0.5, 0.5, 0.5, 0.5], dtype=np.float32)
+    loc = np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
 
-    # Input 8: Float64 precision
-    k = np.array([0, 1], dtype=np.int64)
-    p = np.array([0.123456789, 0.987654321], dtype=np.float64)
-    loc = np.array([0, 0], dtype=np.int64)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D arrays
+    k = np.ones((2, 3, 4), dtype=np.int32)
+    p = np.full((2, 3, 4), 0.75, dtype=np.float32)
+    loc = np.zeros((2, 3, 4), dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
 
-    # Input 9: Out of bound values for 'k'
-    k = np.array([-1, 2, 5], dtype=np.int32)
-    p = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-    loc = np.array([0, 0, 0], dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Probability boundary cases
+    # Input 9: Boundary probabilities (p = 0.0, p = 1.0)
     k = np.array([0, 1], dtype=np.int32)
-    p = np.array([1e-7, 1.0 - 1e-7], dtype=np.float32)
+    p = np.array([0.0, 1.0], dtype=np.float32)
     loc = np.array([0, 0], dtype=np.int32)
-    input_dict = {"k": k, "p": p, "loc": loc}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
+
+    # Input 10: Broadcasting loc across 2D array
+    k = np.array([[1], [0], [1]], dtype=np.int32)
+    p = np.array([[0.3, 0.6]], dtype=np.float32)
+    loc = np.array([[0]], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
+
+    # Input 11: Higher-precision float64 multidimensional
+    k = np.array([[[1.0, 2.0]], [[2.0, 1.0]]], dtype=np.float64)
+    p = np.array([[[0.25, 0.75]], [[0.5, 0.5]]], dtype=np.float64)
+    loc = np.array([[[1.0, 1.0]], [[1.0, 1.0]]], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"k": k, "p": p, "loc": loc})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.bernoulli.logpmf"] = bernoulli_logpmf_inputs()
 

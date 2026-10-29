@@ -7,43 +7,35 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# both tensors must have a non-empty last dimension (Rule 34)
+# precision tuple must have length 2 without invalid convolution mode values (Rule 34)
 
 rule_34 = lambda s, v, n=False: (
-    s.add(Not(And(Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0, Select(v["arg2_shape"], v["arg2_ndim"] - 1) > 0)) if n else
-          And(Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0, Select(v["arg2_shape"], v["arg2_ndim"] - 1) > 0))
+    s.add(Not(And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) != 19), Select(v["arg1_values"], 1) != 19)) if n else
+          And(And(v["arg1_length"] == 2, Select(v["arg1_values"], 0) != 19), Select(v["arg1_values"], 1) != 19))
 )
 
-def rule_34_func(arg1, arg2, solver=None, neg=False):
+def rule_34_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
-            return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, str) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
-        arg2_ndim = Int('arg2_ndim')
-        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), StringSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        for i in range(arg1.ndim):
-            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
-        solver.add(arg2_ndim == arg2.ndim)
-        for i in range(arg2.ndim):
-            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 34
-        rule_34(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_34(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_34(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_34(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

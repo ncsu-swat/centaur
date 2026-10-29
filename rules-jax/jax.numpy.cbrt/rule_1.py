@@ -10,8 +10,8 @@ from z3 import *
 # complex dtypes are not supported for tensor input (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] < 9) if n else
-          v["arg1_dtype"] < 9)
+    s.add(Not(And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10)) if n else
+          And(v["arg1_dtype"] != 9, v["arg1_dtype"] != 10))
 )
 
 def rule_1_func(arg1, solver=None, neg=False):

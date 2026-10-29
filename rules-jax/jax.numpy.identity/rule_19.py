@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The dimension size of the identity matrix must be non-negative and within 2^20 to fit memory constraints (Rule 19)
+# dimension size should be non-negative within reasonable memory bounds (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(And(0 <= v["arg1_value"], v["arg1_value"] <= 1048576)) if n else
-          And(0 <= v["arg1_value"], v["arg1_value"] <= 1048576))
+    s.add(Not(And(v["arg1_value"] >= 0, v["arg1_value"] <= 65536)) if n else
+          And(v["arg1_value"] >= 0, v["arg1_value"] <= 65536))
 )
 
 def rule_19_func(arg1, solver=None, neg=False):

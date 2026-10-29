@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def nextafter_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 arrays
+    # Input 1: 1D float32 arrays, same shape
     x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    y = np.array([2.0, 1.0, 4.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    y = np.array([2.0, 1.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D float32 arrays
-    x = np.array([[1.0, -1.0], [0.0, 2.0]], dtype=np.float32)
-    y = np.array([[2.0, -2.0], [1.0, 1.0]], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float64 arrays with positive and negative numbers
+    x = np.array([-1.5, 0.0, 1.5], dtype=np.float64)
+    y = np.array([-2.0, -1.0, 2.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: Float64 precision, 1D
-    x = np.array([1e-10, 1e10], dtype=np.float64)
-    y = np.array([1e-9, 1e11], dtype=np.float64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float32 arrays
+    x = np.ones((3, 3), dtype=np.float32)
+    y = np.zeros((3, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: Float16 precision
-    x = np.array([-1.0, 0.0, 1.0], dtype=np.float16)
-    y = np.array([0.0, -1.0, 2.0], dtype=np.float16)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Broadcasting (2D and 1D)
+    x = np.zeros((2, 4), dtype=np.float32)
+    y = np.array([1.0, -1.0, 2.0, -2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 3D float32 arrays
+    # Input 5: Scalar 0D arrays
+    x = np.array(1.0, dtype=np.float64)
+    y = np.array(2.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: 3D float32 arrays
     x = np.random.randn(2, 3, 4).astype(np.float32)
     y = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: Broadcasting (x is 2D, y is 1D)
-    x = np.random.randn(3, 3).astype(np.float32)
-    y = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Float16 arrays
+    x = np.array([-0.0, 0.0, 100.0], dtype=np.float16)
+    y = np.array([1.0, -1.0, np.inf], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: Broadcasting (x is 1D shape (1,), y is 2D)
-    x = np.array([0.0], dtype=np.float32)
-    y = np.random.randn(2, 2).astype(np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Special floating point values (inf, -inf)
+    x = np.array([np.inf, -np.inf, 1.0], dtype=np.float32)
+    y = np.array([0.0, 0.0, np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: Special values (infinity, zero)
-    x = np.array([0.0, -0.0, np.inf, -np.inf], dtype=np.float32)
-    y = np.array([1.0, -1.0, 0.0, 0.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D broadcast compatible arrays
+    x = np.ones((2, 1, 3, 1), dtype=np.float32)
+    y = np.zeros((1, 4, 1, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Large values
-    x = np.array([1e30, -1e30], dtype=np.float32)
-    y = np.array([np.inf, -np.inf], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Empty arrays
+    x = np.empty((0, 2), dtype=np.float64)
+    y = np.empty((0, 2), dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 4D float32 arrays
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    y = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Subnormal edge cases with float32
+    x = np.array([0.0, -0.0, 1e-40], dtype=np.float32)
+    y = np.array([1.0, -1.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.nextafter_1"] = nextafter_inputs()
 

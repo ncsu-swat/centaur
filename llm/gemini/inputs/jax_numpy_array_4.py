@@ -4,113 +4,125 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def array_inputs():
     list_of_inputs = []
 
-    # Input 1
+    # Input 1: Zero scalar with int32 dtype and ndmin 0
     input_dict = {
         "object": 0,
-        "dtype": np.int32,
+        "dtype": np.dtype("int32"),
         "copy": True,
         "order": "K",
-        "ndmin": 0
+        "ndmin": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
+    # Input 2: Positive integer to float32 with ndmin 1
     input_dict = {
         "object": 42,
-        "dtype": np.int32,
+        "dtype": np.dtype("float32"),
         "copy": False,
         "order": "K",
-        "ndmin": 1
+        "ndmin": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
+    # Input 3: Negative integer to int64 with ndmin 2
     input_dict = {
-        "object": -100,
-        "dtype": np.float32,
+        "object": -15,
+        "dtype": np.dtype("int64"),
         "copy": True,
         "order": "K",
-        "ndmin": 2
+        "ndmin": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4
-    input_dict = {
-        "object": 7,
-        "dtype": np.float32,
-        "copy": False,
-        "order": "K",
-        "ndmin": 3
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5
-    input_dict = {
-        "object": 123,
-        "dtype": np.int16,
-        "copy": True,
-        "order": "K",
-        "ndmin": 1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6
+    # Input 4: Integer converted to boolean dtype
     input_dict = {
         "object": 1,
-        "dtype": np.uint32,
+        "dtype": np.dtype("bool"),
         "copy": False,
         "order": "K",
-        "ndmin": 0
+        "ndmin": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7
+    # Input 5: Value within uint8 range with ndmin 3
     input_dict = {
-        "object": 99,
-        "dtype": np.int8,
+        "object": 255,
+        "dtype": np.dtype("uint8"),
         "copy": True,
         "order": "K",
-        "ndmin": 4
+        "ndmin": 3,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8
+    # Input 6: Negative integer to float64 with ndmin 1
     input_dict = {
-        "object": 50,
-        "dtype": np.uint8,
+        "object": -1024,
+        "dtype": np.dtype("float64"),
         "copy": False,
         "order": "K",
-        "ndmin": 2
+        "ndmin": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9
+    # Input 7: Positive integer to int16 with ndmin 4
     input_dict = {
-        "object": 2024,
-        "dtype": np.int32,
+        "object": 7,
+        "dtype": np.dtype("int16"),
         "copy": True,
         "order": "K",
-        "ndmin": 5
+        "ndmin": 4,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
+    # Input 8: Boundary value for int8 with ndmin 2
     input_dict = {
-        "object": -9999,
-        "dtype": np.float32,
+        "object": -128,
+        "dtype": np.dtype("int8"),
+        "copy": False,
+        "order": "K",
+        "ndmin": 2,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Large integer to uint32 with ndmin 0
+    input_dict = {
+        "object": 65535,
+        "dtype": np.dtype("uint32"),
         "copy": True,
         "order": "K",
-        "ndmin": 1
+        "ndmin": 0,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Large negative integer to int32 with higher dimensionality ndmin 5
+    input_dict = {
+        "object": -999999,
+        "dtype": np.dtype("int32"),
+        "copy": False,
+        "order": "K",
+        "ndmin": 5,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Very large positive integer to uint64 with ndmin 1
+    input_dict = {
+        "object": 123456789,
+        "dtype": np.dtype("uint64"),
+        "copy": True,
+        "order": "K",
+        "ndmin": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.array_4"] = array_inputs()
 

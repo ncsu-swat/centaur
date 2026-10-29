@@ -4,55 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def absolute_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array
-    x = np.array([-1.2, 0.0, 3.4, -5.6], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D array of integers with positive, negative, and zero
+    x = np.array([5, -2, 0, 12, -99], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float64 array with positive and negative values
-    x = np.random.randn(3, 4).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D array of floats
+    x = np.array([[-1.5, 2.3, -0.0], [4.2, -5.6, 7.8]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D int32 array
-    x = np.random.randint(-100, 100, size=(2, 3, 3)).astype(np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Complex 1D array
+    x = np.array([3 + 4j, -5 + 12j, 0 - 2j, 1 + 0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: Complex64 array
-    x = np.array([3 + 4j, -5 - 12j, 0 + 0j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D array (scalar tensor)
+    x = np.array(-42.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: Complex128 array
-    real = np.random.randn(2, 2)
-    imag = np.random.randn(2, 2)
-    x = (real + 1j * imag).astype(np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D array of int64
+    x = np.random.randint(-100, 100, size=(2, 3, 4), dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 0D array (scalar)
-    x = np.array(-42.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D array of float64
+    x = np.random.randn(2, 2, 3, 3).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D float32 array
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D array with special float values (inf, -inf, nan)
+    x = np.array([np.inf, -np.inf, np.nan, -0.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: int16 array with negative values
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Complex 2D array (complex128)
+    x = np.array(
+        [[1.0 - 1.0j, -2.5 + 3.5j], [0.0 + 0.0j, -4.0 - 4.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: float32 array with special values (inf, nan)
-    x = np.array([-np.inf, np.inf, np.nan, -0.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D int64 array
-    x = np.random.randint(-1000, 1000, size=(100,)).astype(np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Boolean array
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array of float16
+    x = np.array([-3.14, 2.718, -1.414, 0.577], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.absolute"] = absolute_inputs()
 

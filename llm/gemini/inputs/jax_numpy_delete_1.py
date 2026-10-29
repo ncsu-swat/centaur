@@ -4,113 +4,147 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def delete_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, delete index 2 along axis 0
-    arr = np.array([4, 5, 6, 7, 8], dtype=np.int32)
+    # Input 1: 1D integer array, delete first element along axis 0
+    arr = np.array([10, 20, 30, 40, 50], dtype=np.int32)
+    obj = 0
+    axis = 0
+    assume_unique_indices = False
     input_dict = {
         "arr": arr,
-        "obj": int(2),
-        "axis": int(0),
-        "assume_unique_indices": False
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array, delete index 1 along axis 0, with unique indices assumed
-    arr = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=np.int32)
+    # Input 2: 1D float array, negative axis and positive index
+    arr = np.linspace(0.0, 1.0, 10, dtype=np.float32)
+    obj = 2
+    axis = -1
+    assume_unique_indices = True
     input_dict = {
         "arr": arr,
-        "obj": int(1),
-        "axis": int(0),
-        "assume_unique_indices": True
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float32 array, negative index along axis 1
-    arr = np.random.randn(4, 5).astype(np.float32)
+    # Input 3: 2D array, delete row along axis 0
+    arr = np.arange(12, dtype=np.int64).reshape(3, 4)
+    obj = 1
+    axis = 0
+    assume_unique_indices = False
     input_dict = {
         "arr": arr,
-        "obj": int(-1),
-        "axis": int(1),
-        "assume_unique_indices": False
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D int32 array, delete index 0 along axis 2
-    arr = np.random.randint(0, 10, size=(2, 3, 4)).astype(np.int32)
+    # Input 4: 2D array, delete column using negative index along axis 1
+    arr = np.random.randn(4, 5).astype(np.float64)
+    obj = -1
+    axis = 1
+    assume_unique_indices = True
     input_dict = {
         "arr": arr,
-        "obj": int(0),
-        "axis": int(2),
-        "assume_unique_indices": True
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D float64 array, negative index and negative axis
-    arr = np.array([10, 20, 30, 40], dtype=np.float64)
+    # Input 5: 2D array, negative axis index
+    arr = np.ones((6, 3), dtype=np.uint8)
+    obj = 0
+    axis = -2
+    assume_unique_indices = False
     input_dict = {
         "arr": arr,
-        "obj": int(-2),
-        "axis": int(-1),
-        "assume_unique_indices": False
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D float32 array, delete index 2 along axis 0
-    arr = np.random.randn(3, 3).astype(np.float32)
+    # Input 6: 3D float array, axis 0
+    arr = np.random.randn(4, 3, 2).astype(np.float64)
+    obj = 2
+    axis = 0
+    assume_unique_indices = True
     input_dict = {
         "arr": arr,
-        "obj": int(2),
-        "axis": int(0),
-        "assume_unique_indices": False
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D float64 array, negative axis
-    arr = np.random.randn(2, 3, 4).astype(np.float64)
+    # Input 7: 3D integer array, negative index along axis 1
+    arr = np.arange(30, dtype=np.int32).reshape(2, 5, 3)
+    obj = -2
+    axis = 1
+    assume_unique_indices = False
     input_dict = {
         "arr": arr,
-        "obj": int(1),
-        "axis": int(-2),
-        "assume_unique_indices": True
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D int32 array, delete index 0 along axis 3
-    arr = np.random.randint(0, 5, size=(2, 2, 2, 2)).astype(np.int32)
+    # Input 8: 3D complex array, axis 2
+    arr = (np.random.randn(2, 2, 4) + 1j * np.random.randn(2, 2, 4)).astype(
+        np.complex64
+    )
+    obj = 1
+    axis = 2
+    assume_unique_indices = True
     input_dict = {
         "arr": arr,
-        "obj": int(0),
-        "axis": int(3),
-        "assume_unique_indices": False
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D int64 array, index 3, assume unique indices
-    arr = np.array([1, 2, 3, 4, 5], dtype=np.int64)
+    # Input 9: 4D boolean array, axis 3
+    arr = np.random.choice([True, False], size=(2, 3, 4, 5))
+    obj = 0
+    axis = 3
+    assume_unique_indices = False
     input_dict = {
         "arr": arr,
-        "obj": int(3),
-        "axis": int(0),
-        "assume_unique_indices": True
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger 2D array, deleting last index along axis 1
-    arr = np.random.randn(10, 10).astype(np.float32)
+    # Input 10: 4D float array, negative index and negative axis
+    arr = np.random.randn(1, 2, 3, 4).astype(np.float32)
+    obj = -3
+    axis = -1
+    assume_unique_indices = True
     input_dict = {
         "arr": arr,
-        "obj": int(9),
-        "axis": int(1),
-        "assume_unique_indices": True
+        "obj": obj,
+        "axis": axis,
+        "assume_unique_indices": assume_unique_indices,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.delete_1"] = delete_inputs()
 

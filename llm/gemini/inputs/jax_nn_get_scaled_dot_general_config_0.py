@@ -4,85 +4,96 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def get_scaled_dot_general_config_inputs():
     list_of_inputs = []
 
-    # Input 1, nvfp4 mode, scalar float32 scale
+    # Input 1: nvfp4 with float32 scale = 1.0
     input_dict = {
         "mode": "nvfp4",
-        "global_scale": np.array(1.0, dtype=np.float32)
+        "global_scale": np.array(1.0, dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2, mxfp8 mode, scalar float32 scale
-    input_dict = {
-        "mode": "mxfp8",
-        "global_scale": np.array(1.0, dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3, nvfp4 mode, 1D float32 scale
+    # Input 2: nvfp4 with float32 scale = 0.5
     input_dict = {
         "mode": "nvfp4",
-        "global_scale": np.array([1.0, 2.0], dtype=np.float32)
+        "global_scale": np.array(0.5, dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4, mxfp8 mode, 1D float32 scale with multiple elements
-    input_dict = {
-        "mode": "mxfp8",
-        "global_scale": np.array([0.5, 1.5, 2.5], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5, nvfp4 mode, scalar float16 scale
+    # Input 3: nvfp4 with float32 scale = 2.0
     input_dict = {
         "mode": "nvfp4",
-        "global_scale": np.array(2.0, dtype=np.float16)
+        "global_scale": np.array(2.0, dtype=np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6, mxfp8 mode, 2D float32 scale
-    input_dict = {
-        "mode": "mxfp8",
-        "global_scale": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7, nvfp4 mode, 3D float32 scale
+    # Input 4: nvfp4 with float16 scale = 1.0
     input_dict = {
         "mode": "nvfp4",
-        "global_scale": np.ones((2, 2, 2), dtype=np.float32)
+        "global_scale": np.array(1.0, dtype=np.float16),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8, mxfp8 mode, high scale value
-    input_dict = {
-        "mode": "mxfp8",
-        "global_scale": np.array(100.0, dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9, nvfp4 mode, very small scale value
+    # Input 5: nvfp4 with float16 scale = 0.25
     input_dict = {
         "mode": "nvfp4",
-        "global_scale": np.array(1e-5, dtype=np.float32)
+        "global_scale": np.array(0.25, dtype=np.float16),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10, mxfp8 mode, float64 scale
+    # Input 6: nvfp4 with float64 scale = 1.0
     input_dict = {
-        "mode": "mxfp8",
-        "global_scale": np.array(1.0, dtype=np.float64)
+        "mode": "nvfp4",
+        "global_scale": np.array(1.0, dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: nvfp4 with float64 scale = 4.0
+    input_dict = {
+        "mode": "nvfp4",
+        "global_scale": np.array(4.0, dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: nvfp4 with float32 scale = 0.125
+    input_dict = {
+        "mode": "nvfp4",
+        "global_scale": np.array(0.125, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: nvfp4 with float32 scale = 8.0
+    input_dict = {
+        "mode": "nvfp4",
+        "global_scale": np.array(8.0, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: nvfp4 with float32 scale = 16.0
+    input_dict = {
+        "mode": "nvfp4",
+        "global_scale": np.array(16.0, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: nvfp4 with float64 scale = 0.0625
+    input_dict = {
+        "mode": "nvfp4",
+        "global_scale": np.array(0.0625, dtype=np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.nn.get_scaled_dot_general_config"] = get_scaled_dot_general_config_inputs()
+
+generated_inputs["jax.nn.get_scaled_dot_general_config"] = (
+    get_scaled_dot_general_config_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

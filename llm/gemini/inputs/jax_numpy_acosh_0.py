@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def acosh_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, float32, values >= 1
-    x = np.random.uniform(1.0, 10.0, size=(5,)).astype(np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 1: 1D float32 array with values >= 1
+    x = np.array([1.0, 1.5, 2.0, 5.0, 10.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D array, float64, values >= 1
-    x = np.random.uniform(1.0, 100.0, size=(3, 4)).astype(np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 2: 2D float64 array with values >= 1
+    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D array, float32, some values < 1
-    x = np.random.uniform(-5.0, 5.0, size=(2, 2, 3)).astype(np.float32)
-    list_of_inputs.append({"x": x})
-
-    # Input 4: 1D array, complex64
-    real_part = np.random.uniform(-5.0, 5.0, size=(5,))
-    imag_part = np.random.uniform(-5.0, 5.0, size=(5,))
-    x = (real_part + 1j * imag_part).astype(np.complex64)
-    list_of_inputs.append({"x": x})
-
-    # Input 5: 0D array (scalar), float32 >= 1
+    # Input 3: Scalar (0D array)
     x = np.array(2.5, dtype=np.float32)
-    list_of_inputs.append({"x": x})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 4D array, float16, values >= 1
-    x = np.random.uniform(1.0, 5.0, size=(2, 2, 2, 2)).astype(np.float16)
-    list_of_inputs.append({"x": x})
+    # Input 4: 3D float32 array
+    x = np.ones((2, 3, 4), dtype=np.float32) * 3.0
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D array, int32, values >= 1
-    x = np.random.randint(1, 100, size=(3, 3)).astype(np.int32)
-    list_of_inputs.append({"x": x})
+    # Input 5: Complex128 array (acosh is well-defined over complex plane)
+    x = np.array([0.5 + 1.0j, -2.0 + 0.5j, 1.0 - 1.0j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D array, float64, very large values
-    x = np.random.uniform(100.0, 10000.0, size=(10,)).astype(np.float64)
-    list_of_inputs.append({"x": x})
+    # Input 6: Integer array (values >= 1)
+    x = np.array([1, 2, 5, 10, 100], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 3D array, complex128
-    real_part = np.random.uniform(-10.0, 10.0, size=(2, 3, 2))
-    imag_part = np.random.uniform(-10.0, 10.0, size=(2, 3, 2))
-    x = (real_part + 1j * imag_part).astype(np.complex128)
-    list_of_inputs.append({"x": x})
+    # Input 7: Float array including values < 1 (produces NaN in real domain, standard behaviour)
+    x = np.array([-1.0, 0.0, 0.5, 1.0, 2.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D array, float32, values >= 1
-    x = np.random.uniform(1.0, 2.0, size=(1, 2, 1, 3, 2)).astype(np.float32)
-    list_of_inputs.append({"x": x})
+    # Input 8: Float16 array
+    x = np.array([[1.0, 1.2], [1.8, 2.5]], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 4D float32 array
+    x = np.linspace(1.0, 10.0, 16, dtype=np.float32).reshape(2, 2, 2, 2)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: Array containing infinity
+    x = np.array([1.0, 10.0, np.inf], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.acosh"] = acosh_inputs()
 

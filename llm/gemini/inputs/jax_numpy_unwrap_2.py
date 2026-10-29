@@ -4,93 +4,116 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def unwrap_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D float32 array, standard 2*pi period
-    p = np.array([0.0, 0.5, 1.0, 5.0, 5.5, 6.0], dtype=np.float32)
+    # Input 1: 1D float32 array with standard 2*pi period
+    p = np.array([0.1, 0.5, 3.0, -3.1, -2.8], dtype=np.float32)
     discont = np.array(np.pi, dtype=np.float32)
-    axis = 0
-    period = np.array(2 * np.pi, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 1D float32 array in degrees (period 360)
-    p = np.array([179.0, -179.0, 180.0, -180.0], dtype=np.float32)
-    discont = np.array(180.0, dtype=np.float32)
     axis = -1
-    period = np.array(360.0, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    period = np.array(2 * np.pi, dtype=np.float32)
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
 
-    # Input 3: 2D float32 array, unwrapping along axis 0
-    p = np.array([[0.0, 1.0], [5.0, 6.0], [0.1, 1.1]], dtype=np.float32)
+    # Input 2: 1D float64 array in degrees with period 360
+    p = np.array(
+        [76.0, 133.0, 179.0, -157.0, -130.0, -127.0, -121.0], dtype=np.float64
+    )
+    discont = np.array(180.0, dtype=np.float64)
+    axis = 0
+    period = np.array(360.0, dtype=np.float64)
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
+
+    # Input 3: 2D float32 array unwrapped along axis 0
+    p = np.array(
+        [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [-3.0, -2.0, -1.0]],
+        dtype=np.float32,
+    )
     discont = np.array(np.pi, dtype=np.float32)
     axis = 0
     period = np.array(2 * np.pi, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
 
-    # Input 4: 2D float32 array, unwrapping along axis 1
-    p = np.array([[0.0, 5.0, 0.1], [1.0, 6.0, 1.1]], dtype=np.float32)
-    discont = np.array(np.pi, dtype=np.float32)
+    # Input 4: 2D float32 array unwrapped along axis 1 with custom period 100.0
+    p = np.array(
+        [[10.0, 40.0, 80.0, 10.0], [90.0, 15.0, 50.0, 85.0]], dtype=np.float32
+    )
+    discont = np.array(50.0, dtype=np.float32)
     axis = 1
+    period = np.array(100.0, dtype=np.float32)
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
+
+    # Input 5: 3D float32 array unwrapped along axis -1
+    p = np.linspace(0, 4 * np.pi, 24, dtype=np.float32).reshape(2, 3, 4)
+    p = (p + np.pi) % (2 * np.pi) - np.pi
+    discont = np.array(np.pi, dtype=np.float32)
+    axis = -1
     period = np.array(2 * np.pi, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
 
-    # Input 5: float64 precision 1D array
-    p = np.array([-3.0, -1.0, 2.0, 4.0, -4.0], dtype=np.float64)
-    discont = np.array(3.0, dtype=np.float64)
-    axis = 0
-    period = np.array(6.0, dtype=np.float64)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D float64 array with custom discont threshold along axis 1
+    p = np.ones((3, 5, 2), dtype=np.float64) * np.pi
+    discont = np.array(1.5, dtype=np.float64)
+    axis = 1
+    period = np.array(2 * np.pi, dtype=np.float64)
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
 
-    # Input 6: 3D float32 array, unwrapping along axis 2
-    p = np.random.uniform(-np.pi, np.pi, size=(2, 3, 4)).astype(np.float32)
+    # Input 7: 1D float32 array with strictly negative values
+    p = np.array([-6.0, -5.5, -0.2, -6.1, -5.9], dtype=np.float32)
+    discont = np.array(np.pi, dtype=np.float32)
+    axis = -1
+    period = np.array(2 * np.pi, dtype=np.float32)
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
+
+    # Input 8: 2D float64 array unwrapped along axis -2 with period pi
+    p = np.array([[0.1, 0.2], [3.0, 2.9], [0.3, 0.4]], dtype=np.float64)
+    discont = np.array(np.pi / 2, dtype=np.float64)
+    axis = -2
+    period = np.array(np.pi, dtype=np.float64)
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
+
+    # Input 9: 4D float32 array unwrapped along axis 2
+    p = np.zeros((2, 2, 6, 2), dtype=np.float32)
+    p[:, :, :, :] = np.linspace(-np.pi, np.pi, 6, dtype=np.float32).reshape(
+        1, 1, 6, 1
+    )
     discont = np.array(np.pi, dtype=np.float32)
     axis = 2
     period = np.array(2 * np.pi, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
 
-    # Input 7: Small period and small discontinuity
-    p = np.array([0.01, 0.02, 0.08, 0.01, 0.02], dtype=np.float32)
-    discont = np.array(0.05, dtype=np.float32)
-    axis = 0
-    period = np.array(0.1, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 1D array with negative axis specification
-    p = np.array([0.0, 0.9, 1.8, 0.1, 0.8], dtype=np.float32)
+    # Input 10: 1D float32 array with normalized period 1.0
+    p = np.array([0.1, 0.4, 0.9, 0.2, 0.7, 0.1], dtype=np.float32)
     discont = np.array(0.5, dtype=np.float32)
-    axis = -1
+    axis = 0
     period = np.array(1.0, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: float64 2D array with large values
-    p = np.array([[100.0, 105.0, 110.0], [200.0, 201.0, 195.0]], dtype=np.float64)
-    discont = np.array(5.0, dtype=np.float64)
-    axis = 1
-    period = np.array(10.0, dtype=np.float64)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 4D float32 array, unwrapping along axis 1
-    p = np.random.uniform(-10.0, 10.0, size=(2, 5, 2, 2)).astype(np.float32)
-    discont = np.array(10.0, dtype=np.float32)
-    axis = 1
-    period = np.array(20.0, dtype=np.float32)
-    input_dict = {"p": p, "discont": discont, "axis": axis, "period": period}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        {"p": p, "discont": discont, "axis": axis, "period": period}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.unwrap_2"] = unwrap_inputs()
 

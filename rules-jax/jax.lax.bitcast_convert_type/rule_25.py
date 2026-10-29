@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Casting a 1-byte tensor to a 2-byte tensor requires the last dimension to be 2 (Rule 25)
+# bitcasting 1-byte tensor to an 8-byte type requires last dimension to be 8 (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(If(And((Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 5)), (Or(v["arg2_value"] == 2, v["arg2_value"] == 6))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 2), True)) if n else
-          If(And((Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 5)), (Or(v["arg2_value"] == 2, v["arg2_value"] == 6))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 2), True))
+    s.add(Not(If(And((Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 5)), (Or(Or(v["arg2_value"] == 4, v["arg2_value"] == 8), v["arg2_value"] == 9))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 8), True)) if n else
+          If(And((Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 5)), (Or(Or(v["arg2_value"] == 4, v["arg2_value"] == 8), v["arg2_value"] == 9))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 8), True))
 )
 
 def rule_25_func(arg1, arg2, solver=None, neg=False):
@@ -40,9 +40,9 @@ def rule_25_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 25
-        rule_25(solver, {'arg1_dtype': arg1_dtype, 'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_25(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_25(solver, {'arg1_dtype': arg1['dtype'], 'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_25(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

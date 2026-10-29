@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def i0_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, positive floats
-    x = np.array([0.0, 1.0, 2.5, 5.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 0D scalar float32
+    x = np.array(1.5, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array, negative floats
-    x = np.array([-0.5, -1.2, -3.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with positive values
+    x = np.array([0.0, 0.5, 1.0, 2.0, 5.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D array, standard normal distribution (float32)
-    x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 1D array with negative values (i0 is symmetric: i0(-x) = i0(x))
+    x = np.array([-5.0, -2.0, -1.0, -0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D array, uniform distribution (float64)
-    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 3)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D array of zeros
+    x = np.zeros((10,), dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: Scalar-like (0D array, float64)
-    x = np.array(1.5, dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 2D array float64
+    x = np.random.uniform(-10.0, 10.0, size=(4, 5)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: Large 1D array, linspace range (float64)
-    x = np.linspace(-10.0, 10.0, 50).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 2D array float32
+    x = np.linspace(-3.0, 3.0, num=12, dtype=np.float32).reshape(3, 4)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D array of zeros
-    x = np.zeros((4, 4), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 3D array float32
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D array (float32)
-    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 4D array float32
+    x = np.random.uniform(0.0, 2.0, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Small positive values (float32)
-    x = np.array([1e-6, 1e-4, 1e-2], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 1D array with integer values (promoted to float in JAX)
+    x = np.array([-3, -2, -1, 0, 1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Mixed positive and negative float64 values
-    x = np.array([[-10.0, 0.0, 10.0], [-2.5, 1.1, 3.4]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 1D float16 array
+    x = np.array([0.1, 0.5, 1.2, 2.5], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.i0"] = i0_inputs()
 

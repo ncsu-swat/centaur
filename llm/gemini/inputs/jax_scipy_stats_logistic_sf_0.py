@@ -4,93 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logistic_sf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays, float32
-    input_dict = {
-        "x": np.array([-1.0, 0.0, 1.0, 2.0], dtype=np.float32),
-        "loc": np.array([0.0, 0.0, 0.0, 0.0], dtype=np.float32),
-        "scale": np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 0-D (scalar) float32 tensors
+    x = np.array(0.0, dtype=np.float32)
+    loc = np.array(0.0, dtype=np.float32)
+    scale = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 2: 0D arrays (scalars as arrays), float64
-    input_dict = {
-        "x": np.array(1.5, dtype=np.float64),
-        "loc": np.array(-0.5, dtype=np.float64),
-        "scale": np.array(2.0, dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1-D tensors with negative values
+    x = np.array([-2.5, -1.0, 0.0, 1.0, 2.5], dtype=np.float32)
+    loc = np.array([0.0, -1.0, 0.0, 1.0, 0.5], dtype=np.float32)
+    scale = np.array([1.0, 0.5, 2.0, 1.5, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 3: 2D arrays, float32, scale strictly positive
-    input_dict = {
-        "x": np.random.randn(2, 3).astype(np.float32),
-        "loc": np.random.randn(2, 3).astype(np.float32),
-        "scale": np.abs(np.random.randn(2, 3)).astype(np.float32) + 0.1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2-D tensors float64
+    x = np.array([[-3.0, -0.5], [1.2, 4.0]], dtype=np.float64)
+    loc = np.array([[0.0, 0.0], [1.0, -1.0]], dtype=np.float64)
+    scale = np.array([[1.0, 2.0], [0.5, 1.5]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 4: 3D arrays, float64
-    input_dict = {
-        "x": np.random.randn(2, 2, 2).astype(np.float64),
-        "loc": np.random.randn(2, 2, 2).astype(np.float64),
-        "scale": np.abs(np.random.randn(2, 2, 2)).astype(np.float64) + 0.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3-D tensors
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    loc = np.random.randn(2, 3, 4).astype(np.float32)
+    scale = np.abs(np.random.randn(2, 3, 4)).astype(np.float32) + 0.1
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 5: Broadcastable dimensions (x: 2D, loc: 1D, scale: scalar-like 1D)
-    input_dict = {
-        "x": np.random.randn(3, 4).astype(np.float32),
-        "loc": np.array([0.1, -0.2, 0.3, -0.4], dtype=np.float32),
-        "scale": np.array([0.5], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Broadcasting - x is 2D, loc is 1D, scale is scalar
+    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    loc = np.array([0.0, 1.0, 2.0], dtype=np.float32)
+    scale = np.array(2.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 6: Large values of x
-    input_dict = {
-        "x": np.array([100.0, -100.0, 50.0], dtype=np.float32),
-        "loc": np.array([0.0, 0.0, 0.0], dtype=np.float32),
-        "scale": np.array([1.0, 1.0, 1.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Large positive and negative values (numerical stability check)
+    x = np.array([-100.0, -50.0, 0.0, 50.0, 100.0], dtype=np.float64)
+    loc = np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+    scale = np.array([1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 7: Small positive scale values
-    input_dict = {
-        "x": np.array([0.5, -0.5], dtype=np.float32),
-        "loc": np.array([0.0, 0.0], dtype=np.float32),
-        "scale": np.array([0.01, 0.05], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4-D tensors
+    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    loc = np.zeros((2, 2, 2, 2), dtype=np.float32)
+    scale = np.ones((2, 2, 2, 2), dtype=np.float32) * 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 8: 4D arrays, float32
-    input_dict = {
-        "x": np.random.randn(2, 2, 2, 2).astype(np.float32),
-        "loc": np.random.randn(2, 2, 2, 2).astype(np.float32),
-        "scale": np.abs(np.random.randn(2, 2, 2, 2)).astype(np.float32) + 1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Integer arrays (converted/promoted by JAX)
+    x = np.array([-2, -1, 0, 1, 2], dtype=np.int32)
+    loc = np.array([0, 0, 0, 0, 0], dtype=np.int32)
+    scale = np.array([1, 1, 2, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 9: Large scales
-    input_dict = {
-        "x": np.array([-10.0, 10.0], dtype=np.float64),
-        "loc": np.array([0.0, 0.0], dtype=np.float64),
-        "scale": np.array([100.0, 1000.0], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Non-zero offset loc with fractional scale
+    x = np.array([0.5, 1.5, 2.5], dtype=np.float32)
+    loc = np.array([10.0, 20.0, 30.0], dtype=np.float32)
+    scale = np.array([0.1, 0.2, 0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
-    # Input 10: Mixed positive and negative locations, float32
-    input_dict = {
-        "x": np.array([[-1.0, 1.0], [2.0, -2.0]], dtype=np.float32),
-        "loc": np.array([[5.0, -5.0], [0.0, 1.0]], dtype=np.float32),
-        "scale": np.array([[2.0, 2.0], [3.0, 3.0]], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Broadcasting with leading/trailing singleton dimensions
+    x = np.random.randn(4, 1, 3).astype(np.float64)
+    loc = np.random.randn(1, 5, 3).astype(np.float64)
+    scale = np.abs(np.random.randn(4, 5, 1)).astype(np.float64) + 0.05
+    list_of_inputs.append(copy.deepcopy({"x": x, "loc": loc, "scale": scale}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.logistic.sf"] = logistic_sf_inputs()
 

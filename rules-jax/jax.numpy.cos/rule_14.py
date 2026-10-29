@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the input is a list of integers, it must contain at least one element (Rule 14)
+# input tensor rank must be between 1 and 5 (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] >= 1) if n else
-          v["arg1_length"] >= 1)
+    s.add(Not(And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 5)) if n else
+          And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 5))
 )
 
 def rule_14_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_14_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_length': arg1_length})
+        rule_14(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_length': arg1['length']}, neg)
+        rule_14(solver, {'arg1_ndim': arg1['ndim']}, neg)

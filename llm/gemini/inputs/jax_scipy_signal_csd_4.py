@@ -4,203 +4,205 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def csd_inputs():
     list_of_inputs = []
 
-    # Input 1, valid - 1D arrays with standard settings
-    x = np.random.randn(1000).astype(np.float32)
-    y = np.random.randn(1000).astype(np.float32)
+    # Input 1: 1D signals, default-like parameters
+    x = np.random.randn(512).astype(np.float32)
+    y = np.random.randn(512).astype(np.float32)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 1.0,
-        'window': 'hann',
-        'nperseg': 256,
-        'noverlap': 128,
-        'nfft': 256,
-        'detrend': 'constant',
-        'return_onesided': True,
-        'scaling': 'density',
-        'axis': -1,
-        'average': 'mean'
+        "x": x,
+        "y": y,
+        "fs": 1.0,
+        "window": "hann",
+        "nperseg": 128,
+        "noverlap": 64,
+        "nfft": 128,
+        "detrend": "constant",
+        "return_onesided": True,
+        "scaling": "density",
+        "axis": -1,
+        "average": "mean",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2, valid - 2D arrays, median average, spectrum scaling
-    x = np.random.randn(500, 10).astype(np.float32)
-    y = np.random.randn(500, 10).astype(np.float32)
-    input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 100.0,
-        'window': 'hamming',
-        'nperseg': 100,
-        'noverlap': 50,
-        'nfft': 128,
-        'detrend': 'linear',
-        'return_onesided': False,
-        'scaling': 'spectrum',
-        'axis': 0,
-        'average': 'median'
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3, valid - float64 data types and boxcar window
+    # Input 2: 1D signals, float64, zero-padding with nfft > nperseg, linear detrend, two-sided
     x = np.random.randn(1024).astype(np.float64)
     y = np.random.randn(1024).astype(np.float64)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 44100.0,
-        'window': 'boxcar',
-        'nperseg': 512,
-        'noverlap': 256,
-        'nfft': 512,
-        'detrend': 'constant',
-        'return_onesided': True,
-        'scaling': 'density',
-        'axis': -1,
-        'average': 'mean'
+        "x": x,
+        "y": y,
+        "fs": 100.0,
+        "window": "hamming",
+        "nperseg": 256,
+        "noverlap": 128,
+        "nfft": 512,
+        "detrend": "linear",
+        "return_onesided": False,
+        "scaling": "spectrum",
+        "axis": -1,
+        "average": "median",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4, valid - 3D arrays with custom axis
-    x = np.random.randn(5, 500, 3).astype(np.float32)
-    y = np.random.randn(5, 500, 3).astype(np.float32)
+    # Input 3: 2D signals, along axis 1, boxcar window
+    x = np.random.randn(4, 256).astype(np.float32)
+    y = np.random.randn(4, 256).astype(np.float32)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 2.5,
-        'window': 'hann',
-        'nperseg': 64,
-        'noverlap': 32,
-        'nfft': 64,
-        'detrend': 'constant',
-        'return_onesided': False,
-        'scaling': 'density',
-        'axis': 1,
-        'average': 'median'
+        "x": x,
+        "y": y,
+        "fs": 250.5,
+        "window": "boxcar",
+        "nperseg": 64,
+        "noverlap": 32,
+        "nfft": 64,
+        "detrend": "constant",
+        "return_onesided": True,
+        "scaling": "density",
+        "axis": 1,
+        "average": "mean",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5, valid - small segment size
-    x = np.random.randn(16).astype(np.float32)
-    y = np.random.randn(16).astype(np.float32)
+    # Input 4: 2D signals, computed along axis 0
+    x = np.random.randn(200, 8).astype(np.float32)
+    y = np.random.randn(200, 8).astype(np.float32)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 8.0,
-        'window': 'hann',
-        'nperseg': 8,
-        'noverlap': 4,
-        'nfft': 8,
-        'detrend': 'linear',
-        'return_onesided': True,
-        'scaling': 'spectrum',
-        'axis': -1,
-        'average': 'mean'
+        "x": x,
+        "y": y,
+        "fs": 50.0,
+        "window": "bartlett",
+        "nperseg": 50,
+        "noverlap": 25,
+        "nfft": 100,
+        "detrend": "linear",
+        "return_onesided": False,
+        "scaling": "spectrum",
+        "axis": 0,
+        "average": "mean",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6, valid - large dimensions and FFT zero padding
-    x = np.random.randn(5000).astype(np.float32)
-    y = np.random.randn(5000).astype(np.float32)
+    # Input 5: Complex inputs, two-sided spectrum
+    x = (np.random.randn(500) + 1j * np.random.randn(500)).astype(np.complex64)
+    y = (np.random.randn(500) + 1j * np.random.randn(500)).astype(np.complex64)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 1000.0,
-        'window': 'hann',
-        'nperseg': 1024,
-        'noverlap': 512,
-        'nfft': 2048,
-        'detrend': 'constant',
-        'return_onesided': True,
-        'scaling': 'density',
-        'axis': -1,
-        'average': 'mean'
+        "x": x,
+        "y": y,
+        "fs": 10.0,
+        "window": "hann",
+        "nperseg": 100,
+        "noverlap": 50,
+        "nfft": 100,
+        "detrend": "constant",
+        "return_onesided": False,
+        "scaling": "density",
+        "axis": -1,
+        "average": "mean",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7, valid - 3D arrays with negative axis index
-    x = np.random.randn(4, 1000, 2).astype(np.float32)
-    y = np.random.randn(4, 1000, 2).astype(np.float32)
+    # Input 6: 3D signals, blackman window, median averaging
+    x = np.random.randn(2, 3, 256).astype(np.float32)
+    y = np.random.randn(2, 3, 256).astype(np.float32)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 50.0,
-        'window': 'hamming',
-        'nperseg': 200,
-        'noverlap': 100,
-        'nfft': 256,
-        'detrend': 'constant',
-        'return_onesided': False,
-        'scaling': 'spectrum',
-        'axis': -2,
-        'average': 'mean'
+        "x": x,
+        "y": y,
+        "fs": 2.0,
+        "window": "blackman",
+        "nperseg": 128,
+        "noverlap": 0,
+        "nfft": 256,
+        "detrend": "constant",
+        "return_onesided": True,
+        "scaling": "spectrum",
+        "axis": -1,
+        "average": "median",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8, valid - zero overlap
-    x = np.random.randn(1000).astype(np.float32)
-    y = np.random.randn(1000).astype(np.float32)
+    # Input 7: 2D float64 signals, non-standard overlap
+    x = np.random.randn(16, 512).astype(np.float64)
+    y = np.random.randn(16, 512).astype(np.float64)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 1.0,
-        'window': 'hann',
-        'nperseg': 100,
-        'noverlap': 0,
-        'nfft': 100,
-        'detrend': 'linear',
-        'return_onesided': True,
-        'scaling': 'density',
-        'axis': -1,
-        'average': 'median'
+        "x": x,
+        "y": y,
+        "fs": 1000.0,
+        "window": "hann",
+        "nperseg": 256,
+        "noverlap": 64,
+        "nfft": 256,
+        "detrend": "linear",
+        "return_onesided": True,
+        "scaling": "density",
+        "axis": -1,
+        "average": "mean",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9, valid - non-power-of-two FFT length
-    x = np.random.randn(1000).astype(np.float32)
-    y = np.random.randn(1000).astype(np.float32)
+    # Input 8: 1D signals with negative values, low sampling frequency
+    x = np.random.uniform(-10.0, -1.0, size=(300,)).astype(np.float32)
+    y = np.random.uniform(-5.0, 5.0, size=(300,)).astype(np.float32)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 12.34,
-        'window': 'hann',
-        'nperseg': 150,
-        'noverlap': 50,
-        'nfft': 300,
-        'detrend': 'constant',
-        'return_onesided': True,
-        'scaling': 'density',
-        'axis': -1,
-        'average': 'mean'
+        "x": x,
+        "y": y,
+        "fs": 0.5,
+        "window": "hamming",
+        "nperseg": 60,
+        "noverlap": 30,
+        "nfft": 120,
+        "detrend": "constant",
+        "return_onesided": False,
+        "scaling": "density",
+        "axis": 0,
+        "average": "median",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10, valid - 4D input array
-    x = np.random.randn(2, 3, 500, 4).astype(np.float32)
-    y = np.random.randn(2, 3, 500, 4).astype(np.float32)
+    # Input 9: 3D signals along axis 0
+    x = np.random.randn(100, 4, 8).astype(np.float32)
+    y = np.random.randn(100, 4, 8).astype(np.float32)
     input_dict = {
-        'x': x,
-        'y': y,
-        'fs': 250.0,
-        'window': 'hann',
-        'nperseg': 256,
-        'noverlap': 128,
-        'nfft': 256,
-        'detrend': 'constant',
-        'return_onesided': True,
-        'scaling': 'density',
-        'axis': 2,
-        'average': 'mean'
+        "x": x,
+        "y": y,
+        "fs": 12.5,
+        "window": "boxcar",
+        "nperseg": 50,
+        "noverlap": 20,
+        "nfft": 64,
+        "detrend": "constant",
+        "return_onesided": True,
+        "scaling": "spectrum",
+        "axis": 0,
+        "average": "mean",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Short signals with bartlett window
+    x = np.random.randn(128).astype(np.float32)
+    y = np.random.randn(128).astype(np.float32)
+    input_dict = {
+        "x": x,
+        "y": y,
+        "fs": 8.0,
+        "window": "bartlett",
+        "nperseg": 32,
+        "noverlap": 16,
+        "nfft": 32,
+        "detrend": "linear",
+        "return_onesided": True,
+        "scaling": "density",
+        "axis": -1,
+        "average": "median",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.signal.csd_4"] = csd_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Tensor operand and target dtype (Rule 43)
+# when converting integer operand to single-precision float, value should fit within 24-bit exact representable integer bounds (Rule 43)
 
 rule_43 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 0, (Or(v["arg1_dtype"] == v["arg2_value"], v["arg1_dtype"] != v["arg2_value"])))) if n else
-          And(v["arg1_ndim"] >= 0, (Or(v["arg1_dtype"] == v["arg2_value"], v["arg1_dtype"] != v["arg2_value"]))))
+    s.add(Not(If(Or(v["arg2_value"] == 7, v["arg2_value"] == 8), And(v["arg1_value"] >= -16777216, v["arg1_value"] <= 16777216), True)) if n else
+          If(Or(v["arg2_value"] == 7, v["arg2_value"] == 8), And(v["arg1_value"] >= -16777216, v["arg1_value"] <= 16777216), True))
 )
 
 def rule_43_func(arg1, arg2, solver=None, neg=False):
@@ -20,26 +20,24 @@ def rule_43_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg1_dtype = Int('arg1_dtype')
+        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_value == int(arg1))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 43
-        rule_43(solver, {'arg1_dtype': arg1_dtype, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_43(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_43(solver, {'arg1_dtype': arg1['dtype'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_43(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

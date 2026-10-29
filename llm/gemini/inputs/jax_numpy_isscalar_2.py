@@ -4,46 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isscalar_inputs():
     list_of_inputs = []
 
-    # Input 1: Python int
-    list_of_inputs.append({"element": 42})
+    # Input 1: zero integer
+    input_dict = {"element": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python int (negative)
-    list_of_inputs.append({"element": -17})
+    # Input 2: positive integer
+    input_dict = {"element": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Python int (zero)
-    list_of_inputs.append({"element": 0})
+    # Input 3: negative integer
+    input_dict = {"element": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: numpy int32
-    list_of_inputs.append({"element": np.int32(100)})
+    # Input 4: small positive integer
+    input_dict = {"element": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: numpy int32 (negative)
-    list_of_inputs.append({"element": np.int32(-50)})
+    # Input 5: small negative integer
+    input_dict = {"element": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int64
-    list_of_inputs.append({"element": np.int64(12345678)})
+    # Input 6: large positive integer
+    input_dict = {"element": 1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy int64 (negative)
-    list_of_inputs.append({"element": np.int64(-12345678)})
+    # Input 7: large negative integer
+    input_dict = {"element": -1000000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Python int (large positive)
-    list_of_inputs.append({"element": 99999999})
+    # Input 8: powers of two
+    input_dict = {"element": 256}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Python int (large negative)
-    list_of_inputs.append({"element": -99999999})
+    # Input 9: negative power of two
+    input_dict = {"element": -512}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy int32 (zero)
-    list_of_inputs.append({"element": np.int32(0)})
+    # Input 10: 16-bit max integer
+    input_dict = {"element": 32767}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: numpy int64 (zero)
-    list_of_inputs.append({"element": np.int64(0)})
+    # Input 11: 32-bit max integer
+    input_dict = {"element": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 32-bit min integer
+    input_dict = {"element": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isscalar_2"] = isscalar_inputs()
 

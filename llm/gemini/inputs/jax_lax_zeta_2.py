@@ -4,73 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def zeta_inputs():
     list_of_inputs = []
 
-    # Input 1: Float32 numpy scalars
-    list_of_inputs.append({
-        "x": np.float32(2.0),
-        "q": np.float32(1.0)
-    })
+    # Input 1: Standard values (Riemann zeta function equivalent, q=1.0)
+    input_dict = {"x": 2.0, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Float64 numpy scalars
-    list_of_inputs.append({
-        "x": np.float64(3.0),
-        "q": np.float64(0.5)
-    })
+    # Input 2: Non-integer x > 1, integer q
+    input_dict = {"x": 2.5, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Standard python floats
-    list_of_inputs.append({
-        "x": 1.5,
-        "q": 2.0
-    })
+    # Input 3: Non-integer q in (0, 1)
+    input_dict = {"x": 3.0, "q": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large q float
-    list_of_inputs.append({
-        "x": 4.0,
-        "q": 10.0
-    })
+    # Input 4: Large positive x
+    input_dict = {"x": 10.0, "q": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small q float
-    list_of_inputs.append({
-        "x": np.float64(2.5),
-        "q": np.float64(0.1)
-    })
+    # Input 5: q > 1 with integer x
+    input_dict = {"x": 4.0, "q": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Near 1 x float
-    list_of_inputs.append({
-        "x": np.float32(1.1),
-        "q": np.float32(1.5)
-    })
+    # Input 6: Non-integer x and q
+    input_dict = {"x": 1.5, "q": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: High x float
-    list_of_inputs.append({
-        "x": 10.0,
-        "q": 1.0
-    })
+    # Input 7: Small q > 0
+    input_dict = {"x": 2.0, "q": 0.1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: High q float
-    list_of_inputs.append({
-        "x": 2.0,
-        "q": 100.0
-    })
+    # Input 8: Large q
+    input_dict = {"x": 3.5, "q": 15.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small fractional x and q
-    list_of_inputs.append({
-        "x": np.float64(1.05),
-        "q": np.float64(0.01)
-    })
+    # Input 9: x close to 1
+    input_dict = {"x": 1.05, "q": 2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Float32 scalars
-    list_of_inputs.append({
-        "x": np.float32(5.5),
-        "q": np.float32(2.5)
-    })
+    # Input 10: Higher order integer x and q
+    input_dict = {"x": 6.0, "q": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Fractional values for both
+    input_dict = {"x": 4.25, "q": 1.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.zeta_2"] = zeta_inputs()
 

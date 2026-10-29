@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Matrix norm input must have at least 2 dimensions and keepdims must be boolean (Rule 3)
+# valid integer order for matrix norm (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 2, (Or(v["arg2_value"] == True, v["arg2_value"] == False)))) if n else
-          And(v["arg1_ndim"] >= 2, (Or(v["arg2_value"] == True, v["arg2_value"] == False))))
+    s.add(Not(And(v["arg1_ndim"] >= 2, (Or(Or(Or(v["arg2_value"] == 1, v["arg2_value"] == -1), v["arg2_value"] == 2), v["arg2_value"] == -2)))) if n else
+          And(v["arg1_ndim"] >= 2, (Or(Or(Or(v["arg2_value"] == 1, v["arg2_value"] == -1), v["arg2_value"] == 2), v["arg2_value"] == -2))))
 )
 
 def rule_3_func(arg1, arg2, solver=None, neg=False):
@@ -22,17 +22,17 @@ def rule_3_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, bool):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_value = Bool('arg2_value')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == arg2)
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 3
         rule_3(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})

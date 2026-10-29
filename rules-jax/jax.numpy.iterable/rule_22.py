@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input list has a non-negative length (Rule 22)
+# list of booleans must contain at least one element (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_length"] >= 0) if n else
-          v["arg1_length"] >= 0)
+    s.add(Not(v["arg1_length"] > 0) if n else
+          v["arg1_length"] > 0)
 )
 
 def rule_22_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_22_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not (isinstance(arg1, list) and all(isinstance(e, bool) for e in arg1)):
             return False
 
         # Variable declarations

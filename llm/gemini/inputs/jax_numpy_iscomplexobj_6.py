@@ -4,46 +4,69 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def iscomplexobj_inputs():
     list_of_inputs = []
 
-    # Input 1: tuple of real integers
-    list_of_inputs.append({"x": (1, 2, 3)})
+    # Input 1: tuple of integers
+    input_dict = {"x": (1, 2, 3)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: tuple of real floats
-    list_of_inputs.append({"x": (1.0, -2.5, 3.14)})
+    # Input 2: tuple of negative integers
+    input_dict = {"x": (-5, -10, -15)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: tuple with a complex number
-    list_of_inputs.append({"x": (1, 2.0, 3 + 4j)})
+    # Input 3: tuple of standard floats
+    input_dict = {"x": (1.0, 2.5, -3.7)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 4: tuple of complex numbers
-    list_of_inputs.append({"x": (1j, 2 - 3j)})
+    input_dict = {"x": (1 + 2j, 3 - 4j)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: tuple containing numpy array of float32
-    list_of_inputs.append({"x": (np.array([1.0, 2.0], dtype=np.float32),)})
+    # Input 5: tuple with mixed float and complex
+    input_dict = {"x": (0.0, 1 + 0j)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: tuple containing numpy array of complex64
-    list_of_inputs.append({"x": (np.array([1.0 + 1j, 2.0], dtype=np.complex64),)})
+    # Input 6: tuple of booleans
+    input_dict = {"x": (True, False, True)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: tuple containing mix of bool and complex
-    list_of_inputs.append({"x": (True, 1j)})
+    # Input 7: tuple containing a 1D complex numpy array
+    input_dict = {"x": (np.array([1.0 + 2.0j, 3.0 - 1.0j], dtype=np.complex64),)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: tuple with multi-dimensional numpy array of complex
-    list_of_inputs.append({"x": (np.array([[1j, 2j], [3j, 4j]], dtype=np.complex128),)})
+    # Input 8: tuple containing a 2D real numpy array
+    input_dict = {"x": (np.array([[1.0, -2.0], [3.0, 4.0]], dtype=np.float32),)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: empty tuple
-    list_of_inputs.append({"x": ()})
+    # Input 9: tuple containing a 3D complex numpy array
+    input_dict = {
+        "x": (np.ones((2, 3, 4), dtype=np.complex128),)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: tuple containing numpy complex scalar and real scalar
-    list_of_inputs.append({"x": (np.array(1 + 2j, dtype=np.complex64), np.array(3.0, dtype=np.float64))})
+    # Input 10: tuple of numpy complex scalars
+    input_dict = {
+        "x": (np.complex64(1.0 - 2.0j), np.complex64(3.0 + 4.0j))
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: tuple of negative complex numbers
-    list_of_inputs.append({"x": (-1j, -2 - 3j, -4.5j)})
+    # Input 11: tuple of numpy float scalars
+    input_dict = {
+        "x": (np.float64(-3.14), np.float64(2.718))
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: single-element tuple with zero complex value
+    input_dict = {"x": (0.0 + 0.0j,)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.iscomplexobj_6"] = iscomplexobj_inputs()
 

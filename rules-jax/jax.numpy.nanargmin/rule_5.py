@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension-specific axis restrictions (Rule 5)
+# axis must be within the valid range for the input tensor (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == 0 - 1), True)) if n else
-          If(v["arg1_ndim"] == 1, Or(v["arg2_value"] == 0, v["arg2_value"] == 0 - 1), True))
+    s.add(Not(And(0 - v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"] - 1)) if n else
+          And(0 - v["arg1_ndim"] <= v["arg2_value"], v["arg2_value"] <= v["arg1_ndim"] - 1))
 )
 
 def rule_5_func(arg1, arg2, solver=None, neg=False):

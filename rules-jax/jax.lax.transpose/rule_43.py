@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# permutation list must be a complete, bijective mapping of the operand's dimensions (Rule 43)
+# non-scalar operand requires non-empty permutation list of equal length (Rule 43)
 
 rule_43 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_length"] == v["arg1_ndim"], And([Implies(k < (v["arg1_ndim"] - 1 + 1), Or([And(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) == k) for i in range(6)])) for k in range(6)]))) if n else
-          And(v["arg2_length"] == v["arg1_ndim"], And([Implies(k < (v["arg1_ndim"] - 1 + 1), Or([And(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) == k) for i in range(6)])) for k in range(6)])))
+    s.add(Not(If(v["arg1_ndim"] > 0, And(v["arg2_length"] > 0, v["arg2_length"] == v["arg1_ndim"]), v["arg2_length"] == 0)) if n else
+          If(v["arg1_ndim"] > 0, And(v["arg2_length"] > 0, v["arg2_length"] == v["arg1_ndim"]), v["arg2_length"] == 0))
 )
 
 def rule_43_func(arg1, arg2, solver=None, neg=False):
@@ -29,18 +29,15 @@ def rule_43_func(arg1, arg2, solver=None, neg=False):
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 43
-        rule_43(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_43(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_43(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_43(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

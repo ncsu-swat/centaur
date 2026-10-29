@@ -4,63 +4,79 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cond_inputs():
     list_of_inputs = []
 
-    # Input 1: 2x2 square float32 matrix, p = 2.0
-    x = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    # Input 1: 2D square float32 matrix with p=2.0
+    x = np.array([[2.0, 1.0], [1.0, 3.0]], dtype=np.float32)
     p = 2.0
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 2: 3x3 square float64 matrix, p = 1.0
-    x = np.array([[1.0, 0.0, 0.0], [0.0, 2.0, 0.0], [0.0, 0.0, 3.0]], dtype=np.float64)
+    # Input 2: 2D square float64 matrix with p=1.0
+    x = np.array(
+        [[4.0, 1.0, 0.0], [1.0, 5.0, 2.0], [0.0, 2.0, 6.0]], dtype=np.float64
+    )
     p = 1.0
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 3: 4x4 square float32 matrix, p = -1.0
-    x = np.random.randn(4, 4).astype(np.float32)
+    # Input 3: 2D square float32 matrix with p=-1.0
+    x = np.array([[3.0, -1.0], [-1.0, 2.0]], dtype=np.float32)
     p = -1.0
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 4: 2x3 non-square float32 matrix, p = 2.0
-    x = np.random.randn(2, 3).astype(np.float32)
-    p = 2.0
-    list_of_inputs.append({"x": x, "p": p})
-
-    # Input 5: 5x5 square float64 matrix, p = inf
-    x = np.random.randn(5, 5).astype(np.float64)
-    p = float('inf')
-    list_of_inputs.append({"x": x, "p": p})
-
-    # Input 6: 3x3 square float32 matrix, p = -inf
-    x = np.random.randn(3, 3).astype(np.float32)
-    p = float('-inf')
-    list_of_inputs.append({"x": x, "p": p})
-
-    # Input 7: 4x2 non-square float64 matrix, p = -2.0
-    x = np.random.randn(4, 2).astype(np.float64)
+    # Input 4: 2D square float64 matrix with p=-2.0
+    x = np.eye(4, dtype=np.float64) * 2.0 + np.ones((4, 4), dtype=np.float64)
     p = -2.0
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 8: 10x10 square float32 matrix with negative values, p = 2.0
-    x = np.random.uniform(-10.0, 10.0, (10, 10)).astype(np.float32)
+    # Input 5: 2D square float32 matrix with p=inf
+    x = np.array([[10.0, 2.0], [3.0, 8.0]], dtype=np.float32)
+    p = float("inf")
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
+
+    # Input 6: 2D square float64 matrix with p=-inf
+    x = np.array(
+        [[5.0, -2.0, 1.0], [-2.0, 6.0, 0.0], [1.0, 0.0, 4.0]], dtype=np.float64
+    )
+    p = float("-inf")
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
+
+    # Input 7: 3D batched square float32 matrices with p=2.0
+    rng = np.random.RandomState(42)
+    x = rng.randn(3, 4, 4).astype(np.float32) + 5.0 * np.eye(
+        4, dtype=np.float32
+    )
     p = 2.0
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 9: Batched square float32 matrix (2, 3, 3), p = 1.0
-    x = np.random.randn(2, 3, 3).astype(np.float32)
-    p = 1.0
-    list_of_inputs.append({"x": x, "p": p})
+    # Input 8: 2D rectangular float32 matrix (M > N) with p=2.0
+    x = rng.randn(5, 3).astype(np.float32)
+    p = 2.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
-    # Input 10: Batched non-square float64 matrix (3, 4, 2), p = -2.0
-    x = np.random.randn(3, 4, 2).astype(np.float64)
+    # Input 9: 2D rectangular float64 matrix (M < N) with p=-2.0
+    x = rng.randn(3, 5).astype(np.float64)
     p = -2.0
-    list_of_inputs.append({"x": x, "p": p})
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
+
+    # Input 10: 4D batched square float32 matrices with p=float('inf')
+    x = rng.randn(2, 2, 3, 3).astype(np.float32) + 4.0 * np.eye(
+        3, dtype=np.float32
+    )
+    p = float("inf")
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
+
+    # Input 11: 3D batched rectangular float64 matrices with p=2.0
+    x = rng.randn(4, 6, 2).astype(np.float64)
+    p = 2.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "p": p}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.cond_2"] = cond_inputs()
 

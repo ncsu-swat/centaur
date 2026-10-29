@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def sinh_inputs():
     list_of_inputs = []
 
-    # Input 1: Float32 1D array with positive, negative, and zero values
-    x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D array of float32
+    x = np.array([-3.0, -1.0, 0.0, 1.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: Float64 2D array with random values
-    x = np.random.randn(3, 4).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D array of float64
+    x = np.array([[-2.0, 0.5], [1.5, -4.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: Complex64 1D array
-    x = np.array([3.0 - 2.0j, -1.0 + 1.0j, 0.0j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Scalar (0D array)
+    x = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: Int32 1D array
-    x = np.array([-5, 0, 5], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array of integers (promoted by JAX to inexact)
+    x = np.arange(-6, 6, dtype=np.int32).reshape(2, 2, 3)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: Float32 0D array (scalar representation)
-    x = np.array(1.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D complex64 array
+    x = np.array([1.0 + 2.0j, -3.0 + 0.5j, 0.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: Float32 3D array
-    x = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 2D complex128 array
+    x = np.array([[2.0 - 3.0j, -1.0 + 1.0j], [0.5 + 0.5j, -2.5 - 1.5j]], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Complex128 2D array
-    x = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 4D float16 array
+    x = np.random.randn(2, 3, 1, 4).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Float16 1D array
-    x = np.array([-1.5, 0.5, 2.5], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Array containing infinities and NaNs
+    x = np.array([-np.inf, -1.0, 0.0, np.nan, np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Int64 2D array
-    x = np.array([[-3, 2], [1, -4]], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Large 1D array with values close to 0
+    x = np.linspace(-1e-4, 1e-4, 100, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Float32 4D array
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array
+    x = np.empty((0, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: Non-contiguous / transposed array
+    x = np.arange(12, dtype=np.float32).reshape(3, 4).T
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.sinh_1"] = sinh_inputs()
 

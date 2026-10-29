@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# operand must have a numerical data type (Rule 33)
+# the first element of an axes list cannot be duplicated anywhere later in the list (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 11), v["arg1_dtype"] != 12)) if n else
-          And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 11), v["arg1_dtype"] != 12))
+    s.add(Not(If(v["arg1_length"] > 1, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], 0) != Select(v["arg1_values"], i)) for i in range(6)]), True)) if n else
+          If(v["arg1_length"] > 1, And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], 0) != Select(v["arg1_values"], i)) for i in range(6)]), True))
 )
 
 def rule_33_func(arg1, solver=None, neg=False):
@@ -19,20 +19,23 @@ def rule_33_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_length = Int('arg1_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_length == len(arg1))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
 
         # Constraints for rule 33
-        rule_33(solver, {'arg1_dtype': arg1_dtype})
+        rule_33(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_33(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_33(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values']}, neg)

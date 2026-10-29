@@ -4,68 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ravel_inputs():
     list_of_inputs = []
 
     # Input 1: 2D float32 array, C-order
-    a = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {"a": a, "order": "C"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    a = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    order = "C"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
     # Input 2: 2D float32 array, F-order
-    a = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {"a": a, "order": "F"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    a = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
+    order = "F"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
     # Input 3: 1D int32 array, C-order
-    a = np.array([-10, 0, 10, 20, 30], dtype=np.int32)
-    input_dict = {"a": a, "order": "C"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    a = np.array([10, -20, 30, -40, 50], dtype=np.int32)
+    order = "C"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 4: 3D float64 array, C-order
-    a = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {"a": a, "order": "C"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D int32 array, F-order
+    a = np.array([-1, 0, 1], dtype=np.int32)
+    order = "F"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 5: 3D float64 array, F-order
-    a = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {"a": a, "order": "F"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D int64 array, C-order
+    a = np.arange(24, dtype=np.int64).reshape((2, 3, 4)) - 10
+    order = "C"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 6: 4D int64 array, C-order
-    a = np.random.randint(-100, 100, size=(2, 2, 3, 3)).astype(np.int64)
-    input_dict = {"a": a, "order": "C"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D float64 array, F-order
+    a = np.random.randn(3, 4, 2).astype(np.float64)
+    order = "F"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 7: 0D (scalar) array, C-order
-    a = np.array(42.0, dtype=np.float32)
-    input_dict = {"a": a, "order": "C"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 0D scalar array, C-order
+    a = np.array(42.5, dtype=np.float32)
+    order = "C"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 8: 2D boolean array, C-order
-    a = np.random.choice([True, False], size=(5, 5))
-    input_dict = {"a": a, "order": "C"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D float32 array with negative values, F-order
+    a = np.random.uniform(-10.0, 10.0, size=(2, 2, 3, 2)).astype(np.float32)
+    order = "F"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 9: 5D int16 array, F-order
-    a = np.random.randint(-10, 10, size=(2, 1, 3, 1, 2)).astype(np.int16)
-    input_dict = {"a": a, "order": "F"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D boolean array, C-order
+    a = np.array([[True, False, True], [False, False, True]], dtype=np.bool_)
+    order = "C"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 10: 2D complex64 array, C-order
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    input_dict = {"a": a, "order": "C"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D complex64 array, F-order
+    a = np.array([[1 + 2j, 3 - 4j], [-5 + 6j, 7 + 8j]], dtype=np.complex64)
+    order = "F"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
-    # Input 11: 3D uint8 array, F-order
-    a = np.random.randint(0, 255, size=(4, 4, 2)).astype(np.uint8)
-    input_dict = {"a": a, "order": "F"}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Empty 2D array, C-order
+    a = np.empty((0, 5), dtype=np.float32)
+    order = "C"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
+
+    # Input 12: 5D uint8 array, F-order
+    a = np.zeros((1, 2, 1, 3, 2), dtype=np.uint8)
+    order = "F"
+    list_of_inputs.append(copy.deepcopy({"a": a, "order": order}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ravel"] = ravel_inputs()
 

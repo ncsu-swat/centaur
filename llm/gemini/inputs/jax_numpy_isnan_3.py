@@ -4,50 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def isnan_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple python integer scalar (positive)
-    input_dict = {"x": 42}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Python integer scalar (negative)
-    input_dict = {"x": -100}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Python integer scalar (zero)
+    # Input 1: zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Numpy int32 scalar
-    input_dict = {"x": np.int32(10)}
+    # Input 2: positive integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Numpy int64 scalar (large negative value)
-    input_dict = {"x": np.int64(-999999)}
+    # Input 3: negative integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D Numpy array of int32
-    input_dict = {"x": np.array([1, -2, 3, 0], dtype=np.int32)}
+    # Input 4: standard positive integer
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D Numpy array of int64
-    input_dict = {"x": np.array([[10, 20], [-30, -40]], dtype=np.int64)}
+    # Input 5: standard negative integer
+    input_dict = {"x": -100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D Numpy array of int16
-    input_dict = {"x": np.ones((2, 2, 2), dtype=np.int16) * -5}
+    # Input 6: larger positive integer
+    input_dict = {"x": 1000000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D Numpy array of uint8
-    input_dict = {"x": np.array([0, 128, 255], dtype=np.uint8)}
+    # Input 7: larger negative integer
+    input_dict = {"x": -999999}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Higher-dimensional (4D) Numpy array of int32
-    input_dict = {"x": np.zeros((1, 2, 3, 2), dtype=np.int32)}
+    # Input 8: 32-bit signed int max
+    input_dict = {"x": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 32-bit signed int min
+    input_dict = {"x": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 8-bit unsigned boundary
+    input_dict = {"x": 255}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 8-bit signed negative boundary
+    input_dict = {"x": -128}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

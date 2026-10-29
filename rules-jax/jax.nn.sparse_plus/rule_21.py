@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the minimum value of the tensor must be less than or equal to its maximum value (Rule 21)
+# for non-scalar input tensors, the last feature dimension must be strictly positive (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1)) if n else
-          Select(v["arg1_range"], 0) <= Select(v["arg1_range"], 1))
+    s.add(Not(If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0, True)) if n else
+          If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0, True))
 )
 
 def rule_21_func(arg1, solver=None, neg=False):
@@ -24,16 +24,18 @@ def rule_21_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_range': arg1_range})
+        rule_21(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_range': arg1['range']}, neg)
+        rule_21(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

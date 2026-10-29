@@ -4,79 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
-import jax.numpy as jnp
-
-# Patch jax.numpy.atanh so that it accepts and converts tuple inputs
-_original_atanh = jnp.atanh
-
-def patched_atanh(x, *args, **kwargs):
-    if isinstance(x, tuple):
-        x = jnp.array(x)
-    return _original_atanh(x, *args, **kwargs)
-
-jnp.atanh = patched_atanh
-
-# Also patch arctanh since atanh is an alias of arctanh
-_original_arctanh = jnp.arctanh
-
-def patched_arctanh(x, *args, **kwargs):
-    if isinstance(x, tuple):
-        x = jnp.array(x)
-    return _original_arctanh(x, *args, **kwargs)
-
-jnp.arctanh = patched_arctanh
-
-# Ensure the patch is applied in sys.modules
-import sys
-if 'jax.numpy' in sys.modules:
-    sys.modules['jax.numpy'].atanh = patched_atanh
-    sys.modules['jax.numpy'].arctanh = patched_arctanh
+import numpy as np
 
 def atanh_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D tuple of floats
-    input_dict = {"x": (0.5, -0.5, 0.0, 0.9, -0.9)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array
+    x = np.array([0.0, 0.5, -0.5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: Single element tuple
-    input_dict = {"x": (0.1,)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D single-element float32 array
+    x = np.array([0.25], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D tuple (tuple of tuples)
-    input_dict = {"x": ((0.1, -0.2), (0.3, -0.4))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float32 array
+    x = np.array([[0.1, -0.2], [0.3, -0.4]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D tuple close to boundaries
-    input_dict = {"x": (0.999, -0.999, 1e-7, -1e-7)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D float64 array near boundaries
+    x = np.array([-0.99, 0.0, 0.99], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D tuple
-    input_dict = {"x": (((0.1, 0.2), (0.3, 0.4)), ((0.5, 0.6), (0.7, 0.8)))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float32 array
+    x = np.random.uniform(-0.8, 0.8, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: Tuple with complex elements
-    input_dict = {"x": (0.5 + 0.5j, -0.2 - 0.1j)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D complex64 array
+    x = np.array([0.5 + 0.2j, -0.3 - 0.4j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D tuple with complex elements
-    input_dict = {"x": (((0.1 + 0.1j, 0.2 + 0.2j), (0.3 + 0.3j, 0.4 + 0.4j)))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D complex128 array
+    x = np.array([[0.1 + 0.1j, -0.5 + 0.2j], [0.0 + 0.0j, 0.8 - 0.1j]], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: Tuple of zeros
-    input_dict = {"x": (0.0, 0.0, 0.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array of negative values
+    x = np.array([-0.8, -0.5, -0.2, -0.01], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Tuple of numpy float32 scalars
-    input_dict = {"x": (np.float32(0.1), np.float32(-0.5))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D float32 array
+    x = np.random.uniform(-0.7, 0.7, size=(2, 2, 2, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 2D tuple of larger size
-    input_dict = {"x": ((0.1, 0.2, 0.3), (0.4, 0.5, 0.6))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D float64 array
+    x = np.array([[-0.75, 0.25, 0.0], [0.5, -0.5, 0.1]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array of zeros
+    x = np.zeros((5,), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 

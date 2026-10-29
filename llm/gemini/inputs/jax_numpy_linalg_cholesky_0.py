@@ -4,104 +4,108 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cholesky_inputs():
     list_of_inputs = []
 
+    # Helper to generate positive definite matrices
     def make_spd(shape, dtype=np.float32):
-        N = shape[-1]
-        B = np.random.randn(*shape).astype(dtype)
-        A = np.matmul(B, np.swapaxes(B, -1, -2))
-        eye = np.eye(N, dtype=dtype)
-        batch_shape = shape[:-2]
-        for _ in range(len(batch_shape)):
-            eye = np.expand_dims(eye, axis=0)
-        eye = np.tile(eye, batch_shape + (1, 1))
-        return A + (N * 2.0 + 1.0) * eye
+        n = shape[-1]
+        a = np.random.randn(*shape).astype(dtype)
+        if np.iscomplexobj(a):
+            a = a + 1j * np.random.randn(*shape).astype(dtype)
+            conj_t = np.swapaxes(a.conj(), -1, -2)
+            spd = np.matmul(a, conj_t)
+            eye = np.eye(n, dtype=dtype)
+            return spd + eye * (n * 2.0)
+        else:
+            t = np.swapaxes(a, -1, -2)
+            spd = np.matmul(a, t)
+            eye = np.eye(n, dtype=dtype)
+            return spd + eye * (n * 2.0)
 
-    # Input 1: 2D small matrix, default options
-    a = make_spd((3, 3), np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "upper": False,
-        "symmetrize_input": True
-    })
+    np.random.seed(42)
 
-    # Input 2: 2D small matrix, upper=True
-    a = make_spd((4, 4), np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "upper": True,
-        "symmetrize_input": True
-    })
+    # Input 1: Basic 2D float32 SPD matrix, default booleans
+    a1 = make_spd((3, 3), np.float32)
+    list_of_inputs.append(
+        {"a": a1, "upper": False, "symmetrize_input": True}
+    )
 
-    # Input 3: float64 matrix
-    a = make_spd((5, 5), np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "upper": False,
-        "symmetrize_input": True
-    })
+    # Input 2: 2D float64 SPD matrix, upper=True
+    a2 = make_spd((4, 4), np.float64)
+    list_of_inputs.append(
+        {"a": a2, "upper": True, "symmetrize_input": True}
+    )
 
-    # Input 4: 3D batched matrix, symmetrize_input=False
-    a = make_spd((2, 3, 3), np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "upper": False,
-        "symmetrize_input": False
-    })
+    # Input 3: 2D float32 with symmetrize_input=False
+    a3 = make_spd((5, 5), np.float32)
+    list_of_inputs.append(
+        {"a": a3, "upper": False, "symmetrize_input": False}
+    )
 
-    # Input 5: 3D batched, upper=True
-    a = make_spd((3, 4, 4), np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "upper": True,
-        "symmetrize_input": True
-    })
+    # Input 4: 2D float64, upper=True and symmetrize_input=False
+    a4 = make_spd((6, 6), np.float64)
+    list_of_inputs.append(
+        {"a": a4, "upper": True, "symmetrize_input": False}
+    )
 
-    # Input 6: 4D batched matrix
-    a = make_spd((2, 2, 3, 3), np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "upper": True,
-        "symmetrize_input": False
-    })
+    # Input 5: Batched 3D float32 SPD matrices
+    a5 = make_spd((2, 4, 4), np.float32)
+    list_of_inputs.append(
+        {"a": a5, "upper": False, "symmetrize_input": True}
+    )
 
-    # Input 7: 1x1 trivial matrix
-    a = make_spd((1, 1), np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "upper": False,
-        "symmetrize_input": True
-    })
+    # Input 6: Batched 3D float64 SPD matrices, upper=True
+    a6 = make_spd((5, 3, 3), np.float64)
+    list_of_inputs.append(
+        {"a": a6, "upper": True, "symmetrize_input": False}
+    )
 
-    # Input 8: larger 2D matrix
-    a = make_spd((20, 20), np.float32)
-    list_of_inputs.append({
-        "a": a,
-        "upper": False,
-        "symmetrize_input": True
-    })
+    # Input 7: Higher-dimensional 4D batch float32
+    a7 = make_spd((2, 3, 2, 2), np.float32)
+    list_of_inputs.append(
+        {"a": a7, "upper": False, "symmetrize_input": True}
+    )
 
-    # Input 9: float64, 4D batched
-    a = make_spd((1, 3, 2, 2), np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "upper": True,
-        "symmetrize_input": True
-    })
+    # Input 8: 1x1 matrix edge case
+    a8 = np.array([[4.0]], dtype=np.float32)
+    list_of_inputs.append(
+        {"a": a8, "upper": True, "symmetrize_input": True}
+    )
 
-    # Input 10: 10x10 matrix, symmetrize_input=False
-    a = make_spd((10, 10), np.float64)
-    list_of_inputs.append({
-        "a": a,
-        "upper": False,
-        "symmetrize_input": False
-    })
+    # Input 9: Complex64 Hermitian positive definite matrix
+    a9 = make_spd((3, 3), np.complex64)
+    list_of_inputs.append(
+        {"a": a9, "upper": False, "symmetrize_input": True}
+    )
+
+    # Input 10: Complex128 Hermitian positive definite matrix, upper=True
+    a10 = make_spd((4, 4), np.complex128)
+    list_of_inputs.append(
+        {"a": a10, "upper": True, "symmetrize_input": False}
+    )
+
+    # Input 11: Batched complex128 3D matrix
+    a11 = make_spd((3, 2, 2), np.complex128)
+    list_of_inputs.append(
+        {"a": a11, "upper": False, "symmetrize_input": False}
+    )
+
+    # Input 12: Matrix with explicit negative off-diagonal entries
+    a12 = np.array(
+        [[10.0, -2.0, -1.0], [-2.0, 10.0, -3.0], [-1.0, -3.0, 10.0]],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(
+        {"a": a12, "upper": True, "symmetrize_input": True}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.cholesky"] = cholesky_inputs()
 

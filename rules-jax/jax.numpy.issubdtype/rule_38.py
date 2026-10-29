@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when arg1 is a string and arg2 is a dtype, they must be a valid dtype string and a valid dtype index respectively (Rule 38)
+# complex dtype cannot be a subtype of a floating-point string representation (Rule 38)
 
 rule_38 = lambda s, v, n=False: (
-    s.add(Not(And((Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), (And(0 <= v["arg2_value"], v["arg2_value"] <= 12)))) if n else
-          And((Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), (And(0 <= v["arg2_value"], v["arg2_value"] <= 12))))
+    s.add(Not(If(And(9 <= v["arg1_value"], v["arg1_value"] <= 10), And(v["arg2_value"] != 38, v["arg2_value"] != 39), True)) if n else
+          If(And(9 <= v["arg1_value"], v["arg1_value"] <= 10), And(v["arg2_value"] != 38, v["arg2_value"] != 39), True))
 )
 
 def rule_38_func(arg1, arg2, solver=None, neg=False):
@@ -20,19 +20,19 @@ def rule_38_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        arg2_value = Int('arg2_value')
+        arg1_value = Int('arg1_value')
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 38
         rule_38(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})

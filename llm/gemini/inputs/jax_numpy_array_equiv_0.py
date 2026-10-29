@@ -4,73 +4,75 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def array_equiv_inputs():
     list_of_inputs = []
 
-    # Input 1: Identical 1D arrays of floats
-    a1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    a2 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D identical integer arrays
+    a1 = np.array([1, 2, 3], dtype=np.int32)
+    a2 = np.array([1, 2, 3], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 2: Broadcastable arrays (2D and 1D) with matching values
+    # Input 2: 1D different integer arrays of same shape
+    a1 = np.array([1, 2, 3], dtype=np.int64)
+    a2 = np.array([1, 2, 4], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
+
+    # Input 3: 2D and 1D broadcastable equal arrays
     a1 = np.array([[1, 2, 3], [1, 2, 3]], dtype=np.int32)
     a2 = np.array([1, 2, 3], dtype=np.int32)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 3: Same shape, different values
-    a1 = np.array([1, 2, 3], dtype=np.int32)
-    a2 = np.array([1, 2, 4], dtype=np.int32)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 0D scalar array and multi-dimensional array
+    a1 = np.array(5.0, dtype=np.float32)
+    a2 = np.full((3, 4), 5.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 4: Broadcastable but not equivalent (2D and 1D)
-    a1 = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
-    a2 = np.array([1, 2, 3], dtype=np.int32)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Floating point arrays with negative values
+    a1 = np.array([-1.5, 0.0, 2.75], dtype=np.float64)
+    a2 = np.array([-1.5, 0.0, 2.75], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 5: Boolean arrays
-    a1 = np.array([True, False, True], dtype=bool)
-    a2 = np.array([True, False, True], dtype=bool)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Boolean arrays
+    a1 = np.array([[True, False], [False, True]], dtype=np.bool_)
+    a2 = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 6: Negative values, identical
-    a1 = np.array([-10, -5, 0], dtype=np.int64)
-    a2 = np.array([-10, -5, 0], dtype=np.int64)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Complex numbers
+    a1 = np.array([1.0 + 2.0j, -3.0 - 4.0j], dtype=np.complex64)
+    a2 = np.array([1.0 + 2.0j, -3.0 - 4.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 7: Higher dimensional arrays (3D and 1D broadcastable)
-    a1 = np.ones((2, 3, 4), dtype=np.float64)
-    a2 = np.array([1.0], dtype=np.float64)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D arrays broadcasting with (1, 1, 3) and (2, 4, 3)
+    a1 = np.zeros((1, 1, 3), dtype=np.float32)
+    a2 = np.zeros((2, 4, 3), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 8: Empty arrays of same shape
-    a1 = np.array([], dtype=np.float32)
-    a2 = np.array([], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D arrays broadcastable along axis 0
+    a1 = np.array([[1], [2], [3]], dtype=np.int32)
+    a2 = np.array([[1, 1], [2, 2], [3, 3]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 9: 0-D arrays (scalars)
-    a1 = np.array(5, dtype=np.int32)
-    a2 = np.array(5, dtype=np.int32)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Empty arrays with matching shapes
+    a1 = np.empty((0, 5), dtype=np.float32)
+    a2 = np.empty((0, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
-    # Input 10: Arrays with Inf values
-    a1 = np.array([np.inf, -np.inf], dtype=np.float32)
-    a2 = np.array([np.inf, -np.inf], dtype=np.float32)
-    input_dict = {"a1": a1, "a2": a2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 4D arrays with different broadcastable shapes
+    a1 = np.ones((2, 1, 3, 1), dtype=np.int16)
+    a2 = np.ones((1, 4, 1, 5), dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
+
+    # Input 12: Arrays containing NaNs
+    a1 = np.array([np.nan, 1.0], dtype=np.float32)
+    a2 = np.array([np.nan, 1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"a1": a1, "a2": a2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.array_equiv"] = array_equiv_inputs()
 

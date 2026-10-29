@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For 2-dimensional inputs, the first dimension of z and m must be equal (Rule 29)
+# when both inputs are 3D tensors, all corresponding dimension sizes must match (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0), True)) if n else
-          If(And(v["arg1_ndim"] == 2, v["arg2_ndim"] == 2), Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0), True))
+    s.add(Not(If(And(v["arg1_ndim"] == 3, v["arg2_ndim"] == 3), And([Implies(i < (2 + 1), Select(v["arg1_shape"], i) == Select(v["arg2_shape"], i)) for i in range(6)]), True)) if n else
+          If(And(v["arg1_ndim"] == 3, v["arg2_ndim"] == 3), And([Implies(i < (2 + 1), Select(v["arg1_shape"], i) == Select(v["arg2_shape"], i)) for i in range(6)]), True))
 )
 
 def rule_29_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_29_func(arg1, arg2, solver=None, neg=False):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 29
-        rule_29(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_29(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_29(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_29(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

@@ -4,103 +4,113 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_can_cast_inputs():
+
+def can_cast_inputs():
     list_of_inputs = []
 
-    # Input 1: safe cast from int32 to int64
+    # Input 1: int32 to int64, safe casting
     input_dict = {
-        'from_': np.dtype('int32'),
-        'to': np.dtype('int64'),
-        'casting': 'safe'
+        "from_": np.dtype(np.int32),
+        "to": np.dtype(np.int64),
+        "casting": "safe",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: safe cast from float64 to complex128
+    # Input 2: float32 to float64, safe casting
     input_dict = {
-        'from_': np.dtype('float64'),
-        'to': np.dtype('complex128'),
-        'casting': 'safe'
+        "from_": np.dtype(np.float32),
+        "to": np.dtype(np.float64),
+        "casting": "safe",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: safe cast from float32 to float64
+    # Input 3: float64 to float32, same_kind casting
     input_dict = {
-        'from_': np.dtype('float32'),
-        'to': np.dtype('float64'),
-        'casting': 'safe'
+        "from_": np.dtype(np.float64),
+        "to": np.dtype(np.float32),
+        "casting": "same_kind",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: unsafe cast from int16 to int8
+    # Input 4: complex64 to float32, unsafe casting
     input_dict = {
-        'from_': np.dtype('int16'),
-        'to': np.dtype('int8'),
-        'casting': 'unsafe'
+        "from_": np.dtype(np.complex64),
+        "to": np.dtype(np.float32),
+        "casting": "unsafe",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: same_kind cast from float64 to float32
+    # Input 5: int16 to int16, no casting allowed (identity check)
     input_dict = {
-        'from_': np.dtype('float64'),
-        'to': np.dtype('float32'),
-        'casting': 'same_kind'
+        "from_": np.dtype(np.int16),
+        "to": np.dtype(np.int16),
+        "casting": "no",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: unsafe cast from complex64 to float32
+    # Input 6: float32 to complex64, equiv casting
     input_dict = {
-        'from_': np.dtype('complex64'),
-        'to': np.dtype('float32'),
-        'casting': 'unsafe'
+        "from_": np.dtype(np.float32),
+        "to": np.dtype(np.complex64),
+        "casting": "equiv",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 'no' casting constraint with identical types
+    # Input 7: bool to int32, safe casting
     input_dict = {
-        'from_': np.dtype('int32'),
-        'to': np.dtype('int32'),
-        'casting': 'no'
+        "from_": np.dtype(np.bool_),
+        "to": np.dtype(np.int32),
+        "casting": "safe",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 'equiv' casting constraint
+    # Input 8: uint8 to int16, safe casting
     input_dict = {
-        'from_': np.dtype('int32'),
-        'to': np.dtype('int32'),
-        'casting': 'equiv'
+        "from_": np.dtype(np.uint8),
+        "to": np.dtype(np.int16),
+        "casting": "safe",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: safe cast from uint8 to int16
+    # Input 9: int64 to int32, same_kind casting
     input_dict = {
-        'from_': np.dtype('uint8'),
-        'to': np.dtype('int16'),
-        'casting': 'safe'
+        "from_": np.dtype(np.int64),
+        "to": np.dtype(np.int32),
+        "casting": "same_kind",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: safe cast from bool to int32
+    # Input 10: float64 to int64, unsafe casting
     input_dict = {
-        'from_': np.dtype('bool'),
-        'to': np.dtype('int32'),
-        'casting': 'safe'
+        "from_": np.dtype(np.float64),
+        "to": np.dtype(np.int64),
+        "casting": "unsafe",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: unsafe cast from float32 to int32
+    # Input 11: uint32 to uint64, safe casting
     input_dict = {
-        'from_': np.dtype('float32'),
-        'to': np.dtype('int32'),
-        'casting': 'unsafe'
+        "from_": np.dtype(np.uint32),
+        "to": np.dtype(np.uint64),
+        "casting": "safe",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: complex128 to complex64, same_kind casting
+    input_dict = {
+        "from_": np.dtype(np.complex128),
+        "to": np.dtype(np.complex64),
+        "casting": "same_kind",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.can_cast_1"] = generate_can_cast_inputs()
+
+generated_inputs["jax.numpy.can_cast_1"] = can_cast_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

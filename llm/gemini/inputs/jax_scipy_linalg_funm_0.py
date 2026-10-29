@@ -4,117 +4,97 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.numpy as jnp
+import numpy as np
 
-class CallableTensorMock:
+
+class CallableTensor:
+
     def __init__(self, func):
-        self._func = func
+        self.func = func
         self.shape = ()
+        self.dtype = np.dtype(np.float32)
         self.ndim = 0
-        self.dtype = np.dtype('float32')
 
     def __call__(self, x):
-        return self._func(x)
+        return self.func(x)
+
+    def __deepcopy__(self, memo):
+        return CallableTensor(self.func)
+
 
 def funm_inputs():
     list_of_inputs = []
 
-    def gen_pd(n, dtype):
-        B = np.random.randn(n, n).astype(dtype)
-        return B @ B.T + np.eye(n).astype(dtype)
-
-    # Input 1: float32, 2x2, np.sin, disp=True
+    # Input 1: 2x2 float32 with jnp.cos, disp=True
     A = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.sin),
-        "disp": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    func = CallableTensor(jnp.cos)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": True}))
 
-    # Input 2: float32, 3x3, np.cos, disp=False
-    A = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.cos),
-        "disp": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2x2 float32 with jnp.exp, disp=False
+    A = np.array([[0.5, -1.0], [1.5, 2.0]], dtype=np.float32)
+    func = CallableTensor(jnp.exp)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": False}))
 
-    # Input 3: float64, 4x4, np.sinh, disp=True
-    A = np.random.randn(4, 4).astype(np.float64)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.sinh),
-        "disp": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1x1 float32 scalar matrix with jnp.sin, disp=True
+    A = np.array([[2.5]], dtype=np.float32)
+    func = CallableTensor(jnp.sin)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": True}))
 
-    # Input 4: complex64, 2x2, np.cosh, disp=False
-    A = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.cosh),
-        "disp": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3x3 float64 with jnp.sinh, disp=True
+    A = np.array(
+        [[2.0, -1.0, 0.0], [-1.0, 2.0, -1.0], [0.0, -1.0, 2.0]],
+        dtype=np.float64,
+    )
+    func = CallableTensor(jnp.sinh)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": True}))
 
-    # Input 5: float32 Positive Definite, 3x3, np.log, disp=True
-    A = gen_pd(3, np.float32)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.log),
-        "disp": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3x3 float32 with jnp.cosh, disp=False
+    A = np.array(
+        [[1.0, 0.0, 2.0], [0.0, 3.0, -1.0], [1.0, 1.0, 1.0]], dtype=np.float32
+    )
+    func = CallableTensor(jnp.cosh)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": False}))
 
-    # Input 6: float64 Positive Definite, 2x2, np.sqrt, disp=False
-    A = gen_pd(2, np.float64)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.sqrt),
-        "disp": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4x4 float32 random matrix with jnp.exp, disp=True
+    np.random.seed(42)
+    A = np.random.randn(4, 4).astype(np.float32)
+    func = CallableTensor(jnp.exp)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": True}))
 
-    # Input 7: float32, 5x5, np.square, disp=True
-    A = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.square),
-        "disp": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2x2 complex64 with jnp.exp, disp=True
+    A = np.array(
+        [[1.0 + 2.0j, -1.0j], [2.0j, 3.0 - 1.0j]], dtype=np.complex64
+    )
+    func = CallableTensor(jnp.exp)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": True}))
 
-    # Input 8: complex128, 3x3, np.exp, disp=False
-    A = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex128)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.exp),
-        "disp": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 2x2 float64 with custom linear combination, disp=False
+    A = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
+    func = CallableTensor(lambda x: jnp.sin(x) + 2.0 * jnp.cos(x))
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": False}))
 
-    # Input 9: float64, 2x2, np.arctan, disp=True
-    A = np.random.randn(2, 2).astype(np.float64)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.arctan),
-        "disp": True
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3x3 complex128 with jnp.sin, disp=True
+    A = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex128
+    )
+    func = CallableTensor(jnp.sin)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": True}))
 
-    # Input 10: float32 diagonal matrix, 4x4, np.tanh, disp=False
-    A = np.diag([1.0, 2.0, 3.0, 4.0]).astype(np.float32)
-    input_dict = {
-        "A": A,
-        "func": CallableTensorMock(np.tanh),
-        "disp": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 5x5 float32 symmetric matrix with square function, disp=True
+    base = np.random.randn(5, 5).astype(np.float32)
+    A = base + base.T
+    func = CallableTensor(lambda x: x**2)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": True}))
+
+    # Input 11: 4x4 float64 diagonal matrix with jnp.cos, disp=False
+    A = np.diag([1.0, -2.0, 3.0, -4.0]).astype(np.float64)
+    func = CallableTensor(jnp.cos)
+    list_of_inputs.append(copy.deepcopy({"A": A, "func": func, "disp": False}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.funm"] = funm_inputs()
 

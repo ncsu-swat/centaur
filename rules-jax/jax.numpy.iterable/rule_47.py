@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# string value must be one of the specified options (Rule 47)
+# string input specifies an FFT operation mode (Rule 47)
 
 rule_47 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 6), v["arg1_value"] == 7)) if n else
-          Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 6), v["arg1_value"] == 7))
+    s.add(Not(Or(Or(Or(v["arg1_value"] == 29, v["arg1_value"] == 30), v["arg1_value"] == 31), v["arg1_value"] == 32)) if n else
+          Or(Or(Or(v["arg1_value"] == 29, v["arg1_value"] == 30), v["arg1_value"] == 31), v["arg1_value"] == 32))
 )
 
 def rule_47_func(arg1, solver=None, neg=False):

@@ -4,93 +4,209 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def delete_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, delete single element
+    # Input 1: 1D array, 1D integer indices, axis 0, False
     arr = np.array([10, 20, 30, 40, 50], dtype=np.int32)
-    obj = np.array([2], dtype=np.int32)
+    obj = np.array([1, 3], dtype=np.int32)
     axis = 0
     assume_unique_indices = False
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
 
-    # Input 2: 1D array, delete multiple elements, unique
-    arr = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype=np.float32)
-    obj = np.array([0, 4], dtype=np.int32)
-    axis = 0
-    assume_unique_indices = True
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 2D array, delete a row
-    arr = np.random.randn(4, 3).astype(np.float32)
-    obj = np.array([1], dtype=np.int32)
-    axis = 0
-    assume_unique_indices = False
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 2D array, delete multiple rows
-    arr = np.random.randn(5, 3).astype(np.float32)
+    # Input 2: 1D array, 1D unique indices, axis 0, True
+    arr = np.array([1.5, 2.5, 3.5, 4.5, 5.5], dtype=np.float32)
     obj = np.array([0, 2, 4], dtype=np.int32)
     axis = 0
     assume_unique_indices = True
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
 
-    # Input 5: 2D array, delete col with float64
-    arr = np.random.randn(3, 4).astype(np.float64)
-    obj = np.array([2], dtype=np.int32)
+    # Input 3: 2D array, delete rows (axis=0)
+    arr = np.arange(12, dtype=np.float64).reshape(4, 3)
+    obj = np.array([0, 2], dtype=np.int64)
+    axis = 0
+    assume_unique_indices = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
+
+    # Input 4: 2D array, delete columns (axis=1)
+    arr = np.arange(15, dtype=np.int64).reshape(3, 5)
+    obj = np.array([1, 4], dtype=np.int32)
     axis = 1
     assume_unique_indices = False
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
 
-    # Input 6: 2D array, delete multiple columns
-    arr = np.random.randn(3, 5).astype(np.float32)
-    obj = np.array([1, 3], dtype=np.int32)
-    axis = 1
-    assume_unique_indices = True
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array with negative axis and negative indices
+    arr = np.array(
+        [[1, 2, 3], [4, 5, 6], [7, 8, 9], [10, 11, 12]], dtype=np.float32
+    )
+    obj = np.array([-1, -3], dtype=np.int32)
+    axis = -2
+    assume_unique_indices = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
 
-    # Input 7: 3D array, delete along axis 2
+    # Input 6: 3D array, axis=2 (last axis)
     arr = np.random.randn(2, 3, 4).astype(np.float32)
-    obj = np.array([0, 2, 3], dtype=np.int32)
+    obj = np.array([0, 3], dtype=np.int32)
     axis = 2
     assume_unique_indices = True
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
 
-    # Input 8: 3D array, delete single along axis 1
-    arr = np.random.randn(2, 3, 2).astype(np.float32)
-    obj = np.array([1], dtype=np.int32)
+    # Input 7: 3D array, axis=1 (middle axis)
+    arr = np.random.randint(0, 100, size=(3, 6, 2), dtype=np.int32)
+    obj = np.array([1, 2, 4], dtype=np.int32)
+    axis = 1
+    assume_unique_indices = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
+
+    # Input 8: 1D boolean array for obj (mask)
+    arr = np.array([100, 200, 300, 400], dtype=np.int64)
+    obj = np.array([True, False, True, False], dtype=np.bool_)
+    axis = 0
+    assume_unique_indices = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
+
+    # Input 9: 2D array, boolean mask along axis=1
+    arr = np.arange(8, dtype=np.float32).reshape(2, 4)
+    obj = np.array([False, True, False, True], dtype=np.bool_)
     axis = 1
     assume_unique_indices = False
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
 
-    # Input 9: 2D array with negative axis
-    arr = np.random.randn(4, 4).astype(np.float32)
-    obj = np.array([3], dtype=np.int32)
+    # Input 10: 4D array, axis=-1
+    arr = np.ones((2, 2, 3, 5), dtype=np.complex64)
+    obj = np.array([2], dtype=np.int32)
     axis = -1
-    assume_unique_indices = False
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 4D array, axis 2, unique indices
-    arr = np.random.randn(2, 2, 3, 2).astype(np.float32)
-    obj = np.array([0, 2], dtype=np.int32)
-    axis = 2
     assume_unique_indices = True
-    input_dict = {"arr": arr, "obj": obj, "axis": axis, "assume_unique_indices": assume_unique_indices}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
+
+    # Input 11: Single element deletion via 0D/1D scalar tensor
+    arr = np.array([7, 8, 9, 10], dtype=np.int16)
+    obj = np.array(2, dtype=np.int32)
+    axis = 0
+    assume_unique_indices = False
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
+
+    # Input 12: Empty deletion indices
+    arr = np.arange(6, dtype=np.float64).reshape(2, 3)
+    obj = np.array([], dtype=np.int32)
+    axis = 0
+    assume_unique_indices = True
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "obj": obj,
+                "axis": axis,
+                "assume_unique_indices": assume_unique_indices,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.delete_2"] = delete_inputs()
 

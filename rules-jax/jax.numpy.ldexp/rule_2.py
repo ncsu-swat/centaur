@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# x2 must be an integer tensor (Rule 2)
+# x1 must be real-valued, not complex (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5)) if n else
-          And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 5))
+    s.add(Not(v["arg1_dtype"] <= 8) if n else
+          v["arg1_dtype"] <= 8)
 )
 
 def rule_2_func(arg1, solver=None, neg=False):

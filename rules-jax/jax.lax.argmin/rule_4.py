@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# index_dtype must be int32 or int64 to store indices (Rule 4)
+# index_dtype must be standard integer dtype such as int32 or int64 (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
     s.add(Not(Or(v["arg1_value"] == 3, v["arg1_value"] == 4)) if n else

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if the second axis index is negative, its absolute value must not exceed the number of dimensions of the input tensor (Rule 9)
+# axis1 must be within valid index bounds for tensor v_1 using conditional normalization (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, 0 - v["arg2_value"] <= v["arg1_ndim"], True)) if n else
-          If(v["arg2_value"] < 0, 0 - v["arg2_value"] <= v["arg1_ndim"], True))
+    s.add(Not(If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0)) if n else
+          If(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"], v["arg2_value"] + v["arg1_ndim"] >= 0))
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):

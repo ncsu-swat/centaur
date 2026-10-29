@@ -7,37 +7,33 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# valid range of axis parameter (Rule 24)
+# repeats tensor elements bounds: minimum is non-negative and does not exceed maximum (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] > 0, v["arg2_value"] >= 0 - v["arg1_ndim"]), v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(And(v["arg1_ndim"] > 0, v["arg2_value"] >= 0 - v["arg1_ndim"]), v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0))) if n else
+          And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) >= Select(v["arg1_range"], 0)))
 )
 
-def rule_24_func(arg1, arg2, solver=None, neg=False):
+def rule_24_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
-            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_value = Int('arg2_value')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == int(arg2))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 24
-        rule_24(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_24(solver, {'arg1_range': arg1_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_24(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_24(solver, {'arg1_range': arg1['range']}, neg)

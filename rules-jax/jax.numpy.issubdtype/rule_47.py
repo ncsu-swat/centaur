@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# first argument is a dtype-like string and second is a JAX dtype index (Rule 47)
+# int8 dtype subtyping hierarchy constraint (Rule 47)
 
 rule_47 = lambda s, v, n=False: (
-    s.add(Not(And(And((Or(v["arg1_value"] == 39, v["arg1_value"] == 38)), v["arg2_value"] >= 0), v["arg2_value"] < 13)) if n else
-          And(And((Or(v["arg1_value"] == 39, v["arg1_value"] == 38)), v["arg2_value"] >= 0), v["arg2_value"] < 13))
+    s.add(Not(If(v["arg1_value"] == 1, Or((And(1 <= v["arg2_value"], v["arg2_value"] <= 4)), v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12))) if n else
+          If(v["arg1_value"] == 1, Or((And(1 <= v["arg2_value"], v["arg2_value"] <= 4)), v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 12)))
 )
 
 def rule_47_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,18 @@ def rule_47_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 47

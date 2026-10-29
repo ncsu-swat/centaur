@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def polygamma_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D tensor, positive float
+    # Input 1: 0D array (scalar) n=0 (digamma), positive float x
     n = np.array(0, dtype=np.int32)
     x = 1.5
-    list_of_inputs.append({"n": n, "x": x})
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 2: 1D tensor, positive float
+    # Input 2: 1D array with orders [0, 1, 2], positive integer float x
     n = np.array([0, 1, 2], dtype=np.int32)
     x = 2.0
-    list_of_inputs.append({"n": n, "x": x})
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 3: 2D tensor, small float
-    n = np.array([[1, 0], [2, 3]], dtype=np.int32)
+    # Input 3: 1D array of int64, small positive float x
+    n = np.array([1, 2, 3, 4], dtype=np.int64)
     x = 0.5
-    list_of_inputs.append({"n": n, "x": x})
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 4: 1D tensor (int64), larger float
-    n = np.array([4, 5], dtype=np.int64)
-    x = 10.25
-    list_of_inputs.append({"n": n, "x": x})
+    # Input 4: 2D array of orders, non-integer float x
+    n = np.array([[0, 1], [2, 3]], dtype=np.int32)
+    x = 3.7
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 5: 3D tensor, positive float
-    n = np.array([[[1, 2], [0, 1]], [[2, 3], [1, 2]]], dtype=np.int32)
-    x = 1.0
-    list_of_inputs.append({"n": n, "x": x})
+    # Input 5: 2D array of all zeros (digamma function), larger x
+    n = np.zeros((3, 3), dtype=np.int64)
+    x = 10.0
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 6: 1D tensor with shape (1,), float
-    n = np.array([3], dtype=np.int32)
-    x = 4.7
-    list_of_inputs.append({"n": n, "x": x})
+    # Input 6: 3D array of ones (trigamma function), medium float x
+    n = np.ones((2, 2, 2), dtype=np.int32)
+    x = 4.2
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 7: 1D tensor with sequential values, float
-    n = np.arange(5, dtype=np.int32)
-    x = 3.3
-    list_of_inputs.append({"n": n, "x": x})
+    # Input 7: 1D array, negative non-integer float x
+    n = np.array([0, 0, 1, 1], dtype=np.int32)
+    x = -1.5
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 8: 2D tensor (int64), float
-    n = np.ones((3, 3), dtype=np.int64) * 2
-    x = 0.125
-    list_of_inputs.append({"n": n, "x": x})
+    # Input 8: 2D array with varied orders, small float near zero
+    n = np.array([[1, 0, 2], [3, 1, 0]], dtype=np.int64)
+    x = 0.1
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
-    # Input 9: 1D tensor, float close to 0
-    n = np.array([0, 1], dtype=np.int32)
-    x = 0.01
-    list_of_inputs.append({"n": n, "x": x})
-
-    # Input 10: 4D tensor, float
-    n = np.zeros((2, 2, 2, 2), dtype=np.int32)
+    # Input 9: 3D array with orders up to 4, positive float x
+    n = np.array([[[0, 1], [2, 3]], [[1, 2], [3, 4]]], dtype=np.int32)
     x = 5.5
-    list_of_inputs.append({"n": n, "x": x})
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
+
+    # Input 10: 4D array with shape (1, 2, 1, 3), large float x
+    n = np.zeros((1, 2, 1, 3), dtype=np.int32)
+    x = 100.0
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
+
+    # Input 11: 1D array of higher derivative orders, fractional x
+    n = np.array([5, 6], dtype=np.int64)
+    x = 1.25
+    list_of_inputs.append(copy.deepcopy({"n": n, "x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.polygamma_4"] = polygamma_inputs()
 

@@ -4,73 +4,88 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def convert_element_type_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with negative values to int32
-    operand = np.array([-2.5, -1.0, 0.0, 1.5, 2.8], dtype=np.float32)
+    # Input 1: 1D float32 to int32
+    operand = np.array([-2.5, -1.0, 0.0, 1.7, 3.2], dtype=np.float32)
     new_dtype = np.dtype(np.int32)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
 
-    # Input 2: 2D int32 array to float32
-    operand = np.array([[1, -2, 3], [4, 5, -6]], dtype=np.int32)
+    # Input 2: 2D int32 to float32
+    operand = np.array([[-10, 20], [0, -5]], dtype=np.int32)
     new_dtype = np.dtype(np.float32)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
 
-    # Input 3: 3D float64 array to float16
-    operand = np.random.randn(2, 3, 4).astype(np.float64)
-    new_dtype = np.dtype(np.float16)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 0D (scalar) float32 array to int64
-    operand = np.array(-3.14, dtype=np.float32)
-    new_dtype = np.dtype(np.int64)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 4D uint8 array to float32
-    operand = np.random.randint(0, 256, size=(1, 3, 5, 5)).astype(np.uint8)
-    new_dtype = np.dtype(np.float32)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 1D float32 array to complex64
-    operand = np.array([-1.5, 0.0, 1.5], dtype=np.float32)
-    new_dtype = np.dtype(np.complex64)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 2D int16 array to bool
-    operand = np.array([[0, 1], [-1, 0]], dtype=np.int16)
+    # Input 3: 0D scalar float32 to bool
+    operand = np.array(0.0, dtype=np.float32)
     new_dtype = np.dtype(np.bool_)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
 
-    # Input 8: 5D bool array to int8
-    operand = np.random.choice([True, False], size=(1, 2, 2, 2, 2))
-    new_dtype = np.dtype(np.int8)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 1D float32 array to uint32
-    operand = np.array([10.0, 20.0, 30.0], dtype=np.float32)
-    new_dtype = np.dtype(np.uint32)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 3D int64 array to int32
-    operand = np.array([[[1000, -2000], [3000, -4000]]], dtype=np.int64)
+    # Input 4: 3D bool to int32
+    operand = np.array(
+        [[[True, False], [False, True]], [[True, True], [False, False]]],
+        dtype=np.bool_,
+    )
     new_dtype = np.dtype(np.int32)
-    input_dict = {"operand": operand, "new_dtype": new_dtype}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
+
+    # Input 5: 2D int32 to bool
+    operand = np.array([[0, 1], [-5, 0]], dtype=np.int32)
+    new_dtype = np.dtype(np.bool_)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
+
+    # Input 6: 1D bool to float32
+    operand = np.array([True, False, True, True], dtype=np.bool_)
+    new_dtype = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
+
+    # Input 7: 4D float32 to int32
+    operand = np.ones((2, 1, 3, 2), dtype=np.float32) * -15.5
+    new_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
+
+    # Input 8: 2D float32 to float32 (identity cast)
+    operand = np.array([[1.0, -2.0], [3.5, 0.0]], dtype=np.float32)
+    new_dtype = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
+
+    # Input 9: 3D int32 to int32 (identity cast)
+    operand = np.zeros((2, 3, 4), dtype=np.int32)
+    new_dtype = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
+
+    # Input 10: 1D int32 with negative and large values to float32
+    operand = np.array([-100000, 0, 100000], dtype=np.int32)
+    new_dtype = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"operand": operand, "new_dtype": new_dtype})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.convert_element_type_1"] = convert_element_type_inputs()
 

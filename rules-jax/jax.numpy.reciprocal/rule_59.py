@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scalar float input should not be too close to zero to avoid overflow (Rule 59)
+# integer scalar input must have magnitude of at least two (Rule 59)
 
 rule_59 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] > 0.00001, v["arg1_value"] < -0.00001)) if n else
-          Or(v["arg1_value"] > 0.00001, v["arg1_value"] < -0.00001))
+    s.add(Not(Or(v["arg1_value"] >= 2, v["arg1_value"] <= -2)) if n else
+          Or(v["arg1_value"] >= 2, v["arg1_value"] <= -2))
 )
 
 def rule_59_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_59_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_value == int(arg1))
 
         # Constraints for rule 59
         rule_59(solver, {'arg1_value': arg1_value})

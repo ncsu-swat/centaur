@@ -4,113 +4,115 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def unpackbits_inputs():
     list_of_inputs = []
-    
-    # Input 1: 1D array, unpacking all bits, big-endian
-    a = np.array([27], dtype=np.uint8)
+
+    # Input 1: 1D array, axis=0, count positive, bitorder 'big'
+    a = np.array([2, 7, 23], dtype=np.uint8)
     input_dict = {
         "a": a,
         "axis": 0,
-        "count": 8,
-        "bitorder": "big"
+        "count": 16,
+        "bitorder": "big",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array, partial unpacking, little-endian
-    a = np.array([27], dtype=np.uint8)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "count": 4,
-        "bitorder": "little"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 1D array, negative count to trim bits, big-endian
-    a = np.array([27, 154], dtype=np.uint8)
+    # Input 2: 1D array, axis=-1, count negative, bitorder 'little'
+    a = np.array([128, 64, 32, 16], dtype=np.uint8)
     input_dict = {
         "a": a,
         "axis": -1,
-        "count": -2,
-        "bitorder": "big"
+        "count": -5,
+        "bitorder": "little",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array, unpacking along axis 1, big-endian
-    a = np.array([[154, 49]], dtype=np.uint8)
+    # Input 3: 2D array, axis=1, count positive, bitorder 'big'
+    a = np.array([[154, 49], [12, 200]], dtype=np.uint8)
     input_dict = {
         "a": a,
         "axis": 1,
-        "count": 16,
-        "bitorder": "big"
+        "count": 11,
+        "bitorder": "big",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D array, partial unpacking along axis 0, little-endian
-    a = np.array([[154], [49]], dtype=np.uint8)
+    # Input 4: 2D array, axis=0, count negative, bitorder 'little'
+    a = np.array([[10, 20], [30, 40], [50, 60]], dtype=np.uint8)
     input_dict = {
         "a": a,
         "axis": 0,
-        "count": 8,
-        "bitorder": "little"
+        "count": -8,
+        "bitorder": "little",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array, partial unpacking along negative axis, big-endian
-    a = np.array([[154, 49], [12, 34]], dtype=np.uint8)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "count": 12,
-        "bitorder": "big"
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 3D array, full unpacking along axis 2, little-endian
-    a = np.zeros((2, 2, 3), dtype=np.uint8)
+    # Input 5: 3D array, axis=2, count positive, bitorder 'little'
+    a = np.random.randint(0, 256, size=(2, 3, 4), dtype=np.uint8)
     input_dict = {
         "a": a,
         "axis": 2,
-        "count": 24,
-        "bitorder": "little"
+        "count": 25,
+        "bitorder": "little",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D array, full unpacking along axis 0, big-endian
-    a = np.ones((1, 2, 2), dtype=np.uint8)
+    # Input 6: 3D array, axis=-2, count negative, bitorder 'big'
+    a = np.random.randint(0, 256, size=(4, 2, 3), dtype=np.uint8)
+    input_dict = {
+        "a": a,
+        "axis": -2,
+        "count": -4,
+        "bitorder": "big",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 4D array, axis=1, count positive, bitorder 'big'
+    a = np.random.randint(0, 256, size=(2, 2, 2, 2), dtype=np.uint8)
+    input_dict = {
+        "a": a,
+        "axis": 1,
+        "count": 12,
+        "bitorder": "big",
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D array with single element, axis=0, exact count, bitorder 'little'
+    a = np.array([255], dtype=np.uint8)
     input_dict = {
         "a": a,
         "axis": 0,
         "count": 8,
-        "bitorder": "big"
+        "bitorder": "little",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D array, negative count to trim bits, little-endian
-    a = np.array([255, 128], dtype=np.uint8)
+    # Input 9: 2D array, axis=-1, count=1, bitorder 'big'
+    a = np.zeros((3, 3), dtype=np.uint8)
     input_dict = {
         "a": a,
-        "axis": 0,
-        "count": -3,
-        "bitorder": "little"
+        "axis": -1,
+        "count": 1,
+        "bitorder": "big",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array, negative count to trim bits along axis 1, big-endian
-    a = np.array([[255, 128]], dtype=np.uint8)
+    # Input 10: 4D array, axis=3, count negative, bitorder 'little'
+    a = np.ones((1, 2, 1, 3), dtype=np.uint8)
     input_dict = {
         "a": a,
-        "axis": 1,
-        "count": -4,
-        "bitorder": "big"
+        "axis": 3,
+        "count": -10,
+        "bitorder": "little",
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.unpackbits"] = unpackbits_inputs()
 

@@ -10,49 +10,49 @@ import copy
 def poly_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive scalar integer
-    seq_of_zeros = 5
-    list_of_inputs.append({"seq_of_zeros": seq_of_zeros})
+    # Input 1: Zero as integer
+    input_dict = {"seq_of_zeros": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative scalar integer
-    seq_of_zeros = -3
-    list_of_inputs.append({"seq_of_zeros": seq_of_zeros})
+    # Input 2: Positive integer 1
+    input_dict = {"seq_of_zeros": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero scalar integer
-    seq_of_zeros = 0
-    list_of_inputs.append({"seq_of_zeros": seq_of_zeros})
+    # Input 3: Negative integer -1
+    input_dict = {"seq_of_zeros": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D numpy array of positive integers (int32)
-    seq_of_zeros = np.array([1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"seq_of_zeros": copy.deepcopy(seq_of_zeros)})
+    # Input 4: Positive integer
+    input_dict = {"seq_of_zeros": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D numpy array of negative integers (int64)
-    seq_of_zeros = np.array([-5, -10, -15], dtype=np.int64)
-    list_of_inputs.append({"seq_of_zeros": copy.deepcopy(seq_of_zeros)})
+    # Input 5: Negative integer
+    input_dict = {"seq_of_zeros": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D numpy array with mixed positive, negative, and zero integers
-    seq_of_zeros = np.array([-2, 0, 4, -1, 3], dtype=np.int32)
-    list_of_inputs.append({"seq_of_zeros": copy.deepcopy(seq_of_zeros)})
+    # Input 6: Larger positive integer
+    input_dict = {"seq_of_zeros": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D square matrix of integers (shape 2x2)
-    seq_of_zeros = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append({"seq_of_zeros": copy.deepcopy(seq_of_zeros)})
+    # Input 7: Larger negative integer
+    input_dict = {"seq_of_zeros": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D square matrix of integers with negative values (shape 3x3)
-    seq_of_zeros = np.array([[2, -1, 0], [3, 4, -2], [1, 0, 5]], dtype=np.int64)
-    list_of_inputs.append({"seq_of_zeros": copy.deepcopy(seq_of_zeros)})
+    # Input 8: np.int32 scalar
+    input_dict = {"seq_of_zeros": np.int32(7)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large 1D array of integers
-    seq_of_zeros = np.arange(-10, 11, 2, dtype=np.int32)
-    list_of_inputs.append({"seq_of_zeros": copy.deepcopy(seq_of_zeros)})
+    # Input 9: np.int64 scalar
+    input_dict = {"seq_of_zeros": np.int64(-15)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Single-element 1D array of integers
-    seq_of_zeros = np.array([42], dtype=np.int32)
-    list_of_inputs.append({"seq_of_zeros": copy.deepcopy(seq_of_zeros)})
+    # Input 10: np.int16 scalar
+    input_dict = {"seq_of_zeros": np.int16(3)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: A large scalar integer
-    seq_of_zeros = 1000
-    list_of_inputs.append({"seq_of_zeros": seq_of_zeros})
+    # Input 11: np.int8 scalar
+    input_dict = {"seq_of_zeros": np.int8(-4)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

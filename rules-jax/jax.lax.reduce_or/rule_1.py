@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# operand must have boolean or integer dtype (Rule 1)
+# operand must have boolean or integer data type (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_dtype"] == 0, (And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 5)))) if n else
-          Or(v["arg1_dtype"] == 0, (And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 5))))
+    s.add(Not(v["arg1_dtype"] <= 5) if n else
+          v["arg1_dtype"] <= 5)
 )
 
 def rule_1_func(arg1, solver=None, neg=False):

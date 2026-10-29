@@ -4,33 +4,99 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def modf_inputs():
     list_of_inputs = []
 
-    floats = [
-        4.8, 
-        -3.4, 
-        0.0, 
-        12345.6789, 
-        -0.0001, 
-        1e10 + 0.5, 
-        float('inf'), 
-        float('-inf'), 
-        float('nan'), 
-        -123.456
-    ]
-    
-    for f in floats:
-        input_dict = {
-            "x": f,
-            "out": None
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Standard positive float
+    input_dict = {
+        "x": 4.8,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: Negative float
+    input_dict = {
+        "x": -3.4,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Float representation of an integer
+    input_dict = {
+        "x": 5.0,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Negative integer as float
+    input_dict = {
+        "x": -10.0,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Zero
+    input_dict = {
+        "x": 0.0,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Negative zero
+    input_dict = {
+        "x": -0.0,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Small positive float
+    input_dict = {
+        "x": 1.25e-5,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Large positive float
+    input_dict = {
+        "x": 123456.789,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Negative number with magnitude less than 1
+    input_dict = {
+        "x": -0.875,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Mathematical constant approximation
+    input_dict = {
+        "x": 3.141592653589793,
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Positive infinity
+    input_dict = {
+        "x": float("inf"),
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative infinity
+    input_dict = {
+        "x": float("-inf"),
+        "out": None,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.modf_2"] = modf_inputs()
 

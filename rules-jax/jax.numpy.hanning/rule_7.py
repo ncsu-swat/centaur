@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# window size M multiplied by two must be non-negative (Rule 7)
+# window size M should be at least 2 for non-trivial window tapering (Rule 7)
 
 rule_7 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] * 2 >= 0) if n else
-          v["arg1_value"] * 2 >= 0)
+    s.add(Not(v["arg1_value"] >= 2) if n else
+          v["arg1_value"] >= 2)
 )
 
 def rule_7_func(arg1, solver=None, neg=False):

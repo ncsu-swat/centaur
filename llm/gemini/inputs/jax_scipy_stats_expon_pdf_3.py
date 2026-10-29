@@ -4,83 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def expon_pdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard exponential
-    list_of_inputs.append({
-        'x': float(1.0),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 1: Standard exponential evaluation at 1.0
+    input_dict = {"x": 1.0, "loc": 0.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive scale, shifted loc
-    list_of_inputs.append({
-        'x': float(2.5),
-        'loc': float(1.0),
-        'scale': float(2.0)
-    })
+    # Input 2: Boundary point x == loc
+    input_dict = {"x": 0.0, "loc": 0.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Small scale
-    list_of_inputs.append({
-        'x': float(0.5),
-        'loc': float(0.0),
-        'scale': float(0.5)
-    })
+    # Input 3: x < loc (outside support)
+    input_dict = {"x": -1.0, "loc": 0.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: x less than loc
-    list_of_inputs.append({
-        'x': float(-1.0),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 4: Positive loc, small scale
+    input_dict = {"x": 2.5, "loc": 1.0, "scale": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative loc, positive scale
-    list_of_inputs.append({
-        'x': float(5.0),
-        'loc': float(-2.0),
-        'scale': float(3.5)
-    })
+    # Input 5: Negative loc, large scale
+    input_dict = {"x": 5.0, "loc": -2.0, "scale": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large values
-    list_of_inputs.append({
-        'x': float(10.0),
-        'loc': float(5.0),
-        'scale': float(10.0)
-    })
+    # Input 6: Fractional values
+    input_dict = {"x": 0.5, "loc": 0.1, "scale": 2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: x at boundary loc
-    list_of_inputs.append({
-        'x': float(0.0),
-        'loc': float(0.0),
-        'scale': float(1.0)
-    })
+    # Input 7: Large values
+    input_dict = {"x": 100.0, "loc": 50.0, "scale": 10.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small scale, precise values
-    list_of_inputs.append({
-        'x': float(1.23),
-        'loc': float(0.5),
-        'scale': float(0.1)
-    })
+    # Input 8: Very small scale parameter
+    input_dict = {"x": 0.001, "loc": 0.0, "scale": 0.01}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large x, large loc
-    list_of_inputs.append({
-        'x': float(100.0),
-        'loc': float(50.0),
-        'scale': float(2.5)
-    })
+    # Input 9: Negative loc with x >= loc
+    input_dict = {"x": -5.0, "loc": -10.0, "scale": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative x but x > loc
-    list_of_inputs.append({
-        'x': float(-5.5),
-        'loc': float(-10.0),
-        'scale': float(4.2)
-    })
+    # Input 10: Non-integer floats
+    input_dict = {"x": 3.14159, "loc": 2.71828, "scale": 1.41421}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: x strictly less than loc with positive loc
+    input_dict = {"x": 10.0, "loc": 15.0, "scale": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.expon.pdf_3"] = expon_pdf_inputs()
 

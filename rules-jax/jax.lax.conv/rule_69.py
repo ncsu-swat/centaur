@@ -7,37 +7,56 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The padding string must be valid and the input must have rank at least 3 (Rule 69)
+# for 2D valid convolution, spatial dimensions and strides must be valid (Rule 69)
 
 rule_69 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 3, (Or(v["arg2_value"] == 20, v["arg2_value"] == 19)))) if n else
-          And(v["arg1_ndim"] >= 3, (Or(v["arg2_value"] == 20, v["arg2_value"] == 19))))
+    s.add(Not(If(And(And(And(v["arg4_value"] == 19, v["arg1_ndim"] == 4), v["arg2_ndim"] == 4), v["arg3_length"] == 2), And(And(And(Select(v["arg1_shape"], 2) >= Select(v["arg2_shape"], 2), Select(v["arg1_shape"], 3) >= Select(v["arg2_shape"], 3)), Select(v["arg3_values"], 0) > 0), Select(v["arg3_values"], 1) > 0), True)) if n else
+          If(And(And(And(v["arg4_value"] == 19, v["arg1_ndim"] == 4), v["arg2_ndim"] == 4), v["arg3_length"] == 2), And(And(And(Select(v["arg1_shape"], 2) >= Select(v["arg2_shape"], 2), Select(v["arg1_shape"], 3) >= Select(v["arg2_shape"], 3)), Select(v["arg3_values"], 0) > 0), Select(v["arg3_values"], 1) > 0), True))
 )
 
-def rule_69_func(arg1, arg2, solver=None, neg=False):
+def rule_69_func(arg1, arg2, arg3, arg4, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
+    arg4 = next(iter(arg4.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, str):
+        if not isinstance(arg2, np.ndarray):
+            return False
+        if not (isinstance(arg3, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg3)):
+            return False
+        if not isinstance(arg4, str):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
+        arg3_length = Int('arg3_length')
+        arg3_values = Array('arg3_values', IntSort(), IntSort())
+        solver.add(arg4_value == list_of_string_values_jax.index(arg4))
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
+        solver.add(arg3_length == len(arg3))
+        for i in range(len(arg3)):
+            arg3_values = Store(arg3_values, i, arg3[i])
+        solver.add(arg4_value == list_of_string_values_jax.index(arg4))
 
         # Constraints for rule 69
-        rule_69(solver, {'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_69(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape, 'arg3_length': arg3_length, 'arg3_values': arg3_values, 'arg4_value': arg4_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_69(solver, {'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_69(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values'], 'arg4_value': arg4['value']}, neg)

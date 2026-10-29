@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def clip_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array, clipping range [2.0, 5.0]
-    arr = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0], dtype=np.float32)
-    input_dict = {"arr": arr, "min": 2.0, "max": 5.0}
+    # Input 1: 1D float32 array with symmetric bounds
+    arr = np.array([-3.0, -1.0, 0.0, 1.5, 3.0], dtype=np.float32)
+    input_dict = {"arr": arr, "min": -1.0, "max": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array, negative values, clipping range [-1.5, 1.5]
-    arr = np.random.uniform(-3.0, 3.0, size=(3, 4)).astype(np.float32)
-    input_dict = {"arr": arr, "min": -1.5, "max": 1.5}
+    # Input 2: 2D float64 array with positive bounds
+    arr = np.array([[0.5, 2.3, 7.1], [4.4, -1.2, 3.0]], dtype=np.float64)
+    input_dict = {"arr": arr, "min": 0.0, "max": 5.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 array, clipping range [0.1, 0.9]
-    arr = np.random.rand(2, 3, 3).astype(np.float64)
-    input_dict = {"arr": arr, "min": 0.1, "max": 0.9}
+    # Input 3: 3D int32 array
+    arr = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
+    input_dict = {"arr": arr, "min": 5.0, "max": 15.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D int32 array (min/max are floats), clipping range [2.5, 7.5]
-    arr = np.array([-1, 0, 5, 10, 12], dtype=np.int32)
-    input_dict = {"arr": arr, "min": 2.5, "max": 7.5}
+    # Input 4: 1D int64 array with negative bounds
+    arr = np.array([-50, -20, -5, 0, 10, 30], dtype=np.int64)
+    input_dict = {"arr": arr, "min": -30.0, "max": -10.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D float32 array, clipping range [-10.0, 10.0]
-    arr = (np.random.randn(2, 2, 2, 2) * 20.0).astype(np.float32)
-    input_dict = {"arr": arr, "min": -10.0, "max": 10.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 1D float16 array, clipping range [0.0, 1.0]
-    arr = np.array([-0.5, 0.5, 1.5], dtype=np.float16)
-    input_dict = {"arr": arr, "min": 0.0, "max": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: min is larger than max (special case, max value is returned)
-    arr = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    input_dict = {"arr": arr, "min": 3.0, "max": 1.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Scalar-like 1D array, clipping range [0.0, 10.0]
-    arr = np.array([5.5], dtype=np.float32)
-    input_dict = {"arr": arr, "min": 0.0, "max": 10.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Large values, 2D float64 array, clipping range [1000.0, 5000.0]
-    arr = np.array([[500.0, 1500.0], [6000.0, 2500.0]], dtype=np.float64)
-    input_dict = {"arr": arr, "min": 1000.0, "max": 5000.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 5D float32 array, clipping range [-0.5, 0.5]
-    arr = np.random.uniform(-1.0, 1.0, size=(1, 2, 2, 2, 1)).astype(np.float32)
+    # Input 5: 4D float32 array
+    arr = np.random.randn(2, 2, 3, 4).astype(np.float32)
     input_dict = {"arr": arr, "min": -0.5, "max": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
+    # Input 6: 0D scalar float32 array
+    arr = np.array(4.5, dtype=np.float32)
+    input_dict = {"arr": arr, "min": 1.0, "max": 3.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 2D float32 array with identical min and max
+    arr = np.random.uniform(-10.0, 10.0, size=(4, 4)).astype(np.float32)
+    input_dict = {"arr": arr, "min": 0.0, "max": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 1D float16 array
+    arr = np.array([-1.5, -0.5, 0.0, 0.5, 1.5], dtype=np.float16)
+    input_dict = {"arr": arr, "min": -0.25, "max": 0.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 5D int16 array
+    arr = np.random.randint(-100, 100, size=(2, 1, 2, 2, 3), dtype=np.int16)
+    input_dict = {"arr": arr, "min": -25.0, "max": 25.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D float64 array with large range bounds
+    arr = np.linspace(-1000.0, 1000.0, 27, dtype=np.float64).reshape(3, 3, 3)
+    input_dict = {"arr": arr, "min": -100.0, "max": 500.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 2D uint8 array
+    arr = np.array([[0, 50, 100], [150, 200, 255]], dtype=np.uint8)
+    input_dict = {"arr": arr, "min": 30.0, "max": 180.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.clip_2"] = clip_inputs()
 

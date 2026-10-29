@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor x and degrees of freedom df must both be floating-point type tensors of either float32 or float64 (Rule 9)
+# evaluation tensor and location parameter should have the same data type (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And((Or(v["arg1_dtype"] == 7, v["arg1_dtype"] == 8)), (Or(v["arg2_dtype"] == 7, v["arg2_dtype"] == 8)))) if n else
-          And((Or(v["arg1_dtype"] == 7, v["arg1_dtype"] == 8)), (Or(v["arg2_dtype"] == 7, v["arg2_dtype"] == 8))))
+    s.add(Not(v["arg1_dtype"] == v["arg2_dtype"]) if n else
+          v["arg1_dtype"] == v["arg2_dtype"])
 )
 
 def rule_9_func(arg1, arg2, solver=None, neg=False):

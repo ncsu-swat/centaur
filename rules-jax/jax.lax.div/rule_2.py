@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Inputs must have numerical data types (Rule 2)
+# x must have a numerical data type (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 10)) if n else

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# when permutation is a tensor, it must be a 1D integer tensor matching the operand's number of dimensions (Rule 48)
+# for 3D operand tensor, the sum of permutation tuple axes must equal 3 with non-identical adjacent axes (Rule 48)
 
 rule_48 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(v["arg2_ndim"] == 1, Select(v["arg2_shape"], 0) == v["arg1_ndim"]), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5)) if n else
-          And(And(And(v["arg2_ndim"] == 1, Select(v["arg2_shape"], 0) == v["arg1_ndim"]), 1 <= v["arg2_dtype"]), v["arg2_dtype"] <= 5))
+    s.add(Not(If(v["arg1_ndim"] == 3, And(And(v["arg2_length"] == 3, Select(v["arg2_values"], 0) + Select(v["arg2_values"], 1) + Select(v["arg2_values"], 2) == 3), Select(v["arg2_values"], 0) != Select(v["arg2_values"], 1)), v["arg2_length"] == v["arg1_ndim"])) if n else
+          If(v["arg1_ndim"] == 3, And(And(v["arg2_length"] == 3, Select(v["arg2_values"], 0) + Select(v["arg2_values"], 1) + Select(v["arg2_values"], 2) == 3), Select(v["arg2_values"], 0) != Select(v["arg2_values"], 1)), v["arg2_length"] == v["arg1_ndim"]))
 )
 
 def rule_48_func(arg1, arg2, solver=None, neg=False):
@@ -22,27 +22,25 @@ def rule_48_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
-        arg2_ndim = Int('arg2_ndim')
-        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
-        arg2_dtype = Int('arg2_dtype')
+        arg2_length = Int('arg2_length')
+        arg2_values = Array('arg2_values', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_ndim == arg2.ndim)
-        for i in range(arg2.ndim):
-            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg2_length == len(arg2))
+        for i in range(len(arg2)):
+            arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 48
-        rule_48(solver, {'arg1_ndim': arg1_ndim, 'arg2_dtype': arg2_dtype, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_48(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_48(solver, {'arg1_ndim': arg1['ndim'], 'arg2_dtype': arg2['dtype'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_48(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

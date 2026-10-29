@@ -4,75 +4,96 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def eigvalsh_inputs():
     list_of_inputs = []
 
-    def make_symmetric(shape, dtype=np.float32):
-        if np.issubdtype(dtype, np.complexfloating):
-            if dtype == np.complex64:
-                real_dtype = np.float32
-            else:
-                real_dtype = np.float64
-            a = np.random.randn(*shape).astype(real_dtype) + 1j * np.random.randn(*shape).astype(real_dtype)
-            return (a + np.swapaxes(a.conj(), -1, -2)).astype(dtype)
-        else:
-            a = np.random.randn(*shape).astype(dtype)
-            return a + np.swapaxes(a, -1, -2)
+    # Input 1: 2D real float32 symmetric matrix, UPLO='L', symmetrize_input=True
+    mat = np.random.randn(3, 3).astype(np.float32)
+    a = (mat + mat.T) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "L", "symmetrize_input": True})
+    )
 
-    # Input 1: Simple 2x2 real, UPLO='L', symmetrize_input=True
-    a = make_symmetric((2, 2), np.float32)
-    input_dict = {"a": a, "UPLO": "L", "symmetrize_input": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D real float64 symmetric matrix, UPLO='U', symmetrize_input=False
+    mat = np.random.randn(4, 4).astype(np.float64)
+    a = (mat + mat.T) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "U", "symmetrize_input": False})
+    )
 
-    # Input 2: Simple 2x2 real, UPLO='U', symmetrize_input=False
-    a = make_symmetric((2, 2), np.float32)
-    input_dict = {"a": a, "UPLO": "U", "symmetrize_input": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D complex64 Hermitian matrix, UPLO='L', symmetrize_input=True
+    mat = (
+        np.random.randn(3, 3) + 1j * np.random.randn(3, 3)
+    ).astype(np.complex64)
+    a = (mat + mat.conj().T) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "L", "symmetrize_input": True})
+    )
 
-    # Input 3: 3x3 complex, UPLO='L', symmetrize_input=True
-    a = make_symmetric((3, 3), np.complex64)
-    input_dict = {"a": a, "UPLO": "L", "symmetrize_input": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D complex128 Hermitian matrix, UPLO='U', symmetrize_input=False
+    mat = (
+        np.random.randn(4, 4) + 1j * np.random.randn(4, 4)
+    ).astype(np.complex128)
+    a = (mat + mat.conj().T) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "U", "symmetrize_input": False})
+    )
 
-    # Input 4: 4x4 complex double precision, UPLO='U', symmetrize_input=True
-    a = make_symmetric((4, 4), np.complex128)
-    input_dict = {"a": a, "UPLO": "U", "symmetrize_input": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D batched real symmetric matrix (batch of 2), UPLO='L', symmetrize_input=True
+    mat = np.random.randn(2, 3, 3).astype(np.float32)
+    a = (mat + np.swapaxes(mat, -1, -2)) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "L", "symmetrize_input": True})
+    )
 
-    # Input 5: 5x5 real double precision, UPLO='L', symmetrize_input=False
-    a = make_symmetric((5, 5), np.float64)
-    input_dict = {"a": a, "UPLO": "L", "symmetrize_input": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D batched real symmetric matrix, UPLO='U', symmetrize_input=True
+    mat = np.random.randn(2, 2, 5, 5).astype(np.float32)
+    a = (mat + np.swapaxes(mat, -1, -2)) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "U", "symmetrize_input": True})
+    )
 
-    # Input 6: Batched 3D real, UPLO='U', symmetrize_input=True
-    a = make_symmetric((3, 4, 4), np.float32)
-    input_dict = {"a": a, "UPLO": "U", "symmetrize_input": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 1x1 matrix edge case, float32, UPLO='L', symmetrize_input=False
+    a = np.array([[-5.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "L", "symmetrize_input": False})
+    )
 
-    # Input 7: Higher dim batch 4D real, UPLO='L', symmetrize_input=True
-    a = make_symmetric((2, 2, 3, 3), np.float64)
-    input_dict = {"a": a, "UPLO": "L", "symmetrize_input": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D batched complex Hermitian matrix, UPLO='U', symmetrize_input=True
+    mat = (
+        np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)
+    ).astype(np.complex64)
+    a = (mat + np.swapaxes(mat, -1, -2).conj()) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "U", "symmetrize_input": True})
+    )
 
-    # Input 8: Batched 3D complex, UPLO='U', symmetrize_input=False
-    a = make_symmetric((2, 5, 5), np.complex64)
-    input_dict = {"a": a, "UPLO": "U", "symmetrize_input": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Real matrix with strictly negative eigenvalues, float64, UPLO='L', symmetrize_input=True
+    mat = np.random.randn(4, 4).astype(np.float64)
+    a = -(mat @ mat.T) - np.eye(4, dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "L", "symmetrize_input": True})
+    )
 
-    # Input 9: 1x1 matrix (edge case), UPLO='L', symmetrize_input=True
-    a = make_symmetric((1, 1), np.float32)
-    input_dict = {"a": a, "UPLO": "L", "symmetrize_input": True}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Larger 10x10 float32 symmetric matrix, UPLO='U', symmetrize_input=False
+    mat = np.random.randn(10, 10).astype(np.float32)
+    a = (mat + mat.T) / 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "U", "symmetrize_input": False})
+    )
 
-    # Input 10: Larger 50x50 matrix, UPLO='L', symmetrize_input=False
-    a = make_symmetric((50, 50), np.float32)
-    input_dict = {"a": a, "UPLO": "L", "symmetrize_input": False}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: Real matrix with zeros and identity structure, float64, UPLO='L', symmetrize_input=False
+    a = np.eye(6, dtype=np.float64) * 2.0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "UPLO": "L", "symmetrize_input": False})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.eigvalsh"] = eigvalsh_inputs()
 

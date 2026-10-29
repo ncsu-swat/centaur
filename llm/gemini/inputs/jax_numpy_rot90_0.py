@@ -4,63 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def rot90_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, float32, positive rotation, standard axes
-    m = np.random.randn(4, 5).astype(np.float32)
-    input_dict = {"m": m, "k": 1, "axes": (0, 1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D float32 array, default-like rotation
+    m = np.random.randn(3, 4).astype(np.float32)
+    k = 1
+    axes = (0, 1)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 2: 2D array, int32, 180 degree rotation, reversed axes
-    m = np.random.randint(-10, 10, size=(3, 3)).astype(np.int32)
-    input_dict = {"m": m, "k": 2, "axes": (1, 0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D int32 array, inverted axes, k=2
+    m = np.arange(12, dtype=np.int32).reshape(3, 4)
+    k = 2
+    axes = (1, 0)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 3: 2D array, float64, negative rotation
-    m = np.random.randn(6, 4).astype(np.float64)
-    input_dict = {"m": m, "k": -1, "axes": (0, 1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D boolean array, negative k (clockwise)
+    m = np.array([[True, False], [False, True]], dtype=bool)
+    k = -1
+    axes = (0, 1)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 4: 3D array, int64, rotation in the last two dimensions
-    m = np.random.randint(0, 100, size=(2, 3, 4)).astype(np.int64)
-    input_dict = {"m": m, "k": 1, "axes": (1, 2)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float64 array, k=0 (identity rotation)
+    m = np.random.randn(2, 3, 4).astype(np.float64)
+    k = 0
+    axes = (0, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 5: 3D array, float32, rotation with -2 times 90 degrees on non-adjacent axes
-    m = np.random.randn(3, 3, 3).astype(np.float32)
-    input_dict = {"m": m, "k": -2, "axes": (0, 2)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D int64 array, k=3, axes=(1, 2)
+    m = np.random.randint(-50, 50, size=(4, 5, 6), dtype=np.int64)
+    k = 3
+    axes = (1, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 6: 4D array, boolean, 270 degree rotation
-    m = np.random.choice([True, False], size=(2, 2, 4, 4))
-    input_dict = {"m": m, "k": 3, "axes": (2, 3)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D complex64 array, negative k, axes=(2, 0)
+    m = (
+        np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)
+    ).astype(np.complex64)
+    k = -2
+    axes = (2, 0)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 7: 4D array, float32, k=0 (no rotation but output copy)
+    # Input 7: 4D float32 array, axes=(0, 3), k=1
     m = np.random.randn(2, 3, 2, 4).astype(np.float32)
-    input_dict = {"m": m, "k": 0, "axes": (1, 3)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    k = 1
+    axes = (0, 3)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 8: 5D array, float64, large negative k
-    m = np.random.randn(2, 2, 2, 2, 2).astype(np.float64)
-    input_dict = {"m": m, "k": -5, "axes": (0, 4)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 4D uint8 array, negative axes indices, k=-3
+    m = np.random.randint(0, 256, size=(2, 4, 3, 5), dtype=np.uint8)
+    k = -3
+    axes = (-2, -1)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 9: 2D array, float32, k=5 (equivalent to k=1)
-    m = np.random.randn(2, 2).astype(np.float32)
-    input_dict = {"m": m, "k": 5, "axes": (0, 1)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 5D float32 array, large k
+    m = np.random.randn(1, 2, 3, 2, 2).astype(np.float32)
+    k = 5
+    axes = (1, 4)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
-    # Input 10: 3D array, complex64, rotating back and forth (k=2)
-    m = (np.random.randn(3, 4, 5) + 1j * np.random.randn(3, 4, 5)).astype(np.complex64)
-    input_dict = {"m": m, "k": 2, "axes": (2, 0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D square matrix with negative axes indexing, k=-1
+    m = np.eye(5, dtype=np.float32)
+    k = -1
+    axes = (-1, -2)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
+
+    # Input 11: 3D int16 array with mixed positive/negative axes
+    m = np.random.randint(-100, 100, size=(3, 3, 3), dtype=np.int16)
+    k = 2
+    axes = (-3, 1)
+    list_of_inputs.append(
+        copy.deepcopy({"m": m, "k": int(k), "axes": tuple(axes)})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.rot90"] = rot90_inputs()
 

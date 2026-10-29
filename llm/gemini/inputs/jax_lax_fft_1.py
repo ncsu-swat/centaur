@@ -4,53 +4,99 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fft_inputs():
     list_of_inputs = []
 
-    # Case 1: 1D FFT (complex64)
+    # Input 1: 1D FFT (complex64)
     x = (np.random.randn(8) + 1j * np.random.randn(8)).astype(np.complex64)
-    list_of_inputs.append({"x": x, "fft_type": "FFT", "fft_lengths": (8,)})
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "FFT", "fft_lengths": (8,)})
+    )
 
-    # Case 2: 1D IFFT (complex128)
-    x = (np.random.randn(16) + 1j * np.random.randn(16)).astype(np.complex128)
-    list_of_inputs.append({"x": x, "fft_type": "IFFT", "fft_lengths": (16,)})
+    # Input 2: 1D IFFT (complex64)
+    x = (np.random.randn(16) + 1j * np.random.randn(16)).astype(np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "IFFT", "fft_lengths": (16,)})
+    )
 
-    # Case 3: 2D FFT (complex64)
-    x = (np.random.randn(4, 8) + 1j * np.random.randn(4, 8)).astype(np.complex64)
-    list_of_inputs.append({"x": x, "fft_type": "FFT", "fft_lengths": (4, 8)})
+    # Input 3: 2D FFT (complex64)
+    x = (np.random.randn(4, 8) + 1j * np.random.randn(4, 8)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "FFT", "fft_lengths": (4, 8)})
+    )
 
-    # Case 4: 2D IFFT (complex64)
-    x = (np.random.randn(8, 16) + 1j * np.random.randn(8, 16)).astype(np.complex64)
-    list_of_inputs.append({"x": x, "fft_type": "IFFT", "fft_lengths": (8, 16)})
+    # Input 4: Batched 1D FFT with negative values
+    x = (np.random.uniform(-5.0, 5.0, (2, 3, 32)) + 1j * np.random.uniform(
+        -5.0, 5.0, (2, 3, 32)
+    )).astype(np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "FFT", "fft_lengths": (32,)})
+    )
 
-    # Case 5: 1D RFFT (float32)
+    # Input 5: Batched 2D IFFT (complex64)
+    x = (np.random.randn(3, 8, 8) + 1j * np.random.randn(3, 8, 8)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "IFFT", "fft_lengths": (8, 8)})
+    )
+
+    # Input 6: 3D FFT (complex64)
+    x = (np.random.randn(2, 4, 8) + 1j * np.random.randn(2, 4, 8)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "FFT", "fft_lengths": (2, 4, 8)})
+    )
+
+    # Input 7: 1D RFFT (float32)
     x = np.random.randn(16).astype(np.float32)
-    list_of_inputs.append({"x": x, "fft_type": "RFFT", "fft_lengths": (16,)})
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "RFFT", "fft_lengths": (16,)})
+    )
 
-    # Case 6: 1D IRFFT (complex64)
+    # Input 8: 2D RFFT (float32)
+    x = np.random.randn(6, 12).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "RFFT", "fft_lengths": (6, 12)})
+    )
+
+    # Input 9: Batched 2D RFFT with negative values (float32)
+    x = np.random.uniform(-10.0, 10.0, (2, 4, 16)).astype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "RFFT", "fft_lengths": (4, 16)})
+    )
+
+    # Input 10: 1D IRFFT even length (complex64)
     x = (np.random.randn(9) + 1j * np.random.randn(9)).astype(np.complex64)
-    list_of_inputs.append({"x": x, "fft_type": "IRFFT", "fft_lengths": (16,)})
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "IRFFT", "fft_lengths": (16,)})
+    )
 
-    # Case 7: 2D RFFT (float64)
-    x = np.random.randn(4, 8).astype(np.float64)
-    list_of_inputs.append({"x": x, "fft_type": "RFFT", "fft_lengths": (4, 8)})
+    # Input 11: 2D IRFFT (complex64)
+    x = (np.random.randn(4, 6) + 1j * np.random.randn(4, 6)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "IRFFT", "fft_lengths": (4, 10)})
+    )
 
-    # Case 8: 2D IRFFT (complex64)
-    x = (np.random.randn(4, 5) + 1j * np.random.randn(4, 5)).astype(np.complex64)
-    list_of_inputs.append({"x": x, "fft_type": "IRFFT", "fft_lengths": (4, 8)})
-
-    # Case 9: 3D FFT (complex64) with batch dimension
-    x = (np.random.randn(2, 4, 4, 4) + 1j * np.random.randn(2, 4, 4, 4)).astype(np.complex64)
-    list_of_inputs.append({"x": x, "fft_type": "FFT", "fft_lengths": (4, 4, 4)})
-
-    # Case 10: 1D RFFT with batch dimension
-    x = np.random.randn(5, 32).astype(np.float32)
-    list_of_inputs.append({"x": x, "fft_type": "RFFT", "fft_lengths": (32,)})
+    # Input 12: Batched 1D IRFFT odd length (complex64)
+    x = (np.random.randn(5, 8) + 1j * np.random.randn(5, 8)).astype(
+        np.complex64
+    )
+    list_of_inputs.append(
+        copy.deepcopy({"x": x, "fft_type": "IRFFT", "fft_lengths": (15,)})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.fft_1"] = fft_inputs()
 

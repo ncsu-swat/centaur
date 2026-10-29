@@ -4,63 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dstack_inputs():
     list_of_inputs = []
 
-    # Input 1: 3D array (treated as list of 2D arrays)
+    # Input 1: 1D float32 array
+    tup = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 2: 1D int32 array with negative values
+    tup = np.array([-5, 0, 5, -10, 15], dtype=np.int32)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D float32 array
+    tup = np.array([[1.0, -2.0, 3.0], [-4.0, 5.0, -6.0]], dtype=np.float32)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2D float64 array
+    tup = np.random.randn(4, 5).astype(np.float64)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 2D int16 array
+    tup = np.arange(12, dtype=np.int16).reshape(3, 4)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.int16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D float32 array
     tup = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"tup": tup, "dtype": np.float32}
+    input_dict = {"tup": tup, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D array (treated as list of 1D arrays)
-    tup = np.random.randn(3, 5).astype(np.float32)
-    input_dict = {"tup": tup, "dtype": np.float32}
+    # Input 7: 3D int32 array with negative values
+    tup = np.random.randint(-100, 100, size=(3, 2, 5), dtype=np.int32)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D array with negative/zero values, float64
-    tup = np.array([[[1.0, -1.0], [0.0, 2.0]], [[-2.0, 0.5], [1.5, -0.5]]], dtype=np.float64)
-    input_dict = {"tup": tup, "dtype": np.float64}
+    # Input 8: 3D complex64 array
+    tup = (np.random.randn(2, 4, 3) + 1j * np.random.randn(2, 4, 3)).astype(
+        np.complex64
+    )
+    input_dict = {"tup": tup, "dtype": np.dtype(np.complex64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array, int32
-    tup = np.arange(12).reshape(3, 4).astype(np.int32)
-    input_dict = {"tup": tup, "dtype": np.int32}
+    # Input 9: 3D uint8 array
+    tup = np.random.randint(0, 256, size=(2, 3, 2), dtype=np.uint8)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.uint8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array of ones, int32
-    tup = np.ones((5, 2, 2), dtype=np.int32)
-    input_dict = {"tup": tup, "dtype": np.int32}
+    # Input 10: 4D float32 array
+    tup = np.random.randn(2, 3, 4, 2).astype(np.float32)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D array of zeros, float32
-    tup = np.zeros((2, 3, 3), dtype=np.float32)
-    input_dict = {"tup": tup, "dtype": np.float32}
+    # Input 11: 2D boolean array
+    tup = np.array([[True, False, True], [False, True, False]], dtype=np.bool_)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.bool_)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D array, float32
-    tup = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    input_dict = {"tup": tup, "dtype": np.float32}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 3D complex array, complex64
-    tup = np.array([[[1+2j, 3+4j]], [[5+6j, 7+8j]]], dtype=np.complex64)
-    input_dict = {"tup": tup, "dtype": np.complex64}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D boolean array, bool
-    tup = np.array([[True, False], [False, True]])
-    input_dict = {"tup": tup, "dtype": np.bool_}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 2D array, float32
-    tup = np.random.randn(5, 4).astype(np.float32)
-    input_dict = {"tup": tup, "dtype": np.float32}
+    # Input 12: 1D int64 array casting to float64
+    tup = np.array([10, 20, 30, 40], dtype=np.int64)
+    input_dict = {"tup": tup, "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.dstack_1"] = dstack_inputs()
 

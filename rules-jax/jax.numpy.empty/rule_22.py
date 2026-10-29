@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# out_sharding length must match shape length when shape is a list (Rule 22)
+# list shape and dtype constraint for empty array creation (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_length"] > 0, v["arg2_length"] == v["arg1_length"], True)) if n else
-          If(v["arg1_length"] > 0, v["arg2_length"] == v["arg1_length"], True))
+    s.add(Not(And(And(0 <= v["arg2_value"], v["arg2_value"] <= 10), And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)]))) if n else
+          And(And(0 <= v["arg2_value"], v["arg2_value"] <= 10), And([Implies(i < (v["arg1_length"] - 1 + 1), Select(v["arg1_values"], i) >= 0) for i in range(6)])))
 )
 
 def rule_22_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,25 @@ def rule_22_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
             return False
-        if not (isinstance(arg2, tuple) and all(isinstance(e, str) for e in arg2)):
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_length = Int('arg1_length')
-        arg2_length = Int('arg2_length')
+        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_length == len(arg1))
-        solver.add(arg2_length == len(arg2))
+        for i in range(len(arg1)):
+            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 22
-        rule_22(solver, {'arg1_length': arg1_length, 'arg2_length': arg2_length})
+        rule_22(solver, {'arg1_length': arg1_length, 'arg1_values': arg1_values, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_22(solver, {'arg1_length': arg1['length'], 'arg2_length': arg2['length']}, neg)
+        rule_22(solver, {'arg1_length': arg1['length'], 'arg1_values': arg1['values'], 'arg2_value': arg2['value']}, neg)

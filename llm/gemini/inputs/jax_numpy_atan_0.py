@@ -4,57 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def atan_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array with positive float32 values
-    x = np.array([0.1, 0.5, 1.0, 2.0, 10.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 0D scalar float32
+    x = np.array(1.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array with negative float32 values
-    x = np.array([-0.1, -0.5, -1.0, -2.0, -10.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with positive, negative, and zero values
+    x = np.array([-10.0, -1.0, 0.0, 1.0, 10.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D array with mixed float64 values
-    x = np.array([[-1.5, 0.0, 1.5], [-2.5, 3.0, -0.5]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array of float64
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 0D array (scalar equivalent)
-    x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array of float16
+    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D array of float32
-    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 4D array of float32
+    x = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D array of int32
-    x = np.array([-5, -1, 0, 1, 5], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: Integer input (int32)
+    x = np.array([[-5, -1, 0], [1, 5, 10]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D array containing special values (inf, -inf, nan)
+    # Input 7: Integer input (int64)
+    x = np.array([0, -100, 100, 1000], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: Complex input (complex64)
+    x = np.array([1.0 + 2.0j, -0.5 - 1.5j, 0.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: Complex input (complex128)
+    x = np.array([[2.0 - 1.0j, -3.0 + 4.0j], [0.5 + 0.5j, -1.0 - 1.0j]], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: Array with special values (inf, -inf, nan)
     x = np.array([np.inf, -np.inf, np.nan, 0.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D array with very small values (near zero)
-    x = np.array([1e-5, -1e-5, 1e-9, -1e-9], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: Empty array (float32)
+    x = np.empty((0, 5), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 4D array of float16
-    x = np.random.uniform(-2.0, 2.0, size=(2, 2, 2, 2)).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 10: 2D array of zeros
-    x = np.zeros((3, 3), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 11: 5D array of float32
-    x = np.random.uniform(-10.0, 10.0, size=(1, 2, 1, 3, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 12: Boolean array
+    x = np.array([[True, False], [False, True]], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.atan"] = atan_inputs()
 

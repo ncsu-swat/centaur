@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For 2D or higher-dimensional input tensors, all dimensions must have positive size (Rule 11)
+# if input tensor is multi-dimensional, its leading dimension must be positive (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] >= 2, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]), True)) if n else
-          If(v["arg1_ndim"] >= 2, And([Implies(i < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], i) > 0) for i in range(6)]), True))
+    s.add(Not(If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) >= 1, True)) if n else
+          If(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) >= 1, True))
 )
 
 def rule_11_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_11_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 11
-        rule_11(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_11(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_11(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_11(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

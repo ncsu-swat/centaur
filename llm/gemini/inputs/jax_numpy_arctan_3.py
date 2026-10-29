@@ -4,41 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def arctan_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0})
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: One
-    list_of_inputs.append({"x": 1})
+    # Input 2: Positive unit integer
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative one
-    list_of_inputs.append({"x": -1})
+    # Input 3: Negative unit integer
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 4: Small positive integer
-    list_of_inputs.append({"x": 5})
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 5: Small negative integer
-    list_of_inputs.append({"x": -5})
+    input_dict = {"x": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Medium positive integer
-    list_of_inputs.append({"x": 42})
+    # Input 6: Moderate positive integer
+    input_dict = {"x": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Medium negative integer
-    list_of_inputs.append({"x": -42})
+    # Input 7: Moderate negative integer
+    input_dict = {"x": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Larger positive integer
-    list_of_inputs.append({"x": 100})
+    # Input 8: Large positive integer
+    input_dict = {"x": 1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Larger negative integer
-    list_of_inputs.append({"x": -100})
+    # Input 9: Large negative integer
+    input_dict = {"x": -1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Very large integer
-    list_of_inputs.append({"x": 10000})
+    # Input 10: Very large positive integer
+    input_dict = {"x": 2147483647}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Very large negative integer
+    input_dict = {"x": -2147483648}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

@@ -4,63 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def floor_divide_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 arrays
-    x1 = np.array([10, 20, 30], dtype=np.int32)
-    x2 = np.array([3, 4, 7], dtype=np.int32)
+    # Input 1: 1D integer arrays
+    x1 = np.array([10, -20, 30, -40, 50], dtype=np.int32)
+    x2 = np.array([3, 3, -7, -7, 6], dtype=np.int32)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 1D int32 arrays with negative values
-    x1 = np.array([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5], dtype=np.int32)
-    x2 = np.array([3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3], dtype=np.int32)
+    # Input 2: 1D floating point arrays
+    x1 = np.array([10.5, -20.5, 30.2, -40.8], dtype=np.float32)
+    x2 = np.array([2.5, 3.0, -4.2, -5.5], dtype=np.float32)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: 2D float32 arrays
-    x1 = np.array([[6.0, 6.0], [6.0, 6.0]], dtype=np.float32)
-    x2 = np.array([[2.0, 2.5], [3.0, 4.0]], dtype=np.float32)
+    # Input 3: 2D integer arrays with same shape
+    x1 = np.random.randint(-50, 50, size=(4, 5)).astype(np.int64)
+    x2 = np.random.randint(1, 10, size=(4, 5)).astype(np.int64)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: Broadcasting (2D and 1D)
-    x1 = np.array([[10, 20], [30, 40]], dtype=np.int64)
-    x2 = np.array([3, 7], dtype=np.int64)
+    # Input 4: Broadcasting 2D and 1D arrays
+    x1 = np.arange(1, 13, dtype=np.float64).reshape((3, 4))
+    x2 = np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float64)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: 3D arrays, float64
-    x1 = np.random.uniform(10, 100, (2, 3, 4)).astype(np.float64)
-    x2 = np.random.uniform(1, 10, (2, 3, 4)).astype(np.float64)
+    # Input 5: 3D float32 arrays
+    x1 = np.random.uniform(10.0, 100.0, size=(2, 3, 4)).astype(np.float32)
+    x2 = np.random.uniform(1.0, 5.0, size=(2, 3, 4)).astype(np.float32)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: 0D arrays (scalars as numpy arrays)
-    x1 = np.array(15, dtype=np.int32)
+    # Input 6: 0D arrays (scalar tensors)
+    x1 = np.array(-15, dtype=np.int32)
     x2 = np.array(4, dtype=np.int32)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: Larger dimensions (4D)
-    x1 = np.random.randint(-100, 100, size=(2, 2, 2, 2)).astype(np.int32)
-    x2 = np.random.randint(1, 10, size=(2, 2, 2, 2)).astype(np.int32)
+    # Input 7: Broadcasting with a 0D array (divisor is 0D)
+    x1 = np.array([[-10, 20], [30, -40]], dtype=np.int32)
+    x2 = np.array(3, dtype=np.int32)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Broadcasting with one dimension being 1
-    x1 = np.random.randint(10, 50, size=(1, 5)).astype(np.int32)
-    x2 = np.random.randint(1, 5, size=(5, 1)).astype(np.int32)
+    # Input 8: Mixed shapes broadcasting (4D with 2D)
+    x1 = np.random.randint(10, 100, size=(2, 3, 4, 5)).astype(np.int32)
+    x2 = np.random.randint(1, 5, size=(4, 5)).astype(np.int32)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: float32 with negative values
-    x1 = np.array([-10.5, -5.5, 5.5, 10.5], dtype=np.float32)
-    x2 = np.array([2.0, 2.0, 2.0, 2.0], dtype=np.float32)
+    # Input 9: Mixed types (int32 dividend and float32 divisor)
+    x1 = np.array([15, 22, -35, 48], dtype=np.int32)
+    x2 = np.array([2.5, 4.0, 6.0, 5.5], dtype=np.float32)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Large integer division (int64)
-    x1 = np.array([100000000000, -200000000000], dtype=np.int64)
-    x2 = np.array([3000000, 3000000], dtype=np.int64)
+    # Input 10: 2D float64 arrays with negative and positive values
+    x1 = np.array([[-12.5, 14.2], [25.0, -33.3]], dtype=np.float64)
+    x2 = np.array([[3.0, -4.0], [-5.0, 6.0]], dtype=np.float64)
     list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.floor_divide_1"] = floor_divide_inputs()
 

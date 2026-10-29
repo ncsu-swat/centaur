@@ -4,101 +4,118 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 import jax
 from jax.sharding import Mesh, PartitionSpec as P
+import numpy as np
 
-# Set up a global CPU mesh context using the non-deprecated jax.set_mesh
-devices = np.array(jax.devices('cpu'))
-mesh = Mesh(devices.reshape(-1), ('x',))
-ctx = jax.set_mesh(mesh)
-ctx.__enter__()
+# Set up an active mesh context required when out_sharding is specified as a PartitionSpec
+_mesh = Mesh(np.array(jax.devices()), ("axis",))
+_mesh_ctx = jax.set_mesh(_mesh)
+_mesh_ctx.__enter__()
+
 
 def empty_inputs():
     list_of_inputs = []
 
-    # Input 1
+    # Input 1: 0-D scalar, float32
     input_dict = {
-        "shape": (4,),
+        "shape": (),
         "dtype": "float32",
-        "out_sharding": P()
+        "out_sharding": P(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2
+    # Input 2: 1-D array, int32
     input_dict = {
-        "shape": (8, 8),
+        "shape": (8,),
         "dtype": "int32",
-        "out_sharding": P()
+        "out_sharding": P(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3
+    # Input 3: 2-D array, bool
+    input_dict = {
+        "shape": (4, 6),
+        "dtype": "bool",
+        "out_sharding": P(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 2-D square matrix, float64
+    input_dict = {
+        "shape": (5, 5),
+        "dtype": "float64",
+        "out_sharding": P(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3-D array, complex64
     input_dict = {
         "shape": (2, 3, 4),
-        "dtype": "float64",
-        "out_sharding": P()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4
-    input_dict = {
-        "shape": (10, 5),
-        "dtype": "bool",
-        "out_sharding": P()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5
-    input_dict = {
-        "shape": (16, 16, 16),
         "dtype": "complex64",
-        "out_sharding": P()
+        "out_sharding": P(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6
+    # Input 6: 1-D zero-size array, uint8
     input_dict = {
-        "shape": (1,),
-        "dtype": "uint32",
-        "out_sharding": P()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7
-    input_dict = {
-        "shape": (128, 64),
-        "dtype": "int64",
-        "out_sharding": P()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8
-    input_dict = {
-        "shape": (3, 3),
-        "dtype": "int8",
-        "out_sharding": P()
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9
-    input_dict = {
-        "shape": (5, 5, 5, 5),
+        "shape": (0,),
         "dtype": "uint8",
-        "out_sharding": P()
+        "out_sharding": P(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10
+    # Input 7: 3-D array with zero dimension, int8
     input_dict = {
-        "shape": (2, 2, 2, 2, 2),
-        "dtype": "float32",
-        "out_sharding": P()
+        "shape": (3, 0, 2),
+        "dtype": "int8",
+        "out_sharding": P(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4-D array, float16
+    input_dict = {
+        "shape": (2, 2, 2, 2),
+        "dtype": "float16",
+        "out_sharding": P(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 2-D row vector, int64
+    input_dict = {
+        "shape": (1, 10),
+        "dtype": "int64",
+        "out_sharding": P(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 2-D column vector, uint32
+    input_dict = {
+        "shape": (10, 1),
+        "dtype": "uint32",
+        "out_sharding": P(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4-D singleton shape, bfloat16
+    input_dict = {
+        "shape": (1, 1, 1, 1),
+        "dtype": "bfloat16",
+        "out_sharding": P(),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 3-D large array, complex128
+    input_dict = {
+        "shape": (4, 8, 16),
+        "dtype": "complex128",
+        "out_sharding": P(),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.empty_5"] = empty_inputs()
 

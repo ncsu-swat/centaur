@@ -4,48 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import jax.numpy as jnp
+import numpy as np
 
-def jax_numpy_exp_inputs():
+
+def exp_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard python integer (zero)
-    list_of_inputs.append({"x": 0})
+    # Input 1: Zero
+    input_dict = {"x": int(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative python integer
-    list_of_inputs.append({"x": -5})
+    # Input 2: Positive small integer
+    input_dict = {"x": int(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Positive python integer
-    list_of_inputs.append({"x": 10})
+    # Input 3: Negative small integer
+    input_dict = {"x": int(-1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Numpy int32 scalar
-    list_of_inputs.append({"x": np.int32(3)})
+    # Input 4: Moderate positive integer
+    input_dict = {"x": int(2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Numpy int64 scalar (negative)
-    list_of_inputs.append({"x": np.int64(-4)})
+    # Input 5: Moderate negative integer
+    input_dict = {"x": int(-5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D Numpy array of int32
-    list_of_inputs.append({"x": np.array([1, 2, 3], dtype=np.int32)})
+    # Input 6: Positive integer 5
+    input_dict = {"x": int(5)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D Numpy array of int64 with negative and positive values
-    list_of_inputs.append({"x": np.array([[-1, 0], [1, 2]], dtype=np.int64)})
+    # Input 7: Positive integer 10
+    input_dict = {"x": int(10)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D Numpy array of uint8
-    list_of_inputs.append({"x": np.array([[[1, 2], [3, 4]]], dtype=np.uint8)})
+    # Input 8: Negative integer -10
+    input_dict = {"x": int(-10)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Numpy int16 scalar
-    list_of_inputs.append({"x": np.int16(5)})
+    # Input 9: Negative integer -20
+    input_dict = {"x": int(-20)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D Numpy array of int16 with negative values
-    list_of_inputs.append({"x": np.array([-10, -5, 0, 5], dtype=np.int16)})
+    # Input 10: Larger positive integer within single-precision range
+    input_dict = {"x": int(50)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 4D Numpy array of int32
-    list_of_inputs.append({"x": np.ones((2, 2, 2, 2), dtype=np.int32)})
+    # Input 11: Larger negative integer
+    input_dict = {"x": int(-50)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.exp_3"] = jax_numpy_exp_inputs()
+
+generated_inputs["jax.numpy.exp_3"] = exp_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

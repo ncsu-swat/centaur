@@ -7,35 +7,32 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# When input z is a primitive number, deg must be boolean (Rule 14)
+# input tensor z must not be boolean, string, or dtype type (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And((Or(v["arg2_value"] == True, v["arg2_value"] == False)), v["arg1_value"] == v["arg1_value"])) if n else
-          And((Or(v["arg2_value"] == True, v["arg2_value"] == False)), v["arg1_value"] == v["arg1_value"]))
+    s.add(Not(And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 11), v["arg1_dtype"] != 12)) if n else
+          And(And(v["arg1_dtype"] != 0, v["arg1_dtype"] != 11), v["arg1_dtype"] != 12))
 )
 
-def rule_14_func(arg1, arg2, solver=None, neg=False):
+def rule_14_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
-            return False
-        if not isinstance(arg2, bool):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg2_value = Bool('arg2_value')
+        arg1_dtype = Int('arg1_dtype')
 
         # Value assignments
-        solver.add(arg2_value == arg2)
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_14(solver, {'arg1_dtype': arg1_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_14(solver, {'arg1_dtype': arg1['dtype']}, neg)

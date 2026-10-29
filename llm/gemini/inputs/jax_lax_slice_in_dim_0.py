@@ -10,113 +10,124 @@ import copy
 def slice_in_dim_inputs():
     list_of_inputs = []
 
-    # Case 1: 1D float32 array, slice middle, stride 1, axis 0
-    operand = np.random.randn(10).astype(np.float32)
+    # Input 1: 1D float32 array, standard slice
+    operand = np.arange(10, dtype=np.float32)
     input_dict = {
-        'operand': operand,
-        'start_index': 2,
-        'limit_index': 8,
-        'stride': 1,
-        'axis': 0
+        "operand": operand,
+        "start_index": 2,
+        "limit_index": 7,
+        "stride": 1,
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 2: 2D float32 array, slice axis 0, stride 2
-    operand = np.random.randn(8, 8).astype(np.float32)
+    # Input 2: 2D int32 array, stride > 1 along axis 0
+    operand = np.arange(20, dtype=np.int32).reshape(5, 4)
     input_dict = {
-        'operand': operand,
-        'start_index': 1,
-        'limit_index': 7,
-        'stride': 2,
-        'axis': 0
+        "operand": operand,
+        "start_index": 0,
+        "limit_index": 5,
+        "stride": 2,
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 3: 2D float32 array, slice axis 1, stride 1
-    operand = np.random.randn(5, 10).astype(np.float32)
+    # Input 3: 2D float64 array, slice along axis 1
+    operand = np.random.randn(4, 6).astype(np.float64)
     input_dict = {
-        'operand': operand,
-        'start_index': 0,
-        'limit_index': 5,
-        'stride': 1,
-        'axis': 1
+        "operand": operand,
+        "start_index": 1,
+        "limit_index": 4,
+        "stride": 1,
+        "axis": 1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 4: 3D float32 array, slice axis 2, stride 3
-    operand = np.random.randn(3, 4, 12).astype(np.float32)
+    # Input 4: 3D float32 array, negative axis
+    operand = np.random.randn(3, 4, 5).astype(np.float32)
     input_dict = {
-        'operand': operand,
-        'start_index': 3,
-        'limit_index': 11,
-        'stride': 3,
-        'axis': 2
+        "operand": operand,
+        "start_index": 0,
+        "limit_index": 3,
+        "stride": 1,
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 5: 4D float32 array, slice axis 3, stride 1
-    operand = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    # Input 5: 3D int32 array, strided slice along negative axis
+    operand = np.random.randint(0, 100, size=(6, 8, 4), dtype=np.int32)
     input_dict = {
-        'operand': operand,
-        'start_index': 1,
-        'limit_index': 4,
-        'stride': 1,
-        'axis': 3
+        "operand": operand,
+        "start_index": 1,
+        "limit_index": 7,
+        "stride": 2,
+        "axis": -2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 6: 1D float32 array, large, stride 5
-    operand = np.random.randn(100).astype(np.float32)
+    # Input 6: 4D boolean array, slice along axis 2
+    operand = np.random.choice([True, False], size=(2, 3, 6, 2))
     input_dict = {
-        'operand': operand,
-        'start_index': 10,
-        'limit_index': 90,
-        'stride': 5,
-        'axis': 0
+        "operand": operand,
+        "start_index": 0,
+        "limit_index": 5,
+        "stride": 1,
+        "axis": 2,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 7: 3D int32 array, slice axis 0, stride 2
-    operand = np.random.randint(-10, 10, size=(4, 4, 4)).astype(np.int32)
+    # Input 7: 1D int64 array, large stride
+    operand = np.arange(100, dtype=np.int64)
     input_dict = {
-        'operand': operand,
-        'start_index': 0,
-        'limit_index': 4,
-        'stride': 2,
-        'axis': 0
+        "operand": operand,
+        "start_index": 10,
+        "limit_index": 90,
+        "stride": 15,
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 8: 2D float64 array, slice axis 1, stride 1
-    operand = np.random.randn(6, 6).astype(np.float64)
+    # Input 8: 5D float32 array, slice first dimension
+    operand = np.random.randn(4, 2, 2, 3, 2).astype(np.float32)
     input_dict = {
-        'operand': operand,
-        'start_index': 2,
-        'limit_index': 5,
-        'stride': 1,
-        'axis': 1
+        "operand": operand,
+        "start_index": 1,
+        "limit_index": 3,
+        "stride": 1,
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 9: 5D float32 array, slice axis 4, stride 2
-    operand = np.random.randn(2, 2, 2, 2, 10).astype(np.float32)
+    # Input 9: 2D float64 array, zero-length slice (start == limit)
+    operand = np.random.randn(5, 5).astype(np.float64)
     input_dict = {
-        'operand': operand,
-        'start_index': 2,
-        'limit_index': 8,
-        'stride': 2,
-        'axis': 4
+        "operand": operand,
+        "start_index": 2,
+        "limit_index": 2,
+        "stride": 1,
+        "axis": 0,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Case 10: 1D int32 array, start 0, limit 1, stride 1
-    operand = np.random.randint(-5, 5, size=(1,)).astype(np.int32)
+    # Input 10: 3D int32 array, axis 1 slice with large stride
+    operand = np.arange(60, dtype=np.int32).reshape(2, 10, 3)
     input_dict = {
-        'operand': operand,
-        'start_index': 0,
-        'limit_index': 1,
-        'stride': 1,
-        'axis': 0
+        "operand": operand,
+        "start_index": 0,
+        "limit_index": 10,
+        "stride": 3,
+        "axis": 1,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D int64 array, slicing last axis with negative indexing
+    operand = np.ones((2, 3, 4, 8), dtype=np.int64)
+    input_dict = {
+        "operand": operand,
+        "start_index": 2,
+        "limit_index": 6,
+        "stride": 2,
+        "axis": -1,
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 

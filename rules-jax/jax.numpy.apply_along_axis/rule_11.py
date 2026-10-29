@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The size of the tensor along the specified non-negative axis must be at least 1 (Rule 11)
+# valid negative or non-negative axis bounded by array rank (Rule 11)
 
 rule_11 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_value"] >= 0, v["arg1_value"] < v["arg2_ndim"]), Select(v["arg2_shape"], v["arg1_value"]) >= 1, True)) if n else
-          If(And(v["arg1_value"] >= 0, v["arg1_value"] < v["arg2_ndim"]), Select(v["arg2_shape"], v["arg1_value"]) >= 1, True))
+    s.add(Not(If(v["arg1_value"] < 0, v["arg1_value"] + v["arg2_ndim"] >= 0, v["arg1_value"] < v["arg2_ndim"])) if n else
+          If(v["arg1_value"] < 0, v["arg1_value"] + v["arg2_ndim"] >= 0, v["arg1_value"] < v["arg2_ndim"]))
 )
 
 def rule_11_func(arg1, arg2, solver=None, neg=False):
@@ -29,18 +29,15 @@ def rule_11_func(arg1, arg2, solver=None, neg=False):
         solver = Solver()
         arg1_value = Int('arg1_value')
         arg2_ndim = Int('arg2_ndim')
-        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
         solver.add(arg1_value == int(arg1))
         solver.add(arg2_ndim == arg2.ndim)
-        for i in range(arg2.ndim):
-            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 11
-        rule_11(solver, {'arg1_value': arg1_value, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_11(solver, {'arg1_value': arg1_value, 'arg2_ndim': arg2_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_11(solver, {'arg1_value': arg1['value'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_11(solver, {'arg1_value': arg1['value'], 'arg2_ndim': arg2['ndim']}, neg)

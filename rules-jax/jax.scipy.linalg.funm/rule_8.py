@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The first dimension of input matrix A must be positive (Rule 8)
+# matrix A shape symmetry across both axes with minimum size of 1 (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) > 0)) if n else
-          And(v["arg1_ndim"] > 0, Select(v["arg1_shape"], 0) > 0))
+    s.add(Not(And(v["arg1_ndim"] == 2, And([Implies(i < (1 + 1), And(Select(v["arg1_shape"], i) == Select(v["arg1_shape"], 1 - i), Select(v["arg1_shape"], i) >= 1)) for i in range(6)]))) if n else
+          And(v["arg1_ndim"] == 2, And([Implies(i < (1 + 1), And(Select(v["arg1_shape"], i) == Select(v["arg1_shape"], 1 - i), Select(v["arg1_shape"], i) >= 1)) for i in range(6)])))
 )
 
 def rule_8_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_8_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 8
-        rule_8(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_8(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_8(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_8(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

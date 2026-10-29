@@ -4,63 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def resize_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D int array resized to 2D square matrix
-    a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int32)
-    new_shape = (3, 3)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
-
-    # Input 2: 1D int array resized to a larger 2D matrix (repetition)
+    # Input 1: 1D integer array to 2D shape (repeating elements)
     a = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9], dtype=np.int32)
     new_shape = (3, 4)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
-    # Input 3: 2D float32 array resized to a larger 2D matrix
-    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    new_shape = (4, 4)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    # Input 2: 1D integer array to exact 2D shape
+    a = np.arange(9, dtype=np.int64)
+    new_shape = (3, 3)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
-    # Input 4: 2D float64 array resized to a smaller 2D matrix
-    a = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], dtype=np.float64)
-    new_shape = (2, 2)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    # Input 3: 2D float32 array truncated to smaller 1D shape
+    a = np.array([[-1.5, 2.3, 0.0], [4.1, -5.2, 6.8]], dtype=np.float32)
+    new_shape = (4,)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
-    # Input 5: 3D int16 array resized to a 2D matrix
-    a = np.arange(8, dtype=np.int16).reshape((2, 2, 2))
-    new_shape = (4, 2)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    # Input 4: 0D scalar array resized to 2D
+    a = np.array(-7, dtype=np.int32)
+    new_shape = (3, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
-    # Input 6: 1D negative float array resized to a 2D matrix
-    a = np.array([-1.5, -2.5, -3.5, -4.5, -5.5], dtype=np.float32)
-    new_shape = (2, 3)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
-
-    # Input 7: Boolean array resized to a 2D matrix
+    # Input 5: Boolean array resized to 2D
     a = np.array([True, False, True], dtype=np.bool_)
-    new_shape = (2, 2)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    new_shape = (2, 4)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
-    # Input 8: 3D float32 array flattened to a 1D array of different size
+    # Input 6: Float64 array resized to 3D
+    a = np.linspace(-10.0, 10.0, 5, dtype=np.float64)
+    new_shape = (2, 2, 3)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
+
+    # Input 7: Complex array resized to 2D
+    a = np.array([1 + 2j, -3 + 4j, 5 - 6j], dtype=np.complex64)
+    new_shape = (3, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
+
+    # Input 8: 3D float32 array flattened to 1D
     a = np.ones((2, 3, 4), dtype=np.float32)
-    new_shape = (12,)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    new_shape = (10,)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
-    # Input 9: 1D complex array resized to 2D
-    a = np.array([1+2j, 3+4j], dtype=np.complex64)
-    new_shape = (2, 2)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    # Input 9: Unsigned integer array resized to 4D
+    a = np.array([10, 20, 30], dtype=np.uint8)
+    new_shape = (1, 2, 2, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
-    # Input 10: Larger 2D array resized to a different aspect ratio
-    a = np.arange(100, dtype=np.int32).reshape((10, 10))
-    new_shape = (5, 20)
-    list_of_inputs.append({"a": copy.deepcopy(a), "new_shape": new_shape})
+    # Input 10: Array resized to a 0D scalar
+    a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    new_shape = ()
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
+
+    # Input 11: Large 1D array resized to a multi-dimensional array
+    a = np.arange(100, dtype=np.int16)
+    new_shape = (5, 5, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "new_shape": new_shape})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.resize_2"] = resize_inputs()
 

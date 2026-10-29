@@ -4,136 +4,71 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def trim_zeros_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, both trimmed, axis (0,)
-    filt = np.array([0.0, 0.0, 1.0, 2.0, 3.0, 0.0], dtype=np.float32)
-    input_dict = {
-        "filt": filt,
-        "trim": "fb",
-        "axis": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, trim 'fb', axis=(0,)
+    filt = np.array([0, 0, 1, 2, 3, 0, 0], dtype=np.int32)
+    list_of_inputs.append({"filt": filt, "trim": "fb", "axis": (0,)})
 
-    # Input 2: 1D int32 array, leading trimmed, axis (0,)
-    filt = np.array([0, 0, -1, 5, 0, 10, 0], dtype=np.int32)
-    input_dict = {
-        "filt": filt,
-        "trim": "f",
-        "axis": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D array with negative values, trim 'f', axis=(0,)
+    filt = np.array([0, -5, 2, 0, -1, 0], dtype=np.int64)
+    list_of_inputs.append({"filt": filt, "trim": "f", "axis": (0,)})
 
-    # Input 3: 1D float64 array, trailing trimmed, axis (0,)
-    filt = np.array([1.5, 0.0, 2.3, 0.0, 0.0], dtype=np.float64)
-    input_dict = {
-        "filt": filt,
-        "trim": "b",
-        "axis": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array float32, trim 'b', axis=(-1,)
+    filt = np.array([0.0, 1.5, 0.0, -2.5, 0.0, 0.0], dtype=np.float32)
+    list_of_inputs.append({"filt": filt, "trim": "b", "axis": (-1,)})
 
-    # Input 4: 2D float32 array, trim along axis 0
-    filt = np.array([
-        [0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 2.0, 0.0],
-        [0.0, 0.0, 0.0]
-    ], dtype=np.float32)
-    input_dict = {
-        "filt": filt,
-        "trim": "fb",
-        "axis": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D array float64, trim 'fb', axis=(0,)
+    filt = np.array(
+        [[0.0, 0.0], [1.0, 2.0], [-1.0, 0.5], [0.0, 0.0]], dtype=np.float64
+    )
+    list_of_inputs.append({"filt": filt, "trim": "fb", "axis": (0,)})
 
-    # Input 5: 2D float32 array, trim along axis 1
-    filt = np.array([
-        [0.0, 0.0, 0.0],
-        [0.0, 1.0, 0.0],
-        [0.0, 2.0, 0.0],
-        [0.0, 0.0, 0.0]
-    ], dtype=np.float32)
-    input_dict = {
-        "filt": filt,
-        "trim": "fb",
-        "axis": (1,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D array float32, trim 'f', axis=(1,)
+    filt = np.array([[0.0, 1.0, 0.0], [0.0, 0.0, 2.0]], dtype=np.float32)
+    list_of_inputs.append({"filt": filt, "trim": "f", "axis": (1,)})
 
-    # Input 6: 2D int32 array, trim 'f' along axes (0, 1)
-    filt = np.array([
-        [0, 0, 0],
-        [0, 3, 4],
-        [0, 5, 0]
-    ], dtype=np.int32)
-    input_dict = {
-        "filt": filt,
-        "trim": "f",
-        "axis": (0, 1)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D array int16, trim 'b', axis=(0, 1)
+    filt = np.zeros((5, 5), dtype=np.int16)
+    filt[1:4, 1:4] = np.array([[1, -2, 3], [-4, 5, -6], [7, 8, 9]])
+    list_of_inputs.append({"filt": filt, "trim": "b", "axis": (0, 1)})
 
-    # Input 7: 3D float32 array, trim 'b' along axis (2,)
-    filt = np.zeros((3, 3, 3), dtype=np.float32)
-    filt[1, 1, 0] = 1.0
-    filt[1, 1, 1] = 2.0
-    input_dict = {
-        "filt": filt,
-        "trim": "b",
-        "axis": (2,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array uint8, trim 'fb', axis=(0, 2)
+    filt = np.zeros((4, 3, 4), dtype=np.uint8)
+    filt[1:3, :, 1:3] = 5
+    list_of_inputs.append({"filt": filt, "trim": "fb", "axis": (0, 2)})
 
-    # Input 8: 3D int16 array, trim 'fb' along axis (1, 2)
-    filt = np.zeros((2, 4, 4), dtype=np.int16)
-    filt[0, 1:3, 1:3] = 5
-    filt[1, 1:3, 1:3] = 6
-    input_dict = {
-        "filt": filt,
-        "trim": "fb",
-        "axis": (1, 2)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D array complex64, trim 'f', axis=(1,)
+    filt = np.array(
+        [[[0 + 0j], [1 + 2j], [0 + 0j]], [[0 + 0j], [-1 - 1j], [3 + 0j]]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append({"filt": filt, "trim": "f", "axis": (1,)})
 
-    # Input 9: 1D array with no non-zeros (all zeros), trim 'fb', axis (0,)
-    filt = np.zeros((5,), dtype=np.float32)
-    input_dict = {
-        "filt": filt,
-        "trim": "fb",
-        "axis": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D boolean array, trim 'fb', axis=(0, 1)
+    filt = np.array(
+        [[False, False, False], [False, True, False], [False, False, False]],
+        dtype=np.bool_,
+    )
+    list_of_inputs.append({"filt": filt, "trim": "fb", "axis": (0, 1)})
 
-    # Input 10: 4D float32 array, trim 'fb' along axis (1, 2, 3)
-    filt = np.zeros((2, 3, 3, 3), dtype=np.float32)
-    filt[0, 1, 1, 1] = 9.0
-    filt[1, 1, 1, 1] = 9.0
-    input_dict = {
-        "filt": filt,
-        "trim": "fb",
-        "axis": (1, 2, 3)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D array float32, trim 'fb', axis=(0, 1, 2, 3)
+    filt = np.zeros((3, 3, 3, 3), dtype=np.float32)
+    filt[1, 1, 1, 1] = -10.5
+    list_of_inputs.append({"filt": filt, "trim": "fb", "axis": (0, 1, 2, 3)})
 
-    # Input 11: 2D complex64 array, trim 'f' along axis (0,)
-    filt = np.array([
-        [0+0j, 0+0j],
-        [1+1j, 2+2j],
-        [0+0j, 0+0j]
-    ], dtype=np.complex64)
-    input_dict = {
-        "filt": filt,
-        "trim": "f",
-        "axis": (0,)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 3D array int32, trim 'b', axis=(-2, -1)
+    filt = np.zeros((2, 4, 4), dtype=np.int32)
+    filt[:, :2, :2] = np.array([[[-1, 2], [3, -4]], [[5, -6], [7, 8]]])
+    list_of_inputs.append({"filt": filt, "trim": "b", "axis": (-2, -1)})
 
-    return list_of_inputs
+    return [copy.deepcopy(x) for x in list_of_inputs]
+
 
 generated_inputs["jax.numpy.trim_zeros_2"] = trim_zeros_inputs()
 

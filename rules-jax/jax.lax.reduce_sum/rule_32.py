@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axes tuple elements must be valid dimension indices (Rule 32)
+# the first reduction axis in tuple must be a valid dimension index (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg2_length"] == 0, (And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)])))) if n else
-          Or(v["arg2_length"] == 0, (And([Implies(i < (v["arg2_length"] - 1 + 1), And(Select(v["arg2_values"], i) >= 0, Select(v["arg2_values"], i) < v["arg1_ndim"])) for i in range(6)]))))
+    s.add(Not(If(v["arg2_length"] > 0, And(Select(v["arg2_values"], 0) >= 0, Select(v["arg2_values"], 0) < v["arg1_ndim"]), True)) if n else
+          If(v["arg2_length"] > 0, And(Select(v["arg2_values"], 0) >= 0, Select(v["arg2_values"], 0) < v["arg1_ndim"]), True))
 )
 
 def rule_32_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_32_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 32
-        rule_32(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_32(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_32(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_32(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

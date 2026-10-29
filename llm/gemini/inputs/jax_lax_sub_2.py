@@ -4,63 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def sub_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D arrays of int32 (same shape)
-    x = np.array([10, 20, 30], dtype=np.int32)
-    y = np.array([1, 2, 3], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 1: Basic positive integers
+    input_dict = {"x": 10, "y": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D arrays of int32 (same shape)
-    x = np.array([[5, 10], [15, 20]], dtype=np.int32)
-    y = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 2: Both zeros
+    input_dict = {"x": 0, "y": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D arrays of int64 with negative values (same shape)
-    x = np.array([-10, 0, 10], dtype=np.int64)
-    y = np.array([5, -5, 5], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 3: Negative and positive integer
+    input_dict = {"x": -3, "y": 7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Scalar arrays (0D) of int32
-    x = np.array(42, dtype=np.int32)
-    y = np.array(12, dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 4: Positive and negative integer
+    input_dict = {"x": 15, "y": -5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Broadcasting 2D arrays with the same number of dimensions
-    x = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int64) # Shape (2, 3)
-    y = np.array([[1, 2, 3]], dtype=np.int64) # Shape (1, 3)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 5: Both negative integers
+    input_dict = {"x": -20, "y": -8}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Broadcasting 2D array and a scalar (0D array)
-    x = np.array([[10, 20], [30, 40]], dtype=np.int32) # Shape (2, 2)
-    y = np.array(5, dtype=np.int32) # Shape ()
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 6: Equal positive integers
+    input_dict = {"x": 42, "y": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D arrays of int16 (same shape)
-    x = np.arange(24, dtype=np.int16).reshape((2, 3, 4))
-    y = np.ones((2, 3, 4), dtype=np.int16) * 5
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 7: Subtraction resulting in negative value
+    input_dict = {"x": 3, "y": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D arrays of int8 (same shape)
-    x = np.array([100, -50, 120], dtype=np.int8)
-    y = np.array([20, 30, -10], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 8: Larger values
+    input_dict = {"x": 12345, "y": 6789}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D arrays of int32 with random values (same shape)
-    x = np.random.randint(-50, 50, size=(2, 2, 2, 2), dtype=np.int32)
-    y = np.random.randint(-50, 50, size=(2, 2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 9: Zero and negative integer
+    input_dict = {"x": 0, "y": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger 2D arrays of int64 (same shape)
-    x = np.random.randint(-1000, 1000, size=(10, 10), dtype=np.int64)
-    y = np.random.randint(-1000, 1000, size=(10, 10), dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 10: Equal negative integers
+    input_dict = {"x": -1, "y": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Powers of two
+    input_dict = {"x": 1024, "y": 512}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.sub_2"] = sub_inputs()
 

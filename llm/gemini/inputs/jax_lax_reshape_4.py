@@ -4,83 +4,127 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def reshape_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D to 2D standard reshape
-    operand = np.arange(6, dtype=np.int32)
+    # Input 1: 1D to 2D
+    operand = np.arange(6, dtype=np.float32)
     new_sizes = [2, 3]
     dimensions = [0]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
 
-    # Input 2: 2D to 1D with permutation of dimensions
-    operand = np.arange(6, dtype=np.float32).reshape(2, 3)
+    # Input 2: 2D to 1D with permuted dimensions
+    operand = np.arange(-6, 0, dtype=np.int32).reshape(2, 3)
     new_sizes = [6]
     dimensions = [1, 0]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
 
-    # Input 3: 3D to 3D with a different shape and permutation
-    operand = np.random.randn(2, 3, 4).astype(np.float32)
-    new_sizes = [4, 6, 1]
-    dimensions = [2, 0, 1]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D to 1D identity reshape
-    operand = np.arange(10, dtype=np.int64)
-    new_sizes = [10]
-    dimensions = [0]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: 4D to 2D collapse
-    operand = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    new_sizes = [4, 4]
-    dimensions = [0, 1, 2, 3]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Boolean array reshape
-    operand = np.array([True, False, True, False], dtype=np.bool_)
-    new_sizes = [2, 2]
-    dimensions = [0]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: High-dimensional complex permuted reshape
-    operand = np.random.randn(2, 1, 3, 1, 2).astype(np.float32)
-    new_sizes = [3, 4, 1]
-    dimensions = [4, 2, 0, 1, 3]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Float64 type array reshape
-    operand = np.random.randn(3, 4).astype(np.float64)
-    new_sizes = [2, 6]
-    dimensions = [1, 0]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D to 2D transpose-like reshape with complex numbers
-    operand = (np.random.randn(2, 5) + 1j * np.random.randn(2, 5)).astype(np.complex64)
-    new_sizes = [10, 1]
+    # Input 3: 2D to 2D float64
+    operand = np.random.randn(4, 4).astype(np.float64)
+    new_sizes = [2, 8]
     dimensions = [0, 1]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
 
-    # Input 10: Larger 3D shape to 2D
-    operand = np.random.randn(10, 10, 10).astype(np.float32)
-    new_sizes = [100, 10]
-    dimensions = [2, 1, 0]
-    input_dict = {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D to 2D with permutation
+    operand = np.arange(24, dtype=np.int64).reshape(2, 3, 4)
+    new_sizes = [6, 4]
+    dimensions = [2, 0, 1]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
+
+    # Input 5: 0D scalar to 1D array
+    operand = np.array(-5.5, dtype=np.float32)
+    new_sizes = [1]
+    dimensions = []
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
+
+    # Input 6: 1D array of size 1 to 0D scalar
+    operand = np.array([42], dtype=np.int32)
+    new_sizes = []
+    dimensions = [0]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
+
+    # Input 7: 4D to 1D boolean array with reversed permutation
+    operand = np.array([True, False] * 8, dtype=bool).reshape(2, 2, 2, 2)
+    new_sizes = [16]
+    dimensions = [3, 2, 1, 0]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
+
+    # Input 8: 3D complex64 array
+    operand = (
+        np.random.randn(3, 2, 2) + 1j * np.random.randn(3, 2, 2)
+    ).astype(np.complex64)
+    new_sizes = [2, 3, 2]
+    dimensions = [1, 2, 0]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
+
+    # Input 9: 2D with singleton dimension
+    operand = np.random.randn(1, 5).astype(np.float32)
+    new_sizes = [5, 1]
+    dimensions = [0, 1]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
+
+    # Input 10: 4D to 2D uint8
+    operand = np.arange(24, dtype=np.uint8).reshape(2, 1, 3, 4)
+    new_sizes = [6, 4]
+    dimensions = [0, 2, 3, 1]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
+
+    # Input 11: 1D to 3D
+    operand = np.linspace(-10.0, 10.0, 8, dtype=np.float32)
+    new_sizes = [2, 2, 2]
+    dimensions = [0]
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"operand": operand, "new_sizes": new_sizes, "dimensions": dimensions}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.reshape_4"] = reshape_inputs()
 

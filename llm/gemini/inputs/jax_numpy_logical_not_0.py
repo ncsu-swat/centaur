@@ -4,57 +4,66 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logical_not_inputs():
     list_of_inputs = []
 
     # Input 1: 1D boolean array
-    x = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.array([True, False, True, False, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D boolean array
-    x = np.array([[True, False], [False, True]], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D integer array with negative, zero, and positive values
+    x = np.array([-5, 0, 1, 10, -1], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D integer array with positive, negative, and zero values
-    x = np.array([-1, 0, 1, 2, -5], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D float32 array with zeros and non-zeros
+    x = np.array([[0.0, 1.5], [-2.3, 0.0]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 2D integer array
-    x = np.array([[0, 5], [-3, 0]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D scalar boolean array
+    x = np.array(True, dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D float array
-    x = np.array([[[1.5, 0.0], [0.0, -2.3]], [[0.0, 0.0], [9.1, 0.0]]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 0D scalar float array with zero
+    x = np.array(0.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 0D array (scalar)
-    x = np.array(True, dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 3D int8 array
+    x = np.zeros((2, 3, 4), dtype=np.int8)
+    x[0, 1, 2] = 1
+    x[1, 2, 3] = -1
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D uint8 array
-    x = np.array([0, 255, 128, 0], dtype=np.uint8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D float64 array with inf and nan
+    x = np.array([[np.nan, 0.0], [np.inf, -np.inf]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D float64 array
-    x = np.array([-0.0, 0.0, 1e-5, -1e-5], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: Large multi-dimensional boolean array
-    x = np.random.choice([True, False], size=(4, 4, 4))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 4D boolean array
+    x = np.ones((2, 2, 2, 2), dtype=np.bool_)
+    x[0, 0, 0, 0] = False
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Empty array
-    x = np.array([], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 1D complex array
+    x = np.array([0 + 0j, 1 + 0j, 0 + 2j, -1 - 1j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 11: 1D complex array
-    x = np.array([0 + 0j, 1 + 0j, 0 + 1j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 11: 2D uint8 array
+    x = np.array([[0, 255], [128, 0]], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 12: 1D int64 array with large values
+    x = np.array([0, 2**60, -(2**60)], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.logical_not"] = logical_not_inputs()
 

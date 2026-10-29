@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Boolean scalar comparison requires a boolean tensor (Rule 33)
+# integer scalar operand falls within valid range for an int16 tensor operand (Rule 33)
 
 rule_33 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] == 0, (Or(v["arg2_value"] == True, v["arg2_value"] == False)))) if n else
-          And(v["arg1_dtype"] == 0, (Or(v["arg2_value"] == True, v["arg2_value"] == False))))
+    s.add(Not(If(v["arg1_dtype"] == 2, And(v["arg2_value"] >= -32768, v["arg2_value"] <= 32767), True)) if n else
+          If(v["arg1_dtype"] == 2, And(v["arg2_value"] >= -32768, v["arg2_value"] <= 32767), True))
 )
 
 def rule_33_func(arg1, arg2, solver=None, neg=False):
@@ -22,17 +22,17 @@ def rule_33_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, bool):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_dtype = Int('arg1_dtype')
-        arg2_value = Bool('arg2_value')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == arg2)
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 33
         rule_33(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})

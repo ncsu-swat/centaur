@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# validity of kth when axis is -1 (Rule 18)
+# kth index must be within valid bounds along the specified axis (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg3_value"] == -1, (And(-1 * Select(v["arg1_shape"], v["arg1_ndim"] - 1) <= v["arg2_value"], v["arg2_value"] < Select(v["arg1_shape"], v["arg1_ndim"] - 1))), True)) if n else
-          If(v["arg3_value"] == -1, (And(-1 * Select(v["arg1_shape"], v["arg1_ndim"] - 1) <= v["arg2_value"], v["arg2_value"] < Select(v["arg1_shape"], v["arg1_ndim"] - 1))), True))
+    s.add(Not(If(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), And(v["arg2_value"] + Select(v["arg1_shape"], v["arg3_value"]) >= 0, v["arg2_value"] - Select(v["arg1_shape"], v["arg3_value"]) < 0), If(And(v["arg3_value"] < 0, v["arg3_value"] + v["arg1_ndim"] >= 0), And(v["arg2_value"] + Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"]) >= 0, v["arg2_value"] - Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"]) < 0), True))) if n else
+          If(And(v["arg3_value"] >= 0, v["arg3_value"] < v["arg1_ndim"]), And(v["arg2_value"] + Select(v["arg1_shape"], v["arg3_value"]) >= 0, v["arg2_value"] - Select(v["arg1_shape"], v["arg3_value"]) < 0), If(And(v["arg3_value"] < 0, v["arg3_value"] + v["arg1_ndim"] >= 0), And(v["arg2_value"] + Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"]) >= 0, v["arg2_value"] - Select(v["arg1_shape"], v["arg3_value"] + v["arg1_ndim"]) < 0), True)))
 )
 
 def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -43,9 +43,9 @@ def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
+        rule_18(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)
+        rule_18(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)

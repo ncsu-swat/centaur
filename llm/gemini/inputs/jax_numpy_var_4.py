@@ -5,163 +5,149 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import numpy as np
-import copy
-import jax
-import jax.numpy as jnp
 
 def var_inputs():
-    # Patch the positional shift bug in the test harness
-    original_var = jnp.var
-    def patched_var(*args, **kwargs):
-        if len(args) == 5:
-            args = list(args)
-            args.insert(3, None)
-        return original_var(*args, **kwargs)
-    
-    jnp.var = patched_var
-    jax.numpy.var = patched_var
-
     list_of_inputs = []
 
-    # Input 1
-    a = np.random.randn(4, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": (0,),
-        "dtype": np.dtype('float32'),
-        "ddof": 0,
-        "keepdims": False,
-        "where": np.ones((4, 4), dtype=bool),
-        "mean": np.mean(a, axis=(0,), keepdims=True),
-        "correction": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array
+    a = np.array([1.0, -2.0, 3.5, 4.0, -1.5, 6.0], dtype=np.float32)
+    axis = (0,)
+    dtype = np.dtype(np.float32)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float32)
+    correction = 0.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 2
-    a = np.random.randn(3, 5).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "axis": (1,),
-        "dtype": np.dtype('float64'),
-        "ddof": 0,
-        "keepdims": True,
-        "where": np.ones((3, 5), dtype=bool),
-        "mean": np.mean(a, axis=(1,), keepdims=True),
-        "correction": 1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float64 array, reduce axis 1
+    a = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float64)
+    axis = (1,)
+    dtype = np.dtype(np.float64)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float64)
+    correction = 1.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 3
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": (0, 2),
-        "dtype": np.dtype('float32'),
-        "ddof": 0,
-        "keepdims": True,
-        "where": np.ones((2, 3, 4), dtype=bool),
-        "mean": np.mean(a, axis=(0, 2), keepdims=True),
-        "correction": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D float32 array, reduce axis 0
+    a = np.arange(12, dtype=np.float32).reshape(4, 3)
+    axis = (0,)
+    dtype = np.dtype(np.float32)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float32)
+    correction = 0.5
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 4
-    a = np.random.randn(5, 2).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": (0,),
-        "dtype": np.dtype('float32'),
-        "ddof": 0,
-        "keepdims": False,
-        "where": np.ones((5, 2), dtype=bool),
-        "mean": np.mean(a, axis=(0,), keepdims=True),
-        "correction": 1.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float32 array, reduce axes (1, 2)
+    a = np.random.randn(2, 4, 5).astype(np.float32)
+    axis = (1, 2)
+    dtype = np.dtype(np.float32)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float32)
+    correction = 1.5
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 5
-    a = np.random.randn(3, 3, 3).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "axis": (1, 2),
-        "dtype": np.dtype('float64'),
-        "ddof": 0,
-        "keepdims": False,
-        "where": np.ones((3, 3, 3), dtype=bool),
-        "mean": np.mean(a, axis=(1, 2), keepdims=True),
-        "correction": 2.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D float64 array with negative values, reduce axis 0
+    a = np.random.uniform(-10.0, 10.0, size=(5, 3, 2)).astype(np.float64)
+    axis = (0,)
+    dtype = np.dtype(np.float64)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float64)
+    correction = 2.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 6
-    a = np.random.randn(10).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": (0,),
-        "dtype": np.dtype('float32'),
-        "ddof": 0,
-        "keepdims": True,
-        "where": np.ones((10,), dtype=bool),
-        "mean": np.mean(a, axis=(0,), keepdims=True),
-        "correction": 0.5
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D float32 array, reduce axes (0, 2)
+    a = np.random.randn(3, 4, 3, 2).astype(np.float32)
+    axis = (0, 2)
+    dtype = np.dtype(np.float32)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float32)
+    correction = 0.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 7
-    a = np.random.randn(4, 3, 2).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": (1,),
-        "dtype": np.dtype('float32'),
-        "ddof": 0,
-        "keepdims": True,
-        "where": np.ones((4, 3, 2), dtype=bool),
-        "mean": np.mean(a, axis=(1,), keepdims=True),
-        "correction": 1.2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D float32 array with partial boolean mask in `where`
+    a = np.array([[2.0, 4.0, 6.0], [8.0, 10.0, 12.0]], dtype=np.float32)
+    axis = (1,)
+    dtype = np.dtype(np.float32)
+    ddof = None
+    keepdims = False
+    where = np.array([[True, True, False], [True, False, True]], dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True, where=where).astype(np.float32)
+    correction = 0.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 8
-    a = np.random.randn(6, 6).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "axis": (0, 1),
-        "dtype": np.dtype('float64'),
-        "ddof": 0,
-        "keepdims": False,
-        "where": np.ones((6, 6), dtype=bool),
-        "mean": np.mean(a, axis=(0, 1), keepdims=True),
-        "correction": 0.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D float64 array, negative axis index (-1,)
+    a = np.linspace(-5.0, 5.0, 11, dtype=np.float64)
+    axis = (-1,)
+    dtype = np.dtype(np.float64)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float64)
+    correction = 1.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 9
-    a = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": (2, 3),
-        "dtype": np.dtype('float32'),
-        "ddof": 0,
-        "keepdims": True,
-        "where": np.ones((2, 2, 2, 2), dtype=bool),
-        "mean": np.mean(a, axis=(2, 3), keepdims=True),
-        "correction": 1.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 4D float64 array, reduce axes (1, 3)
+    a = np.random.randn(2, 3, 2, 4).astype(np.float64)
+    axis = (1, 3)
+    dtype = np.dtype(np.float64)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float64)
+    correction = 0.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
-    # Input 10
-    a = np.random.randn(5, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "axis": (1,),
-        "dtype": np.dtype('float32'),
-        "ddof": 0,
-        "keepdims": False,
-        "where": np.ones((5, 5), dtype=bool),
-        "mean": np.mean(a, axis=(1,), keepdims=True),
-        "correction": 3.0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D float32 array, reduce all axes (0, 1, 2)
+    a = np.random.uniform(0.0, 100.0, size=(3, 3, 3)).astype(np.float32)
+    axis = (0, 1, 2)
+    dtype = np.dtype(np.float32)
+    ddof = None
+    keepdims = False
+    where = np.ones(a.shape, dtype=bool)
+    mean = np.mean(a, axis=axis, keepdims=True).astype(np.float32)
+    correction = 1.0
+    list_of_inputs.append({
+        "a": a, "axis": axis, "dtype": dtype, "ddof": ddof,
+        "keepdims": keepdims, "where": where, "mean": mean, "correction": correction
+    })
 
     return list_of_inputs
 

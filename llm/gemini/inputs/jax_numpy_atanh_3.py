@@ -4,41 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def atanh_inputs():
     list_of_inputs = []
 
-    # Input 1: Python int (zero)
-    list_of_inputs.append({"x": 0})
+    # Input 1: 0 (well-defined, result is 0.0)
+    input_dict = {"x": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Python int (positive)
-    list_of_inputs.append({"x": 1})
+    # Input 2: 1 (boundary value, result is inf)
+    input_dict = {"x": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Python int (negative)
-    list_of_inputs.append({"x": -1})
+    # Input 3: -1 (boundary value, result is -inf)
+    input_dict = {"x": -1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: np.int32 scalar
-    list_of_inputs.append({"x": np.int32(0)})
+    # Input 4: 2 (outside domain, returns nan for real dtype)
+    input_dict = {"x": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.int64 scalar
-    list_of_inputs.append({"x": np.int64(2)})
+    # Input 5: -2
+    input_dict = {"x": -2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int16 1D array
-    list_of_inputs.append({"x": np.array([0, 0, 0], dtype=np.int16)})
+    # Input 6: 3
+    input_dict = {"x": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.int32 1D array with mixed values
-    list_of_inputs.append({"x": np.array([-1, 0, 1], dtype=np.int32)})
+    # Input 7: -5
+    input_dict = {"x": -5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: np.int64 2D array
-    list_of_inputs.append({"x": np.array([[0, 1], [-1, 0]], dtype=np.int64)})
+    # Input 8: 10
+    input_dict = {"x": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: np.uint8 scalar
-    list_of_inputs.append({"x": np.uint8(0)})
+    # Input 9: -10
+    input_dict = {"x": -10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: np.int8 3D array
-    list_of_inputs.append({"x": np.array([[[0], [1]], [[-1], [0]]], dtype=np.int8)})
+    # Input 10: 42
+    input_dict = {"x": 42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: -100
+    input_dict = {"x": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

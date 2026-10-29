@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def triu_indices_from_inputs():
     list_of_inputs = []
 
-    # Input 1: 3x3 float32, k=0
-    arr = np.random.randn(3, 3).astype(np.float32)
+    # Input 1: Standard square matrix, k=0
+    arr = np.zeros((3, 3), dtype=np.float32)
     k = 0
-    list_of_inputs.append({"arr": arr, "k": k})
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 2: 4x4 int32, k=1
-    arr = np.random.randint(-10, 10, size=(4, 4)).astype(np.int32)
+    # Input 2: Square matrix, positive k
+    arr = np.ones((4, 4), dtype=np.int32)
     k = 1
-    list_of_inputs.append({"arr": arr, "k": k})
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 3: 5x5 float64, k=-1
-    arr = np.random.randn(5, 5).astype(np.float64)
+    # Input 3: Square matrix, negative k
+    arr = np.arange(25, dtype=np.float64).reshape((5, 5))
     k = -1
-    list_of_inputs.append({"arr": arr, "k": k})
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 4: Rectangular 2x3 float32, k=2
-    arr = np.random.randn(2, 3).astype(np.float32)
+    # Input 4: Rectangular matrix (more rows than columns), k=0
+    arr = np.empty((5, 3), dtype=np.int64)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
+
+    # Input 5: Rectangular matrix (more columns than rows), k=2
+    arr = np.zeros((3, 6), dtype=np.bool_)
     k = 2
-    list_of_inputs.append({"arr": arr, "k": k})
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 5: Rectangular 6x2 int32, k=-2
-    arr = np.random.randint(-10, 10, size=(6, 2)).astype(np.int32)
-    k = -2
-    list_of_inputs.append({"arr": arr, "k": k})
-
-    # Input 6: 10x10 bool, k=0
-    arr = np.random.choice([True, False], size=(10, 10))
-    k = 0
-    list_of_inputs.append({"arr": arr, "k": k})
-
-    # Input 7: 1x1 float32, k=0
-    arr = np.random.randn(1, 1).astype(np.float32)
-    k = 0
-    list_of_inputs.append({"arr": arr, "k": k})
-
-    # Input 8: Large square 8x8 float32, k=5
-    arr = np.random.randn(8, 8).astype(np.float32)
+    # Input 6: Large k exceeding matrix dimensions
+    arr = np.zeros((3, 3), dtype=np.float32)
     k = 5
-    list_of_inputs.append({"arr": arr, "k": k})
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 9: Rectangular 5x7 int16, k=-3
-    arr = np.random.randint(-100, 100, size=(5, 7)).astype(np.int16)
-    k = -3
-    list_of_inputs.append({"arr": arr, "k": k})
+    # Input 7: Large negative k exceeding matrix dimensions
+    arr = np.zeros((4, 4), dtype=np.complex64)
+    k = -5
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
-    # Input 10: 100x100 float32, k=-50
-    arr = np.random.randn(100, 100).astype(np.float32)
-    k = -50
-    list_of_inputs.append({"arr": arr, "k": k})
+    # Input 8: 1x1 matrix, k=0
+    arr = np.array([[42.0]], dtype=np.float32)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
+
+    # Input 9: Rectangular matrix with negative k
+    arr = np.ones((2, 5), dtype=np.uint8)
+    k = -2
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
+
+    # Input 10: Matrix with 0 dimensions (e.g. 0x3), k=0
+    arr = np.empty((0, 3), dtype=np.float32)
+    k = 0
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
+
+    # Input 11: Matrix with 0 dimensions (e.g. 3x0), k=1
+    arr = np.empty((3, 0), dtype=np.int32)
+    k = 1
+    list_of_inputs.append(copy.deepcopy({"arr": arr, "k": k}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.triu_indices_from"] = triu_indices_from_inputs()
 

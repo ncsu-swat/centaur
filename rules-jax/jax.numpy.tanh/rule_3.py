@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Input scalar range limit to avoid extreme values (Rule 3)
+# scalar input should be within typical numerical bounds to prevent overflow (Rule 3)
 
 rule_3 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= -10000, v["arg1_value"] <= 10000)) if n else
-          And(v["arg1_value"] >= -10000, v["arg1_value"] <= 10000))
+    s.add(Not(And(v["arg1_value"] >= -1000, v["arg1_value"] <= 1000)) if n else
+          And(v["arg1_value"] >= -1000, v["arg1_value"] <= 1000))
 )
 
 def rule_3_func(arg1, solver=None, neg=False):

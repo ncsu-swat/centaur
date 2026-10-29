@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If x is a float, its absolute value should be strictly less than 1 to yield a real finite result (Rule 32)
+# float scalar lies strictly within the positive interval (0, 1 (Rule 32)
 
 rule_32 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] >= 0, v["arg1_value"] < 1, v["arg1_value"] > -1)) if n else
-          If(v["arg1_value"] >= 0, v["arg1_value"] < 1, v["arg1_value"] > -1))
+    s.add(Not(And(v["arg1_value"] > 0, v["arg1_value"] < 1)) if n else
+          And(v["arg1_value"] > 0, v["arg1_value"] < 1))
 )
 
 def rule_32_func(arg1, solver=None, neg=False):

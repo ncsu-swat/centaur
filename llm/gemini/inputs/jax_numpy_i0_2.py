@@ -4,59 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def i0_inputs():
+def jax_numpy_i0_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float
+    # Input 2: Positive integer as float
     input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
+    # Input 3: Negative integer as float
     input_dict = {"x": -1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Small fractional positive float
-    input_dict = {"x": 0.5}
+    # Input 4: Small positive float
+    input_dict = {"x": 0.25}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small fractional negative float
-    input_dict = {"x": -0.5}
+    # Input 5: Small negative float
+    input_dict = {"x": -0.75}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger positive float
-    input_dict = {"x": 5.0}
+    # Input 6: Moderate positive float
+    input_dict = {"x": 3.14159}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Larger negative float
-    input_dict = {"x": -5.0}
+    # Input 7: Moderate negative float
+    input_dict = {"x": -2.71828}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Arbitrary decimal float
-    input_dict = {"x": 1.234}
+    # Input 8: Larger positive float
+    input_dict = {"x": 10.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Arbitrary negative decimal float
-    input_dict = {"x": -1.234}
+    # Input 9: Larger negative float
+    input_dict = {"x": -15.2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Very small positive float
-    input_dict = {"x": 1e-5}
+    # Input 10: Near-zero positive float
+    input_dict = {"x": 1e-4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Very small negative float
-    input_dict = {"x": -1e-5}
+    # Input 11: Near-zero negative float
+    input_dict = {"x": -1e-4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Float with non-trivial decimal expansion
+    input_dict = {"x": 42.42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.i0_2"] = i0_inputs()
+generated_inputs["jax.numpy.i0_2"] = jax_numpy_i0_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

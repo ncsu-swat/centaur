@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The number of dimensions of x and p must be equal (Rule 25)
+# trials tensor n has rank equal to the rank of p minus one (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] == v["arg2_ndim"]) if n else
-          v["arg1_ndim"] == v["arg2_ndim"])
+    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg2_ndim"] == v["arg1_ndim"] - 1)) if n else
+          And(v["arg1_ndim"] >= 1, v["arg2_ndim"] == v["arg1_ndim"] - 1))
 )
 
 def rule_25_func(arg1, arg2, solver=None, neg=False):

@@ -10,8 +10,8 @@ from z3 import *
 # unroll parameter must be a positive integer (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] > 0) if n else
-          v["arg1_value"] > 0)
+    s.add(Not(v["arg1_value"] >= 1) if n else
+          v["arg1_value"] >= 1)
 )
 
 def rule_2_func(arg1, solver=None, neg=False):

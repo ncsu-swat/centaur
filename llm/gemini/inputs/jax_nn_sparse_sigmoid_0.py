@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def sparse_sigmoid_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array spanning the threshold boundaries (-1 and 1)
-    x = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array across the range [-2, 2]
+    x = np.linspace(-2.0, 2.0, 9, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float32 array with random standard normal values
+    # Input 2: 2D float32 matrix with normal distribution
     x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: Scalar (0D) float32 array
-    x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Scalar 0D array at boundary
+    x = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float32 array
-    x = np.random.uniform(-2.0, 2.0, size=(2, 3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D float64 array
+    x = np.random.uniform(-3.0, 3.0, size=(2, 3, 4)).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: float64 array for higher precision
-    x = np.array([-1.5, -0.2, 0.2, 1.5], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 1D float16 array with boundary values
+    x = np.array([-2.0, -1.0, -0.5, 0.0, 0.5, 1.0, 2.0], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: float16 array for lower precision
-    x = np.array([-0.9, -0.1, 0.1, 0.9], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 4D float32 batch tensor
+    x = np.random.randn(2, 4, 8, 8).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D float32 array representing batch of images (B, H, W, C)
-    x = np.random.randn(2, 8, 8, 3).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D array with extreme large and small values
+    x = np.array([-1e5, -100.0, -1.0001, 0.9999, 100.0, 1e5], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: All values below the lower bound (-1) to test saturation at 0
-    x = np.array([-5.0, -10.0, -100.0, -1.1], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 2D array with all negative values
+    x = -np.abs(np.random.randn(4, 5)).astype(np.float32) - 1.0
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: All values above the upper bound (1) to test saturation at 1
-    x = np.array([1.1, 5.0, 10.0, 100.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 2D array with all positive values exceeding 1
+    x = np.abs(np.random.randn(4, 5)).astype(np.float32) + 1.0
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Empty/zero elements in complex shape, float32
-    x = np.zeros((1, 5, 1), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 5D float32 tensor
+    x = np.random.randn(1, 2, 2, 3, 3).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.sparse_sigmoid"] = sparse_sigmoid_inputs()
 

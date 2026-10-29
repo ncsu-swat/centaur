@@ -4,79 +4,95 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def piecewise_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float array, 1 element-wise condition, 2 functions (1 condition + 1 default)
+    # Input 1: 1D float array with single boolean condition and constant scalar functions
     x = np.array([-2.0, -1.0, 0.0, 1.0, 2.0], dtype=np.float32)
-    condlist = np.array([[True, False, True, False, True]], dtype=bool)
-    funclist = [2.0, 10.0]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 2: 1D int array, 1 element-wise condition
-    x = np.array([1, 2, 3, 4], dtype=np.int32)
-    condlist = np.array([[True, True, False, False]], dtype=bool)
-    funclist = [100, 200]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 3: 2D float array, 1 element-wise condition matching the 2D shape
-    x = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    condlist = np.array([[[True, False, True], [False, True, False]]], dtype=bool)
-    funclist = [5.0, 0.0]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 4: 1D int64 array, 1 element-wise condition, single function (defaulting to 0)
-    x = np.array([-1, 0, 1], dtype=np.int64)
-    condlist = np.array([[True, False, True]], dtype=bool)
-    funclist = [9]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 5: 1D float32 array, 2 element-wise conditions, 3 functions (2 conditions + 1 default)
-    x = np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float32)
-    condlist = np.array([
-        [True, False, True, False, True],
-        [False, True, False, True, False]
-    ], dtype=bool)
-    funclist = [1.0, 10.0, 100.0]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 6: 1D float64 array, 1 element-wise condition
-    x = np.array([1.5, 2.5, 3.5, 4.5], dtype=np.float64)
-    condlist = np.array([[True, False, True, False]], dtype=bool)
-    funclist = [-1.0, 1.0]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 7: 1D negative int32 array, 2 element-wise conditions
-    x = np.array([-5, -4, -3, -2, -1], dtype=np.int32)
-    condlist = np.array([
-        [True, False, True, False, True],
-        [False, True, False, True, False]
-    ], dtype=bool)
-    funclist = [10, -10, 0]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 8: 2D int32 array, 1 element-wise condition
-    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    condlist = np.array([[[False, True], [True, False]]], dtype=bool)
-    funclist = [0, 100]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
-
-    # Input 9: 1D float32 array, 1 element-wise condition
-    x = np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float32)
-    condlist = np.array([[True, True, True, False, False]], dtype=bool)
+    condlist = (x < 0.0).reshape(1, -1)
     funclist = [0.0, 1.0]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
 
-    # Input 10: 1D int64 array, 1 element-wise condition
-    x = np.array([10, 20, 30, 40], dtype=np.int64)
-    condlist = np.array([[False, False, True, True]], dtype=bool)
-    funclist = [5, 20]
-    list_of_inputs.append({"x": x, "condlist": condlist, "funclist": funclist})
+    # Input 2: 1D int array with multiple conditions and constant scalar functions
+    x = np.array([-5, -2, 0, 3, 7], dtype=np.int32)
+    condlist = np.stack([x < 0, (x >= 0) & (x < 5), x >= 5], axis=0)
+    funclist = [-1, 0, 1]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 3: 2D float array, conditions shaped (num_cond, *x.shape)
+    x = np.array([[-1.5, 2.5], [3.0, -0.5]], dtype=np.float32)
+    condlist = np.stack([x < 0.0, x >= 0.0], axis=0)
+    funclist = [0.0, 2.0]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 4: 1D float64 array with default value (len(funclist) == len(condlist) + 1)
+    x = np.linspace(-3.0, 3.0, 7, dtype=np.float64)
+    condlist = np.stack([x < -1.0, x > 1.0], axis=0)
+    funclist = [10.0, -10.0, 0.0]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 5: 1D scalar boolean conditions tensor applying to whole array
+    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    condlist = np.array([False, True])
+    funclist = [2.0, 10.0]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 6: 3D float array
+    x = np.arange(-4, 4, dtype=np.float32).reshape(2, 2, 2)
+    condlist = np.stack([x < 0, x >= 0], axis=0)
+    funclist = [-1.0, 1.0]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 7: 1D int64 array
+    x = np.array([-10, 0, 10, 20], dtype=np.int64)
+    condlist = np.stack([x < 0, x == 0, x > 0], axis=0)
+    funclist = [-1, 0, 1]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 8: 2D int32 array with default condition
+    x = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
+    condlist = np.stack([x % 2 == 0], axis=0)
+    funclist = [2, 3]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 9: 1D array of single element
+    x = np.array([-3.14], dtype=np.float32)
+    condlist = np.stack([x < 0.0, x >= 0.0], axis=0)
+    funclist = [-1.0, 1.0]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
+
+    # Input 10: 4D float32 array
+    x = np.ones((1, 2, 2, 1), dtype=np.float32) * -1.0
+    condlist = np.stack([x < 0.0], axis=0)
+    funclist = [5.0, 0.0]
+    list_of_inputs.append(
+        {"x": copy.deepcopy(x), "condlist": condlist, "funclist": funclist}
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.piecewise_2"] = piecewise_inputs()
 

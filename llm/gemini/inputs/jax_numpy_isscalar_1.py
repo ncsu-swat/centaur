@@ -4,46 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isscalar_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D float32 array (scalar)
-    list_of_inputs.append({"element": np.array(1.0, dtype=np.float32)})
+    # Input 1: 0D float32 array
+    input_dict = {"element": np.array(3.14, dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 0D int32 array (scalar)
-    list_of_inputs.append({"element": np.array(-5, dtype=np.int32)})
+    # Input 2: 0D negative int32 array
+    input_dict = {"element": np.array(-42, dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 0D float64 array (scalar)
-    list_of_inputs.append({"element": np.array(3.14159, dtype=np.float64)})
+    # Input 3: 0D boolean array
+    input_dict = {"element": np.array(True, dtype=np.bool_)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 0D bool array (scalar)
-    list_of_inputs.append({"element": np.array(True, dtype=bool)})
+    # Input 4: 0D complex64 array
+    input_dict = {"element": np.array(1.0 + 2.0j, dtype=np.complex64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 0D complex64 array (scalar)
-    list_of_inputs.append({"element": np.array(1 + 2j, dtype=np.complex64)})
+    # Input 5: 0D float64 array with negative value
+    input_dict = {"element": np.array(-0.005, dtype=np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 6: 1D array with single element
-    list_of_inputs.append({"element": np.array([1.0], dtype=np.float32)})
+    input_dict = {"element": np.array([10], dtype=np.int64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 7: 1D array with multiple elements
-    list_of_inputs.append({"element": np.array([1, 2, 3], dtype=np.int32)})
+    input_dict = {"element": np.array([-1.0, 0.0, 1.0], dtype=np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D array
-    list_of_inputs.append({"element": np.random.randn(2, 3).astype(np.float32)})
+    # Input 8: Empty 1D array
+    input_dict = {"element": np.array([], dtype=np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D array with shape (1, 1, 1)
-    list_of_inputs.append({"element": np.zeros((1, 1, 1), dtype=np.float32)})
+    # Input 9: 2D array
+    input_dict = {"element": np.zeros((3, 3), dtype=np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Empty 1D array
-    list_of_inputs.append({"element": np.array([], dtype=np.int32)})
+    # Input 10: 3D array
+    input_dict = {"element": np.ones((2, 4, 3), dtype=np.uint8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 0D uint8 array (scalar)
-    list_of_inputs.append({"element": np.array(255, dtype=np.uint8)})
+    # Input 11: 4D random float32 array
+    input_dict = {
+        "element": np.random.randn(2, 3, 2, 2).astype(np.float32)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isscalar_1"] = isscalar_inputs()
 

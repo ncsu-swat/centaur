@@ -4,53 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_not_inputs():
     list_of_inputs = []
 
-    # Input 1: bool 1D array
-    x = np.array([True, False, True], dtype=np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D boolean array
+    x = np.array([True, False, True, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: int8 2D array with signed negative, zero and positive values
-    x = np.array([[-128, -1, 0], [1, 127, 42]], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D int32 array with positive and negative integers
+    x = np.array([[-10, 0, 5], [12, -1, 42]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: int16 1D array
-    x = np.array([-32768, 0, 32767], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: Scalar-like 0D int64 array
+    x = np.array(-128, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: int32 3D array
-    x = np.random.randint(-1000, 1000, size=(2, 2, 2), dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: int64 2D array
-    x = np.random.randint(-100000, 100000, size=(3, 3), dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 6: bool 3D array
-    x = np.random.choice([True, False], size=(3, 3, 3)).astype(np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 7: int32 1D array containing extremums and negative values
-    x = np.array([-2147483648, -1, 0, 1, 2147483647], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 8: int64 4D array
-    x = np.random.randint(-50, 50, size=(2, 2, 2, 2), dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 9: int16 2D array
-    x = np.array([[-100, 200], [-300, 400]], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 10: bool 0D array (scalar)
+    # Input 4: 0D boolean array
     x = np.array(True, dtype=np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 5: 3D int32 array
+    x = np.arange(-12, 12, dtype=np.int32).reshape((2, 3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 6: 2D int64 array
+    x = np.array([[100, -200], [300, -400]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 7: 4D int32 array
+    x = np.zeros((2, 1, 2, 2), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 8: 1D int64 array
+    x = np.array([-1000, -1, 0, 1, 1000], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 9: 2D boolean array
+    x = np.array([[True, False], [False, False], [True, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 10: 1D int32 array
+    x = np.array([0, -1, 1, 255, -256], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D boolean array
+    x = np.array(
+        [[[True, False], [False, True]], [[False, False], [True, True]]],
+        dtype=np.bool_,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.bitwise_not_1"] = bitwise_not_inputs()
 

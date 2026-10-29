@@ -4,53 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def acos_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D array (scalar equivalent), float32
+    # Input 1: 0D scalar array (float32)
     x = np.array(0.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array, float32, range [-1, 1]
-    x = np.linspace(-1.0, 1.0, 10, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with negative and positive values (float32)
+    x = np.array([-1.0, -0.5, 0.0, 0.5, 1.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D array, float64, range [-1, 1]
-    x = np.random.uniform(-1.0, 1.0, (4, 4)).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array (float64)
+    x = np.linspace(-1.0, 1.0, 12, dtype=np.float64).reshape((3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D array, float16, range [-1, 1]
-    x = np.random.uniform(-1.0, 1.0, (2, 3, 4)).astype(np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array (float16)
+    x = np.random.uniform(-1.0, 1.0, size=(2, 3, 4)).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D array with negative values
-    x = np.array([-0.9, -0.5, -0.1], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 4D array (float32)
+    x = np.random.uniform(-0.9, 0.9, size=(2, 2, 3, 3)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 2D array of integers in range [-1, 1]
-    x = np.array([[-1, 0], [1, 0]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D integer array
+    x = np.array([-1, 0, 1], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: Complex 1D array
-    x = np.array([0.5 + 0.5j, -0.2 - 0.1j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D complex array
+    x = np.array(
+        [[0.5 + 0.5j, -0.5 + 0.2j], [-0.1 - 0.8j, 0.0 + 1.0j]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D array, float32, range [-0.5, 0.5]
-    x = np.random.uniform(-0.5, 0.5, (2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Empty array with shape (0,)
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D array containing exact boundary values
-    x = np.array([-1.0, 0.0, 1.0], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Array with values containing 0, boundary values, and negative zero
+    x = np.array([-1.0, -0.0, 0.0, 1.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 5D array, float32, small size
-    x = np.random.uniform(-0.8, 0.8, (2, 1, 3, 1, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Non-contiguous sliced array
+    base = np.linspace(-1.0, 1.0, 20, dtype=np.float32)
+    x = base[::2]
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 5D array (float32)
+    x = np.random.uniform(-0.5, 0.5, size=(1, 2, 1, 3, 2)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 12: Boolean array
+    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.acos"] = acos_inputs()
 

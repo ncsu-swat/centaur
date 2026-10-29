@@ -4,63 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dsplit_inputs():
     list_of_inputs = []
 
-    # Case 1: 3D float32, indices (2, 4)
-    ary = np.random.randn(2, 2, 6).astype(np.float32)
+    # Input 1: 3D float32 array, single split point
+    ary = np.random.randn(2, 2, 4).astype(np.float32)
+    indices_or_sections = (2,)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 2: 3D int32 array, multiple split points
+    ary = np.random.randint(-10, 10, size=(1, 3, 6)).astype(np.int32)
     indices_or_sections = (2, 4)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Case 2: 3D int32, indices (4,)
-    ary = np.random.randint(0, 10, size=(3, 4, 8)).astype(np.int32)
-    indices_or_sections = (4,)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    # Input 3: 4D float64 array, three split points
+    ary = np.random.randn(3, 1, 8, 2).astype(np.float64)
+    indices_or_sections = (1, 4, 6)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Case 3: 4D float64, indices (1, 3)
-    ary = np.random.randn(2, 2, 4, 3).astype(np.float64)
-    indices_or_sections = (1, 3)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
-
-    # Case 4: 3D uint8, indices (2, 5, 8)
-    ary = np.random.randint(0, 255, size=(1, 1, 10)).astype(np.uint8)
-    indices_or_sections = (2, 5, 8)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
-
-    # Case 5: 3D float16, indices (1, 2, 3, 4)
-    ary = np.random.randn(2, 3, 5).astype(np.float16)
+    # Input 4: 3D float32 array, multiple split points
+    ary = np.random.randn(2, 4, 5).astype(np.float32)
     indices_or_sections = (1, 2, 3, 4)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Case 6: 5D int64, indices (3,)
-    ary = np.random.randint(-100, 100, size=(2, 2, 6, 2, 2)).astype(np.int64)
+    # Input 5: 3D int64 array, split points including 0
+    ary = np.random.randint(-5, 5, size=(4, 4, 4)).astype(np.int64)
+    indices_or_sections = (0, 2)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 6: 3D float64 array, empty tuple for no split points
+    ary = np.random.randn(1, 1, 3).astype(np.float64)
+    indices_or_sections = ()
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 7: 5D int64 array, two split points
+    ary = np.random.randint(-100, 100, size=(2, 3, 10, 2, 2)).astype(np.int64)
+    indices_or_sections = (3, 7)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
+
+    # Input 8: 3D float32 array with negative values
+    ary = np.linspace(-5.0, 5.0, num=36).reshape(3, 2, 6).astype(np.float32)
     indices_or_sections = (3,)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Case 7: 3D float32, indices (3, 6, 9)
-    ary = np.random.randn(4, 4, 12).astype(np.float32)
-    indices_or_sections = (3, 6, 9)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    # Input 9: 3D float32 array, evenly spaced split points
+    ary = np.random.randn(2, 2, 8).astype(np.float32)
+    indices_or_sections = (2, 4, 6)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Case 8: 3D complex64, indices (1, 2)
-    ary = (np.random.randn(2, 2, 3) + 1j * np.random.randn(2, 2, 3)).astype(np.complex64)
-    indices_or_sections = (1, 2)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
-
-    # Case 9: 3D bool, indices (1,)
-    ary = np.random.choice([True, False], size=(1, 1, 2)).astype(np.bool_)
+    # Input 10: 3D int32 array, split in half
+    ary = np.random.randint(-50, 50, size=(5, 5, 2), dtype=np.int32)
     indices_or_sections = (1,)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
-    # Case 10: 4D float32, indices (5, 10)
-    ary = np.random.randn(3, 3, 15, 2).astype(np.float32)
-    indices_or_sections = (5, 10)
-    list_of_inputs.append({"ary": ary, "indices_or_sections": indices_or_sections})
+    # Input 11: 4D float64 array, asymmetric split points
+    ary = np.random.randn(1, 2, 6, 3).astype(np.float64)
+    indices_or_sections = (2, 5)
+    list_of_inputs.append(
+        copy.deepcopy({"ary": ary, "indices_or_sections": indices_or_sections})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.dsplit_3"] = dsplit_inputs()
 

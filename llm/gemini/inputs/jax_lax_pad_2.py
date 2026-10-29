@@ -4,134 +4,147 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def pad_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array, simple low/high padding
-    operand = np.array([1, 2, 3], dtype=np.int32)
+    # Input 1: 1D int32 array with standard positive low/high padding
+    operand = np.array([1, 2, 3, 4], dtype=np.int32)
     padding_value = np.array(0, dtype=np.int32)
-    padding_config = ((1, 2, 0),)
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    padding_config = ((2, 3, 0),)
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 2: 1D array, interior padding (dilation)
-    operand = np.array([1.0, 2.0], dtype=np.float32)
+    # Input 2: 1D float32 array with interior dilation padding
+    operand = np.array([10.0, 20.0, 30.0], dtype=np.float32)
     padding_value = np.array(-1.0, dtype=np.float32)
-    padding_config = ((0, 0, 2),)
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    padding_config = ((0, 0, 1),)
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 3: 1D array, negative edge padding (cropping)
-    operand = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    padding_value = np.array(0, dtype=np.int32)
-    padding_config = ((-1, -1, 0),)
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D int64 array with negative padding (edge cropping)
+    operand = np.array([10, 20, 30, 40, 50, 60], dtype=np.int64)
+    padding_value = np.array(0, dtype=np.int64)
+    padding_config = ((-1, -2, 0),)
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 4: 2D array, standard padding on both dimensions
-    operand = np.random.randn(3, 4).astype(np.float32)
+    # Input 4: 2D float32 array with asymmetric low and high padding
+    operand = np.ones((3, 4), dtype=np.float32)
     padding_value = np.array(0.0, dtype=np.float32)
-    padding_config = ((1, 1, 0), (2, 2, 0))
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    padding_config = ((1, 2, 0), (2, 1, 0))
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 5: 2D array, interior padding on both dimensions
-    operand = np.random.randn(2, 2).astype(np.float64)
-    padding_value = np.array(0.0, dtype=np.float64)
-    padding_config = ((0, 0, 1), (0, 0, 1))
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D int32 array with interior and exterior padding
+    operand = np.arange(6, dtype=np.int32).reshape(2, 3)
+    padding_value = np.array(-5, dtype=np.int32)
+    padding_config = ((1, 1, 1), (0, 2, 1))
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 6: 2D array, mixed positive and negative padding
-    operand = np.random.randint(0, 10, size=(4, 4)).astype(np.int32)
-    padding_value = np.array(-1, dtype=np.int32)
-    padding_config = ((-1, 2, 0), (2, -1, 0))
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D float64 array with negative (cropping) and positive padding
+    operand = np.arange(20, dtype=np.float64).reshape(4, 5)
+    padding_value = np.array(3.14, dtype=np.float64)
+    padding_config = ((-1, 1, 0), (2, -2, 0))
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 7: 3D array, complex padding configuration
+    # Input 7: 3D float32 array with mixed zero and non-zero padding
     operand = np.random.randn(2, 3, 4).astype(np.float32)
-    padding_value = np.array(9.9, dtype=np.float32)
-    padding_config = ((1, 0, 0), (0, 1, 1), (1, 1, 0))
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 4D array, uniform padding
-    operand = np.zeros((2, 2, 2, 2), dtype=np.float32)
-    padding_value = np.array(1.0, dtype=np.float32)
-    padding_config = ((1, 1, 0), (1, 1, 0), (1, 1, 0), (1, 1, 0))
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 0D array (scalar array)
-    operand = np.array(5.0, dtype=np.float32)
     padding_value = np.array(0.0, dtype=np.float32)
-    padding_config = ()
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    padding_config = ((0, 0, 0), (1, 1, 0), (2, 0, 0))
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 10: 1D array, boolean type
+    # Input 8: 3D int16 array with interior dilation on one dimension
+    operand = np.arange(12, dtype=np.int16).reshape(2, 2, 3)
+    padding_value = np.array(99, dtype=np.int16)
+    padding_config = ((0, 0, 1), (1, 0, 0), (0, 1, 0))
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
+
+    # Input 9: 4D float32 array (batch, channel, height, width) with spatial padding
+    operand = np.random.randn(1, 3, 8, 8).astype(np.float32)
+    padding_value = np.array(0.0, dtype=np.float32)
+    padding_config = ((0, 0, 0), (0, 0, 0), (2, 2, 0), (2, 2, 0))
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
+
+    # Input 10: 1D boolean array with boolean padding value
     operand = np.array([True, False, True], dtype=np.bool_)
     padding_value = np.array(False, dtype=np.bool_)
-    padding_config = ((1, 1, 1),)
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    padding_config = ((2, 1, 0),)
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
-    # Input 11: 1D array, int64 type
-    operand = np.array([100, 200], dtype=np.int64)
-    padding_value = np.array(-999, dtype=np.int64)
-    padding_config = ((2, 3, 0),)
-    input_dict = {
-        "operand": operand,
-        "padding_value": padding_value,
-        "padding_config": padding_config
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 2D complex64 array with complex padding value
+    operand = np.array([[1 + 2j, 3 + 4j], [5 + 6j, 7 + 8j]], dtype=np.complex64)
+    padding_value = np.array(0 + 0j, dtype=np.complex64)
+    padding_config = ((1, 1, 0), (0, 1, 0))
+    list_of_inputs.append(
+        {
+            "operand": operand,
+            "padding_value": padding_value,
+            "padding_config": padding_config,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.pad_2"] = pad_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# prototype tensor must be 1D to 8D (Rule 77)
+# prototype tensor must be 3-dimensional (Rule 77)
 
 rule_77 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 8)) if n else
-          And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 8))
+    s.add(Not(v["arg1_ndim"] == 3) if n else
+          v["arg1_ndim"] == 3)
 )
 
 def rule_77_func(arg1, solver=None, neg=False):

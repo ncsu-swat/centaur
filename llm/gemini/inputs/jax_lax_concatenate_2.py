@@ -10,45 +10,71 @@ import copy
 def concatenate_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32 array, dimension 0
-    operands = np.random.randn(2, 5).astype(np.float32)
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 1: 2D array, concatenating along dimension 0 (float32)
+    operands = np.random.randn(2, 3).astype(np.float32)
+    dimension = 0
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 3D float32 array, dimension 0
+    # Input 2: 3D array, concatenating along dimension 0 (float32)
     operands = np.random.randn(3, 4, 5).astype(np.float32)
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    dimension = 0
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float32 array, dimension 1
-    operands = np.random.randn(2, 4, 5).astype(np.float32)
-    list_of_inputs.append({"operands": operands, "dimension": 1})
+    # Input 3: 3D array, concatenating along dimension 1 with negative integer values (int32)
+    operands = np.random.randint(-10, 10, size=(2, 4, 5), dtype=np.int32)
+    dimension = 1
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 4D int32 array, dimension 2
-    operands = np.random.randint(-10, 10, size=(4, 2, 3, 2)).astype(np.int32)
-    list_of_inputs.append({"operands": operands, "dimension": 2})
+    # Input 4: 4D array, concatenating along dimension 2 (float64)
+    operands = np.random.randn(5, 2, 3, 4).astype(np.float64)
+    dimension = 2
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D int32 array, dimension 0
-    operands = np.random.randint(-10, 10, size=(5, 2)).astype(np.int32)
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 5: 3D array, concatenating along dimension 0 with negative values (int64)
+    operands = np.random.randint(-100, 100, size=(4, 6, 8), dtype=np.int64)
+    dimension = 0
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 3D float64 array, dimension 1
-    operands = np.random.randn(2, 2, 2).astype(np.float64)
-    list_of_inputs.append({"operands": operands, "dimension": 1})
+    # Input 6: 2D boolean array, concatenating along dimension 0 (bool)
+    operands = np.random.choice([True, False], size=(2, 5))
+    dimension = 0
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D boolean array, dimension 0
-    operands = np.random.choice([True, False], size=(3, 2, 2)).astype(bool)
-    list_of_inputs.append({"operands": operands, "dimension": 0})
+    # Input 7: 5D array, concatenating along dimension 3 (float32)
+    operands = np.random.randn(3, 2, 2, 2, 2).astype(np.float32)
+    dimension = 3
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D int8 array, dimension 1
-    operands = np.random.randint(-5, 5, size=(2, 3, 4)).astype(np.int8)
-    list_of_inputs.append({"operands": operands, "dimension": 1})
+    # Input 8: Single operand slice along axis 0 (complex64)
+    operands = (np.random.randn(1, 4, 4) + 1j * np.random.randn(1, 4, 4)).astype(np.complex64)
+    dimension = 0
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D float32 array, dimension 3
-    operands = np.random.randn(2, 1, 2, 1, 3).astype(np.float32)
-    list_of_inputs.append({"operands": operands, "dimension": 3})
+    # Input 9: 3D array, concatenating along dimension 1 (uint8)
+    operands = np.random.randint(0, 255, size=(6, 3, 2), dtype=np.uint8)
+    dimension = 1
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D uint8 array, dimension 1
-    operands = np.random.randint(0, 255, size=(3, 2, 2, 2)).astype(np.uint8)
-    list_of_inputs.append({"operands": operands, "dimension": 1})
+    # Input 10: 4D array, concatenating along dimension 1 (float16)
+    operands = np.random.randn(2, 3, 5, 7).astype(np.float16)
+    dimension = 1
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 3D array, concatenating along dimension 0 (int16)
+    operands = np.random.randint(-50, 50, size=(4, 2, 3), dtype=np.int16)
+    dimension = 0
+    input_dict = {"operands": operands, "dimension": dimension}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

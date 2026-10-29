@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The input tensor must have a floating-point or complex data type corresponding to indices 6 to 10 (Rule 40)
+# input tensor must have a signed integer data type (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10)) if n else
-          And(v["arg1_dtype"] >= 6, v["arg1_dtype"] <= 10))
+    s.add(Not(Or(Or(Or(v["arg1_dtype"] == 1, v["arg1_dtype"] == 2), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4)) if n else
+          Or(Or(Or(v["arg1_dtype"] == 1, v["arg1_dtype"] == 2), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4))
 )
 
 def rule_40_func(arg1, solver=None, neg=False):

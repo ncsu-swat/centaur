@@ -4,68 +4,73 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def diagflat_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float array, k=0
-    v = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    # Input 1: 1D array with default-like k=0
+    v = np.array([1, 2, 3, 4], dtype=np.int32)
     k = 0
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
+    list_of_inputs.append({"v": v, "k": k})
 
-    # Input 2: 1D int array, k=1 (positive offset)
-    v = np.array([5, 6, 7, 8], dtype=np.int32)
+    # Input 2: 1D float array with positive offset
+    v = np.array([1.5, -2.5, 3.0], dtype=np.float32)
     k = 1
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
+    list_of_inputs.append({"v": v, "k": k})
 
-    # Input 3: 1D bool array, k=-1 (negative offset)
-    v = np.array([True, False, True], dtype=bool)
-    k = -1
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
-
-    # Input 4: 2D float array, k=2
-    v = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    k = 2
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
-
-    # Input 5: 2D int array, k=-2
-    v = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int64)
+    # Input 3: 1D float array with negative offset
+    v = np.array([-1.0, 0.0, 1.0], dtype=np.float64)
     k = -2
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
+    list_of_inputs.append({"v": v, "k": k})
 
-    # Input 6: 3D float array, k=0
-    v = np.random.randn(2, 2, 2).astype(np.float32)
+    # Input 4: 2D array flattened with k=0
+    v = np.arange(6, dtype=np.int64).reshape(2, 3)
     k = 0
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
+    list_of_inputs.append({"v": v, "k": k})
 
-    # Input 7: 1D double array, k=5
-    v = np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float64)
-    k = 5
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
+    # Input 5: 2D array flattened with positive offset
+    v = np.array([[10, 20], [30, 40]], dtype=np.int32)
+    k = 2
+    list_of_inputs.append({"v": v, "k": k})
 
-    # Input 8: 1D int array, k=-5
-    v = np.array([10, 20, 30], dtype=np.int16)
-    k = -5
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
-
-    # Input 9: 4D int8 array, k=1
-    v = np.arange(12, dtype=np.int8).reshape(2, 1, 3, 2)
-    k = 1
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
-
-    # Input 10: 1D complex array, k=-1
-    v = np.array([1 + 2j, 3 + 4j], dtype=np.complex64)
+    # Input 6: 2D array flattened with negative offset
+    v = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float32)
     k = -1
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
+    list_of_inputs.append({"v": v, "k": k})
 
-    # Input 11: 0-dimensional array (scalar-like), k=0
-    v = np.array(42)
+    # Input 7: 3D array flattened with k=0
+    v = np.ones((2, 2, 2), dtype=np.float32)
     k = 0
-    list_of_inputs.append({"v": copy.deepcopy(v), "k": k})
+    list_of_inputs.append({"v": v, "k": k})
 
-    return list_of_inputs
+    # Input 8: Boolean 1D array
+    v = np.array([True, False, True], dtype=np.bool_)
+    k = 0
+    list_of_inputs.append({"v": v, "k": k})
+
+    # Input 9: Complex 1D array with positive offset
+    v = np.array([1 + 2j, 3 - 4j], dtype=np.complex64)
+    k = 3
+    list_of_inputs.append({"v": v, "k": k})
+
+    # Input 10: 0D scalar array with k=0
+    v = np.array(42, dtype=np.int32)
+    k = 0
+    list_of_inputs.append({"v": v, "k": k})
+
+    # Input 11: Empty 1D array
+    v = np.array([], dtype=np.float32)
+    k = 1
+    list_of_inputs.append({"v": v, "k": k})
+
+    # Input 12: Large negative offset
+    v = np.array([5, 6], dtype=np.int32)
+    k = -4
+    list_of_inputs.append({"v": v, "k": k})
+
+    return [copy.deepcopy(x) for x in list_of_inputs]
 
 generated_inputs["jax.numpy.diagflat"] = diagflat_inputs()
 

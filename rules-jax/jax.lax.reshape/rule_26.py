@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If the target shape list contains a dimension of size 0, then the input tensor must have at least one dimension of size 0 (Rule 26)
+# reshaping a 3D tensor to a 1D tuple shape must preserve the total number of elements (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(If(Or([And(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) == 0) for i in range(6)]), Or([And(j < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], j) == 0) for j in range(6)]), True)) if n else
-          If(Or([And(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) == 0) for i in range(6)]), Or([And(j < (v["arg1_ndim"] - 1 + 1), Select(v["arg1_shape"], j) == 0) for j in range(6)]), True))
+    s.add(Not(If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 1), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) == Select(v["arg2_values"], 0), True)) if n else
+          If(And(v["arg1_ndim"] == 3, v["arg2_length"] == 1), Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 1) * Select(v["arg1_shape"], 2) == Select(v["arg2_values"], 0), True))
 )
 
 def rule_26_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_26_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
@@ -41,9 +41,9 @@ def rule_26_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 26
-        rule_26(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_26(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_26(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_26(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

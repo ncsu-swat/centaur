@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def nextafter_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array, pointing towards larger value
-    x1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    x2 = 5.0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array moving towards a positive float
+    x1 = np.array([0.0, 1.0, 2.0, 3.0], dtype=np.float32)
+    x2 = 2.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D float32 array, pointing towards smaller value
-    x1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    x2 = -1.0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: float64 array, pointing towards 0
-    x1 = np.random.randn(3, 3).astype(np.float64)
+    # Input 2: 1D float32 array with negative values moving towards zero
+    x1 = np.array([-3.0, -2.0, -1.0, -0.5], dtype=np.float32)
     x2 = 0.0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: 0D array (scalar array)
+    # Input 3: 2D float32 array moving downwards
+    x1 = np.ones((2, 3), dtype=np.float32)
+    x2 = -1.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 4: 0D float32 scalar array moving upwards
     x1 = np.array(0.0, dtype=np.float32)
     x2 = 1.0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: 3D float32 array, pointing towards positive infinity
-    x1 = np.ones((2, 2, 2), dtype=np.float32)
-    x2 = float('inf')
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 4D float64 array, pointing towards negative infinity
-    x1 = np.zeros((2, 1, 2, 1), dtype=np.float64)
-    x2 = float('-inf')
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Array with negative values, pointing to a negative float
-    x1 = np.array([-1.5, -2.5, -3.5], dtype=np.float32)
-    x2 = -10.0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: 1D array with single element, pointing to a fractional float
-    x1 = np.array([0.1], dtype=np.float32)
-    x2 = 0.10001
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Large 5D array
-    x1 = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
+    # Input 5: 3D float64 array moving towards a large float
+    x1 = np.zeros((2, 2, 2), dtype=np.float64)
     x2 = 100.0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Array containing special values, pointing to 1.0
-    x1 = np.array([np.nan, np.inf, -np.inf, 0.0], dtype=np.float32)
+    # Input 6: 1D float32 array with infinities and extreme values
+    x1 = np.array([float("inf"), float("-inf"), 1e30, -1e30], dtype=np.float32)
+    x2 = 0.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 7: 4D float32 array moving towards a fractional float
+    x1 = np.random.randn(1, 2, 3, 4).astype(np.float32)
+    x2 = 0.5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 8: 1D float32 array near subnormal/zero boundary
+    x1 = np.array([0.0, -0.0, 1e-45, -1e-45], dtype=np.float32)
     x2 = 1.0
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 9: 2D float64 array moving towards negative infinity
+    x1 = np.array([[10.0, -20.0], [30.0, -40.0]], dtype=np.float64)
+    x2 = float("-inf")
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: 2D float64 array moving towards positive infinity
+    x1 = np.array([[-1.0, 0.0], [1.0, 2.0]], dtype=np.float64)
+    x2 = float("inf")
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: 3D float32 array moving towards -10.0
+    x1 = np.linspace(-5.0, 5.0, 12, dtype=np.float32).reshape(2, 2, 3)
+    x2 = -10.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.nextafter_3"] = nextafter_inputs()
 

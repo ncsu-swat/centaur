@@ -4,93 +4,114 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def concatenate_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, concat along axis 0
+    # Input 1: 2D float32 array, axis 0
+    arrays = np.random.randn(2, 3).astype(np.float32)
     input_dict = {
-        "arrays": np.random.randn(2, 3).astype(np.float32),
+        "arrays": arrays,
         "axis": 0,
-        "dtype": np.float32
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 3D array, concat along axis 1
+    # Input 2: 2D float32 array, negative axis -1
+    arrays = np.random.randn(4, 5).astype(np.float32)
     input_dict = {
-        "arrays": np.random.randn(3, 4, 5).astype(np.float32),
-        "axis": 1,
-        "dtype": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 2D integer array, concat along axis 0
-    input_dict = {
-        "arrays": np.random.randint(0, 10, size=(2, 2)).astype(np.int32),
-        "axis": 0,
-        "dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 2D float64 array, negative axis
-    input_dict = {
-        "arrays": np.random.randn(4, 2).astype(np.float64),
+        "arrays": arrays,
         "axis": -1,
-        "dtype": np.float64
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D float32 array, negative axis
+    # Input 3: 3D int32 array, axis 0
+    arrays = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int32)
     input_dict = {
-        "arrays": np.random.randn(3, 3).astype(np.float32),
-        "axis": -1,
-        "dtype": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 3D array, casting to float16
-    input_dict = {
-        "arrays": np.random.randn(2, 2, 2).astype(np.float32),
-        "axis": 1,
-        "dtype": np.float16
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: 2D int64 array, larger first dimension
-    input_dict = {
-        "arrays": np.ones((5, 10), dtype=np.int64),
+        "arrays": arrays,
         "axis": 0,
-        "dtype": np.int64
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D array, axis in the middle
+    # Input 4: 3D int32 array, axis 1
+    arrays = np.random.randint(-50, 50, size=(3, 2, 5)).astype(np.int32)
     input_dict = {
-        "arrays": np.zeros((3, 4, 5, 6), dtype=np.float32),
+        "arrays": arrays,
+        "axis": 1,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 3D float32 array, negative axis -1
+    arrays = np.random.randn(2, 4, 3).astype(np.float32)
+    input_dict = {
+        "arrays": arrays,
+        "axis": -1,
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: 3D boolean array, negative axis -2
+    arrays = np.random.choice([True, False], size=(3, 2, 2)).astype(np.bool_)
+    input_dict = {
+        "arrays": arrays,
+        "axis": -2,
+        "dtype": np.dtype(np.bool_),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 4D float32 array, axis 0
+    arrays = np.random.randn(2, 2, 3, 4).astype(np.float32)
+    input_dict = {
+        "arrays": arrays,
+        "axis": 0,
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: 4D int32 array, axis 2
+    arrays = np.random.randint(0, 100, size=(3, 2, 2, 2)).astype(np.int32)
+    input_dict = {
+        "arrays": arrays,
         "axis": 2,
-        "dtype": np.float32
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D array, type promotion via dtype arg
+    # Input 9: 4D float32 array, negative axis -3
+    arrays = np.random.randn(2, 3, 4, 5).astype(np.float32)
     input_dict = {
-        "arrays": np.random.randn(2, 3, 4).astype(np.float32),
-        "axis": 1,
-        "dtype": np.float64
+        "arrays": arrays,
+        "axis": -3,
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D arange array, type promotion to int64
+    # Input 10: 2D int32 array, axis 0
+    arrays = np.random.randint(-100, 100, size=(5, 1)).astype(np.int32)
     input_dict = {
-        "arrays": np.arange(6).reshape(2, 3).astype(np.int32),
+        "arrays": arrays,
         "axis": 0,
-        "dtype": np.int64
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 5D float32 array, axis 3
+    arrays = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
+    input_dict = {
+        "arrays": arrays,
+        "axis": 3,
+        "dtype": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.concatenate_2"] = concatenate_inputs()
 

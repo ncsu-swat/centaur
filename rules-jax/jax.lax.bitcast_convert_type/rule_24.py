@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Casting a 2-byte tensor to a 4-byte tensor requires the last dimension to be 2 (Rule 24)
+# bitcasting 2-byte tensor to a 16-byte complex128 type requires last dimension to be 8 (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(If(And((Or(v["arg1_dtype"] == 2, v["arg1_dtype"] == 6)), (Or(v["arg2_value"] == 3, v["arg2_value"] == 7))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 2), True)) if n else
-          If(And((Or(v["arg1_dtype"] == 2, v["arg1_dtype"] == 6)), (Or(v["arg2_value"] == 3, v["arg2_value"] == 7))), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 2), True))
+    s.add(Not(If(And((Or(v["arg1_dtype"] == 2, v["arg1_dtype"] == 6)), v["arg2_value"] == 10), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 8), True)) if n else
+          If(And((Or(v["arg1_dtype"] == 2, v["arg1_dtype"] == 6)), v["arg2_value"] == 10), And(v["arg1_ndim"] >= 1, Select(v["arg1_shape"], v["arg1_ndim"] - 1) == 8), True))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -40,9 +40,9 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 24
-        rule_24(solver, {'arg1_dtype': arg1_dtype, 'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_24(solver, {'arg1_ndim': arg1_ndim, 'arg1_dtype': arg1_dtype, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_24(solver, {'arg1_dtype': arg1['dtype'], 'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_24(solver, {'arg1_ndim': arg1['ndim'], 'arg1_dtype': arg1['dtype'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

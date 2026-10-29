@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# preferred element type as a dtype must be a numeric type (Rule 35)
+# preferred element type when provided as dtype index must be floating-point or complex (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 1, v["arg1_value"] <= 10)) if n else
-          And(v["arg1_value"] >= 1, v["arg1_value"] <= 10))
+    s.add(Not(And(v["arg1_value"] >= 6, v["arg1_value"] <= 10)) if n else
+          And(v["arg1_value"] >= 6, v["arg1_value"] <= 10))
 )
 
 def rule_35_func(arg1, solver=None, neg=False):

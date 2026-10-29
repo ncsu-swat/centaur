@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dimension sizes must be non-negative (Rule 18)
+# directional bounds on offset k depending on whether it is above or below the main diagonal (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_value"] >= 0, v["arg3_value"] >= 0), v["arg2_value"] + 1 > v["arg2_value"])) if n else
-          And(And(v["arg1_value"] >= 0, v["arg3_value"] >= 0), v["arg2_value"] + 1 > v["arg2_value"]))
+    s.add(Not(If(v["arg2_value"] > 0, And(v["arg2_value"] < v["arg3_value"], v["arg1_value"] > 0), And(v["arg1_value"] + v["arg2_value"] >= 0, v["arg3_value"] > 0))) if n else
+          If(v["arg2_value"] > 0, And(v["arg2_value"] < v["arg3_value"], v["arg1_value"] > 0), And(v["arg1_value"] + v["arg2_value"] >= 0, v["arg3_value"] > 0)))
 )
 
 def rule_18_func(arg1, arg2, arg3, solver=None, neg=False):

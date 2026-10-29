@@ -4,77 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def nextafter_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero towards positive
-    list_of_inputs.append({
-        "x1": float(0.0),
-        "x2": float(1.0)
-    })
+    # Input 1: positive direction from zero
+    input_dict = {"x1": 0.0, "x2": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Zero towards negative
-    list_of_inputs.append({
-        "x1": float(0.0),
-        "x2": float(-1.0)
-    })
+    # Input 2: positive direction from 1.0
+    input_dict = {"x1": 1.0, "x2": 2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Positive float towards infinity
-    list_of_inputs.append({
-        "x1": float(1.0),
-        "x2": float(2.0)
-    })
+    # Input 3: negative direction towards zero
+    input_dict = {"x1": 1.0, "x2": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Positive float towards zero
-    list_of_inputs.append({
-        "x1": float(1.0),
-        "x2": float(0.0)
-    })
+    # Input 4: negative values, decreasing
+    input_dict = {"x1": -1.0, "x2": -2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative float towards negative infinity
-    list_of_inputs.append({
-        "x1": float(-1.0),
-        "x2": float(-2.0)
-    })
+    # Input 5: negative direction from zero
+    input_dict = {"x1": 0.0, "x2": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative float towards zero
-    list_of_inputs.append({
-        "x1": float(-1.0),
-        "x2": float(0.0)
-    })
+    # Input 6: identical values
+    input_dict = {"x1": 2.5, "x2": 2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Very small float towards positive
-    list_of_inputs.append({
-        "x1": float(1e-30),
-        "x2": float(1.0)
-    })
+    # Input 7: towards positive infinity
+    input_dict = {"x1": 1e30, "x2": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Very large float towards zero
-    list_of_inputs.append({
-        "x1": float(1e30),
-        "x2": float(0.0)
-    })
+    # Input 8: from positive infinity towards zero
+    input_dict = {"x1": float("inf"), "x2": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Infinity towards zero
-    list_of_inputs.append({
-        "x1": float('inf'),
-        "x2": float(0.0)
-    })
+    # Input 9: from negative infinity towards zero
+    input_dict = {"x1": float("-inf"), "x2": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative infinity towards zero
-    list_of_inputs.append({
-        "x1": float('-inf'),
-        "x2": float(0.0)
-    })
+    # Input 10: small scale positive values
+    input_dict = {"x1": 1e-10, "x2": 1e-9}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Identical values
-    list_of_inputs.append({
-        "x1": float(1.5),
-        "x2": float(1.5)
-    })
+    # Input 11: negative to positive direction
+    input_dict = {"x1": -5.0, "x2": 5.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# mixed arguments where the first is a valid dtype string and the second is a dtype (Rule 47)
+# float32 string specifier promoted with a floating-point dtype (Rule 47)
 
 rule_47 = lambda s, v, n=False: (
-    s.add(Not(If(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), And(v["arg2_value"] >= 0, v["arg2_value"] <= 12), False)) if n else
-          If(Or(v["arg1_value"] == 38, v["arg1_value"] == 39), And(v["arg2_value"] >= 0, v["arg2_value"] <= 12), False))
+    s.add(Not(And(And(v["arg1_value"] == 38, v["arg2_value"] >= 6), v["arg2_value"] <= 8)) if n else
+          And(And(v["arg1_value"] == 38, v["arg2_value"] >= 6), v["arg2_value"] <= 8))
 )
 
 def rule_47_func(arg1, arg2, solver=None, neg=False):

@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# fill_value tensor must be 0-dimensional (Rule 2)
+# fill_value tensor must be a scalar (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(v["arg1_ndim"] == 0) if n else

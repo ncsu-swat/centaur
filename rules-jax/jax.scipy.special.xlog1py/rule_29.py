@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# y + 1 must be strictly positive to ensure the logarithm term is well-defined (Rule 29)
+# tensor x values must be non-negative (Rule 29)
 
 rule_29 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) + 1 > 0) if n else
-          Select(v["arg1_range"], 0) + 1 > 0)
+    s.add(Not(Select(v["arg1_range"], 0) >= 0) if n else
+          Select(v["arg1_range"], 0) >= 0)
 )
 
 def rule_29_func(arg1, solver=None, neg=False):

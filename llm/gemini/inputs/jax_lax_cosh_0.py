@@ -4,53 +4,61 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cosh_inputs():
     list_of_inputs = []
 
-    # Input 1: float32, 1D array, positive values
-    x = np.array([0.0, 1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 0D scalar float32
+    x = np.array(0.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: float32, 1D array, negative values
-    x = np.array([-0.5, -1.5, -2.5, -3.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D array with positive, negative, and zero float32
+    x = np.array([-3.0, -1.5, 0.0, 1.5, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: float64, 2D array, mixed values
-    x = np.array([[-1.0, 0.0], [1.0, 2.0]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D array float64
+    x = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: float16, 3D array, small values
-    x = np.array([[[-0.1, 0.2], [0.3, -0.4]], [[0.5, -0.6], [0.7, -0.8]]], dtype=np.float16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 3D array float32
+    x = np.random.uniform(-5.0, 5.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: complex64, 1D array
-    x = np.array([1.0 + 1.0j, -2.0 + 0.5j, 0.0 - 1.5j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 4D array float16
+    x = np.random.randn(2, 2, 3, 3).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: complex128, 2D array
-    x = np.array([[0.5 + 0.5j, -0.5 - 0.5j], [1.5j, -1.5j]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D complex64 array
+    x = (np.random.randn(5) + 1j * np.random.randn(5)).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: float32, 0D array (scalar equivalent)
-    x = np.array(1.23, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 2D complex128 array
+    x = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(
+        np.complex128
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: float32, 1D array with values from a uniform distribution
-    x = np.linspace(-5.0, 5.0, 20, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Empty array float32
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: float32, 4D array of random values
-    x = np.random.uniform(-2.0, 2.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Large magnitude values float64
+    x = np.array([-50.0, -20.0, 20.0, 50.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: float32, 2D array of zeros
-    x = np.zeros((3, 3), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 5D array float32
+    x = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array with special values float32
+    x = np.array([np.nan, np.inf, -np.inf, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.cosh"] = cosh_inputs()
 

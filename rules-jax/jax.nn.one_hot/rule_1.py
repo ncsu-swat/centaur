@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# num_classes must be a positive integer (Rule 1)
+# num_classes must be greater than zero (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
     s.add(Not(v["arg1_value"] > 0) if n else

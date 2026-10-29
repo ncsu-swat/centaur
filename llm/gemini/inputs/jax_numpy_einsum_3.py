@@ -4,121 +4,136 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-class PretendList(np.ndarray):
-    @property
-    def __class__(self):
-        return list
-
-def make_pretend_list(arr):
-    return arr.view(PretendList)
 
 def einsum_inputs():
     list_of_inputs = []
 
-    # 1. Trace of 2D matrix
-    input_dict = {
-        "subscripts": "ii",
-        "operands": make_pretend_list(np.random.randn(5, 5).astype(np.float32)),
-        "optimize": [],
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # 2. Matrix Transpose
-    input_dict = {
-        "subscripts": "ij->ji",
-        "operands": make_pretend_list(np.random.randn(4, 7).astype(np.float64)),
-        "optimize": [],
-        "precision": "HIGHEST",
-        "preferred_element_type": np.dtype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # 3. Sum of 1D array
+    # Input 1: 1D array sum
+    x = np.random.randn(8).astype(np.float32)
     input_dict = {
         "subscripts": "i->",
-        "operands": make_pretend_list(np.random.randn(10).astype(np.float32)),
-        "optimize": [],
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype(np.float32)
+        "operands": x,
+        "optimize": [(0,)],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 4. Sum of 2D matrix
+    # Input 2: Matrix transpose (2D, float64)
+    m = np.random.randn(4, 6).astype(np.float64)
     input_dict = {
-        "subscripts": "ij->",
-        "operands": make_pretend_list(np.random.randn(6, 6).astype(np.float32)),
-        "optimize": [],
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype(np.float32)
+        "subscripts": "ij->ji",
+        "operands": m,
+        "optimize": [(0,)],
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 5. Sum along columns of 2D matrix
-    input_dict = {
-        "subscripts": "ij->i",
-        "operands": make_pretend_list(np.random.randn(5, 8).astype(np.float32)),
-        "optimize": [],
-        "precision": "HIGH",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # 6. Sum along rows of 2D matrix
-    input_dict = {
-        "subscripts": "ij->j",
-        "operands": make_pretend_list(np.random.randn(5, 8).astype(np.float32)),
-        "optimize": [],
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # 7. Matrix Diagonal
+    # Input 3: Matrix diagonal extraction
+    m = np.random.randn(5, 5).astype(np.float32)
     input_dict = {
         "subscripts": "ii->i",
-        "operands": make_pretend_list(np.random.randn(6, 6).astype(np.float32)),
-        "optimize": [],
-        "precision": "HIGH",
-        "preferred_element_type": np.dtype(np.float32)
+        "operands": m,
+        "optimize": [(0,)],
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 8. Sum along axis 2 of 3D tensor
+    # Input 4: Matrix trace (reduction to scalar)
+    m = np.random.randn(6, 6).astype(np.float32)
     input_dict = {
-        "subscripts": "ijk->ij",
-        "operands": make_pretend_list(np.random.randn(2, 3, 4).astype(np.float32)),
-        "optimize": [],
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype(np.float32)
+        "subscripts": "ii->",
+        "operands": m,
+        "optimize": [(0,)],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # 9. Permute axes of 3D tensor
-    input_dict = {
-        "subscripts": "ijk->kij",
-        "operands": make_pretend_list(np.random.randn(2, 3, 4).astype(np.float32)),
-        "optimize": [],
-        "precision": "DEFAULT",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # 10. Sum with ellipsis
+    # Input 5: Sum along an axis using ellipsis (3D tensor)
+    t = np.random.randn(3, 4, 5).astype(np.float32)
     input_dict = {
         "subscripts": "...j->...",
-        "operands": make_pretend_list(np.random.randn(2, 3, 4).astype(np.float32)),
-        "optimize": [],
-        "precision": "HIGH",
-        "preferred_element_type": np.dtype(np.float32)
+        "operands": t,
+        "optimize": [(0,)],
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Full reduction of a 2D matrix
+    m = np.random.randn(5, 5).astype(np.float64)
+    input_dict = {
+        "subscripts": "ij->",
+        "operands": m,
+        "optimize": [(0,)],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 3D tensor permutation / transpose
+    t = np.random.randn(2, 3, 4).astype(np.float32)
+    input_dict = {
+        "subscripts": "ijk->kji",
+        "operands": t,
+        "optimize": [(0,)],
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Partial reduction of a 3D tensor along one axis
+    t = np.random.randn(3, 4, 5).astype(np.float64)
+    input_dict = {
+        "subscripts": "ijk->ik",
+        "operands": t,
+        "optimize": [(0,)],
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 4D tensor axes permutation
+    t = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    input_dict = {
+        "subscripts": "ijkl->lkji",
+        "operands": t,
+        "optimize": [(0,)],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 1D identity / copy
+    x = np.random.randn(12).astype(np.float32)
+    input_dict = {
+        "subscripts": "i->i",
+        "operands": x,
+        "optimize": [(0,)],
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Integer matrix trace with negative values
+    m = np.random.randint(-10, 10, size=(4, 4)).astype(np.int32)
+    input_dict = {
+        "subscripts": "ii->",
+        "operands": m,
+        "optimize": [(0,)],
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.einsum_3"] = einsum_inputs()
 

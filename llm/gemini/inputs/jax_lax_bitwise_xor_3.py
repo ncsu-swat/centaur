@@ -4,63 +4,52 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+import jax.lax
+
 
 def bitwise_xor_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D boolean arrays of the same shape
-    x = np.array([True, False, True, False], dtype=np.bool_)
-    y = np.array([False, False, True, True], dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 1: (True, False) using Python booleans
+    list_of_inputs.append({"x": True, "y": False})
 
-    # Input 2: Python boolean scalars
-    x = True
-    y = False
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 2: (False, True) using Python booleans
+    list_of_inputs.append({"x": False, "y": True})
 
-    # Input 3: 2D boolean arrays of the same shape
-    x = np.array([[True, False], [False, True]], dtype=np.bool_)
-    y = np.array([[False, True], [False, False]], dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 3: (True, True) using Python booleans
+    list_of_inputs.append({"x": True, "y": True})
 
-    # Input 4: 1D array and Python scalar (broadcasting)
-    x = np.array([True, False, True], dtype=np.bool_)
-    y = True
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 4: (False, False) using Python booleans
+    list_of_inputs.append({"x": False, "y": False})
 
-    # Input 5: 3D boolean arrays of the same shape
-    x = np.random.choice([True, False], size=(2, 3, 4)).astype(np.bool_)
-    y = np.random.choice([True, False], size=(2, 3, 4)).astype(np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 5: (True, False) using numpy boolean scalars
+    list_of_inputs.append({"x": np.bool_(True), "y": np.bool_(False)})
 
-    # Input 6: 2D array and Python scalar (broadcasting)
-    x = np.array([[True, False], [True, True]], dtype=np.bool_)
-    y = False
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 6: (False, True) using numpy boolean scalars
+    list_of_inputs.append({"x": np.bool_(False), "y": np.bool_(True)})
 
-    # Input 7: Broadcasting with same number of dimensions (2D: (1, 2) and (2, 1))
-    x = np.array([[True, False]], dtype=np.bool_)
-    y = np.array([[False], [True]], dtype=np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 7: (True, True) using numpy boolean scalars
+    list_of_inputs.append({"x": np.bool_(True), "y": np.bool_(True)})
 
-    # Input 8: 4D boolean arrays of the same shape
-    x = np.random.choice([True, False], size=(2, 2, 2, 2)).astype(np.bool_)
-    y = np.random.choice([True, False], size=(2, 2, 2, 2)).astype(np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 8: (False, False) using numpy boolean scalars
+    list_of_inputs.append({"x": np.bool_(False), "y": np.bool_(False)})
 
-    # Input 9: Multi-dimensional broadcasting with same number of dimensions (3D)
-    x = np.random.choice([True, False], size=(1, 3, 1)).astype(np.bool_)
-    y = np.random.choice([True, False], size=(2, 1, 4)).astype(np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 9: Mixed Python bool and numpy bool (True, False)
+    list_of_inputs.append({"x": True, "y": np.bool_(False)})
 
-    # Input 10: 5D boolean arrays of the same shape
-    x = np.random.choice([True, False], size=(2, 1, 2, 1, 2)).astype(np.bool_)
-    y = np.random.choice([True, False], size=(2, 1, 2, 1, 2)).astype(np.bool_)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 10: Mixed numpy bool and Python bool (True, False)
+    list_of_inputs.append({"x": np.bool_(True), "y": False})
 
-    return list_of_inputs
+    # Input 11: Mixed Python bool and numpy bool (False, True)
+    list_of_inputs.append({"x": False, "y": np.bool_(True)})
+
+    # Input 12: Mixed numpy bool and Python bool (False, True)
+    list_of_inputs.append({"x": np.bool_(False), "y": True})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
 
 generated_inputs["jax.lax.bitwise_xor_3"] = bitwise_xor_inputs()
 

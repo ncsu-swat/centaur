@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dtype parameter must be a float or complex type: 6-10 (Rule 28)
+# dtype parameter must be a floating-point or complex type (Rule 28)
 
 rule_28 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 6, v["arg1_value"] <= 10)) if n else
-          And(v["arg1_value"] >= 6, v["arg1_value"] <= 10))
+    s.add(Not(Or((And(v["arg1_value"] >= 6, v["arg1_value"] <= 8)), (And(v["arg1_value"] >= 9, v["arg1_value"] <= 10)))) if n else
+          Or((And(v["arg1_value"] >= 6, v["arg1_value"] <= 8)), (And(v["arg1_value"] >= 9, v["arg1_value"] <= 10))))
 )
 
 def rule_28_func(arg1, solver=None, neg=False):

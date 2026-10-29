@@ -4,54 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import math
 
 def isrealobj_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    input_dict = {"x": 3.14}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative float
-    input_dict = {"x": -2.718}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero float
+    # Input 1: Zero
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large float
-    input_dict = {"x": 1.0e15}
+    # Input 2: Positive float
+    input_dict = {"x": 1.2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Small float (scientific notation)
-    input_dict = {"x": 1.0e-15}
+    # Input 3: Negative float
+    input_dict = {"x": -3.141592653589793}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Positive infinity float
-    input_dict = {"x": float('inf')}
+    # Input 4: Large positive float
+    input_dict = {"x": 1e20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Negative infinity float
-    input_dict = {"x": float('-inf')}
+    # Input 5: Small positive float (close to zero)
+    input_dict = {"x": 1e-20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: NaN float
-    input_dict = {"x": float('nan')}
+    # Input 6: Large negative float
+    input_dict = {"x": -1e20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Numpy float32 scalar
-    input_dict = {"x": np.float32(12.34)}
+    # Input 7: Positive infinity
+    input_dict = {"x": float("inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Numpy float64 scalar
-    input_dict = {"x": np.float64(-56.78)}
+    # Input 8: Negative infinity
+    input_dict = {"x": float("-inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Numpy float16 scalar
-    input_dict = {"x": np.float16(0.001)}
+    # Input 9: NaN
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Euler's number
+    input_dict = {"x": math.e}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

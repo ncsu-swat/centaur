@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isscalar_inputs():
     list_of_inputs = []
@@ -14,43 +15,48 @@ def isscalar_inputs():
     input_dict = {"element": ()}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Tuple with a single integer
-    input_dict = {"element": (42,)}
+    # Input 2: 1-tuple of integer
+    input_dict = {"element": (1,)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Tuple with floats (including positive and negative values)
-    input_dict = {"element": (-1.5, 2.7, 0.0)}
+    # Input 3: Tuple of negative and positive integers
+    input_dict = {"element": (-42, 0, 100)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Tuple with boolean values
-    input_dict = {"element": (True, False, True)}
+    # Input 4: Tuple of floats
+    input_dict = {"element": (1.5, -3.14, 0.0, 2.718)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Tuple with numpy integer types
-    input_dict = {"element": (np.int32(10), np.int64(-20))}
+    # Input 5: Tuple of single negative float
+    input_dict = {"element": (-10.5,)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Tuple with zero-dimensional numpy arrays
-    input_dict = {"element": (np.array(5), np.array(-5))}
+    # Input 6: Tuple of zeros
+    input_dict = {"element": (0, 0, 0, 0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Tuple with complex numbers
-    input_dict = {"element": (1 + 2j, -3 - 4j)}
+    # Input 7: Tuple of strictly negative integers
+    input_dict = {"element": (-100, -50, -25, -1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Tuple with numpy float types
-    input_dict = {"element": (np.float32(0.5), np.float64(-1.5))}
+    # Input 8: Tuple of positive floats
+    input_dict = {"element": (0.1, 0.2, 0.3, 0.4, 0.5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Tuple with a None value
-    input_dict = {"element": (None,)}
+    # Input 9: Tuple of mixed signs float
+    input_dict = {"element": (-1.0, 1.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Tuple with 1D numpy arrays
-    input_dict = {"element": (np.array([1, 2]), np.array([3, 4]))}
+    # Input 10: Two-element tuple of integers
+    input_dict = {"element": (42, -42)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Tuple of large integers
+    input_dict = {"element": (1000, 2000, 3000)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isscalar_7"] = isscalar_inputs()
 

@@ -4,79 +4,83 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def not_equal_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, matching x is 0.0
-    x = 0.0
-    y = np.array([0.0, 1.0, -2.0, 0.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 1: 0D scalar array with positive float
+    input_dict = {"x": 3.14, "y": np.array(3.14, dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array with random values
-    x = -1.5
-    y = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 2: 1D array with negative float
+    input_dict = {
+        "x": -2.5,
+        "y": np.array([-2.5, 0.0, 2.5, -5.0], dtype=np.float64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float64 array, matching some values
-    x = 2.5
-    y = np.array([[2.5, 1.0, 2.5], [0.0, 2.5, -2.5]], dtype=np.float64)
-    input_dict = {"x": x, "y": y}
+    # Input 3: 2D array of integers
+    input_dict = {
+        "x": 0.0,
+        "y": np.array([[0, 1, -1], [2, 0, 3]], dtype=np.int32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float32 array of zeros
-    x = 0.0
-    y = np.zeros((2, 2, 2), dtype=np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 4: 2D array of booleans
+    input_dict = {
+        "x": 1.0,
+        "y": np.array([[True, False], [False, True]], dtype=np.bool_),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 1D float32 array, small positive float
-    x = 1e-5
-    y = np.array([1e-5, 2e-5, 1e-5], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 5: 3D array with float16
+    input_dict = {"x": 0.5, "y": np.ones((2, 3, 4), dtype=np.float16) * 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D float32 array with negative values
-    x = -999.9
-    y = np.linspace(-1000, -999, 6).reshape(2, 3).astype(np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 6: 4D array with random normal values
+    input_dict = {
+        "x": 1.23,
+        "y": np.random.randn(2, 2, 3, 3).astype(np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D float32 array filled with x
-    x = 4.2
-    y = np.full((2, 3, 2), 4.2, dtype=np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 7: Array with NaN and Inf
+    input_dict = {
+        "x": float("nan"),
+        "y": np.array([np.nan, np.inf, -np.inf, 0.0], dtype=np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Infinity as float
-    x = float('inf')
-    y = np.array([1.0, float('inf'), float('-inf')], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 8: Array with infinity
+    input_dict = {
+        "x": float("inf"),
+        "y": np.array([[np.inf, -np.inf], [1.0, np.inf]], dtype=np.float64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D float64 array
-    x = 3.14159
-    y = np.ones((1, 2, 2, 3), dtype=np.float64) * 3.14159
-    input_dict = {"x": x, "y": y}
+    # Input 9: 1D complex array compared to float
+    input_dict = {
+        "x": 2.0,
+        "y": np.array([2.0 + 0.0j, 2.0 + 1.0j, 0.0 + 0.0j], dtype=np.complex64),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: -0.0 and 0.0
-    x = -0.0
-    y = np.array([0.0, -0.0, 1.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
+    # Input 10: Empty array
+    input_dict = {"x": 42.0, "y": np.empty((0, 5), dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: 1D int32 array (representing tensor) with float x
-    x = 5.0
-    y = np.array([1, 2, 5, 6], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
+    # Input 11: High-dimensional array
+    input_dict = {
+        "x": -0.0,
+        "y": np.zeros((1, 2, 1, 3, 2), dtype=np.float32),
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.not_equal_4"] = not_equal_inputs()
 

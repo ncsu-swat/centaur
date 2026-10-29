@@ -4,103 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tri_inputs():
     list_of_inputs = []
 
-    # Input 1: Square matrix with main diagonal
-    input_dict = {
-        "N": 3,
-        "M": 3,
-        "k": 0,
-        "dtype": np.float32
-    }
+    # Input 1: Basic square matrix
+    input_dict = {"N": 3, "M": 3, "k": 0, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Rectangular matrix with negative k
-    input_dict = {
-        "N": 4,
-        "M": 5,
-        "k": -1,
-        "dtype": np.float32
-    }
+    # Input 2: Rectangular matrix where M > N
+    input_dict = {"N": 3, "M": 5, "k": 0, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Rectangular matrix with positive k and integer dtype
-    input_dict = {
-        "N": 5,
-        "M": 3,
-        "k": 2,
-        "dtype": np.int32
-    }
+    # Input 3: Rectangular matrix where N > M
+    input_dict = {"N": 6, "M": 2, "k": 0, "dtype": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Minimal size with boolean dtype
-    input_dict = {
-        "N": 1,
-        "M": 1,
-        "k": 0,
-        "dtype": np.bool_
-    }
+    # Input 4: Positive k (above main diagonal)
+    input_dict = {"N": 4, "M": 4, "k": 1, "dtype": np.dtype(np.float64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Larger square matrix with float64 dtype and deep negative k
-    input_dict = {
-        "N": 10,
-        "M": 10,
-        "k": -5,
-        "dtype": np.float64
-    }
+    # Input 5: Negative k (below main diagonal)
+    input_dict = {"N": 5, "M": 5, "k": -2, "dtype": np.dtype(np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large rectangular matrix with int64 dtype and positive k
-    input_dict = {
-        "N": 8,
-        "M": 12,
-        "k": 4,
-        "dtype": np.int64
-    }
+    # Input 6: Boolean dtype
+    input_dict = {"N": 4, "M": 4, "k": -1, "dtype": np.dtype(np.bool_)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Medium square matrix with uint32 dtype and negative k
-    input_dict = {
-        "N": 6,
-        "M": 6,
-        "k": -3,
-        "dtype": np.uint32
-    }
+    # Input 7: Complex dtype
+    input_dict = {"N": 3, "M": 3, "k": 2, "dtype": np.dtype(np.complex64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Tall rectangular matrix with complex64 dtype
-    input_dict = {
-        "N": 15,
-        "M": 10,
-        "k": 0,
-        "dtype": np.complex64
-    }
+    # Input 8: Large positive k exceeding dimension
+    input_dict = {"N": 3, "M": 4, "k": 10, "dtype": np.dtype(np.uint8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small rectangular matrix with float16 dtype and out-of-bounds negative k
-    input_dict = {
-        "N": 2,
-        "M": 4,
-        "k": -2,
-        "dtype": np.float16
-    }
+    # Input 9: Large negative k exceeding dimension
+    input_dict = {"N": 4, "M": 3, "k": -10, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Medium square matrix with int16 dtype and out-of-bounds positive k
-    input_dict = {
-        "N": 7,
-        "M": 7,
-        "k": 10,
-        "dtype": np.int16
-    }
+    # Input 10: 1x1 matrix
+    input_dict = {"N": 1, "M": 1, "k": 0, "dtype": np.dtype(np.int16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Zero rows/columns
+    input_dict = {"N": 0, "M": 5, "k": 0, "dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Zero columns
+    input_dict = {"N": 5, "M": 0, "k": 0, "dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.tri"] = tri_inputs()
 

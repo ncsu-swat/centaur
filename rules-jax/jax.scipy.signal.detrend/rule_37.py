@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# all integer breakpoints in a list must be non-negative and strictly within the size of the detrend axis (Rule 37)
+# all breakpoints in a list must be within valid index range along axis 0 when axis is 0 (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), (And([Implies(i < (v["arg3_length"] - 1 + 1), And(Select(v["arg3_values"], i) >= 0, Select(v["arg3_values"], i) < Select(v["arg1_shape"], v["arg2_value"]))) for i in range(6)])), True)) if n else
-          If(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]), (And([Implies(i < (v["arg3_length"] - 1 + 1), And(Select(v["arg3_values"], i) >= 0, Select(v["arg3_values"], i) < Select(v["arg1_shape"], v["arg2_value"]))) for i in range(6)])), True))
+    s.add(Not(If(And(v["arg2_value"] == 0, v["arg1_ndim"] >= 1), And([Implies(i < (v["arg3_length"] - 1 + 1), And(0 <= Select(v["arg3_values"], i), Select(v["arg3_values"], i) < Select(v["arg1_shape"], 0))) for i in range(6)]), True)) if n else
+          If(And(v["arg2_value"] == 0, v["arg1_ndim"] >= 1), And([Implies(i < (v["arg3_length"] - 1 + 1), And(0 <= Select(v["arg3_values"], i), Select(v["arg3_values"], i) < Select(v["arg1_shape"], 0))) for i in range(6)]), True))
 )
 
 def rule_37_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -46,9 +46,9 @@ def rule_37_func(arg1, arg2, arg3, solver=None, neg=False):
             arg3_values = Store(arg3_values, i, arg3[i])
 
         # Constraints for rule 37
-        rule_37(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_values': arg3_values, 'arg3_length': arg3_length})
+        rule_37(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_length': arg3_length, 'arg3_values': arg3_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_37(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_values': arg3['values'], 'arg3_length': arg3['length']}, neg)
+        rule_37(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_length': arg3['length'], 'arg3_values': arg3['values']}, neg)

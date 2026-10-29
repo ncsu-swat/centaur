@@ -4,90 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitcast_convert_type_inputs():
     list_of_inputs = []
 
-    # Input 1: int32(0) to float32
-    input_dict = {
-        "operand": np.int32(0),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 1: Zero to int32
+    input_dict = {"operand": 0, "new_dtype": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: int32(1) to float32
-    input_dict = {
-        "operand": np.int32(1),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 2: Positive integer to float32
+    input_dict = {"operand": 1, "new_dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: int32(-1) to float32
-    input_dict = {
-        "operand": np.int32(-1),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 3: Negative integer to uint32
+    input_dict = {"operand": -1, "new_dtype": np.dtype(np.uint32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: int32(100) to int32
-    input_dict = {
-        "operand": np.int32(100),
-        "new_dtype": np.dtype('int32')
-    }
+    # Input 4: Positive integer to int16
+    input_dict = {"operand": 42, "new_dtype": np.dtype(np.int16)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: int32(-100) to int32
-    input_dict = {
-        "operand": np.int32(-100),
-        "new_dtype": np.dtype('int32')
-    }
+    # Input 5: Negative integer to uint16
+    input_dict = {"operand": -100, "new_dtype": np.dtype(np.uint16)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: int32(123456789) to float32
-    input_dict = {
-        "operand": np.int32(123456789),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 6: Integer to int8
+    input_dict = {"operand": 255, "new_dtype": np.dtype(np.int8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: int32(-123456789) to float32
-    input_dict = {
-        "operand": np.int32(-123456789),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 7: Negative integer to uint8
+    input_dict = {"operand": -128, "new_dtype": np.dtype(np.uint8)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: int32(2147483647) to float32
-    input_dict = {
-        "operand": np.int32(2147483647),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 8: Large positive integer to float16
+    input_dict = {"operand": 1000000, "new_dtype": np.dtype(np.float16)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: int32(-2147483648) to float32
-    input_dict = {
-        "operand": np.int32(-2147483648),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 9: Large negative integer to int32
+    input_dict = {"operand": -2147483648, "new_dtype": np.dtype(np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: int32(42) to int32
-    input_dict = {
-        "operand": np.int32(42),
-        "new_dtype": np.dtype('int32')
-    }
+    # Input 10: Maximum positive 32-bit integer to uint32
+    input_dict = {"operand": 2147483647, "new_dtype": np.dtype(np.uint32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: int32(1337) to float32
-    input_dict = {
-        "operand": np.int32(1337),
-        "new_dtype": np.dtype('float32')
-    }
+    # Input 11: Negative integer to float32
+    input_dict = {"operand": -999999, "new_dtype": np.dtype(np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.bitcast_convert_type_2"] = bitcast_convert_type_inputs()
 

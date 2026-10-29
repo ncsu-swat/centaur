@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# boolean input consistency check using conditional expression (Rule 10)
+# scalar float input should be within reasonable numerical range (Rule 10)
 
 rule_10 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"], v["arg1_value"] == True, v["arg1_value"] == False)) if n else
-          If(v["arg1_value"], v["arg1_value"] == True, v["arg1_value"] == False))
+    s.add(Not(And(-1000 <= v["arg1_value"], v["arg1_value"] <= 1000)) if n else
+          And(-1000 <= v["arg1_value"], v["arg1_value"] <= 1000))
 )
 
 def rule_10_func(arg1, solver=None, neg=False):
@@ -19,12 +19,12 @@ def rule_10_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, bool):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Bool('arg1_value')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
         solver.add(arg1_value == arg1)

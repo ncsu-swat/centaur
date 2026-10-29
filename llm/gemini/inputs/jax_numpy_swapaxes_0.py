@@ -11,57 +11,93 @@ import numpy as np
 def swapaxes_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 2D array swap, float32
-    a = np.random.randn(2, 3).astype(np.float32)
-    input_dict = {"a": a, "axis1": 0, "axis2": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: 3D array swap, int32
-    a = np.random.randint(-10, 10, size=(2, 3, 4)).astype(np.int32)
-    input_dict = {"a": a, "axis1": 1, "axis2": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: 4D array swap, float64
-    a = np.random.randn(2, 3, 4, 5).astype(np.float64)
-    input_dict = {"a": a, "axis1": 0, "axis2": 3}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Negative axes, boolean
-    a = np.random.choice([True, False], size=(5, 5))
-    input_dict = {"a": a, "axis1": -1, "axis2": -2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Mixed positive/negative axes, complex64
-    a = (np.random.randn(10, 20, 30) + 1j * np.random.randn(10, 20, 30)).astype(
-        np.complex64
+    # Input 1: 2D array, swap axis 0 and 1 (standard transpose)
+    a = np.ones((2, 3), dtype=np.float32)
+    axis1 = 0
+    axis2 = 1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
     )
-    input_dict = {"a": a, "axis1": -3, "axis2": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Higher dimension (5D) array, uint8
-    a = np.random.randint(0, 255, size=(2, 2, 2, 2, 2)).astype(np.uint8)
-    input_dict = {"a": a, "axis1": 1, "axis2": 4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 3D array, swap axis 0 and 2
+    a = np.arange(24, dtype=np.int32).reshape((2, 3, 4))
+    axis1 = 0
+    axis2 = 2
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
 
-    # Input 7: Swapping same axis (no-op), float16
-    a = np.random.randn(3, 3).astype(np.float16)
-    input_dict = {"a": a, "axis1": 0, "axis2": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 4D array with negative axis indices
+    a = np.random.randn(2, 3, 4, 5).astype(np.float64)
+    axis1 = -1
+    axis2 = -3
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
 
-    # Input 8: 3D array with distinct dimensions, int64
-    a = np.random.randint(-100, 100, size=(4, 2, 3)).astype(np.int64)
-    input_dict = {"a": a, "axis1": 0, "axis2": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Swapping an axis with itself (identity permutation)
+    a = np.zeros((3, 5, 7), dtype=np.complex64)
+    axis1 = 1
+    axis2 = 1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
 
-    # Input 9: Array with singleton dimensions, float32
+    # Input 5: 5D boolean array, mix of positive and negative axis
+    a = np.random.choice([True, False], size=(2, 2, 3, 4, 2))
+    axis1 = 1
+    axis2 = -1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
+
+    # Input 6: 1D array, swapping axis 0 with 0
+    a = np.array([1, 2, 3, 4, 5], dtype=np.int64)
+    axis1 = 0
+    axis2 = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
+
+    # Input 7: 1D array with negative axis
+    a = np.array([10.0, 20.0, 30.0], dtype=np.float16)
+    axis1 = -1
+    axis2 = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
+
+    # Input 8: 6D array, swapping outer dimensions
+    a = np.ones((1, 2, 1, 3, 1, 4), dtype=np.uint8)
+    axis1 = 0
+    axis2 = 5
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
+
+    # Input 9: 3D array with shape including dimension size 1
     a = np.random.randn(1, 10, 1).astype(np.float32)
-    input_dict = {"a": a, "axis1": 0, "axis2": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis1 = 1
+    axis2 = 2
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
 
-    # Input 10: 5D array with mixed index types, int16
-    a = np.random.randint(-50, 50, size=(5, 4, 3, 2, 1)).astype(np.int16)
-    input_dict = {"a": a, "axis1": -2, "axis2": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D array with both negative axes
+    a = np.arange(120, dtype=np.int16).reshape((2, 3, 4, 5))
+    axis1 = -4
+    axis2 = -2
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
+
+    # Input 11: 2D array with negative axis swapped with positive axis
+    a = np.eye(4, dtype=np.float32)
+    axis1 = -2
+    axis2 = 1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "axis1": axis1, "axis2": axis2})
+    )
 
     return list_of_inputs
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor elements must be all strictly positive or all strictly negative to avoid division by zero (Rule 61)
+# scalar input must have an absolute value strictly greater than one (Rule 61)
 
 rule_61 = lambda s, v, n=False: (
-    s.add(Not(Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0)) if n else
-          Or(Select(v["arg1_range"], 0) > 0, Select(v["arg1_range"], 1) < 0))
+    s.add(Not(Or(v["arg1_value"] > 1, v["arg1_value"] < -1)) if n else
+          Or(v["arg1_value"] > 1, v["arg1_value"] < -1))
 )
 
 def rule_61_func(arg1, solver=None, neg=False):
@@ -19,21 +19,18 @@ def rule_61_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_range = Array('arg1_range', IntSort(), IntSort())
 
         # Value assignments
-        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
-        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
 
         # Constraints for rule 61
-        rule_61(solver, {'arg1_range': arg1_range})
+        rule_61(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_61(solver, {'arg1_range': arg1['range']}, neg)
+        rule_61(solver, {'arg1_value': arg1['value']}, neg)

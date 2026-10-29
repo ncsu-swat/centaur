@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if precision is float32 then preferred element type should match float32 (Rule 35)
+# contracting dimension count cannot exceed lhs tensor rank (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 38, v["arg2_value"] == 7, True)) if n else
-          If(v["arg1_value"] == 38, v["arg2_value"] == 7, True))
+    s.add(Not(v["arg2_length"] <= v["arg1_ndim"]) if n else
+          v["arg2_length"] <= v["arg1_ndim"])
 )
 
 def rule_35_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_35_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        arg2_value = Int('arg2_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 35
-        rule_35(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_35(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_35(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_35(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

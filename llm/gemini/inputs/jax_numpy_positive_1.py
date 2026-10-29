@@ -4,57 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def positive_inputs():
     list_of_inputs = []
 
-    # Input 1: Float32 array, 1D, mixed positive and negative values
-    x = np.array([-5.5, 4.0, 7.2, -9.5], dtype=np.float32)
+    # Input 1: 1D float32 array
+    x = np.array([-5.0, 4.0, 7.0, -9.5], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: Float64 array, 2D random
-    x = np.random.randn(3, 4).astype(np.float64)
+    # Input 2: 2D int32 array with mixed signs and zeros
+    x = np.array([[-10, 0, 5], [20, -3, -1]], dtype=np.int32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: Int32 array, 3D, mixed values
-    x = np.array([[[1, -2], [3, -4]], [[-5, 6], [-7, 8]]], dtype=np.int32)
+    # Input 3: 0D scalar float64 array
+    x = np.array(-42.5, dtype=np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: Int64 array, 1D
-    x = np.array([100000000, -200000000, 300000000], dtype=np.int64)
+    # Input 4: 3D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: Complex64 array, 1D
-    x = np.array([1-2j, -3+4j, 5-6j], dtype=np.complex64)
+    # Input 5: 1D int64 array
+    x = np.array([-10000000000, 0, 10000000000], dtype=np.int64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: Complex128 array, 2D
-    x = np.array([[1+1j, -2-2j], [3-3j, -4+4j]], dtype=np.complex128)
+    # Input 6: 2D float64 array
+    x = np.array([[1.5, -2.5], [-3.5, 4.5]], dtype=np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: Float16 array, 4D
-    x = np.random.randn(2, 2, 2, 2).astype(np.float16)
+    # Input 7: 4D int32 array
+    x = np.arange(-12, 12, dtype=np.int32).reshape(2, 2, 2, 3)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: Int16 array, 2D
-    x = np.array([[-10, 20], [-30, 40]], dtype=np.int16)
+    # Input 8: 1D float32 array with special values
+    x = np.array([np.inf, -np.inf, np.nan, 0.0, -0.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: Float32 array, 0D (scalar)
-    x = np.array(-3.14, dtype=np.float32)
+    # Input 9: Empty array
+    x = np.array([], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: Int8 array, 1D
-    x = np.array([-128, 0, 127], dtype=np.int8)
+    # Input 10: 5D float32 array
+    x = np.ones((1, 2, 1, 3, 1), dtype=np.float32) * -1.0
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 11: Float32 array, 3D
-    x = np.random.randn(2, 3, 2).astype(np.float32)
+    # Input 11: 2D int64 array
+    x = np.array([[-1, 2, -3], [4, -5, 6]], dtype=np.int64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.positive_1"] = positive_inputs()
 

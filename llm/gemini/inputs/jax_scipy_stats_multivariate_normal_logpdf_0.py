@@ -4,129 +4,146 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def generate_pd_matrix(d, dtype=np.float32):
-    A = np.random.randn(d, d).astype(dtype)
-    return np.dot(A, A.T) + np.eye(d).astype(dtype) * 0.1
 
-def logpdf_inputs():
+def multivariate_normal_logpdf_inputs():
     list_of_inputs = []
 
-    # Case 1: d=2, single point
-    x = np.array([0.5, -0.5], dtype=np.float32)
-    mean = np.array([0.0, 0.0], dtype=np.float32)
-    cov = generate_pd_matrix(2, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    def make_spd_cov(dim, dtype):
+        A = np.random.randn(dim, dim).astype(dtype)
+        return A @ A.T + np.eye(dim, dtype=dtype) * 0.5
 
-    # Case 2: d=2, batch of 5
+    np.random.seed(42)
+
+    # Input 1: 1D vector (dim=1), float32
+    x = np.array([0.5], dtype=np.float32)
+    mean = np.array([0.0], dtype=np.float32)
+    cov = np.array([[1.0]], dtype=np.float32)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
+
+    # Input 2: 1D vector (dim=2), float64, standard normal
+    x = np.array([1.0, -1.0], dtype=np.float64)
+    mean = np.array([0.0, 0.0], dtype=np.float64)
+    cov = np.eye(2, dtype=np.float64)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
+
+    # Input 3: 1D vector (dim=3) with non-zero mean and non-diagonal cov, float32
+    x = np.array([-1.2, 0.8, 2.3], dtype=np.float32)
+    mean = np.array([0.5, -0.5, 1.0], dtype=np.float32)
+    cov = make_spd_cov(3, np.float32)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
+
+    # Input 4: Batched x of shape (5, 2), float32
     x = np.random.randn(5, 2).astype(np.float32)
-    mean = np.array([1.0, -1.0], dtype=np.float32)
-    cov = generate_pd_matrix(2, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    mean = np.zeros(2, dtype=np.float32)
+    cov = make_spd_cov(2, np.float32)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
-    # Case 3: d=3, single point (float64)
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float64)
-    mean = np.array([0.0, 0.0, 0.0], dtype=np.float64)
-    cov = generate_pd_matrix(3, dtype=np.float64)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    # Input 5: Batched x of shape (10, 4), float64
+    x = np.random.randn(10, 4).astype(np.float64)
+    mean = np.array([1.0, -2.0, 0.5, -0.5], dtype=np.float64)
+    cov = make_spd_cov(4, np.float64)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
-    # Case 4: d=3, batch of 10
-    x = np.random.randn(10, 3).astype(np.float32)
-    mean = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-    cov = generate_pd_matrix(3, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    # Input 6: Multi-dimensional batch of shape (3, 4, 2), float32
+    x = np.random.randn(3, 4, 2).astype(np.float32)
+    mean = np.array([0.1, -0.2], dtype=np.float32)
+    cov = np.array([[2.0, 0.3], [0.3, 1.5]], dtype=np.float32)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
-    # Case 5: d=4, single point
-    x = np.random.randn(4).astype(np.float32)
-    mean = np.zeros(4, dtype=np.float32)
-    cov = generate_pd_matrix(4, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    # Input 7: Higher dimension (dim=6), single vector, float64
+    x = np.random.randn(6).astype(np.float64)
+    mean = np.random.randn(6).astype(np.float64)
+    cov = make_spd_cov(6, np.float64)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
-    # Case 6: d=4, batch of 3
-    x = np.random.randn(3, 4).astype(np.float32)
-    mean = np.ones(4, dtype=np.float32)
-    cov = generate_pd_matrix(4, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    # Input 8: Batch of 1 sample (1, 3), float32
+    x = np.array([[0.0, 1.0, -1.0]], dtype=np.float32)
+    mean = np.zeros(3, dtype=np.float32)
+    cov = np.eye(3, dtype=np.float32) * 2.0
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
-    # Case 7: d=5, single point (float64)
-    x = np.random.randn(5).astype(np.float64)
-    mean = np.zeros(5, dtype=np.float64)
-    cov = generate_pd_matrix(5, dtype=np.float64)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    # Input 9: Large batch (50, 2), float32
+    x = np.random.randn(50, 2).astype(np.float32)
+    mean = np.array([-1.0, 1.0], dtype=np.float32)
+    cov = make_spd_cov(2, np.float32)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
-    # Case 8: d=5, batch of 2 (float64)
-    x = np.random.randn(2, 5).astype(np.float64)
-    mean = np.array([0.1, 0.2, 0.3, 0.4, 0.5], dtype=np.float64)
-    cov = generate_pd_matrix(5, dtype=np.float64)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    # Input 10: 1D vector (dim=5) evaluated at distribution mean, float64
+    mean = np.array([0.5, -1.2, 3.4, -2.1, 0.0], dtype=np.float64)
+    x = mean.copy()
+    cov = make_spd_cov(5, np.float64)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
-    # Case 9: d=6, single point
-    x = np.random.randn(6).astype(np.float32)
-    mean = np.zeros(6, dtype=np.float32)
-    cov = generate_pd_matrix(6, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
-
-    # Case 10: d=6, batch of 15
-    x = np.random.randn(15, 6).astype(np.float32)
-    mean = np.ones(6, dtype=np.float32)
-    cov = generate_pd_matrix(6, dtype=np.float32)
-    list_of_inputs.append({
-        "x": x,
-        "mean": mean,
-        "cov": cov,
-        "allow_singular": None
-    })
+    # Input 11: Multi-dimensional batch (2, 3, 2, 2), float64
+    x = np.random.randn(2, 3, 2, 2).astype(np.float64)
+    mean = np.zeros(2, dtype=np.float64)
+    cov = np.eye(2, dtype=np.float64)
+    allow_singular = None
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"x": x, "mean": mean, "cov": cov, "allow_singular": allow_singular}
+        )
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.scipy.stats.multivariate_normal.logpdf"] = logpdf_inputs()
+
+generated_inputs["jax.scipy.stats.multivariate_normal.logpdf"] = (
+    multivariate_normal_logpdf_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

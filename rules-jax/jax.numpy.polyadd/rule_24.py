@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# data type of a2 is numeric (Rule 24)
+# input polynomial array coefficients have floating-point data type (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 10)) if n else
-          And(1 <= v["arg1_dtype"], v["arg1_dtype"] <= 10))
+    s.add(Not(And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8)) if n else
+          And(6 <= v["arg1_dtype"], v["arg1_dtype"] <= 8))
 )
 
 def rule_24_func(arg1, solver=None, neg=False):

@@ -4,135 +4,153 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_vecdot_inputs():
+
+def vecdot_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 vectors, default axis, default precision
-    x1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    x2 = np.array([4.0, 5.0, 6.0], dtype=np.float32)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": -1,
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D real float32 arrays
+    x1 = np.array([1.0, -2.0, 3.5], dtype=np.float32)
+    x2 = np.array([4.0, 5.0, -1.0], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": -1,
+            "precision": "default",
+            "preferred_element_type": np.dtype(np.float32),
+        }
+    )
 
-    # Input 2: 1D complex vectors, custom axis, high precision
-    x1 = np.array([1j, 2j], dtype=np.complex64)
-    x2 = np.array([3.0, 4.0], dtype=np.complex64)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": 0,
-        "precision": "high",
-        "preferred_element_type": np.dtype(np.complex64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D complex arrays along axis 0
+    x1 = np.array([1.0 + 2.0j, -3.0 + 0.5j, 4.0 - 1.0j], dtype=np.complex64)
+    x2 = np.array([2.0 - 1.0j, 1.0 + 1.0j, -2.0 + 3.0j], dtype=np.complex64)
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": 0,
+            "precision": "high",
+            "preferred_element_type": np.dtype(np.complex64),
+        }
+    )
 
-    # Input 3: 2D float64 arrays, axis -1, highest precision
-    x1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    x2 = np.array([[5.0, 6.0], [7.0, 8.0]], dtype=np.float64)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": -1,
-        "precision": "highest",
-        "preferred_element_type": np.dtype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D arrays, axis=-1, float64
+    x1 = np.arange(12, dtype=np.float64).reshape(3, 4) - 5.0
+    x2 = np.ones((3, 4), dtype=np.float64) * 2.0
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": -1,
+            "precision": "highest",
+            "preferred_element_type": np.dtype(np.float64),
+        }
+    )
 
-    # Input 4: 2D integer arrays, axis 0, default precision
-    x1 = np.array([[1, 2], [3, 4]], dtype=np.int32)
-    x2 = np.array([[5, 6], [7, 8]], dtype=np.int32)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": 0,
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 2D arrays, axis=0
+    x1 = np.array([[1.0, -2.0], [3.0, 4.0], [-5.0, 6.0]], dtype=np.float32)
+    x2 = np.array([[0.5, 1.5], [-1.0, 2.0], [3.0, -0.5]], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": 0,
+            "precision": "default",
+            "preferred_element_type": np.dtype(np.float32),
+        }
+    )
 
-    # Input 5: 3D random float32 arrays, axis 1, high precision
-    x1 = np.random.randn(2, 3, 4).astype(np.float32)
-    x2 = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": 1,
-        "precision": "high",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D arrays with broadcastable dimensions
+    x1 = np.ones((2, 1, 5), dtype=np.float32) * -1.5
+    x2 = np.ones((2, 3, 5), dtype=np.float32) * 2.5
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": -1,
+            "precision": "high",
+            "preferred_element_type": np.dtype(np.float32),
+        }
+    )
 
-    # Input 6: 4D float64 arrays, axis 2, highest precision
-    x1 = np.random.randn(2, 2, 3, 3).astype(np.float64)
-    x2 = np.random.randn(2, 2, 3, 3).astype(np.float64)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": 2,
-        "precision": "highest",
-        "preferred_element_type": np.dtype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 3D arrays, axis=1
+    x1 = np.arange(24, dtype=np.float32).reshape(2, 4, 3) - 10.0
+    x2 = np.arange(24, dtype=np.float32).reshape(2, 4, 3) * 0.1
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": 1,
+            "precision": "highest",
+            "preferred_element_type": np.dtype(np.float64),
+        }
+    )
 
-    # Input 7: 1D vectors with negative values
-    x1 = np.array([-1.0, -2.0, -3.0], dtype=np.float32)
-    x2 = np.array([-4.0, 5.0, -6.0], dtype=np.float32)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": 0,
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D arrays, axis=-2
+    x1 = np.ones((2, 3, 4, 2), dtype=np.float32)
+    x2 = np.full((2, 3, 4, 2), -0.5, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": -2,
+            "precision": "fastest",
+            "preferred_element_type": np.dtype(np.float32),
+        }
+    )
 
-    # Input 8: 2D arrays with broadcasting, axis -1, high precision
-    x1 = np.random.randn(2, 3).astype(np.float32)
-    x2 = np.random.randn(1, 3).astype(np.float32)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": -1,
-        "precision": "high",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Complex 2D arrays, precision to complex128 accumulation
+    x1 = np.array(
+        [[1.0 - 1.0j, 2.0 + 3.0j], [-4.0 + 0.0j, 5.0 - 2.0j]],
+        dtype=np.complex128,
+    )
+    x2 = np.array(
+        [[0.0 + 2.0j, -1.0 - 1.0j], [3.0 + 1.0j, -2.0 - 2.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": -1,
+            "precision": "high",
+            "preferred_element_type": np.dtype(np.complex128),
+        }
+    )
 
-    # Input 9: 3D float64 arrays, axis -2, highest precision
-    x1 = np.random.randn(2, 4, 3).astype(np.float64)
-    x2 = np.random.randn(2, 4, 3).astype(np.float64)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": -2,
-        "precision": "highest",
-        "preferred_element_type": np.dtype(np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D broadcasting against 1D vector along axis=-1
+    x1 = np.arange(18, dtype=np.float32).reshape(2, 3, 3)
+    x2 = np.array([1.0, 0.0, -1.0], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": -1,
+            "precision": "default",
+            "preferred_element_type": np.dtype(np.float32),
+        }
+    )
 
-    # Input 10: 1D integer arrays returning a float32 accumulator type
-    x1 = np.array([1, 2, 3], dtype=np.int32)
-    x2 = np.array([4, 5, 6], dtype=np.int32)
-    input_dict = {
-        "x1": x1,
-        "x2": x2,
-        "axis": 0,
-        "precision": "default",
-        "preferred_element_type": np.dtype(np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D arrays along axis=-3
+    x1 = np.ones((4, 2, 2), dtype=np.float32) * 3.0
+    x2 = np.ones((4, 2, 2), dtype=np.float32) * -2.0
+    list_of_inputs.append(
+        {
+            "x1": x1,
+            "x2": x2,
+            "axis": -3,
+            "precision": "highest",
+            "preferred_element_type": np.dtype(np.float32),
+        }
+    )
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.vecdot_1"] = jax_numpy_vecdot_inputs()
+
+generated_inputs["jax.numpy.vecdot_1"] = vecdot_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

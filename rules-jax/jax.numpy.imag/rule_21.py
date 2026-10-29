@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The number of dimensions of the input tensor must be non-negative and within a reasonable limit (Rule 21)
+# input tensor is a 0-dimensional scalar array (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 8)) if n else
-          And(v["arg1_ndim"] >= 0, v["arg1_ndim"] <= 8))
+    s.add(Not(v["arg1_ndim"] == 0) if n else
+          v["arg1_ndim"] == 0)
 )
 
 def rule_21_func(arg1, solver=None, neg=False):

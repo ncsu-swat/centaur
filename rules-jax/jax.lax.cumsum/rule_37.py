@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis parameter must be a valid dimension index of the operand tensor (Rule 37)
+# for a 3D tensor, axis must be within range -3 to 2 (Rule 37)
 
 rule_37 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(v["arg2_value"] >= 0, v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True)) if n else
+          If(v["arg1_ndim"] == 3, And(v["arg2_value"] >= -3, v["arg2_value"] <= 2), True))
 )
 
 def rule_37_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# n must be a positive power of 2 (Rule 18)
+# dtype must be a standard default integer type (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(Or(Or(Or(Or(Or(Or(Or(Or(v["arg1_value"] == 1, v["arg1_value"] == 2), v["arg1_value"] == 4), v["arg1_value"] == 8), v["arg1_value"] == 16), v["arg1_value"] == 32), v["arg1_value"] == 64), v["arg1_value"] == 128), v["arg1_value"] == 256), v["arg1_value"] == 512), v["arg1_value"] == 1024), (And(v["arg1_value"] > 1024, v["arg1_value"] % 2 == 0)))) if n else
-          Or(Or(Or(Or(Or(Or(Or(Or(Or(Or(Or(v["arg1_value"] == 1, v["arg1_value"] == 2), v["arg1_value"] == 4), v["arg1_value"] == 8), v["arg1_value"] == 16), v["arg1_value"] == 32), v["arg1_value"] == 64), v["arg1_value"] == 128), v["arg1_value"] == 256), v["arg1_value"] == 512), v["arg1_value"] == 1024), (And(v["arg1_value"] > 1024, v["arg1_value"] % 2 == 0))))
+    s.add(Not(Or(v["arg1_value"] == 3, v["arg1_value"] == 4)) if n else
+          Or(v["arg1_value"] == 3, v["arg1_value"] == 4))
 )
 
 def rule_18_func(arg1, solver=None, neg=False):
@@ -19,7 +19,7 @@ def rule_18_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
 
         # Variable declarations
@@ -27,7 +27,7 @@ def rule_18_func(arg1, solver=None, neg=False):
         arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 18
         rule_18(solver, {'arg1_value': arg1_value})

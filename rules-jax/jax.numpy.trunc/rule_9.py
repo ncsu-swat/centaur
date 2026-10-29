@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input dtype must represent a valid numeric type (Rule 9)
+# scalar float input must lie within supported floating-point range (Rule 9)
 
 rule_9 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] >= 0, v["arg1_value"] <= 10)) if n else
-          And(v["arg1_value"] >= 0, v["arg1_value"] <= 10))
+    s.add(Not(And(v["arg1_value"] >= -3.4e+38, v["arg1_value"] <= 3.4e+38)) if n else
+          And(v["arg1_value"] >= -3.4e+38, v["arg1_value"] <= 3.4e+38))
 )
 
 def rule_9_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_9_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_value = Real('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_value == arg1)
 
         # Constraints for rule 9
         rule_9(solver, {'arg1_value': arg1_value})

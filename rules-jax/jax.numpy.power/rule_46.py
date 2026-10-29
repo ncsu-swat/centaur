@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# non-negative power for integer base and exponent (Rule 46)
+# non-positive scalar base requires strictly positive float exponent to avoid division by zero or NaN (Rule 46)
 
 rule_46 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] == 0, v["arg2_value"] > 0, v["arg2_value"] >= 0)) if n else
-          If(v["arg1_value"] == 0, v["arg2_value"] > 0, v["arg2_value"] >= 0))
+    s.add(Not(If(v["arg1_value"] <= 0, v["arg2_value"] > 0, True)) if n else
+          If(v["arg1_value"] <= 0, v["arg2_value"] > 0, True))
 )
 
 def rule_46_func(arg1, arg2, solver=None, neg=False):
@@ -20,19 +20,17 @@ def rule_46_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
             return False
-        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
+        if not isinstance(arg2, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
-        arg2_value = Int('arg2_value')
+        arg2_value = Real('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
-        solver.add(arg2_value == int(arg2))
+        solver.add(arg2_value == arg2)
 
         # Constraints for rule 46
         rule_46(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})

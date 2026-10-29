@@ -4,50 +4,54 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def erfc_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar 0.0 (float32)
-    input_dict = {"x": np.array(0.0, dtype=np.float32)}
+    # Input 1: zero as float
+    input_dict = {"x": float(0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar negative integer value (float64)
-    input_dict = {"x": np.array(-5.0, dtype=np.float64)}
+    # Input 2: small positive value
+    input_dict = {"x": float(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array of positive integer values (float32)
-    input_dict = {"x": np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)}
+    # Input 3: small negative value
+    input_dict = {"x": float(-1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array of mixed integer values (float32)
-    input_dict = {"x": np.array([-10.0, 0.0, 10.0], dtype=np.float32)}
+    # Input 4: positive value
+    input_dict = {"x": float(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D array of integer values (float32)
-    input_dict = {"x": np.array([[1.0, -2.0], [-3.0, 4.0]], dtype=np.float32)}
+    # Input 5: negative value
+    input_dict = {"x": float(-2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array with larger integer values (float64)
-    input_dict = {"x": np.array([[-100.0, 100.0], [0.0, 50.0]], dtype=np.float64)}
+    # Input 6: medium positive value
+    input_dict = {"x": float(5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D array (float32)
-    input_dict = {"x": np.array([[[1.0, -1.0], [2.0, -2.0]]], dtype=np.float32)}
+    # Input 7: medium negative value
+    input_dict = {"x": float(-5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D array (float32)
-    input_dict = {"x": np.array([[[[-5.0], [5.0]]]], dtype=np.float32)}
+    # Input 8: larger positive value
+    input_dict = {"x": float(10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large positive and negative integer values (float64)
-    input_dict = {"x": np.array([1000.0, -1000.0], dtype=np.float64)}
+    # Input 9: larger negative value
+    input_dict = {"x": float(-10)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D array with zero (float32)
-    input_dict = {"x": np.array([0.0, 0.0, 0.0], dtype=np.float32)}
+    # Input 10: large positive value where erfc underflows to 0
+    input_dict = {"x": float(25)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: large negative value where erfc saturates to 2
+    input_dict = {"x": float(-25)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

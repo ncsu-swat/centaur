@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logaddexp2_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard python floats
-    input_dict = {"x1": 1.5, "x2": 2.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative python floats
-    input_dict = {"x1": -3.0, "x2": -4.0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zeros
+    # Input 1: Zero values
     input_dict = {"x1": 0.0, "x2": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Large positive floats
-    input_dict = {"x1": 1000.0, "x2": 1000.0}
+    # Input 2: Positive floats
+    input_dict = {"x1": 1.0, "x2": 2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Very small floats (large negative)
+    # Input 3: Negative floats
+    input_dict = {"x1": -1.0, "x2": -2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: Mixed positive and negative floats
+    input_dict = {"x1": 3.5, "x2": -2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Large positive floats (avoiding overflow)
+    input_dict = {"x1": 1000.0, "x2": 999.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Large negative floats (avoiding underflow)
     input_dict = {"x1": -1000.0, "x2": -1000.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Mixed positive and negative floats
-    input_dict = {"x1": 5.0, "x2": -5.0}
+    # Input 7: Small magnitude floats
+    input_dict = {"x1": 1e-7, "x2": 2e-7}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Numpy float32 scalars
-    input_dict = {"x1": np.float32(1.23), "x2": np.float32(4.56)}
+    # Input 8: Distinct fractional values
+    input_dict = {"x1": 0.125, "x2": 0.875}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Numpy float64 scalars
-    input_dict = {"x1": np.float64(-0.123), "x2": np.float64(0.456)}
+    # Input 9: Widely separated values
+    input_dict = {"x1": 100.0, "x2": -100.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Inf and -Inf
-    input_dict = {"x1": np.float64(np.inf), "x2": np.float64(-np.inf)}
+    # Input 10: Non-integer mathematical constants as floats
+    input_dict = {"x1": 3.141592653589793, "x2": 2.718281828459045}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Very small magnitude floats
-    input_dict = {"x1": 1e-15, "x2": 2e-15}
+    # Input 11: Negative infinity edge case
+    input_dict = {"x1": float("-inf"), "x2": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.logaddexp2_2"] = logaddexp2_inputs()
 

@@ -6,67 +6,57 @@ generated_inputs = dict()
 
 import copy
 import numpy as np
-import jax.numpy as jnp
-import jax._src.numpy.ufuncs as jax_ufuncs
-import jax._src.numpy.util as jax_util
 
-# Monkeypatch both references to promote_args_inexact
-_orig_ufuncs_promote = jax_ufuncs.promote_args_inexact
-def patched_ufuncs_promote(fun_name, *args):
-    clean_args = [jnp.asarray(arg) if isinstance(arg, tuple) else arg for arg in args]
-    return _orig_ufuncs_promote(fun_name, *clean_args)
-jax_ufuncs.promote_args_inexact = patched_ufuncs_promote
-
-_orig_util_promote = jax_util.promote_args_inexact
-def patched_util_promote(fun_name, *args):
-    clean_args = [jnp.asarray(arg) if isinstance(arg, tuple) else arg for arg in args]
-    return _orig_util_promote(fun_name, *clean_args)
-jax_util.promote_args_inexact = patched_util_promote
 
 def cbrt_inputs():
     list_of_inputs = []
 
-    # Case 1: Simple 1D tuple of positive ints
-    input_dict = {"x": (1, 8, 27, 64, 125)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D float32 array
+    x = np.array([1.0, 8.0, 27.0, 64.0, 125.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 2: 1D tuple of negative ints
-    input_dict = {"x": (-1, -8, -27, -64, -125)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D float64 array with negative values
+    x = np.array([-1.0, -8.0, -27.0, -64.0, -125.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 3: 1D tuple of positive floats
-    input_dict = {"x": (1.0, 8.0, 27.0, 64.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array of integers
+    x = np.array([[216, 125, 64], [-27, -8, -1]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 4: 1D tuple of negative floats
-    input_dict = {"x": (-1.0, -8.0, -27.0, -64.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D array including zero and positive/negative values
+    x = np.array([-27.0, -8.0, -1.0, 0.0, 1.0, 8.0, 27.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 5: 1D tuple containing zero and positive/negative floats
-    input_dict = {"x": (-8.0, 0.0, 27.0, -0.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D array with single element
+    x = np.array([1000.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 6: Nested 2D tuple (2x2) of ints
-    input_dict = {"x": ((1, 8), (27, 64))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 1D array of float64 negative values
+    x = np.array([-343.0, -512.0, -729.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 7: Nested 2D tuple (2x3) of floats
-    input_dict = {"x": ((1.0, -8.0, 27.0), (-64.0, 125.0, -216.0))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D array of float32
+    x = np.arange(1, 28, dtype=np.float32).reshape((3, 3, 3))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 8: Single element tuple
-    input_dict = {"x": (1000.0,)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D array with large and small magnitudes
+    x = np.array([1e9, -1e9, 1e-12, -1e-12], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 9: Nested 3D tuple
-    input_dict = {"x": (((1, 8), (27, 64)), ((125, 216), (343, 512)))}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array with boolean values
+    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Case 10: Larger 1D tuple of floats
-    input_dict = {"x": (0.001, 0.008, 0.027, 0.064, 0.125, 0.216, 0.343, 0.512, 0.729, 1.0)}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D array with special float values (inf, -inf, nan)
+    x = np.array([np.inf, -np.inf, np.nan, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 4D array of float32
+    x = np.linspace(-100, 100, 16, dtype=np.float32).reshape((2, 2, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.cbrt_5"] = cbrt_inputs()
 

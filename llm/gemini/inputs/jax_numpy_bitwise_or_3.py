@@ -4,63 +4,73 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bitwise_or_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int32 array, y=True
+    # Input 1: 1D int32 array with True
     x = np.array([0, 1, 2, 3], dtype=np.int32)
     y = True
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: 2D int32 array, y=False
-    x = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    # Input 2: 1D int32 array with negative values and False
+    x = np.array([-4, -3, -2, -1, 0, 1], dtype=np.int32)
     y = False
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: 3D int64 array, y=True
-    x = np.arange(8, dtype=np.int64).reshape((2, 2, 2))
+    # Input 3: 2D boolean array with True
+    x = np.array([[True, False], [False, True]], dtype=bool)
     y = True
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: 1D bool array, y=False
-    x = np.array([True, False, True], dtype=np.bool_)
+    # Input 4: 2D boolean array with False
+    x = np.array([[True, False, True], [False, False, True]], dtype=bool)
     y = False
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: 2D bool array, y=True
-    x = np.array([[True, False], [False, True]], dtype=np.bool_)
+    # Input 5: 3D int32 array with True
+    x = np.arange(24, dtype=np.int32).reshape((2, 3, 4))
     y = True
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: 1D negative int32 array, y=True
-    x = np.array([-1, -2, -3, -4], dtype=np.int32)
+    # Input 6: 1D int64 array with large values and True
+    x = np.array([1000000000, -2000000000, 3000000000], dtype=np.int64)
     y = True
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: 2D negative int64 array, y=False
-    x = np.array([[-10, -20], [-30, -40]], dtype=np.int64)
+    # Input 7: 0D scalar int32 array with False
+    x = np.array(42, dtype=np.int32)
     y = False
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 4D int32 array, y=True
-    x = np.ones((2, 2, 2, 2), dtype=np.int32)
+    # Input 8: 4D int32 array with True
+    x = np.arange(-8, 8, dtype=np.int32).reshape((2, 2, 2, 2))
     y = True
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: 0D int32 array, y=False
-    x = np.array(5, dtype=np.int32)
+    # Input 9: 2D int64 array with False
+    x = np.array([[0, 255], [65535, 16777215]], dtype=np.int64)
     y = False
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 1D int64 array, y=True
-    x = np.array([1024, 2048, 4096], dtype=np.int64)
+    # Input 10: 3D boolean array with False
+    x = np.array(
+        [[[True, False], [False, False]], [[True, True], [False, True]]],
+        dtype=bool,
+    )
+    y = False
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 1D bool array with True
+    x = np.array([True, False, False, True], dtype=bool)
     y = True
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.bitwise_or_3"] = bitwise_or_inputs()
 

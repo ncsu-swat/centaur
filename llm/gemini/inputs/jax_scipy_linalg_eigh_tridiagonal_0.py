@@ -4,153 +4,165 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def eigh_tridiagonal_inputs():
     list_of_inputs = []
 
-    # Input 1: Small matrix, float32, all eigenvalues
+    # Input 1: Basic float32, select all
+    n = 4
     d = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
     e = np.array([1.0, 1.0, 1.0], dtype=np.float32)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'a',
-        'select_range': (0.0, 0.0),
-        'tol': 1e-12,
-        'key': np.array([0, 0], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "a",
+        "select_range": (0, n - 1),
+        "tol": 1e-5,
+        "key": np.array([0, 0], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Larger float64 matrix, all eigenvalues
-    d = np.random.randn(10).astype(np.float64)
-    e = np.random.randn(9).astype(np.float64)
+    # Input 2: float64, select index subset
+    n = 5
+    d = np.array([2.5, -1.0, 4.2, -3.1, 0.5], dtype=np.float64)
+    e = np.array([0.5, -0.2, 1.1, -0.4], dtype=np.float64)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'a',
-        'select_range': (0.0, 0.0),
-        'tol': 0.0,
-        'key': np.array([1, 2], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "i",
+        "select_range": (0, 2),
+        "tol": 1e-6,
+        "key": np.array([1, 2], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Select index range, float32
-    d = np.random.randn(5).astype(np.float32)
-    e = np.random.randn(4).astype(np.float32)
+    # Input 3: Small 2x2 matrix, float32, zero tolerance
+    n = 2
+    d = np.array([-2.0, 3.0], dtype=np.float32)
+    e = np.array([1.5], dtype=np.float32)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'i',
-        'select_range': (0.0, 2.0),
-        'tol': 1e-6,
-        'key': np.array([42, 42], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "a",
+        "select_range": (0, 1),
+        "tol": 0.0,
+        "key": np.array([42, 42], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative values, N=8, float32
-    d = np.array([-1.0, -2.0, -3.0, -4.0, -5.0, -6.0, -7.0, -8.0], dtype=np.float32)
-    e = np.array([-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0], dtype=np.float32)
+    # Input 4: float32, select single eigenvalue (smallest)
+    n = 6
+    d = np.linspace(-5.0, 5.0, n, dtype=np.float32)
+    e = np.ones(n - 1, dtype=np.float32) * 0.5
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'a',
-        'select_range': (0.0, 0.0),
-        'tol': 1e-8,
-        'key': np.array([10, 20], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "i",
+        "select_range": (0, 0),
+        "tol": 1e-5,
+        "key": np.array([10, 20], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: N=100, float64, select index range
-    d = np.random.randn(100).astype(np.float64)
-    e = np.random.randn(99).astype(np.float64)
+    # Input 5: float64, select single eigenvalue (largest)
+    n = 5
+    d = np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float64)
+    e = np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float64)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'i',
-        'select_range': (10.0, 20.0),
-        'tol': 1e-15,
-        'key': np.array([100, 200], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "i",
+        "select_range": (4, 4),
+        "tol": 1e-8,
+        "key": np.array([99, 100], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Minimal size N=3, float32
-    d = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    e = np.array([0.5, 0.5], dtype=np.float32)
+    # Input 6: Disconnected tridiagonal (zero off-diagonals)
+    n = 4
+    d = np.array([1.0, 4.0, 2.0, 3.0], dtype=np.float32)
+    e = np.zeros(n - 1, dtype=np.float32)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'a',
-        'select_range': (0.0, 0.0),
-        'tol': 1e-5,
-        'key': np.array([9, 9], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "a",
+        "select_range": (0, 3),
+        "tol": 1e-4,
+        "key": np.array([7, 13], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: N=2, float32, select index range
-    d = np.array([1.0, 2.0], dtype=np.float32)
-    e = np.array([0.5], dtype=np.float32)
+    # Input 7: Negative diagonal elements
+    n = 7
+    d = -np.arange(1, n + 1, dtype=np.float64)
+    e = np.full(n - 1, -0.5, dtype=np.float64)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'i',
-        'select_range': (0.0, 1.0),
-        'tol': 1e-7,
-        'key': np.array([0, 1], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "i",
+        "select_range": (1, 4),
+        "tol": 1e-7,
+        "key": np.array([123, 456], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: N=15, float64, select index range
-    d = np.random.randn(15).astype(np.float64)
-    e = np.random.randn(14).astype(np.float64)
+    # Input 8: Larger matrix, float32, middle eigenvalues
+    n = 10
+    d = np.sin(np.arange(n, dtype=np.float32))
+    e = np.cos(np.arange(n - 1, dtype=np.float32))
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'i',
-        'select_range': (5.0, 10.0),
-        'tol': 1e-10,
-        'key': np.array([5, 5], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "i",
+        "select_range": (3, 7),
+        "tol": 1e-5,
+        "key": np.array([2023, 2024], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large tolerance value, float32
-    d = np.random.randn(6).astype(np.float32)
-    e = np.random.randn(5).astype(np.float32)
+    # Input 9: Large values, float64, select all
+    n = 3
+    d = np.array([1e4, -2e4, 3e4], dtype=np.float64)
+    e = np.array([1e2, -1e2], dtype=np.float64)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'a',
-        'select_range': (0.0, 0.0),
-        'tol': 1.0,
-        'key': np.array([123, 456], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "a",
+        "select_range": (0, 2),
+        "tol": 1e-3,
+        "key": np.array([5, 5], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Zero off-diagonals (diagonal matrix), float32
-    d = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0], dtype=np.float32)
-    e = np.zeros(6, dtype=np.float32)
+    # Input 10: Constant diagonal and off-diagonal (Toeplitz-like)
+    n = 8
+    d = np.full(n, 2.0, dtype=np.float32)
+    e = np.full(n - 1, -1.0, dtype=np.float32)
     input_dict = {
-        'd': d,
-        'e': e,
-        'eigvals_only': True,
-        'select': 'i',
-        'select_range': (1.0, 4.0),
-        'tol': 1e-9,
-        'key': np.array([7, 7], dtype=np.int32)
+        "d": d,
+        "e": e,
+        "eigvals_only": True,
+        "select": "i",
+        "select_range": (2, 5),
+        "tol": 1e-6,
+        "key": np.array([314, 159], dtype=np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.linalg.eigh_tridiagonal"] = eigh_tridiagonal_inputs()
 

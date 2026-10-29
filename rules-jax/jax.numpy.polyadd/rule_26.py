@@ -7,32 +7,39 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the number of dimensions of a1 should not exceed 6 (Rule 26)
+# both polynomial arrays must have non-empty coefficient lists along dimension 0 (Rule 26)
 
 rule_26 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_ndim"] <= 6) if n else
-          v["arg1_ndim"] <= 6)
+    s.add(Not(And(Select(v["arg1_shape"], 0) > 0, Select(v["arg2_shape"], 0) > 0)) if n else
+          And(Select(v["arg1_shape"], 0) > 0, Select(v["arg2_shape"], 0) > 0))
 )
 
-def rule_26_func(arg1, solver=None, neg=False):
+def rule_26_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not isinstance(arg2, np.ndarray):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 26
-        rule_26(solver, {'arg1_ndim': arg1_ndim})
+        rule_26(solver, {'arg1_shape': arg1_shape, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_26(solver, {'arg1_ndim': arg1['ndim']}, neg)
+        rule_26(solver, {'arg1_shape': arg1['shape'], 'arg2_shape': arg2['shape']}, neg)

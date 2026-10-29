@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the input tensor must have a valid numeric or boolean dtype and cannot be a string (Rule 41)
+# dtype must correspond to standard floating-point or complex types (Rule 41)
 
 rule_41 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10)) if n else
-          And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 10))
+    s.add(Not(Or((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), (And(9 <= v["arg1_value"], v["arg1_value"] <= 10)))) if n else
+          Or((And(6 <= v["arg1_value"], v["arg1_value"] <= 8)), (And(9 <= v["arg1_value"], v["arg1_value"] <= 10))))
 )
 
 def rule_41_func(arg1, solver=None, neg=False):
@@ -19,20 +19,20 @@ def rule_41_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 41
-        rule_41(solver, {'arg1_dtype': arg1_dtype})
+        rule_41(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_41(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_41(solver, {'arg1_value': arg1['value']}, neg)

@@ -4,133 +4,181 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 import jax
+import numpy as np
 
-# Monkeypatch jax.lax.Precision to support comparison operators for numpy's min/max
-try:
-    jax.lax.Precision.__lt__ = lambda self, other: self.value < other.value
-    jax.lax.Precision.__gt__ = lambda self, other: self.value > other.value
-    jax.lax.Precision.__le__ = lambda self, other: self.value <= other.value
-    jax.lax.Precision.__ge__ = lambda self, other: self.value >= other.value
-except Exception:
-    pass
+
+class PrecisionTuple(tuple):
+    def __array__(self, *args, **kwargs):
+        return np.array([0, 0], dtype=np.int32)
+
 
 def dot_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D vectors with default precision
-    a = np.random.randn(5).astype(np.float32)
-    b = np.random.randn(5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D vectors with default precision and float32 dtype
+    a = np.array([1.0, -2.0, 3.5], dtype=np.float32)
+    b = np.array([-4.0, 5.0, 6.0], dtype=np.float32)
+    precision = PrecisionTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
+    preferred_element_type = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 2: 2D matrices with high precision
-    a = np.random.randn(4, 3).astype(np.float32)
-    b = np.random.randn(3, 5).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D matrices with high precision and float64 dtype
+    a = np.random.randn(3, 4).astype(np.float64)
+    b = np.random.randn(4, 5).astype(np.float64)
+    precision = PrecisionTuple((jax.lax.Precision.HIGH, jax.lax.Precision.HIGH))
+    preferred_element_type = np.dtype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 3: float64 matrices with highest precision
-    a = np.random.randn(3, 2).astype(np.float64)
-    b = np.random.randn(2, 4).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST),
-        "preferred_element_type": np.float64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D matrix and 1D vector with highest precision
+    a = np.random.randn(5, 6).astype(np.float32)
+    b = np.random.randn(6).astype(np.float32)
+    precision = PrecisionTuple((jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST))
+    preferred_element_type = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 4: Integer matrices
-    a = np.random.randint(-10, 10, size=(5, 5)).astype(np.int32)
-    b = np.random.randint(-10, 10, size=(5, 5)).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 1D vector and 2D matrix
+    a = np.random.randn(4).astype(np.float32)
+    b = np.random.randn(4, 3).astype(np.float32)
+    precision = PrecisionTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.HIGH))
+    preferred_element_type = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 5: 3D tensor and 1D vector
+    # Input 5: 3D tensor and 2D matrix
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    b = np.random.randn(4, 5).astype(np.float32)
+    precision = PrecisionTuple((jax.lax.Precision.HIGH, jax.lax.Precision.DEFAULT))
+    preferred_element_type = np.dtype(np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
+
+    # Input 6: 3D tensor and 1D vector
     a = np.random.randn(2, 3, 4).astype(np.float32)
     b = np.random.randn(4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.HIGH),
-        "preferred_element_type": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    precision = PrecisionTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
+    preferred_element_type = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 6: 1D vector and 2D matrix
-    a = np.random.randn(3).astype(np.float32)
-    b = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.HIGH),
-        "preferred_element_type": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 3D tensor and 3D tensor
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    b = np.random.randn(5, 4, 6).astype(np.float32)
+    precision = PrecisionTuple((jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGH))
+    preferred_element_type = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 7: Complex matrices
-    a = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
-    b = (np.random.randn(2, 2) + 1j * np.random.randn(2, 2)).astype(np.complex64)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.complex64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Integer arrays with int32 accumulation
+    a = np.random.randint(-10, 10, size=(4, 5), dtype=np.int32)
+    b = np.random.randint(-10, 10, size=(5, 2), dtype=np.int32)
+    precision = PrecisionTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
+    preferred_element_type = np.dtype(np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 8: Mixed precision settings
-    a = np.random.randn(2, 3).astype(np.float32)
-    b = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.HIGHEST, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 0D scalar arrays
+    a = np.array(3.0, dtype=np.float32)
+    b = np.random.randn(2, 3).astype(np.float32)
+    precision = PrecisionTuple((jax.lax.Precision.HIGH, jax.lax.Precision.HIGHEST))
+    preferred_element_type = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
-    # Input 9: Large dimensions
-    a = np.random.randn(10, 20).astype(np.float64)
-    b = np.random.randn(20, 10).astype(np.float64)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.HIGH, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.float64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Binary-like integer matrices
-    a = np.random.randint(0, 2, size=(3, 3)).astype(np.int32)
-    b = np.random.randint(0, 2, size=(3, 3)).astype(np.int32)
-    input_dict = {
-        "a": a,
-        "b": b,
-        "precision": (jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT),
-        "preferred_element_type": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 4D tensor with 2D matrix
+    a = np.random.randn(2, 1, 3, 5).astype(np.float32)
+    b = np.random.randn(5, 4).astype(np.float32)
+    precision = PrecisionTuple((jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST))
+    preferred_element_type = np.dtype(np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "b": b,
+                "precision": precision,
+                "preferred_element_type": preferred_element_type,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.dot_2"] = dot_inputs()
 

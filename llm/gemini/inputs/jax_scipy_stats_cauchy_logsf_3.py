@@ -5,58 +5,93 @@ from generator.input_generators import get_abstract_input
 generated_inputs = dict()
 
 import copy
-import numpy as np
 
-
-def jax_scipy_stats_cauchy_logsf_inputs():
+def cauchy_logsf_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard Cauchy, x=0
-    input_dict = {"x": 0.0, "loc": 0.0, "scale": 1.0}
+    # Input 1: Standard Cauchy evaluation at 0.0
+    input_dict = {
+        "x": 0.0,
+        "loc": 0.0,
+        "scale": 1.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard Cauchy, positive x
-    input_dict = {"x": 1.5, "loc": 0.0, "scale": 1.0}
+    # Input 2: Positive x with default scale
+    input_dict = {
+        "x": 1.5,
+        "loc": 0.0,
+        "scale": 1.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Standard Cauchy, negative x
-    input_dict = {"x": -1.5, "loc": 0.0, "scale": 1.0}
+    # Input 3: Negative x
+    input_dict = {
+        "x": -2.5,
+        "loc": 0.0,
+        "scale": 1.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Shifted and scaled, positive x
-    input_dict = {"x": 10.0, "loc": 2.0, "scale": 0.5}
+    # Input 4: Shifted location
+    input_dict = {
+        "x": 3.0,
+        "loc": 2.0,
+        "scale": 0.5
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Shifted and scaled, negative x
-    input_dict = {"x": -5.0, "loc": -1.0, "scale": 2.0}
+    # Input 5: Negative location and larger scale
+    input_dict = {
+        "x": -1.0,
+        "loc": -3.5,
+        "scale": 4.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large scale
-    input_dict = {"x": 0.0, "loc": 0.0, "scale": 10.0}
+    # Input 6: Large positive x (tail region)
+    input_dict = {
+        "x": 100.0,
+        "loc": 0.0,
+        "scale": 1.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small scale, positive offset
-    input_dict = {"x": 100.0, "loc": 50.0, "scale": 5.0}
+    # Input 7: Large negative x
+    input_dict = {
+        "x": -100.0,
+        "loc": 0.0,
+        "scale": 2.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Standard scale, large negative x
-    input_dict = {"x": -100.0, "loc": 0.0, "scale": 1.0}
+    # Input 8: Very small scale parameter
+    input_dict = {
+        "x": 0.01,
+        "loc": 0.0,
+        "scale": 0.05
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Small scale, x equal to loc
-    input_dict = {"x": 0.5, "loc": 0.5, "scale": 0.1}
+    # Input 9: Non-zero location, x equal to loc
+    input_dict = {
+        "x": 5.25,
+        "loc": 5.25,
+        "scale": 10.0
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: General values
-    input_dict = {"x": -0.2, "loc": 1.2, "scale": 3.5}
+    # Input 10: Mixed positive values
+    input_dict = {
+        "x": 12.34,
+        "loc": 7.89,
+        "scale": 3.14
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-
-generated_inputs["jax.scipy.stats.cauchy.logsf_3"] = (
-    jax_scipy_stats_cauchy_logsf_inputs()
-)
+generated_inputs["jax.scipy.stats.cauchy.logsf_3"] = cauchy_logsf_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -4,57 +4,35 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def erf_inv_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar representation of True (1.0) as float32
-    x = np.array(True, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # erf_inv accepts floating-point values in the domain (-1, 1)
+    values = [
+        0.0,
+        0.5,
+        -0.5,
+        0.25,
+        -0.25,
+        0.75,
+        -0.75,
+        np.float32(0.1),
+        np.float32(-0.1),
+        np.float64(0.8),
+        np.float64(-0.8),
+        np.float32(0.6),
+    ]
 
-    # Input 2: Scalar representation of False (0.0) as float32
-    x = np.array(False, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 3: 1D array from booleans to float32
-    x = np.array([True, False, True, False], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 4: 2D array from booleans to float32
-    x = np.array([[True, False], [False, True]], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 5: 3D array from booleans to float64
-    x = np.array([[[True, True], [False, False]], [[False, True], [True, False]]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 6: 4D array of ones (True) to float32
-    x = np.ones((2, 2, 2, 2), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 7: 5D array of zeros (False) to float32
-    x = np.zeros((1, 2, 1, 3, 2), dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 8: Empty 1D array (float32)
-    x = np.array([], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 9: 1D array with True (1.0) float64
-    x = np.array([True, True, True, True, True], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 10: 1D array with False (0.0) float64
-    x = np.array([False, False, False], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
-
-    # Input 11: 2D array from random booleans to float32
-    x = np.random.choice([True, False], size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    for v in values:
+        input_dict = {"x": v}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.erf_inv_4"] = erf_inv_inputs()
 

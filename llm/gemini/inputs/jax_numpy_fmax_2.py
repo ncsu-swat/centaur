@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fmax_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, positive float
-    x1 = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    x2 = 2.5
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    # Input 1: 1D float32 array and positive float
+    x1 = np.array([-1.5, 0.0, 2.3, 5.7], dtype=np.float32)
+    x2 = 1.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D float64 array with negative values, negative float
-    x1 = np.array([[-1.0, -2.5], [-3.0, -4.2]], dtype=np.float64)
+    # Input 2: 2D float64 array and negative float
+    x1 = np.array([[-3.0, -1.0], [0.5, -4.2]], dtype=np.float64)
     x2 = -2.0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: 3D int32 array, float
-    x1 = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32)
-    x2 = 4.5
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # Input 4: 1D array containing NaNs and Infs, positive float
-    x1 = np.array([np.nan, 1.0, np.inf, -np.inf], dtype=np.float32)
-    x2 = 5.0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # Input 5: 2D array, nan float
-    x1 = np.array([[-np.inf, np.nan], [0.0, 5.0]], dtype=np.float32)
-    x2 = float('nan')
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
-
-    # Input 6: 3D random float32 array, zero float
-    x1 = np.random.randn(2, 3, 4).astype(np.float32)
+    # Input 3: 3D int32 array and float zero
+    x1 = np.arange(-12, 12, dtype=np.int32).reshape((2, 3, 4))
     x2 = 0.0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: 0D scalar-like array, float
+    # Input 4: 1D array with NaN and Inf values and finite float
+    x1 = np.array([np.nan, np.inf, -np.inf, 2.0], dtype=np.float32)
+    x2 = 3.5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 5: 4D float32 array and float
+    x1 = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    x2 = 0.5
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 6: 2D float32 array and float NaN
+    x1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    x2 = float("nan")
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 7: 1D float16 array and positive infinity float
+    x1 = np.array([10.0, -20.0, 30.0], dtype=np.float16)
+    x2 = float("inf")
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 8: 0D scalar array and negative infinity float
     x1 = np.array(5.0, dtype=np.float32)
-    x2 = 3.14
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    x2 = float("-inf")
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: 1D linspace float64 array, negative float
-    x1 = np.linspace(-10, 10, 50).astype(np.float64)
-    x2 = -1.5
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    # Input 9: 2D int64 array and large float
+    x1 = np.array([[100, 200], [300, 400]], dtype=np.int64)
+    x2 = 250.75
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: 2D float64 array, large float
-    x1 = np.array([[10.5, -20.3, 0.0], [100.2, -50.1, 10.0]], dtype=np.float64)
-    x2 = 1000.0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    # Input 10: 1D float64 array with all negative values and negative float
+    x1 = np.array([-10.5, -20.3, -5.1, -100.0], dtype=np.float64)
+    x2 = -15.0
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: 4D random float32 array, float boundary value
-    x1 = np.random.uniform(-100, 100, size=(2, 2, 2, 2)).astype(np.float32)
-    x2 = 50.0
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": x2})
+    # Input 11: 3D float32 array with small values and small float
+    x1 = np.full((2, 1, 4), 1e-5, dtype=np.float32)
+    x2 = 1e-4
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fmax_2"] = fmax_inputs()
 

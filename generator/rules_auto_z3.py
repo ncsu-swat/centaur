@@ -61,14 +61,15 @@ def get_rules_map(api, use_reference=False, lib="torch"):
     
     return rule_func_map
 
-def check_rules_z3(api, input_dict, print_rules=False, use_reference=False, lib="torch"):
+def check_rules_z3(api, input_dict, print_rules=False, use_reference=False, lib="torch", return_errored=False):
     rule_func_map = get_rules_map(api, use_reference=use_reference, lib=lib)
     set_of_rules_passed = set()
-    
+    set_of_rules_errored = set()   # rules that RAISED on this input: indeterminate, NOT a counterexample
+
     if len(input_dict.keys()) < 1:
         print("Not enough arguments to check rules")
-        return set_of_rules_passed
-    
+        return (set_of_rules_passed, set_of_rules_errored) if return_errored else set_of_rules_passed
+
     for arity in rule_func_map:
         if len(input_dict.keys()) < arity:
             continue
@@ -82,13 +83,15 @@ def check_rules_z3(api, input_dict, print_rules=False, use_reference=False, lib=
                             for (a, r, *arg_list) in set_of_rules_passed
                         ):
                             set_of_rules_passed.add((arity, rule_name, *args))
-                except:
-                    pass 
+                except Exception:
+                    # a rule that can't be evaluated on this input is INDETERMINATE, not violated:
+                    # record it so the invariant intersection can preserve it instead of dropping it
+                    set_of_rules_errored.add((arity, rule_name, *args))
 
     if print_rules:
         for arity, rule_name, *args in set_of_rules_passed:
             print(f"Arity {arity} Rule {rule_name} passed between {args}")
-    return set_of_rules_passed
+    return (set_of_rules_passed, set_of_rules_errored) if return_errored else set_of_rules_passed
 
 def check_rules_z3_invalid_inputs(api, invalid_inputs, rule, use_reference=False, lib="torch"):
     arity, rule_name, *args = rule

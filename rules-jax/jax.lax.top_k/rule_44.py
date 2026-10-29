@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For a 3D tensor, if axis is 2, k cannot exceed the size of the third dimension (Rule 44)
+# for 4D tensor with axis 1, k must be bounded by dimension 1 (Rule 44)
 
 rule_44 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] == 3, v["arg3_value"] == 2), And(v["arg2_value"] > 0, v["arg2_value"] <= Select(v["arg1_shape"], 2)), True)) if n else
-          If(And(v["arg1_ndim"] == 3, v["arg3_value"] == 2), And(v["arg2_value"] > 0, v["arg2_value"] <= Select(v["arg1_shape"], 2)), True))
+    s.add(Not(And(And(And(v["arg1_ndim"] == 4, v["arg3_value"] == 1), v["arg2_value"] >= 1), v["arg2_value"] <= Select(v["arg1_shape"], 1))) if n else
+          And(And(And(v["arg1_ndim"] == 4, v["arg3_value"] == 1), v["arg2_value"] >= 1), v["arg2_value"] <= Select(v["arg1_shape"], 1)))
 )
 
 def rule_44_func(arg1, arg2, arg3, solver=None, neg=False):
@@ -43,9 +43,9 @@ def rule_44_func(arg1, arg2, arg3, solver=None, neg=False):
         solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 44
-        rule_44(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
+        rule_44(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_44(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)
+        rule_44(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value'], 'arg3_value': arg3['value']}, neg)

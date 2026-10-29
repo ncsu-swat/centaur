@@ -7,32 +7,39 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# epsilon must be a positive float within a reasonable small range (Rule 20)
+# where mask tensor must be boolean and have rank not exceeding input tensor (Rule 20)
 
 rule_20 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > 0.0, v["arg1_value"] < 0.1)) if n else
-          And(v["arg1_value"] > 0.0, v["arg1_value"] < 0.1))
+    s.add(Not(And(v["arg2_dtype"] == 0, v["arg2_ndim"] <= v["arg1_ndim"])) if n else
+          And(v["arg2_dtype"] == 0, v["arg2_ndim"] <= v["arg1_ndim"]))
 )
 
-def rule_20_func(arg1, solver=None, neg=False):
+def rule_20_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_ndim = Int('arg2_ndim')
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 20
-        rule_20(solver, {'arg1_value': arg1_value})
+        rule_20(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_20(solver, {'arg1_value': arg1['value']}, neg)
+        rule_20(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg2_dtype': arg2['dtype']}, neg)

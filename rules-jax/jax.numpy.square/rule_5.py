@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The scalar input must be within a safe numerical range (Rule 5)
+# floating-point or integer scalar input value boundary (Rule 5)
 
 rule_5 = lambda s, v, n=False: (
     s.add(Not(And(v["arg1_value"] >= -1000000, v["arg1_value"] <= 1000000)) if n else

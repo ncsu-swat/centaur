@@ -7,37 +7,32 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For complex-to-complex and complex-to-real FFTs, the input tensor must be complex (Rule 1)
+# fft_type must be a valid FFT operation type (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(If((Or(Or(v["arg2_value"] == 29, v["arg2_value"] == 30), v["arg2_value"] == 32)), (Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10)), True)) if n else
-          If((Or(Or(v["arg2_value"] == 29, v["arg2_value"] == 30), v["arg2_value"] == 32)), (Or(v["arg1_dtype"] == 9, v["arg1_dtype"] == 10)), True))
+    s.add(Not(Or(Or(Or(v["arg1_value"] == 29, v["arg1_value"] == 30), v["arg1_value"] == 31), v["arg1_value"] == 32)) if n else
+          Or(Or(Or(v["arg1_value"] == 29, v["arg1_value"] == 30), v["arg1_value"] == 31), v["arg1_value"] == 32))
 )
 
-def rule_1_func(arg1, arg2, solver=None, neg=False):
+def rule_1_func(arg1, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
-    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, np.ndarray):
-            return False
-        if not isinstance(arg2, str):
+        if not isinstance(arg1, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
 
         # Constraints for rule 1
-        rule_1(solver, {'arg1_dtype': arg1_dtype, 'arg2_value': arg2_value})
+        rule_1(solver, {'arg1_value': arg1_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_1(solver, {'arg1_dtype': arg1['dtype'], 'arg2_value': arg2['value']}, neg)
+        rule_1(solver, {'arg1_value': arg1['value']}, neg)

@@ -4,48 +4,50 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
-def jax_scipy_special_factorial_inputs():
+def factorial_inputs():
     list_of_inputs = []
 
-    # Input 1: Small integer float
+    # Input 1: Zero
     list_of_inputs.append({"n": 0.0, "exact": False})
 
-    # Input 2: Integer float 1.0
+    # Input 2: Positive integer as float
     list_of_inputs.append({"n": 1.0, "exact": False})
 
-    # Input 3: Integer float 5.0
+    # Input 3: Small positive integer as float
     list_of_inputs.append({"n": 5.0, "exact": False})
 
-    # Input 4: Larger integer float
+    # Input 4: Larger integer value
     list_of_inputs.append({"n": 10.0, "exact": False})
 
-    # Input 5: Non-integer float 2.5
-    list_of_inputs.append({"n": 2.5, "exact": False})
-
-    # Input 6: Non-integer float 4.7
-    list_of_inputs.append({"n": 4.7, "exact": False})
-
-    # Input 7: Fractional float 0.5
+    # Input 5: Fractional float (half-integer)
     list_of_inputs.append({"n": 0.5, "exact": False})
 
-    # Input 8: Larger non-integer float
-    list_of_inputs.append({"n": 12.3, "exact": False})
+    # Input 6: Positive non-integer float
+    list_of_inputs.append({"n": 2.5, "exact": False})
 
-    # Input 9: Floating point value for 20.0
-    list_of_inputs.append({"n": 20.0, "exact": False})
+    # Input 7: Arbitrary positive non-integer
+    list_of_inputs.append({"n": 4.7, "exact": False})
 
-    # Input 10: Mathematical constant approximation (pi)
-    list_of_inputs.append({"n": 3.14159, "exact": False})
-
-    # Input 11: Negative non-integer float (supported via gamma function)
+    # Input 8: Negative non-integer float
     list_of_inputs.append({"n": -0.5, "exact": False})
 
-    return list_of_inputs
+    # Input 9: Another negative non-integer float
+    list_of_inputs.append({"n": -1.5, "exact": False})
 
-generated_inputs["jax.scipy.special.factorial_3"] = jax_scipy_special_factorial_inputs()
+    # Input 10: Value around the standard 64-bit integer limit
+    list_of_inputs.append({"n": 20.0, "exact": False})
+
+    # Input 11: Small fractional float close to zero
+    list_of_inputs.append({"n": 0.001, "exact": False})
+
+    # Input 12: Large float value
+    list_of_inputs.append({"n": 50.0, "exact": False})
+
+    return [copy.deepcopy(x) for x in list_of_inputs]
+
+generated_inputs["jax.scipy.special.factorial_3"] = factorial_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

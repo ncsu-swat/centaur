@@ -4,150 +4,132 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax._src.numpy.util as jax_util
+import numpy as np
 
-if not hasattr(jax_util, '_patched_for_place'):
-    orig_ensure_arraylike = jax_util.ensure_arraylike
-    def patched_ensure_arraylike(fun_name, *args):
-        new_args = tuple(np.array(arg) if isinstance(arg, tuple) else arg for arg in args)
-        return orig_ensure_arraylike(fun_name, *new_args)
-    jax_util.ensure_arraylike = patched_ensure_arraylike
-    jax_util._patched_for_place = True
 
 def place_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D int array
-    arr = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    mask = np.array([True, False, True, False, True], dtype=bool)
-    vals = (10, 20)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D int32 array
+    arr = np.array([1, 2, 3, 4, 5, 6], dtype=np.int32)
+    mask = np.array([True, False, True, False, False, True], dtype=bool)
+    vals = np.array([10, 20], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
     # Input 2: 2D float32 array
     arr = np.zeros((3, 4), dtype=np.float32)
-    mask = np.array([
-        [True, False, True, False],
-        [False, True, False, True],
-        [True, True, False, False]
-    ], dtype=bool)
-    vals = (1.5, 2.5, 3.5)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    mask = np.array(
+        [
+            [True, False, False, True],
+            [False, True, True, False],
+            [False, False, False, True],
+        ],
+        dtype=bool,
+    )
+    vals = np.array([-1.5], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 3: 3D int32 array
-    arr = np.ones((2, 2, 2), dtype=np.int32)
-    mask = np.ones((2, 2, 2), dtype=bool)
-    vals = (-1, -2)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D int64 array with all True mask
+    arr = np.ones((2, 3), dtype=np.int64)
+    mask = np.ones((2, 3), dtype=bool)
+    vals = np.array([1, 2, 3], dtype=np.int64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 4: 1D float64 array
-    arr = np.linspace(0, 1, 10, dtype=np.float64)
-    mask = arr > 0.5
-    vals = (9.9, 8.8)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D float64 array
+    arr = np.arange(24, dtype=np.float64).reshape((2, 3, 4))
+    mask = arr % 2 == 0
+    vals = np.array([0.0, -100.5, 42.0], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 5: 2D int16 array
-    arr = np.arange(16, dtype=np.int16).reshape(4, 4)
-    mask = np.zeros((4, 4), dtype=bool)
-    vals = (100, 200)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D float32 array with all False mask
+    arr = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
+    mask = np.zeros(4, dtype=bool)
+    vals = np.array([9.9], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 6: 1D uint8 array
-    arr = np.array([10, 20, 30], dtype=np.uint8)
-    mask = np.array([True, True, True], dtype=bool)
-    vals = (50,)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D int16 array
+    arr = np.zeros((2, 2, 2, 2), dtype=np.int16)
+    mask = np.ones((2, 2, 2, 2), dtype=bool)
+    vals = np.array([-1, -2, -3, -4], dtype=np.int16)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 7: 4D float32 array
-    arr = np.random.randn(2, 1, 3, 2).astype(np.float32)
-    mask = arr > 0
-    vals = (0.0, -0.0)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D bool array
+    arr = np.array([[True, False], [False, True]], dtype=bool)
+    mask = np.array([[False, True], [True, False]], dtype=bool)
+    vals = np.array([True, False], dtype=bool)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 8: 2D int8 array
-    arr = np.zeros((5, 2), dtype=np.int8)
-    mask = np.ones((5, 2), dtype=bool)
-    vals = (1, 2, 3, 4, 5)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 1D complex64 array
+    arr = np.array([1 + 1j, 2 + 2j, 3 + 3j], dtype=np.complex64)
+    mask = np.array([True, False, True], dtype=bool)
+    vals = np.array([1.0 + 2.0j, -3.0j], dtype=np.complex64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 9: Single-element float32 array
-    arr = np.array([1.23], dtype=np.float32)
-    mask = np.array([True], dtype=bool)
-    vals = (4.56,)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D int32 array with negative values
+    arr = np.array([[[-5, -4], [-3, -2]], [[-1, 0], [1, 2]]], dtype=np.int32)
+    mask = arr < 0
+    vals = np.array([99], dtype=np.int32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
-    # Input 10: 3D int64 array
-    arr = np.zeros((3, 1, 3), dtype=np.int64)
-    mask = np.array([
-        [[True, False, True]],
-        [[False, True, False]],
-        [[True, True, True]]
-    ], dtype=bool)
-    vals = (-10, -20, -30, -40, -50)
-    input_dict = {
-        "arr": arr,
-        "mask": mask,
-        "vals": vals,
-        "inplace": False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 2D uint8 array
+    arr = np.array([[0, 50], [100, 150], [200, 250]], dtype=np.uint8)
+    mask = np.array([[True, False], [False, True], [True, False]], dtype=bool)
+    vals = np.array([255, 0, 128], dtype=np.uint8)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
+
+    # Input 11: 1D float64 array with excess values in vals
+    arr = np.array([0.5, 1.5, 2.5, 3.5, 4.5], dtype=np.float64)
+    mask = np.array([True, False, True, False, False], dtype=bool)
+    vals = np.array([-0.1, -0.2, -0.3, -0.4, -0.5], dtype=np.float64)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {"arr": arr, "mask": mask, "vals": vals, "inplace": False}
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.place_5"] = place_inputs()
 

@@ -4,48 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_fabs_inputs():
+
+def fabs_inputs():
     list_of_inputs = []
 
-    # Input 1: Positive float
-    list_of_inputs.append({"x": 3.14})
-
-    # Input 2: Negative float
-    list_of_inputs.append({"x": -2.718})
-
-    # Input 3: Positive zero
+    # Input 1: Zero
     list_of_inputs.append({"x": 0.0})
 
-    # Input 4: Negative zero
+    # Input 2: Negative zero
     list_of_inputs.append({"x": -0.0})
 
-    # Input 5: Large positive float
-    list_of_inputs.append({"x": 1e10})
+    # Input 3: Negative float
+    list_of_inputs.append({"x": -1.5})
 
-    # Input 6: Small negative float
-    list_of_inputs.append({"x": -1.23e-5})
+    # Input 4: Positive float
+    list_of_inputs.append({"x": 3.141592653589793})
 
-    # Input 7: Positive infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 5: Large negative float
+    list_of_inputs.append({"x": -1e10})
 
-    # Input 8: Negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 6: Small positive float
+    list_of_inputs.append({"x": 1e-10})
 
-    # Input 9: Not a number (NaN)
-    list_of_inputs.append({"x": float('nan')})
+    # Input 7: Negative integer-valued float
+    list_of_inputs.append({"x": -42.0})
 
-    # Input 10: Standard float 1.0
-    list_of_inputs.append({"x": 1.0})
+    # Input 8: Positive infinity
+    list_of_inputs.append({"x": float("inf")})
 
-    # Input 11: Large negative float
-    list_of_inputs.append({"x": -999.99})
+    # Input 9: Negative infinity
+    list_of_inputs.append({"x": float("-inf")})
 
-    return list_of_inputs
+    # Input 10: NaN
+    list_of_inputs.append({"x": float("nan")})
 
-generated_inputs["jax.numpy.fabs_3"] = jax_numpy_fabs_inputs()
+    # Input 11: Negative fractional float
+    list_of_inputs.append({"x": -2.718281828459045})
+
+    # Input 12: Positive large float
+    list_of_inputs.append({"x": 65536.125})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
+
+generated_inputs["jax.numpy.fabs_3"] = fabs_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

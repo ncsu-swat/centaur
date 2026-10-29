@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# numeric value within bounds (Rule 46)
+# tuple of floats has length exactly 3 (Rule 46)
 
 rule_46 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -100, v["arg1_value"] < 100)) if n else
-          And(v["arg1_value"] > -100, v["arg1_value"] < 100))
+    s.add(Not(v["arg1_length"] == 3) if n else
+          v["arg1_length"] == 3)
 )
 
 def rule_46_func(arg1, solver=None, neg=False):
@@ -19,18 +19,20 @@ def rule_46_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not (isinstance(arg1, tuple) and all(isinstance(e, (float, np.floating)) for e in arg1)):
             return False
 
         # Variable declarations
         solver = Solver()
+        arg1_length = Int('arg1_length')
 
         # Value assignments
+        solver.add(arg1_length == len(arg1))
 
         # Constraints for rule 46
-        rule_46(solver, {'arg1_value': arg1_value})
+        rule_46(solver, {'arg1_length': arg1_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_46(solver, {'arg1_value': arg1['value']}, neg)
+        rule_46(solver, {'arg1_length': arg1['length']}, neg)

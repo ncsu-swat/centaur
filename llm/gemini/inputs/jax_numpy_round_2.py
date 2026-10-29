@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def round_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic positive float, decimals = 0
-    input_dict = {"a": 1.532, "decimals": 0}
+    # Input 1
+    input_dict = {"a": 1.532, "decimals": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float with decimals = 2
-    input_dict = {"a": 3.267, "decimals": 2}
+    # Input 2
+    input_dict = {"a": 3.267, "decimals": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float, decimals = 1
-    input_dict = {"a": -6.149, "decimals": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Halfway value, decimals = 0 (rounds to even)
-    input_dict = {"a": 10.5, "decimals": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Negative halfway value, decimals = 0
+    # Input 3: Negative float, halfway rounding
     input_dict = {"a": -10.5, "decimals": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small float, decimals = 5
-    input_dict = {"a": 0.123456789, "decimals": 5}
+    # Input 4: Positive float, halfway rounding
+    input_dict = {"a": 21.5, "decimals": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large float, decimals = 3
-    input_dict = {"a": 12345.6789, "decimals": 3}
+    # Input 5: Zero with non-zero decimals
+    input_dict = {"a": 0.0, "decimals": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative small float, decimals = 4
-    input_dict = {"a": -0.000456, "decimals": 4}
+    # Input 6: Negative small float with higher precision
+    input_dict = {"a": -0.1234567, "decimals": 4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Floating point value close to next integer, decimals = 1
-    input_dict = {"a": 99.999, "decimals": 1}
+    # Input 7: Large float with decimals
+    input_dict = {"a": 1234.5678, "decimals": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: High precision float, decimals = 6
-    input_dict = {"a": 2.7182818284, "decimals": 6}
+    # Input 8: Halfway rounding to even (2.5 -> 2.0)
+    input_dict = {"a": 2.5, "decimals": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Halfway rounding to even (3.5 -> 4.0)
+    input_dict = {"a": 3.5, "decimals": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Scientific notation value
+    input_dict = {"a": 1e-5, "decimals": 6}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative number with single decimal place
+    input_dict = {"a": -999.999, "decimals": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Pi rounded to 5 decimals
+    input_dict = {"a": float(np.pi), "decimals": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.round_2"] = round_inputs()
 

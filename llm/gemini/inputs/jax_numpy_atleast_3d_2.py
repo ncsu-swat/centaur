@@ -4,63 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def atleast_3d_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D float32 array (representing two 1D arrays if unpacked)
-    list_of_inputs.append({
-        "arys": np.random.randn(2, 3).astype(np.float32)
-    })
+    # Input 1: 0D scalar float32
+    arys = np.array(3.14, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 2: 3D float64 array (representing three 2D arrays if unpacked)
-    list_of_inputs.append({
-        "arys": np.random.randn(3, 4, 5).astype(np.float64)
-    })
+    # Input 2: 1D array with negative and positive int32 values
+    arys = np.array([-5, -1, 0, 2, 7], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 3: 1D int32 array (representing five scalars if unpacked)
-    list_of_inputs.append({
-        "arys": np.arange(5).astype(np.int32)
-    })
+    # Input 3: 2D float64 array
+    arys = np.array([[-1.5, 2.3, 0.0], [4.1, -3.2, 5.5]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 4: 4D int64 array (representing two 3D arrays if unpacked)
-    list_of_inputs.append({
-        "arys": np.ones((2, 2, 2, 2), dtype=np.int64)
-    })
+    # Input 4: 3D int16 array
+    arys = np.ones((2, 3, 4), dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 5: 2D float16 array (representing one 1D array if unpacked)
-    list_of_inputs.append({
-        "arys": np.zeros((1, 5), dtype=np.float16)
-    })
+    # Input 5: 4D float32 array
+    arys = np.zeros((1, 2, 3, 4), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 6: 2D boolean array
-    list_of_inputs.append({
-        "arys": np.array([[True, False], [False, True]])
-    })
+    # Input 6: 1D boolean array
+    arys = np.array([True, False, True, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 7: 3D float32 array with negative values
-    list_of_inputs.append({
-        "arys": (np.random.randn(4, 2, 3) * 10).astype(np.float32)
-    })
+    # Input 7: Empty 1D float64 array
+    arys = np.array([], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 8: 2D int32 array
-    list_of_inputs.append({
-        "arys": np.arange(12).reshape(2, 6).astype(np.int32)
-    })
+    # Input 8: Empty 2D int32 array
+    arys = np.empty((0, 5), dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 9: 3D float32 array with single-dimensions
-    list_of_inputs.append({
-        "arys": np.ones((3, 1, 1), dtype=np.float32)
-    })
+    # Input 9: 1D complex128 array with negative components
+    arys = np.array([1 + 2j, -3 + 4j, -0.5 - 1.5j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
-    # Input 10: 1D float32 array
-    list_of_inputs.append({
-        "arys": np.array([1.5, -2.5, 3.5], dtype=np.float32)
-    })
+    # Input 10: 2D uint8 array
+    arys = np.array([[255, 0], [128, 64]], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
+
+    # Input 11: 5D int64 array
+    arys = np.arange(24, dtype=np.int64).reshape((1, 2, 3, 2, 2))
+    list_of_inputs.append(copy.deepcopy({"arys": arys}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.atleast_3d_2"] = atleast_3d_inputs()
 

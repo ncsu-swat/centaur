@@ -4,63 +4,92 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def less_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32 array
-    x = 0.5
-    y = np.array([0.0, 1.0, 2.0], dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 1: 1D float32 array, standard positive float
+    input_dict = {
+        "x": 0.5,
+        "y": np.array([0.1, 0.5, 0.9], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float32 array with random normal values
-    x = -1.2
-    y = np.random.randn(2, 3).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 2: 1D int32 array, negative float
+    input_dict = {
+        "x": -2.5,
+        "y": np.array([-5, -3, -2, 0, 2], dtype=np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float32 array with random values
-    x = 10.0
-    y = np.random.uniform(-20, 20, size=(3, 3, 3)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 3: 2D float64 array, zero float
+    input_dict = {
+        "x": 0.0,
+        "y": np.array([[-1.0, 0.0], [1.0, 2.0]], dtype=np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D float64 array using linspace
-    x = 3.14159
-    y = np.linspace(0, 5, 10).astype(np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 4: 0D scalar array
+    input_dict = {
+        "x": 10.0,
+        "y": np.array(5.0, dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D float32 array with uniform values, x is negative zero
-    x = -0.0
-    y = np.random.uniform(-1, 1, size=(5, 5)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 5: 3D array with negative and positive values
+    input_dict = {
+        "x": 1.23,
+        "y": np.random.randn(2, 3, 4).astype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float32 array
-    x = 100.0
-    y = (np.ones((2, 2, 2, 2), dtype=np.float32) * 50.0)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 6: 4D array with float16 dtype
+    input_dict = {
+        "x": -0.01,
+        "y": np.ones((2, 2, 2, 2), dtype=np.float16) * -0.5,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float32 array from arange
-    x = -50.5
-    y = np.arange(-100, 100, 10, dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 7: 1D int64 array with large values
+    input_dict = {
+        "x": 1e9,
+        "y": np.array([10**8, 10**9, 10**10], dtype=np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D float64 array with exponential distribution
-    x = 1e-3
-    y = np.random.exponential(scale=1.0, size=(4, 4)).astype(np.float64)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 8: 2D array with inf and nan values
+    input_dict = {
+        "x": 5.0,
+        "y": np.array([[np.inf, -np.inf], [np.nan, 5.0]], dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 2D array with 1 row and 5 columns
-    x = 2.718
-    y = np.random.normal(0, 1, size=(1, 5)).astype(np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 9: 1D uint8 array
+    input_dict = {
+        "x": 128.0,
+        "y": np.array([0, 50, 128, 200, 255], dtype=np.uint8),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D float32 array with zeros
-    x = 1.5
-    y = np.zeros((3, 1), dtype=np.float32)
-    list_of_inputs.append({"x": x, "y": copy.deepcopy(y)})
+    # Input 10: 2D boolean array
+    input_dict = {
+        "x": 0.5,
+        "y": np.array([[True, False], [False, True]], dtype=bool),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 5D array
+    input_dict = {
+        "x": -100.0,
+        "y": np.zeros((1, 2, 1, 3, 2), dtype=np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.less_4"] = less_inputs()
 

@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def arccosh_inputs():
     list_of_inputs = []
 
-    # Input 1: Python standard integer
-    input_dict = {"x": int(5)}
+    # Input 1: positive integer at domain boundary (arccosh(1) = 0)
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: np.int32 scalar
-    input_dict = {"x": np.int32(10)}
+    # Input 2: small positive integer > 1
+    input_dict = {"x": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: np.int64 scalar
-    input_dict = {"x": np.int64(1)}
+    # Input 3: moderate positive integer
+    input_dict = {"x": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array of int32 (positive integers >= 1)
-    input_dict = {"x": np.array([1, 2, 5, 10], dtype=np.int32)}
+    # Input 4: integer 10
+    input_dict = {"x": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D array of int64
-    input_dict = {"x": np.array([[2, 3], [4, 5]], dtype=np.int64)}
+    # Input 5: integer zero (outside real domain, produces nan)
+    input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array containing negative, zero, and positive integers
-    input_dict = {"x": np.array([-5, 0, 1, 2], dtype=np.int32)}
+    # Input 6: negative integer -1 (outside real domain, produces nan)
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D array of int16
-    input_dict = {"x": np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int16)}
+    # Input 7: negative integer -5
+    input_dict = {"x": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 0D array of int32
-    input_dict = {"x": np.array(3, dtype=np.int32)}
+    # Input 8: negative integer -100
+    input_dict = {"x": -100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large 1D array of int64 created via arange
-    input_dict = {"x": np.arange(1, 15, dtype=np.int64)}
+    # Input 9: larger positive integer
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D array of int8
-    input_dict = {"x": np.ones((2, 2, 2, 2), dtype=np.int8) * 3}
+    # Input 10: large positive integer
+    input_dict = {"x": 1000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: positive integer 3
+    input_dict = {"x": 3}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arccosh_3"] = arccosh_inputs()
 

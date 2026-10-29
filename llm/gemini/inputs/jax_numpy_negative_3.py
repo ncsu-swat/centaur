@@ -4,44 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import math
 
 def negative_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard positive float
-    list_of_inputs.append({"x": 5.5})
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard negative float
-    list_of_inputs.append({"x": -10.2})
+    # Input 2: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero
-    list_of_inputs.append({"x": 0.0})
+    # Input 3: Positive integer as float
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero
-    list_of_inputs.append({"x": -0.0})
+    # Input 4: Negative integer as float
+    input_dict = {"x": -1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive float
-    list_of_inputs.append({"x": 1.23e10})
+    # Input 5: Positive real value (pi)
+    input_dict = {"x": math.pi}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Large negative float
-    list_of_inputs.append({"x": -9.87e10})
+    # Input 6: Negative real value (e)
+    input_dict = {"x": -math.e}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Small positive float
-    list_of_inputs.append({"x": 1e-7})
+    # Input 7: Very large float
+    input_dict = {"x": 1e20}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small negative float
-    list_of_inputs.append({"x": -1e-7})
+    # Input 8: Very small positive float
+    input_dict = {"x": 1e-20}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Infinity
-    list_of_inputs.append({"x": float('inf')})
+    # Input 9: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 10: Negative infinity
-    list_of_inputs.append({"x": float('-inf')})
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: NaN (Not a Number)
-    list_of_inputs.append({"x": float('nan')})
+    # Input 11: NaN
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Arbitrary decimal
+    input_dict = {"x": -123.456}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

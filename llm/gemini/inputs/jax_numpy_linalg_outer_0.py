@@ -4,81 +4,72 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_linalg_outer_inputs():
+
+def linalg_outer_inputs():
     list_of_inputs = []
 
-    # Input 1: Float32, same size
-    x1 = np.random.randn(5).astype(np.float32)
-    x2 = np.random.randn(5).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic float32 1D arrays of the same length
+    x1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    x2 = np.array([4.0, 5.0, 6.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: Float64, different size
-    x1 = np.random.randn(10).astype(np.float64)
-    x2 = np.random.randn(8).astype(np.float64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: Integer arrays with negative values
+    x1 = np.array([-1, 0, 2, -3], dtype=np.int32)
+    x2 = np.array([5, -2, 7], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: Int32, with negative values
-    x1 = np.random.randint(-10, 10, size=6).astype(np.int32)
-    x2 = np.random.randint(-10, 10, size=6).astype(np.int32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: float64 arrays of different lengths
+    x1 = np.linspace(-2.0, 2.0, 5, dtype=np.float64)
+    x2 = np.linspace(0.0, 1.0, 3, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: Int64, different size
-    x1 = np.random.randint(-100, 100, size=4).astype(np.int64)
-    x2 = np.random.randint(-100, 100, size=12).astype(np.int64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Complex64 arrays
+    x1 = np.array([1.0 + 2.0j, -3.0 + 0.5j], dtype=np.complex64)
+    x2 = np.array([0.0 - 1.0j, 2.5 + 1.0j, -1.0 - 1.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: Float16
-    x1 = np.random.randn(7).astype(np.float16)
-    x2 = np.random.randn(7).astype(np.float16)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Complex128 arrays
+    x1 = np.array([-0.5 + 1.5j, 2.0 - 3.0j, 0.0 + 0.0j], dtype=np.complex128)
+    x2 = np.array([1.0 + 0.0j, -1.0 - 2.0j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: Complex64
-    x1 = (np.random.randn(5) + 1j * np.random.randn(5)).astype(np.complex64)
-    x2 = (np.random.randn(5) + 1j * np.random.randn(5)).astype(np.complex64)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Float32, single element arrays
-    x1 = np.array([2.5], dtype=np.float32)
+    # Input 6: Single-element 1D arrays
+    x1 = np.array([4.2], dtype=np.float32)
     x2 = np.array([-1.5], dtype=np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: UInt8
-    x1 = np.random.randint(0, 10, size=5).astype(np.uint8)
-    x2 = np.random.randint(0, 10, size=5).astype(np.uint8)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Boolean arrays
+    x1 = np.array([True, False, True], dtype=np.bool_)
+    x2 = np.array([False, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: Large arrays (Float32)
-    x1 = np.random.randn(100).astype(np.float32)
-    x2 = np.random.randn(200).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: int64 arrays of larger size
+    x1 = np.arange(10, dtype=np.int64)
+    x2 = np.arange(-5, 5, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Float32, with zeros
-    x1 = np.zeros(8, dtype=np.float32)
-    x2 = np.random.randn(8).astype(np.float32)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Empty 1D arrays
+    x1 = np.array([], dtype=np.float32)
+    x2 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: Int16, mixed signs
-    x1 = np.random.randint(-50, 50, size=9).astype(np.int16)
-    x2 = np.random.randint(-50, 50, size=9).astype(np.int16)
-    input_dict = {"x1": x1, "x2": x2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: uint8 arrays
+    x1 = np.array([0, 128, 255], dtype=np.uint8)
+    x2 = np.array([1, 2, 4], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: int16 arrays
+    x1 = np.array([-300, 0, 300], dtype=np.int16)
+    x2 = np.array([10, -20], dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.linalg.outer"] = jax_numpy_linalg_outer_inputs()
+
+generated_inputs["jax.numpy.linalg.outer"] = linalg_outer_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

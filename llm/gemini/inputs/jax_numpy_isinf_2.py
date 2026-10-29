@@ -4,46 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isinf_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0.0})
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Standard positive float
-    list_of_inputs.append({"x": 12.34})
+    # Input 2: Positive float
+    input_dict = {"x": 42.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Standard negative float
-    list_of_inputs.append({"x": -56.78})
+    # Input 3: Negative float
+    input_dict = {"x": -100.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Positive infinity as Python float
-    list_of_inputs.append({"x": float('inf')})
+    # Input 4: Positive infinity
+    input_dict = {"x": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative infinity as Python float
-    list_of_inputs.append({"x": float('-inf')})
+    # Input 5: Negative infinity
+    input_dict = {"x": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: NaN as Python float
-    list_of_inputs.append({"x": float('nan')})
+    # Input 6: NaN
+    input_dict = {"x": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Large scientific notation float
-    list_of_inputs.append({"x": 1e308})
+    # Input 7: Very small positive float (subnormal/near zero)
+    input_dict = {"x": 1e-30}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Small scientific notation float
-    list_of_inputs.append({"x": -1e-308})
+    # Input 8: Very large float
+    input_dict = {"x": 1e308}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Positive infinity as numpy float64
-    list_of_inputs.append({"x": np.float64(np.inf)})
+    # Input 9: Very large negative float
+    input_dict = {"x": -1e308}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Negative infinity as numpy float32
-    list_of_inputs.append({"x": np.float32(-np.inf)})
+    # Input 10: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Standard float as numpy float64
-    list_of_inputs.append({"x": np.float64(3.14159)})
+    # Input 11: Mathematical constant pi
+    input_dict = {"x": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isinf_2"] = isinf_inputs()
 

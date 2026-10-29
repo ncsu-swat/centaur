@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# dtype of input loc must be real or integer (Rule 4)
+# x must have a real numeric data type (Rule 4)
 
 rule_4 = lambda s, v, n=False: (
     s.add(Not(And(v["arg1_dtype"] >= 1, v["arg1_dtype"] <= 8)) if n else

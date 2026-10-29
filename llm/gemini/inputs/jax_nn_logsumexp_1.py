@@ -4,153 +4,195 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logsumexp_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D float32
-    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)
-    b = np.array([0.5, 1.0, 1.5, 2.0, 2.5], dtype=np.float32)
-    where = np.array([True, True, True, False, True], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "b": b,
-        "keepdims": False,
-        "return_sign": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D array, basic float32
+    a = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    axis = 0
+    b = np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    keepdims = False
+    return_sign = False
+    where = np.array([True, True, True], dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
 
-    # Input 2: 2D float32, reduction along axis 1, keepdims=True
-    a = np.random.randn(3, 4).astype(np.float32)
-    b = np.random.uniform(0.1, 1.0, size=(3, 4)).astype(np.float32)
-    where = np.random.choice([True, False], size=(3, 4), p=[0.8, 0.2]).astype(bool)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "b": b,
-        "keepdims": True,
-        "return_sign": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D array, reduction along axis 0, keepdims=True
+    a = np.random.randn(4, 5).astype(np.float32)
+    axis = 0
+    b = np.ones((4, 5), dtype=np.float32)
+    keepdims = True
+    return_sign = False
+    where = np.ones((4, 5), dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
 
-    # Input 3: 3D float64, return_sign=True
-    a = np.random.randn(2, 3, 4).astype(np.float64)
-    b = np.random.randn(2, 3, 4).astype(np.float64)
-    where = np.ones((2, 3, 4), dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 2,
-        "b": b,
-        "keepdims": False,
-        "return_sign": True,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D array, negative values, reduction along axis 1, return_sign=True
+    a = -np.abs(np.random.randn(3, 6).astype(np.float64))
+    axis = 1
+    b = np.array([[-1.0], [2.0], [-0.5]], dtype=np.float64)
+    keepdims = False
+    return_sign = True
+    where = np.ones((3, 6), dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
 
-    # Input 4: Negative coordinates of axis
+    # Input 4: 3D array with broadcasted b and where mask
+    a = np.random.randn(2, 3, 4).astype(np.float32)
+    axis = -1
+    b = np.random.uniform(0.1, 2.0, size=(1, 3, 4)).astype(np.float32)
+    keepdims = True
+    return_sign = False
+    where = np.random.rand(2, 3, 4) > 0.3
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
+
+    # Input 5: Large positive values (testing numerical stability)
+    a = np.array([[1000.0, 1001.0], [999.0, 1002.0]], dtype=np.float32)
+    axis = 1
+    b = np.array([[1.0, 2.0], [0.5, 1.5]], dtype=np.float32)
+    keepdims = False
+    return_sign = False
+    where = np.ones((2, 2), dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
+
+    # Input 6: Negative axis index with return_sign=True and keepdims=True
+    a = np.random.randn(2, 4, 3).astype(np.float32)
+    axis = -2
+    b = np.random.randn(2, 4, 3).astype(np.float32)
+    keepdims = True
+    return_sign = True
+    where = np.ones((2, 4, 3), dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
+
+    # Input 7: 4D tensor with float64 precision
+    a = np.random.randn(2, 2, 3, 2).astype(np.float64)
+    axis = 2
+    b = np.ones((1, 1, 1, 1), dtype=np.float64)
+    keepdims = False
+    return_sign = False
+    where = np.ones((2, 2, 3, 2), dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
+
+    # Input 8: Scalar broadcast for b and where, axis=0
+    a = np.array([-5.0, -10.0, -2.0, -0.1], dtype=np.float32)
+    axis = 0
+    b = np.array(0.5, dtype=np.float32)
+    keepdims = True
+    return_sign = False
+    where = np.array(True, dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
+
+    # Input 9: 2D array with sparse where mask
     a = np.random.randn(5, 5).astype(np.float32)
-    b = np.ones((5, 5), dtype=np.float32)
-    where = np.ones((5, 5), dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "b": b,
-        "keepdims": False,
-        "return_sign": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    axis = 0
+    b = np.random.uniform(0.1, 1.0, size=(5, 5)).astype(np.float32)
+    keepdims = False
+    return_sign = True
+    where = np.eye(5, dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
 
-    # Input 5: Broadcasted b and where
-    a = np.random.randn(4, 3).astype(np.float32)
-    b = np.array([[0.5], [1.0], [1.5], [2.0]], dtype=np.float32)
-    where = np.array([[True], [False], [True], [True]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "b": b,
-        "keepdims": True,
-        "return_sign": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Higher-dimensional array 4D
-    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    b = np.ones((2, 2, 3, 3), dtype=np.float32)
-    where = np.ones((2, 2, 3, 3), dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 3,
-        "b": b,
-        "keepdims": False,
-        "return_sign": True,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Float64 type and negative scaling factors for sign return
-    a = np.array([[-1.0, -2.0], [3.0, 4.0]], dtype=np.float64)
-    b = np.array([[-1.0, 1.0], [-1.0, 1.0]], dtype=np.float64)
-    where = np.array([[True, True], [True, True]], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "b": b,
-        "keepdims": False,
-        "return_sign": True,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Larger scale dimensions
-    a = np.random.randn(10, 20).astype(np.float32)
-    b = np.random.uniform(0.1, 2.0, size=(10, 20)).astype(np.float32)
-    where = np.random.choice([True, False], size=(10, 20), p=[0.9, 0.1]).astype(bool)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "b": b,
-        "keepdims": True,
-        "return_sign": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Single element dimensions broadcasted
-    a = np.random.randn(1, 5, 1).astype(np.float32)
-    b = np.ones((1, 5, 1), dtype=np.float32)
-    where = np.ones((1, 5, 1), dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 1,
-        "b": b,
-        "keepdims": True,
-        "return_sign": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D float64 with custom boolean mask
-    a = np.array([10.0, 20.0, 30.0], dtype=np.float64)
-    b = np.array([1.0, 1.0, 1.0], dtype=np.float64)
-    where = np.array([False, True, False], dtype=bool)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "b": b,
-        "keepdims": False,
-        "return_sign": False,
-        "where": where
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D array with negative weights in b and return_sign=True
+    a = np.array([2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+    axis = 0
+    b = np.array([-1.0, 2.0, -3.0, 4.0], dtype=np.float64)
+    keepdims = False
+    return_sign = True
+    where = np.array([True, True, False, True], dtype=bool)
+    list_of_inputs.append(
+        {
+            "a": a,
+            "axis": axis,
+            "b": b,
+            "keepdims": keepdims,
+            "return_sign": return_sign,
+            "where": where,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.logsumexp_1"] = logsumexp_inputs()
 

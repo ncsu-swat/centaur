@@ -4,63 +4,103 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def moveaxis_inputs():
     list_of_inputs = []
 
-    # Input 1: 3D float32 array, move axis 0 to 2
-    a = np.random.randn(2, 3, 4).astype(np.float32)
-    input_dict = {"a": a, "source": 0, "destination": 2}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 2D array, move first axis to second axis
+    a = np.ones((2, 3), dtype=np.float32)
+    source = 0
+    destination = 1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 2: 3D float64 array, move axis 2 to 0
+    # Input 2: 2D array, move second axis to first axis using negative source
+    a = np.zeros((4, 5), dtype=np.int32)
+    source = -1
+    destination = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
+
+    # Input 3: 3D array, move axis 0 to the end using negative destination
     a = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {"a": a, "source": 2, "destination": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    source = 0
+    destination = -1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 3: 4D int32 array, move axis 1 to -1 (negative destination)
-    a = np.random.randint(0, 10, size=(2, 3, 4, 5)).astype(np.int32)
-    input_dict = {"a": a, "source": 1, "destination": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D array, move middle axis to beginning
+    a = np.arange(24, dtype=np.int64).reshape((2, 3, 4))
+    source = 1
+    destination = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 4: 4D float32 array, move axis -1 to 1 (negative source)
+    # Input 5: 1D array, moving axis 0 to 0 (identity)
+    a = np.array([1, 2, 3, 4], dtype=np.int8)
+    source = 0
+    destination = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
+
+    # Input 6: 4D array, move axis using both negative indices
     a = np.random.randn(2, 3, 4, 5).astype(np.float32)
-    input_dict = {"a": a, "source": -1, "destination": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    source = -2
+    destination = -4
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 5: 2D int64 array, move axis 0 to 1
-    a = np.random.randint(0, 10, size=(5, 10)).astype(np.int64)
-    input_dict = {"a": a, "source": 0, "destination": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D boolean array, move axis 3 to axis 1
+    a = np.ones((2, 2, 2, 2), dtype=np.bool_)
+    source = 3
+    destination = 1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 6: 2D float32 array, move axis 1 to 0
-    a = np.random.randn(10, 5).astype(np.float32)
-    input_dict = {"a": a, "source": 1, "destination": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 5D complex array, move axis 4 to axis 2
+    a = np.zeros((1, 2, 3, 4, 5), dtype=np.complex64)
+    source = 4
+    destination = 2
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 7: 5D float32 array, move axis 2 to 4
-    a = np.random.randn(2, 2, 3, 3, 4).astype(np.float32)
-    input_dict = {"a": a, "source": 2, "destination": 4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 3D array, move last axis to middle
+    a = np.random.uniform(-1, 1, size=(6, 7, 8)).astype(np.float32)
+    source = 2
+    destination = 1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 8: 5D float32 array, move axis -3 to -1
-    a = np.random.randn(2, 2, 3, 3, 4).astype(np.float32)
-    input_dict = {"a": a, "source": -3, "destination": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 5D array, move first axis to last with negative source and destination
+    a = np.arange(32, dtype=np.uint8).reshape((2, 2, 2, 2, 2))
+    source = -5
+    destination = -1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
-    # Input 9: 3D complex64 array, move axis 0 to 1
-    a = (np.random.randn(2, 3, 4) + 1j * np.random.randn(2, 3, 4)).astype(np.complex64)
-    input_dict = {"a": a, "source": 0, "destination": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 6D int16 array, move axis 3 to 1
-    a = np.random.randint(-100, 100, size=(2, 2, 2, 3, 3, 4)).astype(np.int16)
-    input_dict = {"a": a, "source": 3, "destination": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 11: 1D array with negative indices
+    a = np.array([10.0, 20.0, 30.0], dtype=np.float16)
+    source = -1
+    destination = -1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "source": source, "destination": destination})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.moveaxis_1"] = moveaxis_inputs()
 

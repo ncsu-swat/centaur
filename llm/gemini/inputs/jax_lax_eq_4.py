@@ -4,65 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_lax_eq_inputs():
+
+def eq_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar boolean arrays
-    x = np.array(True, dtype=bool)
-    y = np.array(False, dtype=bool)
-    list_of_inputs.append({"x": x, "y": y})
+    # Input 1: True == True (Python bool)
+    list_of_inputs.append({"x": True, "y": True})
 
-    # Input 2: 1D boolean arrays of same shape
-    x = np.array([True, False, True], dtype=bool)
-    y = np.array([False, False, True], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 2: True == False (Python bool)
+    list_of_inputs.append({"x": True, "y": False})
 
-    # Input 3: 2D boolean arrays of same shape
-    x = np.array([[True, False], [False, True]], dtype=bool)
-    y = np.array([[True, True], [False, False]], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 3: False == True (Python bool)
+    list_of_inputs.append({"x": False, "y": True})
 
-    # Input 4: Broadcasting with same number of dimensions (2D to 2D)
-    x = np.array([[True, False]], dtype=bool)
-    y = np.array([[True, False], [False, True]], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 4: False == False (Python bool)
+    list_of_inputs.append({"x": False, "y": False})
 
-    # Input 5: Broadcasting scalar to 2D array
-    x = np.array(True, dtype=bool)
-    y = np.array([[True, False], [False, True]], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 5: True == True (np.bool_)
+    list_of_inputs.append({"x": np.bool_(True), "y": np.bool_(True)})
 
-    # Input 6: 3D random boolean arrays
-    x = np.random.choice([True, False], size=(2, 3, 2)).astype(bool)
-    y = np.random.choice([True, False], size=(2, 3, 2)).astype(bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 6: True == False (np.bool_)
+    list_of_inputs.append({"x": np.bool_(True), "y": np.bool_(False)})
 
-    # Input 7: Broadcasting compatible shapes (1, 3) and (3, 1) - both 2D
-    x = np.array([[True, False, True]], dtype=bool)
-    y = np.array([[True], [False], [True]], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 7: False == True (np.bool_)
+    list_of_inputs.append({"x": np.bool_(False), "y": np.bool_(True)})
 
-    # Input 8: 4D random boolean arrays
-    x = np.random.choice([True, False], size=(2, 2, 2, 2)).astype(bool)
-    y = np.random.choice([True, False], size=(2, 2, 2, 2)).astype(bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 8: False == False (np.bool_)
+    list_of_inputs.append({"x": np.bool_(False), "y": np.bool_(False)})
 
-    # Input 9: Single element 1D arrays
-    x = np.array([True], dtype=bool)
-    y = np.array([False], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 9: Python bool and np.bool_ (True, True)
+    list_of_inputs.append({"x": True, "y": np.bool_(True)})
 
-    # Input 10: Larger 1D boolean arrays
-    x = np.random.choice([True, False], size=(50,)).astype(bool)
-    y = np.random.choice([True, False], size=(50,)).astype(bool)
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": copy.deepcopy(y)})
+    # Input 10: Python bool and np.bool_ (False, False)
+    list_of_inputs.append({"x": False, "y": np.bool_(False)})
 
-    return list_of_inputs
+    # Input 11: Python bool and np.bool_ (True, False)
+    list_of_inputs.append({"x": True, "y": np.bool_(False)})
 
-generated_inputs["jax.lax.eq_4"] = jax_lax_eq_inputs()
+    # Input 12: Python bool and np.bool_ (False, True)
+    list_of_inputs.append({"x": False, "y": np.bool_(True)})
+
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
+
+
+generated_inputs["jax.lax.eq_4"] = eq_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

@@ -10,133 +10,133 @@ import copy
 def conv_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D convolution with VALID padding, stride 1, default precision
-    lhs = np.random.randn(2, 3, 10).astype(np.float32)
-    rhs = np.random.randn(4, 3, 3).astype(np.float32)
+    # Input 1: 1D convolution, VALID padding, default precision, float32
+    lhs = np.random.randn(1, 1, 8).astype(np.float32)
+    rhs = np.random.randn(1, 1, 3).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [1],
-        'padding': 'VALID',
-        'precision': 'default',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [1],
+        "padding": "VALID",
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D convolution with SAME padding, stride 2, high precision
-    lhs = np.random.randn(1, 2, 16).astype(np.float32)
-    rhs = np.random.randn(2, 2, 5).astype(np.float32)
+    # Input 2: 1D convolution, SAME padding, stride 2, high precision
+    lhs = np.random.randn(2, 3, 16).astype(np.float32)
+    rhs = np.random.randn(4, 3, 4).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [2],
-        'padding': 'SAME',
-        'precision': 'high',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [2],
+        "padding": "SAME",
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D convolution with VALID padding, stride 1, highest precision
-    lhs = np.random.randn(2, 3, 16, 16).astype(np.float32)
-    rhs = np.random.randn(4, 3, 3, 3).astype(np.float32)
+    # Input 3: 2D convolution, standard 3x3 kernel, VALID padding, highest precision
+    lhs = np.random.randn(2, 3, 10, 10).astype(np.float32)
+    rhs = np.random.randn(8, 3, 3, 3).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [1, 1],
-        'padding': 'VALID',
-        'precision': 'highest',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [1, 1],
+        "padding": "VALID",
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D convolution with float64 and SAME padding, stride 2
-    lhs = np.random.randn(1, 2, 32, 32).astype(np.float64)
-    rhs = np.random.randn(2, 2, 5, 5).astype(np.float64)
+    # Input 4: 2D convolution, SAME padding, stride (2, 2)
+    lhs = np.random.randn(4, 1, 14, 14).astype(np.float32)
+    rhs = np.random.randn(2, 1, 5, 5).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [2, 2],
-        'padding': 'SAME',
-        'precision': 'default',
-        'preferred_element_type': np.float64
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [2, 2],
+        "padding": "SAME",
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D convolution with SAME padding, stride 1
-    lhs = np.random.randn(1, 2, 8, 8, 8).astype(np.float32)
-    rhs = np.random.randn(2, 2, 3, 3, 3).astype(np.float32)
+    # Input 5: 2D convolution, asymmetric strides [1, 2], fastest precision
+    lhs = np.random.randn(1, 4, 8, 16).astype(np.float32)
+    rhs = np.random.randn(4, 4, 3, 5).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [1, 1, 1],
-        'padding': 'SAME',
-        'precision': 'default',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [1, 2],
+        "padding": "VALID",
+        "precision": "fastest",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D convolution with negative values, VALID padding
-    lhs = np.random.uniform(-1, 1, (4, 3, 14, 14)).astype(np.float32)
-    rhs = np.random.uniform(-1, 1, (8, 3, 3, 3)).astype(np.float32)
+    # Input 6: 3D convolution, VALID padding, stride [1, 1, 1]
+    lhs = np.random.randn(1, 2, 5, 5, 5).astype(np.float32)
+    rhs = np.random.randn(2, 2, 2, 2, 2).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [1, 1],
-        'padding': 'VALID',
-        'precision': 'high',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [1, 1, 1],
+        "padding": "VALID",
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D convolution with negative values, stride 3
-    lhs = np.random.uniform(-2, 2, (3, 2, 20)).astype(np.float32)
-    rhs = np.random.uniform(-2, 2, (4, 2, 4)).astype(np.float32)
+    # Input 7: 3D convolution, SAME padding, stride [2, 2, 2]
+    lhs = np.random.randn(2, 1, 8, 8, 8).astype(np.float32)
+    rhs = np.random.randn(3, 1, 3, 3, 3).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [3],
-        'padding': 'VALID',
-        'precision': 'default',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [2, 2, 2],
+        "padding": "SAME",
+        "precision": "highest",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D convolution with non-square kernels and strides
-    lhs = np.random.randn(2, 3, 12, 16).astype(np.float32)
-    rhs = np.random.randn(4, 3, 3, 5).astype(np.float32)
+    # Input 8: 1x1 2D convolution (pointwise convolution)
+    lhs = np.random.randn(4, 8, 12, 12).astype(np.float32)
+    rhs = np.random.randn(16, 8, 1, 1).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [1, 2],
-        'padding': 'SAME',
-        'precision': 'high',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [1, 1],
+        "padding": "VALID",
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D convolution with float64, stride 2, VALID padding
-    lhs = np.random.randn(2, 1, 6, 6, 6).astype(np.float64)
-    rhs = np.random.randn(2, 1, 2, 2, 2).astype(np.float64)
+    # Input 9: 2D convolution with negative values
+    lhs = (np.random.randn(2, 2, 7, 9) * 5.0 - 2.5).astype(np.float32)
+    rhs = (np.random.randn(3, 2, 3, 3) * 2.0 - 1.0).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [2, 2, 2],
-        'padding': 'VALID',
-        'precision': 'highest',
-        'preferred_element_type': np.float64
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [1, 1],
+        "padding": "SAME",
+        "precision": "high",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D convolution with 1x1 kernel and high channel count
-    lhs = np.random.randn(1, 16, 8, 8).astype(np.float32)
-    rhs = np.random.randn(32, 16, 1, 1).astype(np.float32)
+    # Input 10: 1D convolution with larger filter, VALID padding, stride 3
+    lhs = np.random.randn(3, 2, 25).astype(np.float32)
+    rhs = np.random.randn(5, 2, 7).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'window_strides': [2, 2],
-        'padding': 'SAME',
-        'precision': 'default',
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "window_strides": [3],
+        "padding": "VALID",
+        "precision": "default",
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 

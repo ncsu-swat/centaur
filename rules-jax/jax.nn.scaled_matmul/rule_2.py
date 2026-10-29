@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# matching batch and contracting dimensions of lhs and rhs (Rule 2)
+# lhs and rhs must share the same batch size and contracting dimension (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
     s.add(Not(And(Select(v["arg1_shape"], 0) == Select(v["arg2_shape"], 0), Select(v["arg1_shape"], 2) == Select(v["arg2_shape"], 2))) if n else

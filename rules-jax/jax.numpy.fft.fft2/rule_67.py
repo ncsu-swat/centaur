@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Axes elements of tuple axes must refer to distinct dimensions of tensor a (Rule 67)
+# axes list elements must not exceed input tensor rank minus 1 (Rule 67)
 
 rule_67 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), ((Select(v["arg2_values"], 0) + v["arg1_ndim"]) % v["arg1_ndim"]) != ((Select(v["arg2_values"], 1) + v["arg1_ndim"]) % v["arg1_ndim"]))) if n else
-          And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), ((Select(v["arg2_values"], 0) + v["arg1_ndim"]) % v["arg1_ndim"]) != ((Select(v["arg2_values"], 1) + v["arg1_ndim"]) % v["arg1_ndim"])))
+    s.add(Not(And(And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), Select(v["arg2_values"], 0) <= v["arg1_ndim"] - 1), Select(v["arg2_values"], 1) <= v["arg1_ndim"] - 1)) if n else
+          And(And(And(v["arg1_ndim"] >= 2, v["arg2_length"] == 2), Select(v["arg2_values"], 0) <= v["arg1_ndim"] - 1), Select(v["arg2_values"], 1) <= v["arg1_ndim"] - 1))
 )
 
 def rule_67_func(arg1, arg2, solver=None, neg=False):
@@ -22,7 +22,7 @@ def rule_67_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
             return False
 
         # Variable declarations
@@ -38,9 +38,9 @@ def rule_67_func(arg1, arg2, solver=None, neg=False):
             arg2_values = Store(arg2_values, i, arg2[i])
 
         # Constraints for rule 67
-        rule_67(solver, {'arg1_ndim': arg1_ndim, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_67(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length, 'arg2_values': arg2_values})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_67(solver, {'arg1_ndim': arg1['ndim'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_67(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length'], 'arg2_values': arg2['values']}, neg)

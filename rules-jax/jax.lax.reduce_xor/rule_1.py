@@ -10,8 +10,8 @@ from z3 import *
 # operand must have boolean or integer dtype (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 2), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4), v["arg1_dtype"] == 5)) if n else
-          Or(Or(Or(Or(Or(v["arg1_dtype"] == 0, v["arg1_dtype"] == 1), v["arg1_dtype"] == 2), v["arg1_dtype"] == 3), v["arg1_dtype"] == 4), v["arg1_dtype"] == 5))
+    s.add(Not(And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 5)) if n else
+          And(v["arg1_dtype"] >= 0, v["arg1_dtype"] <= 5))
 )
 
 def rule_1_func(arg1, solver=None, neg=False):

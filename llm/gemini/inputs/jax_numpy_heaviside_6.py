@@ -4,43 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def heaviside_inputs():
     list_of_inputs = []
 
-    # Input 1: negative x1, positive x2
-    list_of_inputs.append({"x1": -2.5, "x2": 0.5})
+    # Input 1: x1 is zero, x2 is 0.5
+    input_dict = {"x1": 0.0, "x2": 0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: zero x1, positive x2
-    list_of_inputs.append({"x1": 0.0, "x2": 0.5})
+    # Input 2: x1 is negative, x2 is positive
+    input_dict = {"x1": -3.5, "x2": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: positive x1, positive x2
-    list_of_inputs.append({"x1": 3.5, "x2": 0.5})
+    # Input 3: x1 is positive, x2 is zero
+    input_dict = {"x1": 4.2, "x2": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: negative x1, negative x2
-    list_of_inputs.append({"x1": -1.2, "x2": -0.8})
+    # Input 4: Both are zero
+    input_dict = {"x1": 0.0, "x2": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: zero x1, negative x2
-    list_of_inputs.append({"x1": 0.0, "x2": -1.5})
+    # Input 5: x1 is zero, x2 is negative
+    input_dict = {"x1": 0.0, "x2": -2.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: positive x1, negative x2
-    list_of_inputs.append({"x1": 5.0, "x2": -2.0})
+    # Input 6: x1 is large positive, x2 is fractional
+    input_dict = {"x1": 1e6, "x2": 0.25}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: zero x1, zero x2
-    list_of_inputs.append({"x1": 0.0, "x2": 0.0})
+    # Input 7: x1 is small negative, x2 is large
+    input_dict = {"x1": -1e-5, "x2": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: large positive x1, positive x2
-    list_of_inputs.append({"x1": 1e6, "x2": 1.0})
+    # Input 8: x1 is negative zero, x2 is 0.75
+    input_dict = {"x1": -0.0, "x2": 0.75}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: large negative x1, positive x2
-    list_of_inputs.append({"x1": -1e6, "x2": 1.0})
+    # Input 9: x1 is positive, x2 is negative
+    input_dict = {"x1": 12.8, "x2": -0.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: small positive x1, positive x2
-    list_of_inputs.append({"x1": 1e-6, "x2": 0.5})
+    # Input 10: x1 is negative, x2 is negative
+    input_dict = {"x1": -100.0, "x2": -50.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: x1 is zero, x2 is large positive
+    input_dict = {"x1": 0.0, "x2": 999.9}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.heaviside_6"] = heaviside_inputs()
 

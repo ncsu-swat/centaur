@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# base must be non-zero when raised to a negative power for float inputs (Rule 38)
+# Integer base and exponent are bounded within [-10, 10] and [0, 10] respectively to prevent overflow (Rule 38)
 
 rule_38 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] < 0, v["arg1_value"] != 0, True)) if n else
-          If(v["arg2_value"] < 0, v["arg1_value"] != 0, True))
+    s.add(Not(And(And(And(v["arg1_value"] >= -10, v["arg1_value"] <= 10), v["arg2_value"] >= 0), v["arg2_value"] <= 10)) if n else
+          And(And(And(v["arg1_value"] >= -10, v["arg1_value"] <= 10), v["arg2_value"] >= 0), v["arg2_value"] <= 10))
 )
 
 def rule_38_func(arg1, arg2, solver=None, neg=False):
@@ -20,19 +20,19 @@ def rule_38_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, (float, np.floating)):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
-        if not isinstance(arg2, (float, np.floating)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Real('arg1_value')
-        arg2_value = Real('arg2_value')
+        arg1_value = Int('arg1_value')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == arg1)
-        solver.add(arg2_value == arg2)
+        solver.add(arg1_value == int(arg1))
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 38
         rule_38(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})

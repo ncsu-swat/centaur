@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# numerical scalar input should not exceed the overflow limit for exponential computation (Rule 40)
+# primitive numeric variable should fall within moderate exponential range (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] <= 709.0) if n else
-          v["arg1_value"] <= 709.0)
+    s.add(Not(And(v["arg1_value"] >= -50.0, v["arg1_value"] <= 50.0)) if n else
+          And(v["arg1_value"] >= -50.0, v["arg1_value"] <= 50.0))
 )
 
 def rule_40_func(arg1, solver=None, neg=False):

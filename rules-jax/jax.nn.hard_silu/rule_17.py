@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For any 1D input tensor, its shape must be at least 1 (Rule 17)
+# input tensor can be a 2D matrix with positive dimensions (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) >= 1, True)) if n else
-          If(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) >= 1, True))
+    s.add(Not(And(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) > 0), Select(v["arg1_shape"], 1) > 0)) if n else
+          And(And(v["arg1_ndim"] == 2, Select(v["arg1_shape"], 0) > 0), Select(v["arg1_shape"], 1) > 0))
 )
 
 def rule_17_func(arg1, solver=None, neg=False):
@@ -33,9 +33,9 @@ def rule_17_func(arg1, solver=None, neg=False):
             arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim})
+        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim']}, neg)
+        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

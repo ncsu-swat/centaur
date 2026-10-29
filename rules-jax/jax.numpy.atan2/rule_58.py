@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the difference in the number of dimensions between the two tensors must not exceed 3 (Rule 58)
+# Both input tensors have rank of at least two (Rule 58)
 
 rule_58 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] - v["arg2_ndim"] <= 3, v["arg2_ndim"] - v["arg1_ndim"] <= 3)) if n else
-          And(v["arg1_ndim"] - v["arg2_ndim"] <= 3, v["arg2_ndim"] - v["arg1_ndim"] <= 3))
+    s.add(Not(And(v["arg1_ndim"] >= 2, v["arg2_ndim"] >= 2)) if n else
+          And(v["arg1_ndim"] >= 2, v["arg2_ndim"] >= 2))
 )
 
 def rule_58_func(arg1, arg2, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# diagonal offset k should be relatively proportional to the 1D input array's length (Rule 18)
+# constrain combined tensor size and offset square to prevent output_too_large (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 1, And(v["arg2_value"] <= Select(v["arg1_shape"], 0), v["arg2_value"] >= 0 - Select(v["arg1_shape"], 0)), True)) if n else
-          If(v["arg1_ndim"] == 1, And(v["arg2_value"] <= Select(v["arg1_shape"], 0), v["arg2_value"] >= 0 - Select(v["arg1_shape"], 0)), True))
+    s.add(Not(And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 0) + v["arg2_value"] * v["arg2_value"] <= 50000000)) if n else
+          And(v["arg1_ndim"] == 1, Select(v["arg1_shape"], 0) * Select(v["arg1_shape"], 0) + v["arg2_value"] * v["arg2_value"] <= 50000000))
 )
 
 def rule_18_func(arg1, arg2, solver=None, neg=False):
@@ -38,9 +38,9 @@ def rule_18_func(arg1, arg2, solver=None, neg=False):
         solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 18
-        rule_18(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_value': arg2_value})
+        rule_18(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_18(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_value': arg2['value']}, neg)
+        rule_18(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_value': arg2['value']}, neg)

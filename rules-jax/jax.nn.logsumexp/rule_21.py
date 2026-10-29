@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# If scaling tensor b has rank ndim(a (Rule 21)
+# scaling factor b must broadcast to input tensor a along trailing dimensions (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg1_ndim"] > 0, v["arg2_ndim"] == v["arg1_ndim"] - 1), (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], i) == Select(v["arg1_shape"], i + 1), Select(v["arg2_shape"], i) == 1)) for i in range(6)])))) if n else
-          And(And(v["arg1_ndim"] > 0, v["arg2_ndim"] == v["arg1_ndim"] - 1), (And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], i) == Select(v["arg1_shape"], i + 1), Select(v["arg2_shape"], i) == 1)) for i in range(6)]))))
+    s.add(Not(And(v["arg2_ndim"] <= v["arg1_ndim"], And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], i) == 1, Select(v["arg2_shape"], i) == Select(v["arg1_shape"], i + v["arg1_ndim"] - v["arg2_ndim"]))) for i in range(6)]))) if n else
+          And(v["arg2_ndim"] <= v["arg1_ndim"], And([Implies(i < (v["arg2_ndim"] - 1 + 1), Or(Select(v["arg2_shape"], i) == 1, Select(v["arg2_shape"], i) == Select(v["arg1_shape"], i + v["arg1_ndim"] - v["arg2_ndim"]))) for i in range(6)])))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):
@@ -41,9 +41,9 @@ def rule_21_func(arg1, arg2, solver=None, neg=False):
             arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_shape': arg1_shape, 'arg1_ndim': arg1_ndim, 'arg2_shape': arg2_shape, 'arg2_ndim': arg2_ndim})
+        rule_21(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_shape': arg1['shape'], 'arg1_ndim': arg1['ndim'], 'arg2_shape': arg2['shape'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_21(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

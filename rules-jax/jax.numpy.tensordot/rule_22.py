@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# valid precision string value (Rule 22)
+# preferred element type should be a standard numeric accumulation datatype (Rule 22)
 
 rule_22 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_value"] == 37) if n else
-          v["arg1_value"] == 37)
+    s.add(Not(Or(Or(Or(v["arg1_value"] == 3, v["arg1_value"] == 4), v["arg1_value"] == 7), v["arg1_value"] == 8)) if n else
+          Or(Or(Or(v["arg1_value"] == 3, v["arg1_value"] == 4), v["arg1_value"] == 7), v["arg1_value"] == 8))
 )
 
 def rule_22_func(arg1, solver=None, neg=False):
@@ -19,15 +19,15 @@ def rule_22_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_value = Int('arg1_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
 
         # Constraints for rule 22
         rule_22(solver, {'arg1_value': arg1_value})

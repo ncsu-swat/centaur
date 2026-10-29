@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For 2D tensor, the integer axis must be between -2 and 1 (Rule 40)
+# for a 4-dimensional input array, the integer axis must be between -4 and 3 inclusive (Rule 40)
 
 rule_40 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True)) if n else
-          If(v["arg1_ndim"] == 2, And(v["arg2_value"] >= -2, v["arg2_value"] <= 1), True))
+    s.add(Not(If(v["arg1_ndim"] == 4, And(v["arg2_value"] >= -4, v["arg2_value"] <= 3), True)) if n else
+          If(v["arg1_ndim"] == 4, And(v["arg2_value"] >= -4, v["arg2_value"] <= 3), True))
 )
 
 def rule_40_func(arg1, arg2, solver=None, neg=False):

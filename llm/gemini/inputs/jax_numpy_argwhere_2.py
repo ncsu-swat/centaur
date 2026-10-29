@@ -4,93 +4,106 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def argwhere_inputs():
     list_of_inputs = []
 
-    # Input 1
-    input_dict = {
-        "a": np.array([1, 0, 2], dtype=np.int32),
-        "size": 2,
-        "fill_value": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: 1D int array
+    a = np.array([0, 1, 0, 2, 3, 0], dtype=np.int32)
+    size = 5
+    fill_value = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 2
-    input_dict = {
-        "a": np.array([[1, 0], [0, 2]], dtype=np.int32),
-        "size": 2,
-        "fill_value": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 2D float array with negative and zero values
+    a = np.array([[-1.5, 0.0, 2.3], [0.0, -0.1, 0.0]], dtype=np.float32)
+    size = 4
+    fill_value = -1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 3
-    input_dict = {
-        "a": np.array([[1, 1], [0, 1]], dtype=np.int32),
-        "size": 3,
-        "fill_value": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D boolean array
+    a = np.array(
+        [[True, False, True], [False, False, True], [True, True, False]],
+        dtype=bool,
+    )
+    size = 10
+    fill_value = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 4
-    input_dict = {
-        "a": np.array([True, False, True], dtype=bool),
-        "size": 2,
-        "fill_value": -2
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D int array
+    a = np.array(
+        [
+            [[1, 0], [0, 2]],
+            [[0, 0], [3, -4]],
+        ],
+        dtype=np.int64,
+    )
+    size = 6
+    fill_value = 99
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 5
-    input_dict = {
-        "a": np.array([[-1, 0], [0, -3]], dtype=np.int32),
-        "size": 2,
-        "fill_value": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 1D float array with truncation (size < number of nonzero elements)
+    a = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
+    size = 3
+    fill_value = -999
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 6
-    input_dict = {
-        "a": np.array([[[0, 0], [0, 1]], [[0, 0], [0, 0]]], dtype=np.int32),
-        "size": 1,
-        "fill_value": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 4D integer array
+    a = np.zeros((2, 2, 2, 2), dtype=np.int32)
+    a[0, 1, 0, 1] = 5
+    a[1, 0, 1, 0] = -3
+    size = 4
+    fill_value = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 7
-    input_dict = {
-        "a": np.array(5, dtype=np.int32),
-        "size": 1,
-        "fill_value": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 2D complex array
+    a = np.array([[1.0 + 0.0j, 0.0 + 0.0j], [0.0 + 2.0j, -1.0 - 1.0j]], dtype=np.complex64)
+    size = 5
+    fill_value = -1
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 8
-    input_dict = {
-        "a": np.array([[0.5, 0.0, 1.2], [0.0, 0.0, 0.0], [0.0, -0.1, 0.0]], dtype=np.float32),
-        "size": 3,
-        "fill_value": -9
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: 3D array of all zeros
+    a = np.zeros((3, 3, 3), dtype=np.float32)
+    size = 5
+    fill_value = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 9
-    input_dict = {
-        "a": np.array([0, 0], dtype=np.int32),
-        "size": 0,
-        "fill_value": 0
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array with size 0
+    a = np.array([[1, 2], [3, 4]], dtype=np.int32)
+    size = 0
+    fill_value = 0
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
-    # Input 10
-    input_dict = {
-        "a": np.array([[[1.0, 0.0], [0.0, 0.0]], [[0.0, 0.0], [3.1, 0.0]]], dtype=np.float64),
-        "size": 2,
-        "fill_value": -1
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 1D uint8 array
+    a = np.array([0, 255, 0, 128, 0], dtype=np.uint8)
+    size = 8
+    fill_value = 255
+    list_of_inputs.append(
+        copy.deepcopy({"a": a, "size": size, "fill_value": fill_value})
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.argwhere_2"] = argwhere_inputs()
 

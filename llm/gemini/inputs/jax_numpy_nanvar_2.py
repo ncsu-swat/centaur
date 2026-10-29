@@ -4,206 +4,258 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import warnings
+import numpy as np
+
 
 def nanvar_inputs():
     list_of_inputs = []
 
-    # Helper to generate random array with NaNs
-    def gen_array_with_nans(shape, low=-10.0, high=10.0, dtype=np.float32):
-        arr = np.random.uniform(low, high, size=shape).astype(dtype)
-        mask = np.random.rand(*shape) < 0.2
-        arr[mask] = np.nan
-        if np.isnan(arr).all():
-            arr.flat[0] = 1.0
-        return arr
+    # Input 1: 2D array, reduce along axis 0, float32
+    a = np.array([[1.0, np.nan, 3.0], [-2.0, 5.0, np.nan]], dtype=np.float32)
+    axis = (0,)
+    dtype = np.dtype(np.float32)
+    ddof = 0
+    keepdims = False
+    where = np.ones_like(a, dtype=bool)
+    mean = np.array([[-0.5, 5.0, 3.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
+    # Input 2: 2D array, reduce along axis 1, keepdims=True, ddof=1, float32
+    a = np.array(
+        [[10.5, -4.2, np.nan, 8.0], [np.nan, 3.1, -1.0, 0.0]], dtype=np.float32
+    )
+    axis = (1,)
+    dtype = np.dtype(np.float32)
+    ddof = 1
+    keepdims = True
+    where = np.array(
+        [[True, True, False, True], [False, True, True, True]], dtype=bool
+    )
+    mean = np.array([[4.7666667], [0.7]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 1. 2D array, float32, axis=(0,), keepdims=False
-        a = gen_array_with_nans((4, 4), dtype=np.float32)
-        axis = (0,)
-        where = np.random.rand(4, 4) > 0.1
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float32),
-            "ddof": 0,
-            "keepdims": False,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 1D array, reduce along axis 0
+    a = np.array([np.nan, -1.0, 2.5, np.nan, 4.0], dtype=np.float32)
+    axis = (0,)
+    dtype = np.dtype(np.float32)
+    ddof = 0
+    keepdims = False
+    where = np.array([True, True, True, True, False], dtype=bool)
+    mean = np.array([0.75], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 2. 2D array, float64, axis=(1,), keepdims=True, ddof=1
-        a = gen_array_with_nans((3, 5), dtype=np.float64)
-        axis = (1,)
-        where = np.random.rand(3, 5) > 0.1
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float64),
-            "ddof": 1,
-            "keepdims": True,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: 3D array, reduce along multiple axes (0, 2)
+    a = np.arange(24, dtype=np.float32).reshape(2, 3, 4)
+    a[0, 1, 2] = np.nan
+    a[1, 0, 0] = np.nan
+    axis = (0, 2)
+    dtype = np.dtype(np.float32)
+    ddof = 1
+    keepdims = True
+    where = a > 5.0
+    mean = np.full((1, 3, 1), 14.0, dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 3. 3D array, float32, axis=(0, 2), keepdims=True, ddof=0
-        a = gen_array_with_nans((2, 3, 4), dtype=np.float32)
-        axis = (0, 2)
-        where = np.random.rand(2, 3, 4) > 0.2
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float32),
-            "ddof": 0,
-            "keepdims": True,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 3D array, reduce along axis 1, keepdims=False
+    a = np.array(
+        [[[1.0, 2.0], [np.nan, 4.0]], [[-5.0, -6.0], [7.0, np.nan]]],
+        dtype=np.float32,
+    )
+    axis = (1,)
+    dtype = np.dtype(np.float32)
+    ddof = 0
+    keepdims = False
+    where = np.ones_like(a, dtype=bool)
+    mean = np.array([[[1.0, 3.0]], [[1.0, -6.0]]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 4. 1D array, float32, axis=(0,), keepdims=False, ddof=1
-        a = gen_array_with_nans((10,), dtype=np.float32)
-        axis = (0,)
-        where = np.random.rand(10) > 0.1
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float32),
-            "ddof": 1,
-            "keepdims": False,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D array, reduce along all axes (0, 1)
+    a = np.array(
+        [[-10.0, np.nan, -30.0], [40.0, 50.0, np.nan]], dtype=np.float32
+    )
+    axis = (0, 1)
+    dtype = np.dtype(np.float32)
+    ddof = 2
+    keepdims = False
+    where = np.ones_like(a, dtype=bool)
+    mean = np.array([[12.5]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 5. 4D array, float64, axis=(1, 2), keepdims=False, ddof=2
-        a = gen_array_with_nans((2, 2, 3, 3), dtype=np.float64)
-        axis = (1, 2)
-        where = np.random.rand(2, 2, 3, 3) > 0.1
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float64),
-            "ddof": 2,
-            "keepdims": False,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: 4D array, reduce along axis 3
+    a = np.zeros((2, 2, 2, 3), dtype=np.float32)
+    a[0, 0, 0, 1] = np.nan
+    a[1, 1, 1, 2] = 5.0
+    axis = (3,)
+    dtype = np.dtype(np.float32)
+    ddof = 0
+    keepdims = True
+    where = np.ones_like(a, dtype=bool)
+    mean = np.zeros((2, 2, 2, 1), dtype=np.float32)
+    mean[1, 1, 1, 0] = 5.0 / 3.0
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 6. 2D array (5, 5), positive, float32, axis=(0,), keepdims=True, ddof=1
-        a = gen_array_with_nans((5, 5), low=1.0, high=100.0, dtype=np.float32)
-        axis = (0,)
-        where = np.random.rand(5, 5) > 0.05
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float32),
-            "ddof": 1,
-            "keepdims": True,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Integer array input with float32 computation
+    a = np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32)
+    axis = (1,)
+    dtype = np.dtype(np.float32)
+    ddof = 0
+    keepdims = False
+    where = np.ones((2, 3), dtype=bool)
+    mean = np.array([[2.0], [5.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 7. 3D array (3, 2, 2), negative, float32, axis=(2,), keepdims=True, ddof=0
-        a = gen_array_with_nans((3, 2, 2), low=-50.0, high=-1.0, dtype=np.float32)
-        axis = (2,)
-        where = np.random.rand(3, 2, 2) > 0.1
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float32),
-            "ddof": 0,
-            "keepdims": True,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: 2D array with negative axis indexing (-1,)
+    a = np.array([[np.nan, 2.0], [3.0, 4.0], [-1.0, np.nan]], dtype=np.float32)
+    axis = (-1,)
+    dtype = np.dtype(np.float32)
+    ddof = 1
+    keepdims = True
+    where = np.array([[False, True], [True, True], [True, False]], dtype=bool)
+    mean = np.array([[2.0], [3.5], [-1.0]], dtype=np.float32)
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
-        # 8. 2D array (2, 6), large, float64, axis=(1,), keepdims=False, ddof=1
-        a = gen_array_with_nans((2, 6), low=1000.0, high=5000.0, dtype=np.float64)
-        axis = (1,)
-        where = np.random.rand(2, 6) > 0.1
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float64),
-            "ddof": 1,
-            "keepdims": False,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
-
-        # 9. 4D array (2, 1, 4, 2), float32, axis=(0, 2, 3), keepdims=True, ddof=1
-        a = gen_array_with_nans((2, 1, 4, 2), dtype=np.float32)
-        axis = (0, 2, 3)
-        where = np.random.rand(2, 1, 4, 2) > 0.2
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float32),
-            "ddof": 1,
-            "keepdims": True,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
-
-        # 10. 2D array (8, 8), float32, axis=(0, 1), keepdims=False, ddof=0, all-True where
-        a = gen_array_with_nans((8, 8), dtype=np.float32)
-        axis = (0, 1)
-        where = np.ones((8, 8), dtype=bool)
-        masked_a = np.where(where, a, np.nan)
-        mean = np.nanmean(masked_a, axis=axis, keepdims=True)
-        mean = np.nan_to_num(mean, nan=0.0)
-        input_dict = {
-            "a": a,
-            "axis": axis,
-            "dtype": np.dtype(np.float32),
-            "ddof": 0,
-            "keepdims": False,
-            "where": where,
-            "mean": mean
-        }
-        list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: 3D array, reduce along (1, 2)
+    a = np.array(
+        [
+            [[1.0, -1.0], [np.nan, 2.0]],
+            [[np.nan, np.nan], [3.0, 4.0]],
+            [[-2.0, 0.0], [1.0, np.nan]],
+        ],
+        dtype=np.float32,
+    )
+    axis = (1, 2)
+    dtype = np.dtype(np.float32)
+    ddof = 0
+    keepdims = False
+    where = np.ones_like(a, dtype=bool)
+    mean = np.array(
+        [[[2.0 / 3.0]], [[3.5]], [[-1.0 / 3.0]]], dtype=np.float32
+    )
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "a": a,
+                "axis": axis,
+                "dtype": dtype,
+                "ddof": ddof,
+                "keepdims": keepdims,
+                "where": where,
+                "mean": mean,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.nanvar_2"] = nanvar_inputs()
 

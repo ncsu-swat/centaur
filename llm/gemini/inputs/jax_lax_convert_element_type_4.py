@@ -4,65 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def convert_element_type_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D boolean, dtype float32
-    operand = np.array(True, dtype=bool)
-    new_dtype = np.dtype(np.float32)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 1: True to float32
+    input_dict = {"operand": True, "new_dtype": np.dtype(np.float32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D boolean, dtype int32
-    operand = np.array([True, False, True], dtype=bool)
-    new_dtype = np.dtype(np.int32)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 2: False to int32
+    input_dict = {"operand": False, "new_dtype": np.dtype(np.int32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D boolean, dtype float64
-    operand = np.array([[True, False], [False, True]], dtype=bool)
-    new_dtype = np.dtype(np.float64)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 3: True to bool
+    input_dict = {"operand": True, "new_dtype": np.dtype(np.bool_)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D boolean, dtype int64
-    operand = np.random.choice([True, False], size=(2, 3, 4)).astype(bool)
-    new_dtype = np.dtype(np.int64)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 4: False to float64
+    input_dict = {"operand": False, "new_dtype": np.dtype(np.float64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D boolean, dtype uint8
-    operand = np.random.choice([True, False], size=(1, 2, 2, 3)).astype(bool)
-    new_dtype = np.dtype(np.uint8)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 5: True to uint8
+    input_dict = {"operand": True, "new_dtype": np.dtype(np.uint8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D boolean, dtype int16
-    operand = np.array([False, False, True, True], dtype=bool)
-    new_dtype = np.dtype(np.int16)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 6: False to int8
+    input_dict = {"operand": False, "new_dtype": np.dtype(np.int8)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D boolean, dtype float16
-    operand = np.random.choice([True, False], size=(5, 5)).astype(bool)
-    new_dtype = np.dtype(np.float16)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 7: True to int16
+    input_dict = {"operand": True, "new_dtype": np.dtype(np.int16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D boolean, dtype complex64
-    operand = np.random.choice([True, False], size=(2, 2, 2)).astype(bool)
-    new_dtype = np.dtype(np.complex64)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 8: False to uint32
+    input_dict = {"operand": False, "new_dtype": np.dtype(np.uint32)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 1D boolean, dtype bool
-    operand = np.array([True, True], dtype=bool)
-    new_dtype = np.dtype(bool)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 9: True to float16
+    input_dict = {"operand": True, "new_dtype": np.dtype(np.float16)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 5D boolean, dtype int8
-    operand = np.random.choice([True, False], size=(1, 1, 2, 2, 2)).astype(bool)
-    new_dtype = np.dtype(np.int8)
-    list_of_inputs.append({"operand": copy.deepcopy(operand), "new_dtype": new_dtype})
+    # Input 10: False to complex64
+    input_dict = {"operand": False, "new_dtype": np.dtype(np.complex64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: True to int64
+    input_dict = {"operand": True, "new_dtype": np.dtype(np.int64)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 
-generated_inputs["jax.lax.convert_element_type_4"] = convert_element_type_inputs()
+
+generated_inputs["jax.lax.convert_element_type_4"] = (
+    convert_element_type_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

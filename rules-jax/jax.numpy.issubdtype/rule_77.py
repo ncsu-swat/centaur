@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if supertype is bfloat16 string, subtype string must be float32 or bfloat16 (Rule 77)
+# float32 dtype cannot subtype narrower float16 dtype (Rule 77)
 
 rule_77 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] == 39, (Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), (And(v["arg1_value"] == 38, v["arg2_value"] == 38)))) if n else
-          If(v["arg2_value"] == 39, (Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), (And(v["arg1_value"] == 38, v["arg2_value"] == 38))))
+    s.add(Not(If(v["arg1_value"] == 7, v["arg2_value"] != 6, True)) if n else
+          If(v["arg1_value"] == 7, v["arg2_value"] != 6, True))
 )
 
 def rule_77_func(arg1, arg2, solver=None, neg=False):
@@ -20,19 +20,19 @@ def rule_77_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
-        if not isinstance(arg2, str):
+        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        arg1_value = Int('arg1_value')
+        arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
-        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 77
         rule_77(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})

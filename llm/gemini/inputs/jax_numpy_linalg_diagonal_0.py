@@ -4,65 +4,77 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def diagonal_inputs():
+
+def jax_numpy_linalg_diagonal_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D square matrix, offset=0, float32
-    x = np.random.randn(3, 3).astype(np.float32)
+    # Input 1: 2D square matrix, float32, offset 0
+    x = np.random.randn(4, 4).astype(np.float32)
     offset = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
 
-    # Input 2: 2D rectangular matrix, positive offset, int32
-    x = np.random.randint(-10, 10, size=(4, 5)).astype(np.int32)
+    # Input 2: 2D rectangular matrix (wide), int32, positive offset
+    x = np.arange(12, dtype=np.int32).reshape(3, 4)
     offset = 1
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
 
-    # Input 3: 2D rectangular matrix, negative offset, float64
-    x = np.random.randn(5, 4).astype(np.float64)
-    offset = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
-
-    # Input 4: Large 2D square matrix, larger positive offset, float32
-    x = np.random.randn(10, 10).astype(np.float32)
-    offset = 3
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
-
-    # Input 5: Batched 3D matrix, offset=0, int32
-    x = np.random.randint(-100, 100, size=(2, 3, 3)).astype(np.int32)
-    offset = 0
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
-
-    # Input 6: Batched 3D matrix, positive offset, float32
-    x = np.random.randn(3, 4, 5).astype(np.float32)
-    offset = 2
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
-
-    # Input 7: Batched 3D matrix, negative offset, float64
-    x = np.random.randn(2, 5, 4).astype(np.float64)
+    # Input 3: 2D rectangular matrix (tall), float64, negative offset
+    x = np.random.randn(5, 3).astype(np.float64)
     offset = -2
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
 
-    # Input 8: 4D batched matrix, negative offset, float32
-    x = np.random.randn(2, 3, 4, 4).astype(np.float32)
+    # Input 4: 3D batched square matrices, float32, offset 0
+    x = np.random.randn(2, 6, 6).astype(np.float32)
+    offset = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
+
+    # Input 5: 3D batched rectangular matrices, int64, positive offset
+    x = np.arange(60, dtype=np.int64).reshape(3, 4, 5)
+    offset = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
+
+    # Input 6: 4D batched matrices, float32, negative offset
+    x = np.random.randn(2, 3, 5, 5).astype(np.float32)
     offset = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
 
-    # Input 9: 5D batched matrix, complex64, positive offset
-    x = (np.random.randn(1, 2, 3, 5, 5) + 1j * np.random.randn(1, 2, 3, 5, 5)).astype(np.complex64)
-    offset = 3
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
+    # Input 7: 2D boolean matrix, offset 0
+    x = np.random.choice([True, False], size=(4, 4))
+    offset = 0
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
 
-    # Input 10: 2D matrix, int64, negative offset
-    x = np.random.randint(-5, 5, size=(2, 2)).astype(np.int64)
+    # Input 8: Complex matrix, complex64, offset 1
+    x = (
+        np.random.randn(4, 4).astype(np.float32)
+        + 1j * np.random.randn(4, 4).astype(np.float32)
+    ).astype(np.complex64)
+    offset = 1
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
+
+    # Input 9: Large 2D matrix, float32, large offset
+    x = np.random.randn(20, 20).astype(np.float32)
+    offset = 10
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
+
+    # Input 10: 5D batched matrix, float64, negative offset
+    x = np.random.randn(2, 2, 2, 3, 3).astype(np.float64)
     offset = -1
-    list_of_inputs.append({"x": copy.deepcopy(x), "offset": offset})
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
+
+    # Input 11: 2D matrix, offset equals row size minus 1
+    x = np.random.randn(3, 3).astype(np.float32)
+    offset = 2
+    list_of_inputs.append(copy.deepcopy({"x": x, "offset": offset}))
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.linalg.diagonal"] = diagonal_inputs()
+
+generated_inputs["jax.numpy.linalg.diagonal"] = (
+    jax_numpy_linalg_diagonal_inputs()
+)
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

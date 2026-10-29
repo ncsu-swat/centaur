@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Valid integer indices and shape tuple (Rule 14)
+# scalar flat index within bounds of 1D shape (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(And(And((v["arg1_value"] == v["arg1_value"]), v["arg2_length"] >= 1), (And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 1) for i in range(6)])))) if n else
-          And(And((v["arg1_value"] == v["arg1_value"]), v["arg2_length"] >= 1), (And([Implies(i < (v["arg2_length"] - 1 + 1), Select(v["arg2_values"], i) >= 1) for i in range(6)]))))
+    s.add(Not(And(And(v["arg2_value"] > 0, v["arg1_value"] >= 0), v["arg1_value"] < v["arg2_value"])) if n else
+          And(And(v["arg2_value"] > 0, v["arg1_value"] >= 0), v["arg1_value"] < v["arg2_value"]))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):
@@ -22,25 +22,22 @@ def rule_14_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not (isinstance(arg2, (int, np.integer)) and not isinstance(arg2, bool)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_value = Int('arg1_value')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), IntSort())
+        arg2_value = Int('arg2_value')
 
         # Value assignments
         solver.add(arg1_value == int(arg1))
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg2_value == int(arg2))
 
         # Constraints for rule 14
-        rule_14(solver, {'arg1_value': arg1_value, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_14(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_14(solver, {'arg1_value': arg1['value'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_14(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

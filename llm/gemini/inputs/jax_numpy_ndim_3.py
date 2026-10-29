@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def ndim_inputs():
     list_of_inputs = []
 
-    # Input 1: standard positive float
-    input_dict = {"a": 3.14}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: standard negative float
-    input_dict = {"a": -2.718}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero float
+    # Input 1: Zero
     input_dict = {"a": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: large float
-    input_dict = {"a": 1.5e15}
+    # Input 2: Positive float
+    input_dict = {"a": 3.141592653589793}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: small negative float
-    input_dict = {"a": -1.2e-7}
+    # Input 3: Negative float
+    input_dict = {"a": -2.718281828459045}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: positive infinity
-    input_dict = {"a": float('inf')}
+    # Input 4: Large positive float
+    input_dict = {"a": 1e20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: negative infinity
-    input_dict = {"a": float('-inf')}
+    # Input 5: Small positive float
+    input_dict = {"a": 1e-20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Not a Number (NaN)
-    input_dict = {"a": float('nan')}
+    # Input 6: Large negative float
+    input_dict = {"a": -1e20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: extremely small float
-    input_dict = {"a": 1e-30}
+    # Input 7: Small negative float
+    input_dict = {"a": -1e-20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: precise decimal float
-    input_dict = {"a": 12345.6789}
+    # Input 8: Positive infinity
+    input_dict = {"a": float("inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Negative infinity
+    input_dict = {"a": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: NaN
+    input_dict = {"a": float("nan")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Negative zero
+    input_dict = {"a": -0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.ndim_3"] = ndim_inputs()
 

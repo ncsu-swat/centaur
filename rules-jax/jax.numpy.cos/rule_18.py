@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# A scalar input should be within a reasonably bounded domain to ensure precise evaluation (Rule 18)
+# scalar input angle in radians is strictly within two full periods (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > -5000, v["arg1_value"] < 5000)) if n else
-          And(v["arg1_value"] > -5000, v["arg1_value"] < 5000))
+    s.add(Not(And(-6.28 < v["arg1_value"], v["arg1_value"] < 6.28)) if n else
+          And(-6.28 < v["arg1_value"], v["arg1_value"] < 6.28))
 )
 
 def rule_18_func(arg1, solver=None, neg=False):

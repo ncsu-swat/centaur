@@ -4,53 +4,59 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def fabs_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array with positive and negative values
-    x = np.array([-1.5, 2.3, -0.0, 4.5], dtype=np.float32)
+    # Input 1: 1D float32 array with negative and positive values
+    x = np.array([-1.342, 5.649, -3.927, 0.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 2: 2D float64 array with negative values
-    x = np.array([[-3.4, -5.6], [7.8, -9.1]], dtype=np.float64)
+    # Input 2: 1D integer array
+    x = np.array([-5, -9, 1, 10, 15, 0], dtype=np.int32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 3: 1D int32 array
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
+    # Input 3: 2D float64 array
+    x = np.array([[-2.5, 3.1], [-0.0, -100.4]], dtype=np.float64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 4: 3D int16 array
-    x = np.array([[[-1, 2], [-3, 4]], [[-5, 6], [-7, 8]]], dtype=np.int16)
+    # Input 4: 0D scalar array (float32)
+    x = np.array(-42.0, dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 5: Boolean array
-    x = np.array([True, False, True], dtype=np.bool_)
+    # Input 5: 3D float16 array
+    x = np.random.uniform(-10, 10, size=(2, 3, 4)).astype(np.float16)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 6: 0D scalar-like array
-    x = np.array(-42.42, dtype=np.float32)
+    # Input 6: 1D boolean array
+    x = np.array([True, False, True, True, False], dtype=np.bool_)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 7: 4D float32 array with random values (including negatives)
-    x = np.random.uniform(-10.0, 10.0, size=(2, 2, 3, 3)).astype(np.float32)
+    # Input 7: 4D int64 array
+    x = np.random.randint(-100, 100, size=(2, 2, 3, 2), dtype=np.int64)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 8: Array containing inf and nan values
+    # Input 8: Empty array
+    x = np.array([], dtype=np.float32)
+    list_of_inputs.append({"x": copy.deepcopy(x)})
+
+    # Input 9: Array with special float values (inf, -inf, nan)
     x = np.array([-np.inf, np.inf, np.nan, -0.0, 0.0], dtype=np.float32)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 9: Large float64 values
-    x = np.array([-1e10, 2.5e15, -3.8e20], dtype=np.float64)
+    # Input 10: 2D unsigned integer array
+    x = np.array([[0, 10, 255], [128, 5, 20]], dtype=np.uint8)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
-    # Input 10: float16 array
-    x = np.array([-0.5, -1.5, 2.5], dtype=np.float16)
+    # Input 11: 1D int16 array
+    x = np.array([-32768, -1, 0, 1, 32767], dtype=np.int16)
     list_of_inputs.append({"x": copy.deepcopy(x)})
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.fabs_1"] = fabs_inputs()
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The dtype input must be a valid index, and the string input must not be "none" (Rule 8)
+# both arguments are identical string type specifiers (Rule 8)
 
 rule_8 = lambda s, v, n=False: (
-    s.add(Not(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), v["arg2_value"] != 5)) if n else
-          And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), v["arg2_value"] != 5))
+    s.add(Not(And(v["arg1_value"] == v["arg2_value"], (Or(v["arg1_value"] == 38, v["arg1_value"] == 39)))) if n else
+          And(v["arg1_value"] == v["arg2_value"], (Or(v["arg1_value"] == 38, v["arg1_value"] == 39))))
 )
 
 def rule_8_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,18 @@ def rule_8_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
+        if not isinstance(arg1, str):
             return False
         if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
-        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
+        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
         solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 8

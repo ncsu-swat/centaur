@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# For integer axis, it must be within the range of negative ndim to ndim - 1 (Rule 1)
+# integer axis within valid dimension bounds (Rule 1)
 
 rule_1 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] <= v["arg1_ndim"] - 1)) if n else
+          And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] <= v["arg1_ndim"] - 1))
 )
 
 def rule_1_func(arg1, arg2, solver=None, neg=False):

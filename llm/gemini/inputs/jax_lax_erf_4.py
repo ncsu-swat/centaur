@@ -4,63 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def erf_inputs():
     list_of_inputs = []
 
-    # Input 1: Float representing True
-    x = np.float32(1.0)
-    input_dict = {"x": x}
+    # Input 1: Zero
+    input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Float representing False
-    x = np.float32(0.0)
-    input_dict = {"x": x}
+    # Input 2: Positive float
+    input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D float array representing booleans
-    x = np.array([1.0, 0.0, 1.0, 1.0, 0.0], dtype=np.float32)
-    input_dict = {"x": x}
+    # Input 3: Negative float
+    input_dict = {"x": -1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D float array representing booleans
-    x = np.array([[1.0, 0.0], [0.0, 1.0], [1.0, 1.0]], dtype=np.float32)
-    input_dict = {"x": x}
+    # Input 4: Small positive float
+    input_dict = {"x": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D float array representing booleans
-    x = np.random.choice([0.0, 1.0], size=(2, 2, 2)).astype(np.float32)
-    input_dict = {"x": x}
+    # Input 5: Small negative float
+    input_dict = {"x": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 4D float array representing booleans
-    x = np.random.choice([0.0, 1.0], size=(2, 3, 1, 2)).astype(np.float32)
-    input_dict = {"x": x}
+    # Input 6: Larger positive float
+    input_dict = {"x": 2.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float64 array of size 1
-    x = np.array([1.0], dtype=np.float64)
-    input_dict = {"x": x}
+    # Input 7: Larger negative float
+    input_dict = {"x": -2.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D float64 array of size 1x1
-    x = np.array([[0.0]], dtype=np.float64)
-    input_dict = {"x": x}
+    # Input 8: Value near zero
+    input_dict = {"x": 1e-4}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 5D float64 array representing booleans
-    x = np.random.choice([0.0, 1.0], size=(2, 1, 2, 1, 2)).astype(np.float64)
-    input_dict = {"x": x}
+    # Input 9: Asymptotic region positive
+    input_dict = {"x": 5.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Empty 1D float32 array
-    x = np.array([], dtype=np.float32)
-    input_dict = {"x": x}
+    # Input 10: Asymptotic region negative
+    input_dict = {"x": -5.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.erf_4"] = erf_inputs()
 

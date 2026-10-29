@@ -4,53 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isrealobj_inputs():
     list_of_inputs = []
 
-    # Input 1: List of integers
-    input_dict = {"x": [1, 2, -3, 4]}
+    # Input 1: 1D list of positive integers
+    input_dict = {"x": [1, 2, 3, 4]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: List of floats
-    input_dict = {"x": [1.0, 2.5, -3.2, 0.0]}
+    # Input 2: 1D list of negative and zero integers
+    input_dict = {"x": [-10, -5, 0, 5]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: List of complex numbers
-    input_dict = {"x": [1+2j, 3-4j, 0+0j]}
+    # Input 3: 1D list of floats
+    input_dict = {"x": [1.5, -2.3, 0.0, 4.7]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: List of complex numbers with zero imaginary parts
-    input_dict = {"x": [1+0j, -2.5+0j]}
+    # Input 4: 1D list of booleans
+    input_dict = {"x": [True, False, True, True]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Nested list of floats (2D structure)
-    input_dict = {"x": [[1.0, 2.0], [3.0, 4.0]]}
+    # Input 5: 1D list of complex numbers with non-zero imaginary parts
+    input_dict = {"x": [1.0 + 2.0j, -3.0 + 4.0j]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Nested list containing complex numbers
-    input_dict = {"x": [[1.0, 2j], [3.0, 4.0]]}
+    # Input 6: 1D list of complex numbers with zero imaginary parts
+    input_dict = {"x": [1.0 + 0.0j, 2.0 + 0.0j, -3.0 + 0.0j]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: List of numpy arrays (real)
-    input_dict = {"x": [np.array([1, 2]), np.array([3, 4])]}
+    # Input 7: 2D nested list of integers
+    input_dict = {"x": [[1, 2, 3], [4, 5, 6]]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: List of numpy arrays (complex)
-    input_dict = {"x": [np.array([1+2j, 2]), np.array([3, 4])]}
+    # Input 8: 2D nested list of floats
+    input_dict = {"x": [[-1.2, 0.5], [3.3, -4.1]]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: List of booleans
-    input_dict = {"x": [True, False, True]}
+    # Input 9: 2D nested list of complex numbers
+    input_dict = {"x": [[1j, 2j], [3 - 1j, 4 + 0j]]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: List of mixed types (int and float)
-    input_dict = {"x": [1, 2.0, 3, 4.5]}
+    # Input 10: 3D nested list of floats
+    input_dict = {"x": [[[1.0, -2.0], [3.0, 4.0]], [[5.0, 6.0], [-7.0, 8.0]]]}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Empty list
+    input_dict = {"x": []}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Mixed int and float list
+    input_dict = {"x": [1, 2.5, -3, 4.2]}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isrealobj_5"] = isrealobj_inputs()
 

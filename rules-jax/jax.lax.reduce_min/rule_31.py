@@ -7,32 +7,37 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# operand data type must be real or boolean (Rule 31)
+# remaining dimensions count after reduction must be non-negative for list (Rule 31)
 
 rule_31 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] < 9) if n else
-          v["arg1_dtype"] < 9)
+    s.add(Not(v["arg1_ndim"] - v["arg2_length"] >= 0) if n else
+          v["arg1_ndim"] - v["arg2_length"] >= 0)
 )
 
-def rule_31_func(arg1, solver=None, neg=False):
+def rule_31_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
+        if not (isinstance(arg2, list) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+            return False
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
+        arg2_length = Int('arg2_length')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
+        solver.add(arg2_length == len(arg2))
 
         # Constraints for rule 31
-        rule_31(solver, {'arg1_dtype': arg1_dtype})
+        rule_31(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_31(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_31(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)

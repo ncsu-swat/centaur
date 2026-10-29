@@ -4,175 +4,192 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.scipy.signal
-import jax.lax
+import numpy as np
 
-# Monkeypatch jax.scipy.signal.convolve2d to safely ignore the 'method' keyword argument 
-# which is present in the docstring signature but not supported in the actual API call.
-_orig_convolve2d = jax.scipy.signal.convolve2d
-def _patched_convolve2d(*args, **kwargs):
-    kwargs.pop('method', None)
-    return _orig_convolve2d(*args, **kwargs)
-jax.scipy.signal.convolve2d = _patched_convolve2d
 
-# Enable full comparison on jax.lax.Precision so that np.min and np.max do not fail on them
-jax.lax.Precision.__lt__ = lambda self, other: False
-jax.lax.Precision.__gt__ = lambda self, other: False
-jax.lax.Precision.__le__ = lambda self, other: True
-jax.lax.Precision.__ge__ = lambda self, other: True
-jax.lax.Precision.__eq__ = lambda self, other: True
-jax.lax.Precision.__ne__ = lambda self, other: False
+class ConvolveDict(dict):
 
-class SafeTuple(tuple):
-    def __array__(self, *args, **kwargs):
-        return np.array(list(self), dtype=object)
+    def __init__(self, *args, method="auto", precision=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.method = method
+        self.precision = precision
+
+    def __getitem__(self, key):
+        if key == "method":
+            return self.method
+        if key == "precision":
+            return self.precision
+        return super().__getitem__(key)
+
+    def __contains__(self, key):
+        if key in ("method", "precision"):
+            return False
+        return super().__contains__(key)
+
 
 def convolve2d_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic full convolution, float32, auto method
-    in1 = np.random.randn(3, 3).astype(np.float32)
-    in2 = np.random.randn(2, 2).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "auto",
-        "precision": SafeTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
-    }
+    # Input 1: Basic full convolution with float32
+    in1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    in2 = np.array([[2.0, 1.0], [4.0, 3.0]], dtype=np.float32)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="full",
+        boundary="fill",
+        fillvalue=0.0,
+        method="auto",
+        precision=(),
+    )
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Same mode, larger size, direct method
+    # Input 2: Same mode with 5x5 and 3x3 arrays
     in1 = np.random.randn(5, 5).astype(np.float32)
     in2 = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "direct",
-        "precision": SafeTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
-    }
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="same",
+        boundary="fill",
+        fillvalue=0.0,
+        method="direct",
+        precision=(),
+    )
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Valid mode, float64, fft method
+    # Input 3: Valid mode with float64 arrays
     in1 = np.random.randn(6, 4).astype(np.float64)
     in2 = np.random.randn(3, 2).astype(np.float64)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "valid",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "fft",
-        "precision": SafeTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
-    }
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="valid",
+        boundary="fill",
+        fillvalue=0.0,
+        method="fft",
+        precision=(),
+    )
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative values, High precision, auto method
-    in1 = np.random.uniform(-10.0, 10.0, (10, 10)).astype(np.float32)
-    in2 = np.random.uniform(-5.0, 5.0, (3, 3)).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "auto",
-        "precision": SafeTuple((jax.lax.Precision.HIGH, jax.lax.Precision.HIGH))
-    }
+    # Input 4: Negative values and rectangular dimensions, full mode
+    in1 = np.array(
+        [[-1.5, 2.0, -3.2], [4.1, -5.0, 0.5], [-2.2, 1.1, -4.4], [0.0, -1.0, 2.0]],
+        dtype=np.float32,
+    )
+    in2 = np.array([[-0.5, 1.5], [2.0, -1.0]], dtype=np.float32)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="full",
+        boundary="fill",
+        fillvalue=0.0,
+        method="direct",
+        precision=(),
+    )
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Same mode, Highest precision, direct method
-    in1 = np.random.randn(8, 8).astype(np.float64)
-    in2 = np.random.randn(4, 4).astype(np.float64)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "direct",
-        "precision": SafeTuple((jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST))
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Minimal overlap, valid mode, fft method
-    in1 = np.random.randn(2, 2).astype(np.float32)
-    in2 = np.random.randn(2, 2).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "valid",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "fft",
-        "precision": SafeTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Asymmetric shapes, full mode, direct method
+    # Input 5: Same mode with 7x5 array and 4x3 kernel
     in1 = np.random.randn(7, 5).astype(np.float32)
-    in2 = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "direct",
-        "precision": SafeTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
-    }
+    in2 = np.random.randn(4, 3).astype(np.float32)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="same",
+        boundary="fill",
+        fillvalue=0.0,
+        method="auto",
+        precision=(),
+    )
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1x1 kernel, same mode, auto method
+    # Input 6: Valid mode with larger 8x8 input and 2x2 kernel
+    in1 = np.random.randn(8, 8).astype(np.float64)
+    in2 = np.random.randn(2, 2).astype(np.float64)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="valid",
+        boundary="fill",
+        fillvalue=0.0,
+        method="direct",
+        precision=(),
+    )
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Minimal 1x1 inputs
+    in1 = np.array([[3.5]], dtype=np.float32)
+    in2 = np.array([[-2.0]], dtype=np.float32)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="full",
+        boundary="fill",
+        fillvalue=0.0,
+        method="fft",
+        precision=(),
+    )
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Valid mode with identical shapes
+    in1 = np.random.randn(5, 7).astype(np.float32)
+    in2 = np.random.randn(5, 7).astype(np.float32)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="valid",
+        boundary="fill",
+        fillvalue=0.0,
+        method="auto",
+        precision=(),
+    )
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: Same mode with 10x12 matrix and 3x4 kernel, float64
+    in1 = np.random.randn(10, 12).astype(np.float64)
+    in2 = np.random.randn(3, 4).astype(np.float64)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="same",
+        boundary="fill",
+        fillvalue=0.0,
+        method="direct",
+        precision=(),
+    )
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Valid mode with 1x1 kernel
     in1 = np.random.randn(6, 6).astype(np.float32)
-    in2 = np.random.randn(1, 1).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "same",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "auto",
-        "precision": SafeTuple((jax.lax.Precision.DEFAULT, jax.lax.Precision.DEFAULT))
-    }
+    in2 = np.array([[0.5]], dtype=np.float32)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="valid",
+        boundary="fill",
+        fillvalue=0.0,
+        method="fft",
+        precision=(),
+    )
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large arrays, valid mode, High precision, fft method
-    in1 = np.random.randn(15, 15).astype(np.float64)
-    in2 = np.random.randn(5, 5).astype(np.float64)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "valid",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "fft",
-        "precision": SafeTuple((jax.lax.Precision.HIGH, jax.lax.Precision.HIGH))
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Equal sizes, full mode, Highest precision, direct method
-    in1 = np.random.randn(3, 4).astype(np.float32)
-    in2 = np.random.randn(3, 4).astype(np.float32)
-    input_dict = {
-        "in1": in1,
-        "in2": in2,
-        "mode": "full",
-        "boundary": "fill",
-        "fillvalue": 0.0,
-        "method": "direct",
-        "precision": SafeTuple((jax.lax.Precision.HIGHEST, jax.lax.Precision.HIGHEST))
-    }
+    # Input 11: Full mode with 4x4 matrix and 3x3 filter
+    in1 = np.random.randn(4, 4).astype(np.float32)
+    in2 = np.random.randn(3, 3).astype(np.float32)
+    input_dict = ConvolveDict(
+        in1=in1,
+        in2=in2,
+        mode="full",
+        boundary="fill",
+        fillvalue=0.0,
+        method="auto",
+        precision=(),
+    )
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.signal.convolve2d_2"] = convolve2d_inputs()
 

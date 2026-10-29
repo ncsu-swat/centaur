@@ -4,53 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def iscomplex_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D complex array with mixed real/complex values
-    x = np.array([1.0, 1.0 + 1.0j, 2.0j, 0.0 + 0.0j, -3.0j]).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D complex64 array with both complex and purely real numbers
+    x = np.array([1.0 + 2.0j, 3.0 + 0.0j, 0.0 + 4.0j, 0.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D float32 array
-    x = np.random.randn(3, 4).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D complex128 array with negative components
+    x = np.array(
+        [[-1.5 - 2.5j, 3.0 + 0.0j], [0.0 - 1.0j, -4.0 + 0.0j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 3D complex64 array
-    x = (np.random.randn(2, 2, 2) + 1j * np.random.randn(2, 2, 2)).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 1D standard float32 array (all should be non-complex)
+    x = np.array([1.0, -2.5, 3.14, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 1D int32 array
-    x = np.array([-10, 0, 10, 20]).astype(np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 0D complex scalar array
+    x = np.array(2.0 + 3.0j, dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 0D array (scalar) complex
-    x = np.array(1 + 2j).astype(np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 0D real scalar array
+    x = np.array(42.0, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 2D complex128 array with negative and mixed values
-    x = np.array([[-1-1j, -2j], [3, 4+0j]]).astype(np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 3D integer array
+    x = np.arange(-12, 12, dtype=np.int32).reshape((2, 3, 4))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D float64 array with np.nan and np.inf
-    x = np.array([np.nan, np.inf, -np.inf, 0.0]).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: Boolean array
+    x = np.array([True, False, True, False], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 4D complex64 array
-    x = (np.random.randn(2, 3, 1, 2) + 1j * np.random.randn(2, 3, 1, 2)).astype(np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Empty complex array
+    x = np.array([], dtype=np.complex128).reshape((0, 5))
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D boolean array
-    x = np.array([True, False, True]).astype(np.bool_)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 4D complex array
+    real_part = np.random.randn(2, 2, 3, 2).astype(np.float32)
+    imag_part = np.random.randn(2, 2, 3, 2).astype(np.float32)
+    x = real_part + 1j * imag_part
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Empty complex array
-    x = np.array([], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 2D complex array containing NaNs and Infs in imaginary parts
+    x = np.array(
+        [[1.0 + np.nan * 1j, np.inf + 2.0j], [-np.inf + 0.0j, 0.0 + np.inf * 1j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D int64 array with zeros and negative values
+    x = np.array([-10, 0, 10, -100], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.iscomplex"] = iscomplex_inputs()
 

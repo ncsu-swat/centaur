@@ -4,153 +4,153 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def histogramdd_inputs():
     list_of_inputs = []
 
-    # Case 1: D=1, N=100
-    sample = np.random.randn(100, 1).astype(np.float32)
-    bins = 10
-    range_list = [(-3.0, 3.0)]
-    weights = np.random.rand(100).astype(np.float32)
-    density = False
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
-
-    # Case 2: D=2, N=50
-    sample = np.random.rand(50, 2).astype(np.float32)
-    bins = 5
-    range_list = [(0.0, 1.0), (0.0, 1.0)]
+    # Input 1: 2D sample, float32, basic parameters
+    sample = np.random.randn(50, 2).astype(np.float32)
     weights = np.ones(50, dtype=np.float32)
-    density = True
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 5,
+            "range": [(-3.0, 3.0), (-3.0, 3.0)],
+            "weights": weights,
+            "density": False,
+        }
+    )
 
-    # Case 3: D=3, N=200
-    sample = np.random.randn(200, 3).astype(np.float64)
-    bins = 6
-    range_list = [(-2.0, 2.0), (-2.0, 2.0), (-2.0, 2.0)]
-    weights = np.random.randn(200).astype(np.float64)
-    density = False
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 2: 1D sample with shape (N, 1), density=True
+    sample = np.linspace(-2.0, 2.0, 30, dtype=np.float64).reshape(-1, 1)
+    weights = np.random.uniform(0.5, 1.5, size=30).astype(np.float64)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 10,
+            "range": [(-2.5, 2.5)],
+            "weights": weights,
+            "density": True,
+        }
+    )
 
-    # Case 4: D=2, N=10
-    sample = np.random.uniform(-5.0, 5.0, (10, 2)).astype(np.float32)
-    bins = 3
-    range_list = [(-5.0, 5.0), (-5.0, 5.0)]
-    weights = np.ones(10, dtype=np.float32)
-    density = True
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 3: 3D sample, float64, non-negative range
+    sample = np.random.uniform(0.0, 10.0, size=(100, 3)).astype(np.float64)
+    weights = np.random.uniform(0.1, 2.0, size=100).astype(np.float64)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 4,
+            "range": [(0.0, 10.0), (0.0, 10.0), (0.0, 10.0)],
+            "weights": weights,
+            "density": False,
+        }
+    )
 
-    # Case 5: D=4, N=500
-    sample = np.random.uniform(0.0, 10.0, (500, 4)).astype(np.float32)
-    bins = 4
-    range_list = [(0.0, 10.0), (0.0, 10.0), (0.0, 10.0), (0.0, 10.0)]
-    weights = np.random.uniform(0.5, 1.5, 500).astype(np.float32)
-    density = False
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 4: 4D sample, float32, density=True
+    sample = np.random.normal(loc=0.0, scale=1.0, size=(80, 4)).astype(
+        np.float32
+    )
+    weights = np.random.exponential(scale=1.0, size=80).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 3,
+            "range": [(-4.0, 4.0), (-4.0, 4.0), (-4.0, 4.0), (-4.0, 4.0)],
+            "weights": weights,
+            "density": True,
+        }
+    )
 
-    # Case 6: D=1, N=1000, float64
-    sample = np.random.randn(1000, 1).astype(np.float64)
-    bins = 20
-    range_list = [(-10.0, 10.0)]
-    weights = np.random.rand(1000).astype(np.float64)
-    density = True
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 5: 2D integer sample
+    sample = np.random.randint(-10, 10, size=(60, 2)).astype(np.int32)
+    weights = np.ones(60, dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 6,
+            "range": [(-10.0, 10.0), (-10.0, 10.0)],
+            "weights": weights,
+            "density": False,
+        }
+    )
 
-    # Case 7: D=3, N=20
-    sample = np.random.randn(20, 3).astype(np.float32)
-    bins = 2
-    range_list = [(-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0)]
-    weights = np.random.rand(20).astype(np.float32)
-    density = False
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 6: 2D sample with negative range and asymmetric bounds
+    sample = np.random.uniform(-5.0, -1.0, size=(40, 2)).astype(np.float32)
+    weights = np.random.uniform(1.0, 5.0, size=40).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 8,
+            "range": [(-6.0, 0.0), (-5.0, -1.0)],
+            "weights": weights,
+            "density": True,
+        }
+    )
 
-    # Case 8: D=2, N=300
-    sample = np.random.uniform(-5.0, 5.0, (300, 2)).astype(np.float32)
-    bins = 8
-    range_list = [(-5.0, 0.0), (0.0, 5.0)]
-    weights = np.random.rand(300).astype(np.float32)
-    density = True
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 7: 5D sample, small bin count
+    sample = np.random.randn(120, 5).astype(np.float32)
+    weights = np.abs(np.random.randn(120)).astype(np.float32)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 2,
+            "range": [
+                (-3.0, 3.0),
+                (-3.0, 3.0),
+                (-3.0, 3.0),
+                (-3.0, 3.0),
+                (-3.0, 3.0),
+            ],
+            "weights": weights,
+            "density": False,
+        }
+    )
 
-    # Case 9: D=5, N=100
-    sample = np.random.randn(100, 5).astype(np.float32)
-    bins = 3
-    range_list = [(-2.0, 2.0)] * 5
-    weights = np.random.randn(100).astype(np.float32)
-    density = False
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 8: 3D sample with integer weights
+    sample = np.random.uniform(-1.0, 1.0, size=(75, 3)).astype(np.float64)
+    weights = np.random.randint(1, 5, size=75).astype(np.int64)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 7,
+            "range": [(-1.5, 1.5), (-1.5, 1.5), (-1.5, 1.5)],
+            "weights": weights,
+            "density": True,
+        }
+    )
 
-    # Case 10: D=2, N=150
-    sample = np.random.uniform(1.0, 10.0, (150, 2)).astype(np.float32)
-    bins = 12
-    range_list = [(1.0, 10.0), (1.0, 10.0)]
-    weights = np.random.rand(150).astype(np.float32)
-    density = True
-    list_of_inputs.append({
-        "sample": sample,
-        "bins": bins,
-        "range": range_list,
-        "weights": weights,
-        "density": density
-    })
+    # Input 9: Single-point 2D sample
+    sample = np.array([[0.5, -0.5]], dtype=np.float32)
+    weights = np.array([1.0], dtype=np.float32)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 3,
+            "range": [(0.0, 1.0), (-1.0, 0.0)],
+            "weights": weights,
+            "density": False,
+        }
+    )
+
+    # Input 10: 2D sample with large number of points and float64 weights
+    sample = np.random.randn(200, 2).astype(np.float64)
+    weights = np.random.uniform(0.0, 1.0, size=200).astype(np.float64)
+    list_of_inputs.append(
+        {
+            "sample": sample,
+            "bins": 12,
+            "range": [(-4.0, 4.0), (-4.0, 4.0)],
+            "weights": weights,
+            "density": True,
+        }
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.histogramdd_1"] = histogramdd_inputs()
 

@@ -4,53 +4,68 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def isreal_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float array (positive and negative)
-    x = np.array([-1.5, 0.0, 2.3, 4.5], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D complex array with mixed real and imaginary parts
+    x = np.array([False, 0j, 1, 2.1, 1 + 2j, -3 - 0j], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D complex array
-    x = np.array([1 + 0j, 2 + 3j, -0.5j, 4 - 1j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 1D real float32 array
+    x = np.array([-1.5, 0.0, 3.14, 42.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 2D integer array
-    x = np.array([[1, -2, 3], [4, 5, -6]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 2D complex array
+    x = np.array(
+        [[1.0 + 0.0j, 2.0 - 1.0j], [-3.0 + 4.0j, 0.0 + 0.0j]],
+        dtype=np.complex64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D float array
-    x = np.random.randn(2, 3, 4).astype(np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 2D integer array
+    x = np.array([[-10, 0, 5], [20, -30, 40]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 0D (scalar) array
-    x = np.array(5.5, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D float64 array with special values (NaN, inf)
+    x = np.array(
+        [[[np.nan, np.inf], [-np.inf, 1.0]], [[0.0, -0.0], [2.5, -3.5]]],
+        dtype=np.float64,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D boolean array
-    x = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 0D scalar tensor (complex)
+    x = np.array(5.0 + 0.0j, dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 4D complex array
-    x = (np.random.randn(2, 2, 2, 2) + 1j * np.random.randn(2, 2, 2, 2)).astype(np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 0D scalar tensor (pure imaginary)
+    x = np.array(0.0 + 3.0j, dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 1D array with special float values (nan, inf, -inf)
-    x = np.array([np.nan, np.inf, -np.inf, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: Boolean array
+    x = np.array([[True, False], [False, True]], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 2D complex array with zero imaginary part
-    x = np.array([[1.0 + 0.0j, -2.0 + 0.0j], [3.0 + 0.0j, 4.0 + 0.0j]], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 4D complex array
+    x = (np.random.randn(2, 3, 4, 5) + 1j * np.random.randn(2, 3, 4, 5)).astype(
+        np.complex128
+    )
+    x[0, 1, 2, :] = x[0, 1, 2, :].real
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D int64 array with extreme values
-    x = np.array([np.iinfo(np.int64).min, 0, np.iinfo(np.int64).max], dtype=np.int64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Empty array
+    x = np.array([], dtype=np.complex128)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D int64 array
+    x = np.arange(-5, 5, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.isreal_1"] = isreal_inputs()
 

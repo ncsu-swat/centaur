@@ -4,115 +4,105 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.numpy as jnp
-import jax.scipy.special as jsp
+import numpy as np
 
-# Monkeypatch jax.scipy.special with a compliant comb function
-# since the target JAX version does not have it implemented.
-def mock_comb(N, k, exact=False, repetition=False):
-    if exact:
-        raise ValueError("exact=True is not supported")
-    N = jnp.asarray(N)
-    k = jnp.asarray(k)
-    if repetition:
-        N = N + k - 1
-    cond = (k >= 0) & (k <= N)
-    N_f = N.astype(jnp.float32)
-    k_f = k.astype(jnp.float32)
-    safe_N = jnp.where(cond, N_f, 1.0)
-    safe_k = jnp.where(cond, k_f, 0.0)
-    out = jnp.exp(jsp.gammaln(safe_N + 1.0) - jsp.gammaln(safe_k + 1.0) - jsp.gammaln(safe_N - safe_k + 1.0))
-    out = jnp.round(out)
-    return jnp.where(cond, out, 0.0)
-
-jsp.comb = mock_comb
 
 def comb_inputs():
     list_of_inputs = []
 
-    # Input 1, scalar values
-    list_of_inputs.append({
-        "N": np.array(10, dtype=np.int32),
-        "k": np.array(5, dtype=np.int32),
+    # Input 1: Basic standard combination (N=5, k=2)
+    input_dict = {
+        "N": int(5),
+        "k": int(2),
         "exact": False,
-        "repetition": False
-    })
+        "repetition": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2, 1D arrays with exact=False
-    list_of_inputs.append({
-        "N": np.array([10, 20, 30], dtype=np.int32),
-        "k": np.array([3, 4, 5], dtype=np.int32),
+    # Input 2: Combination with repetition (N=10, k=3)
+    input_dict = {
+        "N": int(10),
+        "k": int(3),
         "exact": False,
-        "repetition": False
-    })
+        "repetition": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3, 2D arrays, int64
-    list_of_inputs.append({
-        "N": np.array([[5, 6], [7, 8]], dtype=np.int64),
-        "k": np.array([[2, 3], [4, 1]], dtype=np.int64),
+    # Input 3: Boundary case k = 0
+    input_dict = {
+        "N": int(8),
+        "k": int(0),
         "exact": False,
-        "repetition": False
-    })
+        "repetition": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4, scalar with repetition=True
-    list_of_inputs.append({
-        "N": np.array(10, dtype=np.int32),
-        "k": np.array(3, dtype=np.int32),
+    # Input 4: Boundary case N = 0, k = 0
+    input_dict = {
+        "N": int(0),
+        "k": int(0),
         "exact": False,
-        "repetition": True
-    })
+        "repetition": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5, 1D arrays, int64, repetition=True
-    list_of_inputs.append({
-        "N": np.array([10, 15], dtype=np.int64),
-        "k": np.array([2, 5], dtype=np.int64),
+    # Input 5: Boundary case k == N
+    input_dict = {
+        "N": int(6),
+        "k": int(6),
         "exact": False,
-        "repetition": True
-    })
+        "repetition": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6, small integers
-    list_of_inputs.append({
-        "N": np.array(5, dtype=np.int32),
-        "k": np.array(2, dtype=np.int32),
+    # Input 6: k > N without repetition
+    input_dict = {
+        "N": int(4),
+        "k": int(7),
         "exact": False,
-        "repetition": False
-    })
+        "repetition": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7, broadcasting N (1D) and k (scalar)
-    list_of_inputs.append({
-        "N": np.array([10, 20, 30, 40], dtype=np.int32),
-        "k": np.array(2, dtype=np.int32),
-        "exact": False,
-        "repetition": True
-    })
+    # Input 7: Using numpy int32 and numpy bool
+    input_dict = {
+        "N": np.int32(12),
+        "k": np.int32(4),
+        "exact": np.bool_(False),
+        "repetition": np.bool_(False),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8, broadcasting N (scalar) and k (1D)
-    list_of_inputs.append({
-        "N": np.array(15, dtype=np.int32),
-        "k": np.array([1, 2, 3], dtype=np.int32),
+    # Input 8: Using numpy int64 and repetition
+    input_dict = {
+        "N": np.int64(20),
+        "k": np.int64(5),
         "exact": False,
-        "repetition": False
-    })
+        "repetition": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9, 2D arrays with repetition=True
-    list_of_inputs.append({
-        "N": np.array([[12, 14], [16, 18]], dtype=np.int32),
-        "k": np.array([[2, 2], [3, 3]], dtype=np.int32),
+    # Input 9: Large N with repetition
+    input_dict = {
+        "N": int(50),
+        "k": int(2),
         "exact": False,
-        "repetition": True
-    })
+        "repetition": True,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10, large integers
-    list_of_inputs.append({
-        "N": np.array(100, dtype=np.int64),
-        "k": np.array(50, dtype=np.int64),
+    # Input 10: N = 1, k = 1
+    input_dict = {
+        "N": int(1),
+        "k": int(1),
         "exact": False,
-        "repetition": False
-    })
+        "repetition": False,
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.special.comb_2"] = comb_inputs()
 

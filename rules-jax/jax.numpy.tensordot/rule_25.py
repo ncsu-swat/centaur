@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# integer axes must be within valid dimension range of both inputs (Rule 25)
+# tensordot with axes 2 requires both inputs to have rank of at least 2 (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(And(And(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"]), v["arg3_value"] <= v["arg2_ndim"])) if n else
-          And(And(v["arg3_value"] >= 0, v["arg3_value"] <= v["arg1_ndim"]), v["arg3_value"] <= v["arg2_ndim"]))
+    s.add(Not(If(v["arg3_value"] == 2, And(v["arg1_ndim"] >= 2, v["arg2_ndim"] >= 2), True)) if n else
+          If(v["arg3_value"] == 2, And(v["arg1_ndim"] >= 2, v["arg2_ndim"] >= 2), True))
 )
 
 def rule_25_func(arg1, arg2, arg3, solver=None, neg=False):

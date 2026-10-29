@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# tensor input n must have non-negative values (Rule 19)
+# tensor input elements must be non-negative and within double-precision overflow limit (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(Select(v["arg1_range"], 0) >= 0) if n else
-          Select(v["arg1_range"], 0) >= 0)
+    s.add(Not(And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) <= 170)) if n else
+          And(Select(v["arg1_range"], 0) >= 0, Select(v["arg1_range"], 1) <= 170))
 )
 
 def rule_19_func(arg1, solver=None, neg=False):

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the subset_by_index range must be valid, with start non-negative and end at least start + 1 (Rule 17)
+# the last two dimensions representing the matrix to decompose must be strictly positive (Rule 17)
 
 rule_17 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_length"] == 2, And(Select(v["arg1_values"], 0) >= 0, Select(v["arg1_values"], 1) >= Select(v["arg1_values"], 0) + 1), True)) if n else
-          If(v["arg1_length"] == 2, And(Select(v["arg1_values"], 0) >= 0, Select(v["arg1_values"], 1) >= Select(v["arg1_values"], 0) + 1), True))
+    s.add(Not(And(Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 2) > 0)) if n else
+          And(Select(v["arg1_shape"], v["arg1_ndim"] - 1) > 0, Select(v["arg1_shape"], v["arg1_ndim"] - 2) > 0))
 )
 
 def rule_17_func(arg1, solver=None, neg=False):
@@ -19,23 +19,23 @@ def rule_17_func(arg1, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg1)):
+        if not isinstance(arg1, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_length = Int('arg1_length')
-        arg1_values = Array('arg1_values', IntSort(), IntSort())
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_length == len(arg1))
-        for i in range(len(arg1)):
-            arg1_values = Store(arg1_values, i, arg1[i])
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
 
         # Constraints for rule 17
-        rule_17(solver, {'arg1_values': arg1_values, 'arg1_length': arg1_length})
+        rule_17(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_17(solver, {'arg1_values': arg1['values'], 'arg1_length': arg1['length']}, neg)
+        rule_17(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape']}, neg)

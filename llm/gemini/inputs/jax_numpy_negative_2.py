@@ -4,43 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def negative_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D scalar (positive int32)
-    list_of_inputs.append({"x": np.int32(42)})
+    # Input 1: Zero
+    input_dict = {"x": int(0)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 0D scalar (negative int64)
-    list_of_inputs.append({"x": np.int64(-100)})
+    # Input 2: Small positive integer
+    input_dict = {"x": int(1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array of mixed integers (int32)
-    list_of_inputs.append({"x": np.array([1, -2, 3, -4], dtype=np.int32)})
+    # Input 3: Small negative integer
+    input_dict = {"x": int(-1)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 2D array of integers (int64)
-    list_of_inputs.append({"x": np.array([[1, -2], [3, -4]], dtype=np.int64)})
+    # Input 4: Moderate positive integer
+    input_dict = {"x": int(42)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D array of integers (int16)
-    list_of_inputs.append({"x": np.array([[[1], [2]], [[-3], [-4]]], dtype=np.int16)})
+    # Input 5: Moderate negative integer
+    input_dict = {"x": int(-42)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D array of boundary values (int8)
-    list_of_inputs.append({"x": np.array([-128, 0, 127], dtype=np.int8)})
+    # Input 6: 8-bit positive limit
+    input_dict = {"x": int(127)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D array of unsigned integers (uint32)
-    list_of_inputs.append({"x": np.array([0, 5, 4294967295], dtype=np.uint32)})
+    # Input 7: 8-bit negative limit
+    input_dict = {"x": int(-128)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 4D array of zeros (int32)
-    list_of_inputs.append({"x": np.zeros((2, 2, 2, 2), dtype=np.int32)})
+    # Input 8: 16-bit positive boundary
+    input_dict = {"x": int(32767)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large random integers (int64)
-    list_of_inputs.append({"x": np.random.randint(-100000, 100000, size=(5, 5), dtype=np.int64)})
+    # Input 9: 16-bit negative boundary
+    input_dict = {"x": int(-32768)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Single int16 boundary scalar
-    list_of_inputs.append({"x": np.int16(-32768)})
+    # Input 10: Large positive integer
+    input_dict = {"x": int(1000000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Large negative integer
+    input_dict = {"x": int(-1000000)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: 32-bit positive limit
+    input_dict = {"x": int(2147483647)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.negative_2"] = negative_inputs()
 

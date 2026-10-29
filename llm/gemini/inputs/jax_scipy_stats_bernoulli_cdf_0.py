@@ -4,73 +4,65 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def bernoulli_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: 0D arrays (scalars as tensors)
+    # Input 1: 0D scalars (represented as 0D numpy arrays)
     k = np.array(0, dtype=np.int32)
     p = np.array(0.5, dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
-    # Input 2: 1D arrays of the same size, basic float values
-    k = np.array([-1, 0, 1, 2], dtype=np.float32)
-    p = np.array([0.1, 0.5, 0.9, 0.5], dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Broadcast a scalar 'p' over 1D 'k'
-    k = np.array([-0.5, 0.5, 1.5], dtype=np.float32)
-    p = np.array(0.3, dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Broadcast a scalar 'k' over 1D 'p'
-    k = np.array(0, dtype=np.int32)
+    # Input 2: 1D arrays with standard binary values
+    k = np.array([0, 1, 0, 1], dtype=np.int32)
     p = np.array([0.2, 0.4, 0.6, 0.8], dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
-    # Input 5: float64 arrays, 2D shape
-    k = np.array([[0, 1], [1, 0]], dtype=np.float64)
-    p = np.array([[0.2, 0.8], [0.5, 0.5]], dtype=np.float64)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: Negative and greater than 1 values for k
+    k = np.array([-2, -1, 0, 1, 2, 3], dtype=np.int64)
+    p = np.array([0.3, 0.3, 0.3, 0.3, 0.3, 0.3], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
-    # Input 6: 3D arrays, with mixed float values
-    k = np.random.choice([-1.0, 0.0, 1.0, 2.0], size=(2, 2, 2)).astype(np.float32)
-    p = np.random.uniform(0.0, 1.0, size=(2, 2, 2)).astype(np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Floating point k values
+    k = np.array([-0.5, 0.0, 0.5, 1.0, 1.5], dtype=np.float32)
+    p = np.array([0.7, 0.7, 0.7, 0.7, 0.7], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
-    # Input 7: Boolean 'k' array and float 'p' array
-    k = np.array([True, False, True], dtype=bool)
-    p = np.array([0.5, 0.5, 0.5], dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: 2D arrays with identical shape
+    k = np.array([[0, 1], [1, 2]], dtype=np.int32)
+    p = np.array([[0.1, 0.5], [0.9, 0.2]], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
-    # Input 8: Broadcasting higher dimensions
-    k = np.array([[0], [1]], dtype=np.int32)
-    p = np.array([[0.2, 0.5, 0.8]], dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: Broadcasting 1D k with 2D p
+    k = np.array([0, 1, 2], dtype=np.int32)
+    p = np.full((4, 3), 0.25, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
-    # Input 9: Large 1D array
-    k = np.linspace(-1, 2, 100).astype(np.float32)
-    p = np.array(0.5, dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Broadcasting 2D k with 1D p
+    k = np.ones((3, 4), dtype=np.float64)
+    p = np.array([0.1, 0.2, 0.3, 0.4], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
-    # Input 10: Boundary values for probability
-    k = np.array([0, 1, 0, 1], dtype=np.float32)
+    # Input 8: 3D arrays
+    k = np.random.randint(-1, 3, size=(2, 3, 4)).astype(np.int32)
+    p = np.random.uniform(0.0, 1.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
+
+    # Input 9: Boundary values for probability p (0 and 1)
+    k = np.array([-1, 0, 1, 2], dtype=np.int32)
     p = np.array([0.0, 0.0, 1.0, 1.0], dtype=np.float32)
-    input_dict = {"k": k, "p": p}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
+
+    # Input 10: Higher dimensional broadcasting with float64
+    k = np.array([[[0]], [[1]]], dtype=np.float64)
+    p = np.array([0.3, 0.7], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"k": k, "p": p}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.bernoulli.cdf"] = bernoulli_cdf_inputs()
 

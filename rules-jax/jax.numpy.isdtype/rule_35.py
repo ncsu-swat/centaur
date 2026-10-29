@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# input kind should be a valid list of dtype-like strings (Rule 35)
+# complex dtypes are incompatible with real floating kind strings (Rule 35)
 
 rule_35 = lambda s, v, n=False: (
-    s.add(Not(And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), v["arg2_length"] > 0), And([Implies(i < (v["arg2_length"] - 1 + 1), (Or(Select(v["arg2_values"], i) == 38, Select(v["arg2_values"], i) == 39))) for i in range(6)]))) if n else
-          And(And(And(0 <= v["arg1_value"], v["arg1_value"] <= 10), v["arg2_length"] > 0), And([Implies(i < (v["arg2_length"] - 1 + 1), (Or(Select(v["arg2_values"], i) == 38, Select(v["arg2_values"], i) == 39))) for i in range(6)])))
+    s.add(Not(If(And(9 <= v["arg1_value"], v["arg1_value"] <= 10), And(v["arg2_value"] != 38, v["arg2_value"] != 39), True)) if n else
+          If(And(9 <= v["arg1_value"], v["arg1_value"] <= 10), And(v["arg2_value"] != 38, v["arg2_value"] != 39), True))
 )
 
 def rule_35_func(arg1, arg2, solver=None, neg=False):
@@ -22,25 +22,22 @@ def rule_35_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
-        if not (isinstance(arg2, tuple) and all(isinstance(e, str) for e in arg2)):
+        if not isinstance(arg2, str):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_value = Int('arg1_value')
-        arg2_length = Int('arg2_length')
-        arg2_values = Array('arg2_values', IntSort(), StringSort())
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Value assignments
         solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
-        solver.add(arg2_length == len(arg2))
-        for i in range(len(arg2)):
-            arg2_values = Store(arg2_values, i, arg2[i])
+        solver.add(arg2_value == list_of_string_values_jax.index(arg2))
 
         # Constraints for rule 35
-        rule_35(solver, {'arg1_value': arg1_value, 'arg2_values': arg2_values, 'arg2_length': arg2_length})
+        rule_35(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_35(solver, {'arg1_value': arg1['value'], 'arg2_values': arg2['values'], 'arg2_length': arg2['length']}, neg)
+        rule_35(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)

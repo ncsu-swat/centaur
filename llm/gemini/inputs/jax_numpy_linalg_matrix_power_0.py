@@ -4,68 +4,86 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def matrix_power_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple float32 square matrix, positive power
+    # Input 1: 2x2 matrix with power 0
     a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
-    n = 3
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
+    n = int(0)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
 
-    # Input 2: float64 square matrix, negative power (requires invertible matrix)
+    # Input 2: 2x2 matrix with power 1
+    a = np.array([[2.0, -1.0], [1.0, 3.0]], dtype=np.float32)
+    n = int(1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
+
+    # Input 3: 3x3 matrix with power 3
+    a = np.array(
+        [[1.0, 0.0, 2.0], [-1.0, 3.0, 1.0], [0.0, 1.0, 2.0]], dtype=np.float32
+    )
+    n = int(3)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
+
+    # Input 4: 2x2 invertible matrix with negative power -1
+    a = np.array([[4.0, 7.0], [2.0, 6.0]], dtype=np.float64)
+    n = int(-1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
+
+    # Input 5: 2x2 invertible matrix with negative power -2
     a = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float64)
-    n = -2
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
+    n = int(-2)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
 
-    # Input 3: Large float32 matrix, zero power
-    a = np.random.randn(10, 10).astype(np.float32)
-    n = 0
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
-
-    # Input 4: Batched float32 matrices, positive power
-    a = np.random.randn(3, 4, 4).astype(np.float32)
-    n = 5
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
-
-    # Input 5: Complex64 square matrix, positive power
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    n = 4
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
-
-    # Input 6: float16 square matrix, small positive power
-    a = np.random.randn(2, 2).astype(np.float16)
-    n = 2
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
-
-    # Input 7: 1x1 matrix, large positive power
+    # Input 6: 1x1 matrix with power 5
     a = np.array([[2.5]], dtype=np.float32)
-    n = 10
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
+    n = int(5)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
 
-    # Input 8: High-dimensional batched float64 matrices, positive power
-    a = np.random.randn(2, 2, 3, 3).astype(np.float64)
-    n = 3
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
+    # Input 7: 1x1 matrix with negative power -3
+    a = np.array([[2.0]], dtype=np.float64)
+    n = int(-3)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
 
-    # Input 9: float32 invertible matrix (diagonal), negative power
-    a = np.diag([2.0, 3.0, 4.0]).astype(np.float32)
-    n = -3
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
+    # Input 8: Batched 3D matrix (batch size 4, 2x2) with power 2
+    np.random.seed(42)
+    a = np.random.randn(4, 2, 2).astype(np.float32)
+    n = int(2)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
 
-    # Input 10: 5x5 matrix, positive power
-    a = np.random.randn(5, 5).astype(np.float32)
-    n = 6
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
+    # Input 9: Batched 3D invertible matrix (batch size 3, 3x3) with negative power -1
+    diag_dominance = 10.0 * np.eye(3, dtype=np.float64)
+    a = np.stack(
+        [
+            diag_dominance + np.random.randn(3, 3).astype(np.float64)
+            for _ in range(3)
+        ]
+    )
+    n = int(-1)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
 
-    # Input 11: Batched float32 matrices, zero power
-    a = np.random.randn(2, 5, 5).astype(np.float32)
-    n = 0
-    list_of_inputs.append({"a": copy.deepcopy(a), "n": n})
+    # Input 10: 4D batched matrix (2, 2, 3, 3) with power 4
+    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
+    n = int(4)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
+
+    # Input 11: Complex 2x2 matrix with power 2
+    a = (
+        np.array([[1.0 + 2.0j, -1.0j], [3.0, 2.0 - 1.0j]], dtype=np.complex64)
+    )
+    n = int(2)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
+
+    # Input 12: Integer matrix with positive power
+    a = np.array([[1, 2], [0, 1]], dtype=np.int32)
+    n = int(5)
+    list_of_inputs.append(copy.deepcopy({"a": a, "n": n}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.linalg.matrix_power"] = matrix_power_inputs()
 

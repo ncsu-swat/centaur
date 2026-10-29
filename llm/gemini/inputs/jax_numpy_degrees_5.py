@@ -4,79 +4,73 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax.numpy as jnp
-import jax._src.numpy.ufuncs as ufuncs
+import numpy as np
 
-def to_jax_array(x):
-    if isinstance(x, tuple):
-        elements = [to_jax_array(el) for el in x]
-        if len(elements) == 0:
-            return jnp.array([])
-        return jnp.stack(elements)
-    return x
-
-# Define the patch to intercept tuples and convert them to JAX arrays under any tracing context
-orig_rad2deg = ufuncs.rad2deg
-
-def patched_rad2deg(x, *args, **kwargs):
-    x = to_jax_array(x)
-    return orig_rad2deg(x, *args, **kwargs)
-
-# Apply patch to ufuncs and jax.numpy namespace
-ufuncs.rad2deg = patched_rad2deg
-ufuncs.degrees = patched_rad2deg
-jnp.rad2deg = patched_rad2deg
-jnp.degrees = patched_rad2deg
 
 def degrees_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float tuple representing standard angles in radians
-    x = (0.0, 0.5 * np.pi, np.pi, 1.5 * np.pi, 2.0 * np.pi)
-    list_of_inputs.append({"x": x})
+    # Input 1: 1D array of standard radian angles (float32)
+    x = np.array([0.0, np.pi / 4, np.pi / 2, np.pi, 2 * np.pi], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative float values
-    x = (-3.141592653589793, -1.5707963267948966, 0.0)
-    list_of_inputs.append({"x": x})
+    # Input 2: 1D array with negative radian angles (float64)
+    x = np.array([-2 * np.pi, -np.pi, -np.pi / 2, -np.pi / 3], dtype=np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Integer tuple
-    x = (0, 1, 2, 3, 4)
-    list_of_inputs.append({"x": x})
-
-    # Input 4: 2D tuple (nested tuple) of floats
-    x = ((0.0, 0.7853981633974483), (1.5707963267948966, 3.141592653589793))
-    list_of_inputs.append({"x": x})
-
-    # Input 5: 2D tuple of mixed positive and negative integers
-    x = ((-1, -2, -3), (4, 5, 6))
-    list_of_inputs.append({"x": x})
-
-    # Input 6: 3D tuple of floats
-    x = (
-        ((0.1, 0.2), (0.3, 0.4)),
-        ((0.5, 0.6), (0.7, 0.8))
+    # Input 3: 2D array (float32)
+    x = np.array(
+        [[0.0, np.pi / 6], [np.pi / 3, np.pi / 2], [3 * np.pi / 4, np.pi]],
+        dtype=np.float32,
     )
-    list_of_inputs.append({"x": x})
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Single element tuple
-    x = (1.5707963267948966,)
-    list_of_inputs.append({"x": x})
+    # Input 4: 2D array with mixed signs
+    x = np.array([[-np.pi, np.pi / 4], [np.pi / 2, -3 * np.pi / 2]], dtype=np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 2D tuple with a single row
-    x = ((1.0, 2.0, 3.0, 4.0),)
-    list_of_inputs.append({"x": x})
+    # Input 5: 3D array
+    x = np.linspace(-np.pi, np.pi, 24, dtype=np.float32).reshape(2, 3, 4)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large values (greater than 2*pi) and negative values
-    x = (10.0, -10.0, 100.0, -100.0)
-    list_of_inputs.append({"x": x})
+    # Input 6: 1D single-element array
+    x = np.array([np.pi], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 1D tuple of very small float values (close to 0)
-    x = (1e-5, -1e-5, 2.5e-6, -2.5e-6)
-    list_of_inputs.append({"x": x})
+    # Input 7: 1D integer array
+    x = np.array([-3, -1, 0, 1, 3], dtype=np.int32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 8: Empty 1D array
+    x = np.array([], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 9: 1D array with special values (inf, -inf, nan)
+    x = np.array([0.0, np.inf, -np.inf, np.nan], dtype=np.float64)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 4D array of small values
+    x = np.random.uniform(-np.pi, np.pi, size=(2, 2, 2, 2)).astype(np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 1D array with large values
+    x = np.array([1e4, -1e4, 1e-4, -1e-4], dtype=np.float32)
+    input_dict = {"x": x}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.degrees_5"] = degrees_inputs()
 

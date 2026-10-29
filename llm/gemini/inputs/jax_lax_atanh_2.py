@@ -4,7 +4,6 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def atanh_inputs():
@@ -14,44 +13,44 @@ def atanh_inputs():
     input_dict = {"x": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float
+    # Input 2: Positive standard float
     input_dict = {"x": 0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
+    # Input 3: Negative standard float
     input_dict = {"x": -0.5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Close to 1
+    # Input 4: Small positive value
+    input_dict = {"x": 0.001}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Small negative value
+    input_dict = {"x": -0.001}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Near boundary positive
     input_dict = {"x": 0.99}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Close to -1
+    # Input 7: Near boundary negative
     input_dict = {"x": -0.99}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Small positive float
-    input_dict = {"x": 1e-4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Small negative float
-    input_dict = {"x": -1e-4}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Another positive float
+    # Input 8: Typical positive fraction
     input_dict = {"x": 0.25}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Another negative float
-    input_dict = {"x": -0.25}
+    # Input 9: Typical negative fraction
+    input_dict = {"x": -0.75}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: High precision float near 1
-    input_dict = {"x": 0.9999}
+    # Input 10: Value close to zero
+    input_dict = {"x": 1e-6}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: High precision float near -1
-    input_dict = {"x": -0.9999}
+    # Input 11: Negative value close to zero
+    input_dict = {"x": -1e-6}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

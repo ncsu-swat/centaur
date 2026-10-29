@@ -4,57 +4,58 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+
 
 def arcsinh_inputs():
     list_of_inputs = []
 
-    # Input 1: positive integer (python int)
-    input_dict = {"x": 5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: negative integer (python int)
-    input_dict = {"x": -5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: zero (python int)
+    # Input 1: Zero
     input_dict = {"x": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: large positive integer (python int)
-    input_dict = {"x": 1000}
+    # Input 2: Positive small integer
+    input_dict = {"x": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: large negative integer (python int)
-    input_dict = {"x": -1000}
+    # Input 3: Negative small integer
+    input_dict = {"x": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: numpy int32 scalar, positive
-    input_dict = {"x": np.int32(10)}
+    # Input 4: Moderate positive integer
+    input_dict = {"x": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: numpy int32 scalar, negative
-    input_dict = {"x": np.int32(-10)}
+    # Input 5: Moderate negative integer
+    input_dict = {"x": -5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: numpy int64 scalar, large value
-    input_dict = {"x": np.int64(123456)}
+    # Input 6: Larger positive integer
+    input_dict = {"x": 42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: numpy int16 scalar, small value
-    input_dict = {"x": np.int16(2)}
+    # Input 7: Larger negative integer
+    input_dict = {"x": -42}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: numpy int8 scalar, negative
-    input_dict = {"x": np.int8(-3)}
+    # Input 8: Century positive integer
+    input_dict = {"x": 100}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: numpy int64 scalar, negative large value
-    input_dict = {"x": np.int64(-987654)}
+    # Input 9: Century negative integer
+    input_dict = {"x": -100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: Large positive integer
+    input_dict = {"x": 10000}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Large negative integer
+    input_dict = {"x": -10000}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.arcsinh_3"] = arcsinh_inputs()
 

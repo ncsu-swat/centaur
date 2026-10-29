@@ -4,46 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def tan_inputs():
     list_of_inputs = []
 
     # Input 1: Zero
-    list_of_inputs.append({"x": 0.0})
+    input_dict = {"x": 0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Positive float
-    list_of_inputs.append({"x": 1.0})
+    # Input 2: Positive angle (pi/4)
+    input_dict = {"x": float(np.pi / 4)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Negative float
-    list_of_inputs.append({"x": -1.0})
+    # Input 3: Negative angle (-pi/4)
+    input_dict = {"x": float(-np.pi / 4)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: pi / 4
-    list_of_inputs.append({"x": float(np.pi / 4)})
+    # Input 4: Angle pi/6
+    input_dict = {"x": float(np.pi / 6)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: pi / 2
-    list_of_inputs.append({"x": float(np.pi / 2)})
+    # Input 5: Angle pi/3
+    input_dict = {"x": float(np.pi / 3)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Negative pi
-    list_of_inputs.append({"x": float(-np.pi)})
+    # Input 6: Negative angle (-pi/3)
+    input_dict = {"x": float(-np.pi / 3)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Very small positive float
-    list_of_inputs.append({"x": 1e-6})
+    # Input 7: Float value 1.0
+    input_dict = {"x": 1.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Large positive float
-    list_of_inputs.append({"x": 1000.0})
+    # Input 8: Negative arbitrary float
+    input_dict = {"x": -2.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large negative float
-    list_of_inputs.append({"x": -1000.0})
+    # Input 9: Small float near zero
+    input_dict = {"x": 1e-7}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: pi / 3
-    list_of_inputs.append({"x": float(np.pi / 3)})
+    # Input 10: Angle pi
+    input_dict = {"x": float(np.pi)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Negative pi / 6
-    list_of_inputs.append({"x": float(-np.pi / 6)})
+    # Input 11: Large float value
+    input_dict = {"x": 100.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: Negative zero
+    input_dict = {"x": -0.0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.tan_2"] = tan_inputs()
 

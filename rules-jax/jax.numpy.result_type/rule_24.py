@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Result type of a union parameter and a dtype, checking if union parameter is zero when the dtype is floating-point (Rule 24)
+# maximum element of first tensor is bounded by minimum of second tensor (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_value"] >= 6, v["arg1_value"] > -1000.0, v["arg1_value"] == 0)) if n else
-          If(v["arg2_value"] >= 6, v["arg1_value"] > -1000.0, v["arg1_value"] == 0))
+    s.add(Not(Select(v["arg1_range"], 1) <= Select(v["arg2_range"], 0)) if n else
+          Select(v["arg1_range"], 1) <= Select(v["arg2_range"], 0))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -20,22 +20,26 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not ((isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)) or isinstance(arg1, (float, np.floating))):
+        if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg2_value = Int('arg2_value')
+        arg1_range = Array('arg1_range', IntSort(), IntSort())
+        arg2_range = Array('arg2_range', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
+        arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
+        arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
+        arg2_range = Store(arg2_range, 0, int(np.min(arg2)))
+        arg2_range = Store(arg2_range, 1, int(np.max(arg2)))
 
         # Constraints for rule 24
-        rule_24(solver, {'arg1_value': arg1_value, 'arg2_value': arg2_value})
+        rule_24(solver, {'arg1_range': arg1_range, 'arg2_range': arg2_range})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_24(solver, {'arg1_value': arg1['value'], 'arg2_value': arg2['value']}, neg)
+        rule_24(solver, {'arg1_range': arg1['range'], 'arg2_range': arg2['range']}, neg)

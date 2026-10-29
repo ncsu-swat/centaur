@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if comparing an integer and a uint8 tensor, the integer must be within uint8 range (Rule 21)
+# both tensors have boolean data types (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_dtype"] == 5, (And(v["arg1_value"] >= 0, v["arg1_value"] <= 255)), True)) if n else
-          If(v["arg2_dtype"] == 5, (And(v["arg1_value"] >= 0, v["arg1_value"] <= 255)), True))
+    s.add(Not(And(v["arg1_dtype"] == 0, v["arg2_dtype"] == 0)) if n else
+          And(v["arg1_dtype"] == 0, v["arg2_dtype"] == 0))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):
@@ -20,24 +20,24 @@ def rule_21_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+        if not isinstance(arg1, np.ndarray):
             return False
         if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_value = Int('arg1_value')
+        arg1_dtype = Int('arg1_dtype')
         arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
-        solver.add(arg1_value == int(arg1))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
         solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_value': arg1_value, 'arg2_dtype': arg2_dtype})
+        rule_21(solver, {'arg1_dtype': arg1_dtype, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_value': arg1['value'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_21(solver, {'arg1_dtype': arg1['dtype'], 'arg2_dtype': arg2['dtype']}, neg)

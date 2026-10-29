@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Scaling constraint conditional on matrix size being positive (Rule 14)
+# unscaled DFT matrix dimension must be at least 1 (Rule 14)
 
 rule_14 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg1_value"] > 0, v["arg2_value"] == 5, False)) if n else
-          If(v["arg1_value"] > 0, v["arg2_value"] == 5, False))
+    s.add(Not(And(v["arg1_value"] >= 1, v["arg2_value"] == 5)) if n else
+          And(v["arg1_value"] >= 1, v["arg2_value"] == 5))
 )
 
 def rule_14_func(arg1, arg2, solver=None, neg=False):

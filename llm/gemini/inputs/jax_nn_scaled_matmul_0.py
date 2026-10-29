@@ -4,178 +4,199 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
-import jax
+import jax.nn
 import jax.numpy as jnp
+from jax.interpreters import mlir
+import numpy as np
 
-# Monkey-patch jax.nn.scaled_matmul to bypass missing CPU backend implementation
-def patched_scaled_matmul(lhs, rhs, lhs_scales, rhs_scales, preferred_element_type=jnp.float32):
-    a = jnp.asarray(lhs)
-    b = jnp.asarray(rhs)
-    a_scales = jnp.asarray(lhs_scales)
-    b_scales = jnp.asarray(rhs_scales)
-    
-    a_block_size = a.shape[-1] // a_scales.shape[-1]
-    b_block_size = b.shape[-1] // b_scales.shape[-1]
-    
-    a_scaled = a * jnp.repeat(a_scales, a_block_size, axis=-1)
-    b_scaled = b * jnp.repeat(b_scales, b_block_size, axis=-1)
-    
-    out = jnp.einsum('BMK,BNK->BMN', a_scaled, b_scaled)
-    return out.astype(preferred_element_type)
-
-jax.nn.scaled_matmul = patched_scaled_matmul
 try:
-    import jax._src.nn.functions as functions
-    functions.scaled_matmul = patched_scaled_matmul
-except ImportError:
+    _cudnn_func = jax.nn.scaled_matmul.__globals__["cudnn_scaled_matmul"]
+    _p = _cudnn_func.__globals__["_scaled_matmul_p_wrapper"]
+
+    def _scaled_matmul_cpu_rule(
+        lhs, rhs, lhs_scales, rhs_scales, preferred_element_type=np.float32
+    ):
+        a_block_size = lhs.shape[-1] // lhs_scales.shape[-1]
+        b_block_size = rhs.shape[-1] // rhs_scales.shape[-1]
+        a_scaled = lhs * jnp.repeat(lhs_scales, a_block_size, axis=-1)
+        b_scaled = rhs * jnp.repeat(rhs_scales, b_block_size, axis=-1)
+        return jnp.einsum("BMK,BNK->BMN", a_scaled, b_scaled).astype(
+            preferred_element_type
+        )
+
+    mlir.register_lowering(
+        _p, mlir.lower_fun(_scaled_matmul_cpu_rule), platform="cpu"
+    )
+except Exception:
     pass
+
 
 def scaled_matmul_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32, block size 1
-    lhs = np.random.randn(1, 2, 4).astype(np.float32)
-    rhs = np.random.randn(1, 3, 4).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (1, 2, 4)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (1, 3, 4)).astype(np.float32)
+    # Input 1: Basic minimal 3D case from documentation
+    lhs = np.array([[[1.0, 2.0, 3.0]]], dtype=np.float32)
+    rhs = np.array([[[4.0, 5.0, 6.0]]], dtype=np.float32)
+    lhs_scales = np.array([[[0.5]]], dtype=np.float32)
+    rhs_scales = np.array([[[0.5]]], dtype=np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Block size 2
+    # Input 2: Batch size 2 with block-scale partition (K=16, K_scale=4)
+    lhs = np.random.randn(2, 4, 16).astype(np.float32)
+    rhs = np.random.randn(2, 8, 16).astype(np.float32)
+    lhs_scales = np.random.uniform(0.1, 1.0, size=(2, 4, 4)).astype(np.float32)
+    rhs_scales = np.random.uniform(0.1, 1.0, size=(2, 8, 4)).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: Negative and positive values with single scale per row (K=32, K_scale=1)
+    lhs = np.random.uniform(-5.0, 5.0, size=(4, 16, 32)).astype(np.float32)
+    rhs = np.random.uniform(-5.0, 5.0, size=(4, 16, 32)).astype(np.float32)
+    lhs_scales = np.random.uniform(0.5, 2.0, size=(4, 16, 1)).astype(np.float32)
+    rhs_scales = np.random.uniform(0.5, 2.0, size=(4, 16, 1)).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: preferred_element_type as float16 (K=64, K_scale=2)
+    lhs = np.random.randn(1, 8, 64).astype(np.float32)
+    rhs = np.random.randn(1, 4, 64).astype(np.float32)
+    lhs_scales = np.random.uniform(0.5, 1.5, size=(1, 8, 2)).astype(np.float32)
+    rhs_scales = np.random.uniform(0.5, 1.5, size=(1, 4, 2)).astype(np.float32)
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float16),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Larger matrices with finer scale granularity (K=128, K_scale=16)
+    lhs = np.random.randn(3, 32, 128).astype(np.float32)
+    rhs = np.random.randn(3, 64, 128).astype(np.float32)
+    lhs_scales = np.random.uniform(0.1, 1.0, size=(3, 32, 16)).astype(
+        np.float32
+    )
+    rhs_scales = np.random.uniform(0.1, 1.0, size=(3, 64, 16)).astype(
+        np.float32
+    )
+    input_dict = {
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Full scale granularity (block size 1, K=4, K_scale=4)
     lhs = np.random.randn(2, 2, 4).astype(np.float32)
     rhs = np.random.randn(2, 2, 4).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (2, 2, 2)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (2, 2, 2)).astype(np.float32)
+    lhs_scales = np.ones((2, 2, 4), dtype=np.float32)
+    rhs_scales = np.ones((2, 2, 4), dtype=np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Block size K (scales shape -1 is 1)
-    lhs = np.random.randn(1, 4, 8).astype(np.float32)
-    rhs = np.random.randn(1, 4, 8).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (1, 4, 1)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (1, 4, 1)).astype(np.float32)
+    # Input 7: Rectangular matrix dimensions (K=6, K_scale=3)
+    lhs = np.random.randn(1, 3, 6).astype(np.float32)
+    rhs = np.random.randn(1, 5, 6).astype(np.float32)
+    lhs_scales = np.ones((1, 3, 3), dtype=np.float32)
+    rhs_scales = np.ones((1, 5, 3), dtype=np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Different block sizes for lhs and rhs
-    lhs = np.random.randn(1, 4, 12).astype(np.float32)
-    rhs = np.random.randn(1, 4, 12).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (1, 4, 3)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (1, 4, 4)).astype(np.float32)
+    # Input 8: Batch size 2 with multiple rows (K=12, K_scale=6)
+    lhs = np.random.uniform(-2.0, 2.0, size=(2, 6, 12)).astype(np.float32)
+    rhs = np.random.uniform(-2.0, 2.0, size=(2, 3, 12)).astype(np.float32)
+    lhs_scales = np.random.uniform(0.5, 1.0, size=(2, 6, 6)).astype(np.float32)
+    rhs_scales = np.random.uniform(0.5, 1.0, size=(2, 3, 6)).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Negative values, different preferred_element_type
-    lhs = np.random.uniform(-2.0, 2.0, (2, 3, 6)).astype(np.float32)
-    rhs = np.random.uniform(-2.0, 2.0, (2, 3, 6)).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 2.0, (2, 3, 2)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 2.0, (2, 3, 3)).astype(np.float32)
+    # Input 9: Square M and N dimensions (K=20, K_scale=5)
+    lhs = np.random.randn(1, 10, 20).astype(np.float32)
+    rhs = np.random.randn(1, 10, 20).astype(np.float32)
+    lhs_scales = np.random.uniform(0.2, 0.8, size=(1, 10, 5)).astype(np.float32)
+    rhs_scales = np.random.uniform(0.2, 0.8, size=(1, 10, 5)).astype(
+        np.float32
+    )
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float64
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Larger dimensions and larger block size
-    lhs = np.random.randn(4, 16, 32).astype(np.float32)
-    rhs = np.random.randn(4, 16, 32).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (4, 16, 16)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (4, 16, 8)).astype(np.float32)
+    # Input 10: Vector-like batches (M=1, N=1, K=8, K_scale=8)
+    lhs = np.random.randn(4, 1, 8).astype(np.float32)
+    rhs = np.random.randn(4, 1, 8).astype(np.float32)
+    lhs_scales = np.random.uniform(0.5, 2.0, size=(4, 1, 8)).astype(np.float32)
+    rhs_scales = np.random.uniform(0.5, 2.0, size=(4, 1, 8)).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: High batch dimension size
-    lhs = np.random.randn(8, 2, 16).astype(np.float32)
-    rhs = np.random.randn(8, 2, 16).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (8, 2, 4)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (8, 2, 4)).astype(np.float32)
+    # Input 11: Odd dimension lengths along K (K=15, K_scale=5)
+    lhs = np.random.randn(2, 5, 15).astype(np.float32)
+    rhs = np.random.randn(2, 7, 15).astype(np.float32)
+    lhs_scales = np.random.uniform(0.1, 1.0, size=(2, 5, 5)).astype(np.float32)
+    rhs_scales = np.random.uniform(0.1, 1.0, size=(2, 7, 5)).astype(np.float32)
     input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Float64 precision preferred type
-    lhs = np.random.randn(2, 4, 8).astype(np.float64)
-    rhs = np.random.randn(2, 4, 8).astype(np.float64)
-    lhs_scales = np.random.uniform(0.1, 1.0, (2, 4, 2)).astype(np.float64)
-    rhs_scales = np.random.uniform(0.1, 1.0, (2, 4, 2)).astype(np.float64)
-    input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Smallest dimensions
-    lhs = np.random.randn(1, 1, 1).astype(np.float32)
-    rhs = np.random.randn(1, 1, 1).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (1, 1, 1)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (1, 1, 1)).astype(np.float32)
-    input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Non-square dimensions
-    lhs = np.random.randn(2, 8, 16).astype(np.float32)
-    rhs = np.random.randn(2, 4, 16).astype(np.float32)
-    lhs_scales = np.random.uniform(0.1, 1.0, (2, 8, 8)).astype(np.float32)
-    rhs_scales = np.random.uniform(0.1, 1.0, (2, 4, 4)).astype(np.float32)
-    input_dict = {
-        'lhs': lhs,
-        'rhs': rhs,
-        'lhs_scales': lhs_scales,
-        'rhs_scales': rhs_scales,
-        'preferred_element_type': np.float32
+        "lhs": lhs,
+        "rhs": rhs,
+        "lhs_scales": lhs_scales,
+        "rhs_scales": rhs_scales,
+        "preferred_element_type": np.dtype(np.float32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.scaled_matmul"] = scaled_matmul_inputs()
 

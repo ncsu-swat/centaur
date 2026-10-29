@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def hypot_inputs():
     list_of_inputs = []
 
-    # Case 1: 1D float32 arrays, same size, positive values
+    # Input 1: 1D float32 arrays of same shape
     x1 = np.array([3.0, 5.0, 8.0], dtype=np.float32)
     x2 = np.array([4.0, 12.0, 15.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 2: 1D float32 arrays, same size, negative values
-    x1 = np.array([-3.0, -5.0, -8.0], dtype=np.float32)
-    x2 = np.array([-4.0, -12.0, -15.0], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 2: 2D integer arrays with negative values
+    x1 = np.array([[3, -2, 5], [9, 1, -4]], dtype=np.int32)
+    x2 = np.array([[-5, 6, 8], [2, -7, 0]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 3: 2D float64 arrays, same size, mixed values
-    x1 = np.random.uniform(-10, 10, (3, 4)).astype(np.float64)
-    x2 = np.random.uniform(-10, 10, (3, 4)).astype(np.float64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 3: Broadcasting 2D and 1D arrays
+    x1 = np.array([[3.0, -2.0, 5.0], [9.0, 1.0, -4.0]], dtype=np.float64)
+    x2 = np.array([-5.0, 6.0, 8.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 4: Broadcasting: (1, 3) and (3, 1) float32 arrays
-    x1 = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
-    x2 = np.array([[4.0], [5.0], [6.0]], dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
-
-    # Case 5: 0D arrays (scalars as arrays)
+    # Input 4: 0D scalar arrays
     x1 = np.array(3.0, dtype=np.float32)
-    x2 = np.array(4.0, dtype=np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    x2 = np.array(-4.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 6: 3D float32 arrays, same size
+    # Input 5: 3D float32 arrays
     x1 = np.random.randn(2, 3, 4).astype(np.float32)
     x2 = np.random.randn(2, 3, 4).astype(np.float32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 7: Integer arrays (int32)
-    x1 = np.array([3, 5, 8], dtype=np.int32)
-    x2 = np.array([4, 12, 15], dtype=np.int32)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 6: Broadcasting with singleton dimensions (1, 4) and (3, 1)
+    x1 = np.arange(4, dtype=np.float32).reshape(1, 4)
+    x2 = np.arange(3, dtype=np.float32).reshape(3, 1)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 8: Integer arrays (int64) with broadcasting
-    x1 = np.arange(5, dtype=np.int64).reshape(5, 1)
-    x2 = np.arange(5, dtype=np.int64).reshape(1, 5)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 7: Float16 precision
+    x1 = np.array([[1.5, -2.5], [0.0, 4.0]], dtype=np.float16)
+    x2 = np.array([[2.0, 3.5], [-1.0, -0.5]], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 9: 4D float64 arrays, same size
-    x1 = np.random.randn(2, 2, 3, 3).astype(np.float64)
-    x2 = np.random.randn(2, 2, 3, 3).astype(np.float64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 8: 4D arrays with zeros and large values
+    x1 = np.zeros((2, 2, 2, 2), dtype=np.float64)
+    x2 = np.full((2, 2, 2, 2), 1e8, dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Case 10: Large values (to verify overflow/underflow handling)
-    x1 = np.array([1e150, 1e-150], dtype=np.float64)
-    x2 = np.array([1e150, 1e-150], dtype=np.float64)
-    list_of_inputs.append({"x1": x1, "x2": x2})
+    # Input 9: Int64 arrays
+    x1 = np.array([-10, 0, 10, 100], dtype=np.int64)
+    x2 = np.array([20, -5, 0, -100], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 10: Boolean arrays
+    x1 = np.array([True, False, True, False], dtype=bool)
+    x2 = np.array([False, False, True, True], dtype=bool)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
+
+    # Input 11: Special values (inf and nan)
+    x1 = np.array([np.inf, -np.inf, np.nan, 3.0], dtype=np.float32)
+    x2 = np.array([1.0, 2.0, 3.0, np.nan], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.hypot_1"] = hypot_inputs()
 

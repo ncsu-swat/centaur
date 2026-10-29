@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# Tensors must have the same number of dimensions if neither is a scalar (Rule 2)
+# Equal rank when neither input is a scalar (Rule 2)
 
 rule_2 = lambda s, v, n=False: (
-    s.add(Not(If(And(v["arg1_ndim"] > 0, v["arg2_ndim"] > 0), v["arg1_ndim"] == v["arg2_ndim"], True)) if n else
-          If(And(v["arg1_ndim"] > 0, v["arg2_ndim"] > 0), v["arg1_ndim"] == v["arg2_ndim"], True))
+    s.add(Not(Or(Or(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0), v["arg1_ndim"] == v["arg2_ndim"])) if n else
+          Or(Or(v["arg1_ndim"] == 0, v["arg2_ndim"] == 0), v["arg1_ndim"] == v["arg2_ndim"]))
 )
 
 def rule_2_func(arg1, arg2, solver=None, neg=False):

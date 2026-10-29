@@ -11,47 +11,52 @@ import numpy as np
 def abs_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D Float32 array with mixed signs
-    x = np.array([-1.5, 0.0, 2.5, -3.14], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 1: 1D float32 array with negative and positive values
+    x = np.array([-3.5, -1.0, 0.0, 2.3, 4.8], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 2D Float64 array with mixed signs
-    x = np.array([[-2.0, 3.5], [-1.2, -0.0]], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 2: 2D float64 array
+    x = np.array([[-1.2, 2.5, -3.7], [4.1, -5.0, 0.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D Signed Integer (Int32) array
-    x = np.array([-10, -5, 0, 5, 10], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar tensor (signed int32)
+    x = np.array(-42, dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: Complex64 elements
-    x = np.array([3 + 4j, -5 + 12j, -1j], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D signed int64 array with negative values
+    x = np.array([-100, -50, 0, 50, 100], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 3D Float32 array
-    x = np.random.uniform(-10, 10, size=(2, 3, 4)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 2D signed int16 array
+    x = np.array([[-32767, -1], [0, 32767]], dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 0D array (Scalar-like tensor)
-    x = np.array(-42.0, dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 1D signed int8 array
+    x = np.array([-127, -64, 0, 64, 127], dtype=np.int8)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D Int8 array
-    x = np.array([-128, -1, 0, 127], dtype=np.int8)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 1D complex64 array
+    x = np.array([3.0 + 4.0j, -1.0 - 1.0j, 0.0 + 2.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 2D Complex128 array
+    # Input 8: 2D complex128 array
     x = np.array(
-        [[1 - 1j, -2 + 2j], [3.5 - 4.5j, -0.1 + 0.1j]], dtype=np.complex128
+        [[1.5 - 2.5j, -3.0 + 0.0j], [0.0 - 4.2j, -5.5 - 1.1j]],
+        dtype=np.complex128,
     )
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 4D Float32 array
-    x = np.random.uniform(-1.0, 1.0, size=(2, 2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: 3D float32 array
+    x = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D Int16 array
-    x = np.array([-32768, -100, 0, 100, 32767], dtype=np.int16)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: 4D float16 array
+    x = (np.random.randn(2, 2, 3, 3) * 10).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 1D array with special float values (inf, -inf, nan)
+    x = np.array([-np.inf, np.inf, np.nan, -0.0, 0.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
 

@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# n and m must be positive integers (Rule 42)
+# column count m strictly exceeds row count n for a horizontally elongated array (Rule 42)
 
 rule_42 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_value"] > 0, v["arg2_value"] > 0)) if n else
-          And(v["arg1_value"] > 0, v["arg2_value"] > 0))
+    s.add(Not(And(v["arg1_value"] > 0, v["arg2_value"] - v["arg1_value"] > 0)) if n else
+          And(v["arg1_value"] > 0, v["arg2_value"] - v["arg1_value"] > 0))
 )
 
 def rule_42_func(arg1, arg2, solver=None, neg=False):

@@ -4,73 +4,109 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def cumprod_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple 1D int array
-    a = np.array([1, 2, 3, 4, 5], dtype=np.int32)
-    axis = 0
-    dtype = np.int32
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 1: 1D float array, axis 0
+    input_dict = {
+        "a": np.array([1.5, -2.0, 3.0, 0.5], dtype=np.float32),
+        "axis": 0,
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D float array along axis 0
-    a = np.random.randn(3, 4).astype(np.float32)
-    axis = 0
-    dtype = np.float32
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 2: 2D integer array, axis 0
+    input_dict = {
+        "a": np.array([[1, 2, 3], [4, 5, 6]], dtype=np.int32),
+        "axis": 0,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 2D float array along axis 1
-    a = np.random.randn(3, 4).astype(np.float32)
-    axis = 1
-    dtype = np.float32
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 3: 2D integer array, axis 1, cast to int64
+    input_dict = {
+        "a": np.array([[2, -3, 4], [-1, 5, -2]], dtype=np.int32),
+        "axis": 1,
+        "dtype": np.dtype(np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 3D float64 array along axis 2
-    a = np.random.randn(2, 3, 4).astype(np.float64)
-    axis = 2
-    dtype = np.float64
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 4: 2D float array with negative axis
+    input_dict = {
+        "a": np.array(
+            [[0.5, 1.2, -3.4], [2.1, -0.4, 1.0]], dtype=np.float64
+        ),
+        "axis": -1,
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 3D int64 array along negative axis
-    a = np.random.randint(-5, 5, size=(2, 2, 2)).astype(np.int64)
-    axis = -1
-    dtype = np.int64
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 5: 3D float array, axis 1
+    input_dict = {
+        "a": np.random.randn(2, 3, 4).astype(np.float32),
+        "axis": 1,
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D negative values float32
-    a = np.array([-1.0, -2.0, -3.0, 4.0], dtype=np.float32)
-    axis = 0
-    dtype = np.float32
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 6: 3D complex array, axis 2
+    input_dict = {
+        "a": (
+            np.random.randn(2, 2, 3) + 1j * np.random.randn(2, 2, 3)
+        ).astype(np.complex64),
+        "axis": 2,
+        "dtype": np.dtype(np.complex64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 4D float32 array along axis 2
-    a = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    axis = 2
-    dtype = np.float32
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 7: 4D float array, axis -2
+    input_dict = {
+        "a": np.random.uniform(0.5, 1.5, size=(2, 3, 2, 4)).astype(np.float32),
+        "axis": -2,
+        "dtype": np.dtype(np.float32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Complex64 array along axis 0
-    a = (np.random.randn(3, 3) + 1j * np.random.randn(3, 3)).astype(np.complex64)
-    axis = 0
-    dtype = np.complex64
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 8: 1D boolean array accumulated to int32
+    input_dict = {
+        "a": np.array([True, True, False, True], dtype=np.bool_),
+        "axis": 0,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Cast integer array to float64 output dtype
-    a = np.random.randint(1, 10, size=(3, 3)).astype(np.int32)
-    axis = 1
-    dtype = np.float64
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 9: 2D float array with zeros, axis 0
+    input_dict = {
+        "a": np.array([[1.0, 0.0, 3.0], [4.0, 5.0, 0.0]], dtype=np.float32),
+        "axis": 0,
+        "dtype": np.dtype(np.float64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Cast float16 array to float32 output dtype
-    a = np.random.randn(4, 2).astype(np.float16)
-    axis = 0
-    dtype = np.float32
-    list_of_inputs.append({"a": a, "axis": axis, "dtype": dtype})
+    # Input 10: 1D array of single element
+    input_dict = {
+        "a": np.array([42], dtype=np.int32),
+        "axis": 0,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    return copy.deepcopy(list_of_inputs)
+    # Input 11: 3D integer array with negative values, axis -3
+    input_dict = {
+        "a": np.array(
+            [[[1, -2], [3, -4]], [[-5, 6], [-7, 8]]], dtype=np.int16
+        ),
+        "axis": -3,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    return list_of_inputs
+
 
 generated_inputs["jax.numpy.cumprod"] = cumprod_inputs()
 

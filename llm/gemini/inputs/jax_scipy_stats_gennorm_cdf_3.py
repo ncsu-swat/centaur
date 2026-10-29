@@ -4,83 +4,63 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def gennorm_cdf_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic Python integers
-    input_dict = {
-        "x": 0,
-        "beta": 2
-    }
+    # Input 1: standard normal equivalent (x=0, beta=2)
+    input_dict = {"x": int(0), "beta": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative x and positive beta as Python integers
-    input_dict = {
-        "x": -5,
-        "beta": 1
-    }
+    # Input 2: Laplace equivalent with positive x (x=1, beta=1)
+    input_dict = {"x": int(1), "beta": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D NumPy arrays of int32
-    input_dict = {
-        "x": np.array([1, 2, 3], dtype=np.int32),
-        "beta": np.array([1, 2, 3], dtype=np.int32)
-    }
+    # Input 3: Laplace equivalent with negative x (x=-1, beta=1)
+    input_dict = {"x": int(-1), "beta": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D NumPy arrays of int64 with negative values in x
-    input_dict = {
-        "x": np.array([-2, 0, 2], dtype=np.int64),
-        "beta": np.array([2, 2, 2], dtype=np.int64)
-    }
+    # Input 4: positive x, beta=2
+    input_dict = {"x": int(2), "beta": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D NumPy arrays of int32
-    input_dict = {
-        "x": np.array([[1, -1], [2, -2]], dtype=np.int32),
-        "beta": np.array([[1, 2], [3, 4]], dtype=np.int32)
-    }
+    # Input 5: negative x, beta=2
+    input_dict = {"x": int(-2), "beta": int(2)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1-element NumPy arrays
-    input_dict = {
-        "x": np.array([5], dtype=np.int32),
-        "beta": np.array([2], dtype=np.int32)
-    }
+    # Input 6: x=0, beta=1
+    input_dict = {"x": int(0), "beta": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D array for x and scalar for beta (broadcasting)
-    input_dict = {
-        "x": np.array([[-3, 4], [0, 1]], dtype=np.int64),
-        "beta": 2
-    }
+    # Input 7: larger beta with positive x
+    input_dict = {"x": int(3), "beta": int(4)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar x and 1D array for beta
-    input_dict = {
-        "x": 1,
-        "beta": np.array([1, 2, 3], dtype=np.int32)
-    }
+    # Input 8: negative x with odd beta
+    input_dict = {"x": int(-5), "beta": int(3)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D NumPy arrays of int32
-    input_dict = {
-        "x": np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32),
-        "beta": np.array([[[1, 1], [2, 2]], [[3, 3], [4, 4]]], dtype=np.int32)
-    }
+    # Input 9: larger positive x and beta
+    input_dict = {"x": int(10), "beta": int(5)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Larger 1D array of int32 with negative and positive values
-    input_dict = {
-        "x": np.array([-10, -5, 0, 5, 10], dtype=np.int32),
-        "beta": np.array([1, 1, 1, 1, 1], dtype=np.int32)
-    }
+    # Input 10: large negative x
+    input_dict = {"x": int(-10), "beta": int(2)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: x=0 with large beta
+    input_dict = {"x": int(0), "beta": int(10)}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 12: positive x with beta=1
+    input_dict = {"x": int(4), "beta": int(1)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.scipy.stats.gennorm.cdf_3"] = gennorm_cdf_inputs()
 

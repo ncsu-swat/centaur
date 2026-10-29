@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# preferred accumulation element type must be a valid float type string (Rule 19)
+# preferred element type when provided as a string (Rule 19)
 
 rule_19 = lambda s, v, n=False: (
-    s.add(Not(Or(v["arg1_value"] == 38, v["arg1_value"] == 39)) if n else
-          Or(v["arg1_value"] == 38, v["arg1_value"] == 39))
+    s.add(Not(Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 38), v["arg1_value"] == 39)) if n else
+          Or(Or(v["arg1_value"] == 5, v["arg1_value"] == 38), v["arg1_value"] == 39))
 )
 
 def rule_19_func(arg1, solver=None, neg=False):

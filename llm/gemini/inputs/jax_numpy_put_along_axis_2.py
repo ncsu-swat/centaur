@@ -4,173 +4,215 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def put_along_axis_inputs():
     list_of_inputs = []
 
-    # Input 1: 2D array, updating along axis 1
-    arr = np.array([[10, 30, 20], [60, 40, 50]], dtype=np.float32)
-    indices = np.array([[1], [0]], dtype=np.int32)
-    values = 99.0
-    axis = 1
-    inplace = False
-    mode = "clip"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
-
-    # Input 2: 2D array, updating along axis 0
-    arr = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=np.int32)
-    indices = np.array([[0, 2, 1]], dtype=np.int32)
-    values = -1.0
-    axis = 0
-    inplace = False
-    mode = "drop"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
-
-    # Input 3: 1D array
-    arr = np.array([10.0, 20.0, 30.0, 40.0, 50.0], dtype=np.float32)
+    # Input 1: 1D array, axis 0, promise_in_bounds
+    arr = np.array([10.0, 20.0, 30.0, 40.0], dtype=np.float32)
     indices = np.array([1, 3], dtype=np.int32)
-    values = 5.5
+    values = 99.0
     axis = 0
     inplace = False
-    mode = "clip"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
+    mode = "promise_in_bounds"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 4: 3D array, updating along axis 1
-    arr = np.ones((2, 3, 4), dtype=np.float32)
-    indices = np.ones((2, 1, 4), dtype=np.int32)
-    values = 0.0
-    axis = 1
+    # Input 2: 2D array, axis 0, drop mode
+    arr = np.arange(12, dtype=np.float64).reshape(3, 4)
+    indices = np.array([[0, 2, 1, 0]], dtype=np.int64)
+    values = -5.5
+    axis = 0
     inplace = False
     mode = "drop"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 5: 2D float64 array, negative axis index
-    arr = np.random.randn(4, 4).astype(np.float64)
-    indices = np.array([[0], [1], [2], [3]], dtype=np.int32)
-    values = 12.34
+    # Input 3: 2D array, axis 1, fill mode
+    arr = np.zeros((4, 5), dtype=np.float32)
+    indices = np.array([[1], [3], [0], [4]], dtype=np.int32)
+    values = 7.0
+    axis = 1
+    inplace = False
+    mode = "fill"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
+
+    # Input 4: 2D array, negative axis -1, promise_in_bounds
+    arr = np.ones((2, 3), dtype=np.float32)
+    indices = np.array([[2, 0], [1, 2]], dtype=np.int32)
+    values = 42.0
     axis = -1
     inplace = False
     mode = "promise_in_bounds"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 6: 1D array with larger index set
-    arr = np.arange(10, dtype=np.float32)
-    indices = np.array([0, 2, 4, 6, 8], dtype=np.int32)
-    values = -999.0
-    axis = 0
-    inplace = False
-    mode = "clip"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
-
-    # Input 7: 3D array, updating along axis 2
-    arr = np.zeros((2, 2, 2), dtype=np.float32)
-    indices = np.zeros((2, 2, 1), dtype=np.int32)
-    values = 1.0
+    # Input 5: 3D array, axis 2, drop mode
+    arr = np.random.randn(2, 3, 4).astype(np.float64)
+    indices = np.zeros((2, 3, 1), dtype=np.int32)
+    values = 0.0
     axis = 2
     inplace = False
     mode = "drop"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 8: 2D array, updating along axis 0
-    arr = np.random.randn(5, 2).astype(np.float32)
-    indices = np.array([[2, 3]], dtype=np.int32)
-    values = 42.0
+    # Input 6: 3D array, axis 0, fill mode
+    arr = np.arange(24, dtype=np.float32).reshape(2, 3, 4)
+    indices = np.ones((1, 3, 4), dtype=np.int64)
+    values = -1.0
     axis = 0
     inplace = False
-    mode = "clip"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
+    mode = "fill"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 9: 1D float64 array with int64 indices
-    arr = np.array([1.1, 2.2, 3.3], dtype=np.float64)
-    indices = np.array([2], dtype=np.int64)
-    values = -3.14
-    axis = -1
+    # Input 7: 3D array, negative axis -2, promise_in_bounds
+    arr = np.linspace(0, 10, 24, dtype=np.float32).reshape(2, 4, 3)
+    indices = np.array([[[1, 2, 0]], [[3, 1, 2]]], dtype=np.int32)
+    values = 3.14159
+    axis = -2
     inplace = False
-    mode = "drop"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
+    mode = "promise_in_bounds"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
-    # Input 10: 4D array, updating along axis 1
-    arr = np.ones((2, 2, 2, 2), dtype=np.float32)
-    indices = np.zeros((2, 1, 2, 2), dtype=np.int32)
-    values = 100.0
+    # Input 8: 4D array, axis 1, drop mode
+    arr = np.zeros((2, 3, 2, 2), dtype=np.float32)
+    indices = np.ones((2, 1, 2, 2), dtype=np.int32)
+    values = 8.8
     axis = 1
     inplace = False
-    mode = "clip"
-    list_of_inputs.append({
-        "arr": arr,
-        "indices": indices,
-        "values": values,
-        "axis": axis,
-        "inplace": inplace,
-        "mode": mode
-    })
+    mode = "drop"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
+
+    # Input 9: 1D array with multiple indices to update, fill mode
+    arr = np.array([-10.0, -20.0, -30.0, -40.0, -50.0], dtype=np.float64)
+    indices = np.array([0, 2, 4], dtype=np.int64)
+    values = 100.0
+    axis = 0
+    inplace = False
+    mode = "fill"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
+
+    # Input 10: 2D array, full-slice indices along axis 0, promise_in_bounds
+    arr = np.ones((4, 2), dtype=np.float32)
+    indices = np.array([[3, 2], [1, 0]], dtype=np.int32)
+    values = 2.718
+    axis = 0
+    inplace = False
+    mode = "promise_in_bounds"
+    list_of_inputs.append(
+        copy.deepcopy(
+            {
+                "arr": arr,
+                "indices": indices,
+                "values": values,
+                "axis": axis,
+                "inplace": inplace,
+                "mode": mode,
+            }
+        )
+    )
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.put_along_axis_2"] = put_along_axis_inputs()
 

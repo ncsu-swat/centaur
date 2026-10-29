@@ -4,44 +4,55 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def hanning_inputs():
     list_of_inputs = []
 
-    # Input 1: Zero
-    list_of_inputs.append({"M": 0})
+    # Input 1: Zero window size
+    input_dict = {"M": 0}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: One
-    list_of_inputs.append({"M": 1})
+    # Input 2: Window size 1
+    input_dict = {"M": 1}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Small positive integer
-    list_of_inputs.append({"M": 4})
+    # Input 3: Window size 2
+    input_dict = {"M": 2}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Standard size integer
-    list_of_inputs.append({"M": 10})
+    # Input 4: Small odd window size
+    input_dict = {"M": 3}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: np.int32 type
-    list_of_inputs.append({"M": np.int32(8)})
+    # Input 5: Small even window size
+    input_dict = {"M": 4}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: np.int64 type
-    list_of_inputs.append({"M": np.int64(16)})
+    # Input 6: Window size 5
+    input_dict = {"M": 5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: np.int16 type
-    list_of_inputs.append({"M": np.int16(32)})
+    # Input 7: Window size 10
+    input_dict = {"M": 10}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Larger size integer
-    list_of_inputs.append({"M": 100})
+    # Input 8: Window size 16
+    input_dict = {"M": 16}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Large power of 2
-    list_of_inputs.append({"M": 1024})
+    # Input 9: Odd window size
+    input_dict = {"M": 51}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Odd positive integer
-    list_of_inputs.append({"M": 5})
+    # Input 10: Power-of-two window size
+    input_dict = {"M": 128}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Medium standard integer
-    list_of_inputs.append({"M": 50})
+    # Input 11: Typical FFT window size
+    input_dict = {"M": 1024}
+    list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

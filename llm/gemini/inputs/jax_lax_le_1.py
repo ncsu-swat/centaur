@@ -4,73 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def jax_lax_le_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic float32 comparison, 1D
-    x = np.array([1.0, 2.0, 3.0], dtype=np.float32)
-    y = np.array([2.0, 2.0, 2.0], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 1. Scalar arrays, float32
+    x = np.array(1.5, dtype=np.float32)
+    y = np.array(2.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 2: Int32 comparison with negative values, 2D
-    x = np.array([[-5, 10], [0, -3]], dtype=np.int32)
-    y = np.array([[-4, 10], [1, -5]], dtype=np.int32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 2. 1D arrays, matching shapes, int32 with negative values
+    x = np.array([-5, 0, 10, -2], dtype=np.int32)
+    y = np.array([-3, 0, 8, 5], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 3: Float64 comparison, 3D
-    x = np.random.randn(2, 3, 4).astype(np.float64)
-    y = np.random.randn(2, 3, 4).astype(np.float64)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 3. 2D arrays, broadcastable shapes (same number of dimensions), float64
+    x = np.random.randn(3, 1).astype(np.float64)
+    y = np.random.randn(3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 4: Broadcasting, (3, 1) and (1, 4) - both 2D
-    x = np.array([[1.0], [2.0], [3.0]], dtype=np.float32)
-    y = np.array([[0.0, 2.0, 3.0, 4.0]], dtype=np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 4. 2D arrays, matching shapes, uint8
+    x = np.array([[10, 20], [30, 40]], dtype=np.uint8)
+    y = np.array([[15, 20], [25, 45]], dtype=np.uint8)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 5: Int8 comparison, 1D
-    x = np.array([-128, 0, 127], dtype=np.int8)
-    y = np.array([-127, 0, 126], dtype=np.int8)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 5. 3D arrays, broadcastable shapes, float32
+    x = np.random.randn(2, 1, 4).astype(np.float32)
+    y = np.random.randn(2, 3, 4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 6: Unsigned integers uint8, 1D
-    x = np.array([0, 255, 128], dtype=np.uint8)
-    y = np.array([1, 255, 127], dtype=np.uint8)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 6. 3D arrays, identical shapes, int64
+    x = np.arange(24, dtype=np.int64).reshape((2, 3, 4))
+    y = np.full((2, 3, 4), 12, dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 7: Float16 comparison, 4D
-    x = np.random.randn(2, 2, 2, 2).astype(np.float16)
-    y = np.random.randn(2, 2, 2, 2).astype(np.float16)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 7. 4D arrays, matching shapes, float16
+    x = np.random.randn(1, 2, 2, 3).astype(np.float16)
+    y = np.random.randn(1, 2, 2, 3).astype(np.float16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: 1D Boolean array comparison
+    # 8. Boolean arrays, 1D
     x = np.array([True, False, True, False], dtype=np.bool_)
     y = np.array([False, False, True, True], dtype=np.bool_)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: Large arrays, 1D int64
-    x = np.arange(100, dtype=np.int64)
-    y = np.arange(100, dtype=np.int64) + 1
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 9. 2D broadcastable with singleton dimension on y, int16
+    x = np.array([[-10, 20, 30], [5, -15, 0]], dtype=np.int16)
+    y = np.array([[0], [10]], dtype=np.int16)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: Broadcasting with matching rank, (1, 1) and (3, 3) - both 2D
-    x = np.array([[5.5]], dtype=np.float32)
-    y = np.random.randn(3, 3).astype(np.float32)
-    input_dict = {"x": x, "y": y}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # 10. 5D arrays, matching shapes, float32
+    x = np.zeros((1, 2, 1, 3, 2), dtype=np.float32)
+    y = np.ones((1, 2, 1, 3, 2), dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # 11. 1D empty arrays, int32
+    x = np.array([], dtype=np.int32)
+    y = np.array([], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.lax.le_1"] = jax_lax_le_inputs()
 

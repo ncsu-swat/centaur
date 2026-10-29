@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# axis1 must be within the valid range of tensor dimensions (Rule 30)
+# difference between ndim and axis2 must be positive and bounded by twice ndim (Rule 30)
 
 rule_30 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"])) if n else
-          And(v["arg2_value"] >= 0 - v["arg1_ndim"], v["arg2_value"] < v["arg1_ndim"]))
+    s.add(Not(And(v["arg1_ndim"] - v["arg2_value"] > 0, v["arg1_ndim"] - v["arg2_value"] <= 2 * v["arg1_ndim"])) if n else
+          And(v["arg1_ndim"] - v["arg2_value"] > 0, v["arg1_ndim"] - v["arg2_value"] <= 2 * v["arg1_ndim"]))
 )
 
 def rule_30_func(arg1, arg2, solver=None, neg=False):

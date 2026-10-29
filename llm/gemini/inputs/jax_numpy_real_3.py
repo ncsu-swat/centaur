@@ -4,57 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def real_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive float
-    input_dict = {"val": 3.14}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 2: Negative float
-    input_dict = {"val": -10.5}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Zero float
+    # Input 1: Zero
     input_dict = {"val": 0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Negative zero float
+    # Input 2: Negative zero
     input_dict = {"val": -0.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Large positive float
-    input_dict = {"val": 1e15}
+    # Input 3: Positive float
+    input_dict = {"val": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Very small float
+    # Input 4: Negative float
+    input_dict = {"val": -42.5}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: Pi approximation
+    input_dict = {"val": 3.141592653589793}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 6: Euler's number approximation (negative)
+    input_dict = {"val": -2.718281828459045}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: Small positive float
     input_dict = {"val": 1e-15}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: Positive infinity as float
-    input_dict = {"val": float('inf')}
+    # Input 8: Large negative float
+    input_dict = {"val": -1e20}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Negative infinity as float
-    input_dict = {"val": float('-inf')}
+    # Input 9: Very large float
+    input_dict = {"val": 1e308}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: NaN as float
-    input_dict = {"val": float('nan')}
+    # Input 10: Very small negative subnormal-like float
+    input_dict = {"val": -1e-308}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: Float represented by np.float32
-    input_dict = {"val": float(np.float32(2.71828))}
+    # Input 11: Positive infinity
+    input_dict = {"val": float("inf")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 11: Float represented by np.float64
-    input_dict = {"val": float(np.float64(-0.57721))}
+    # Input 12: Negative infinity
+    input_dict = {"val": float("-inf")}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 13: NaN
+    input_dict = {"val": float("nan")}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.real_3"] = real_inputs()
 

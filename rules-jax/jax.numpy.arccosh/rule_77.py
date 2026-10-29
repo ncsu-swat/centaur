@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# The tensor must not have a string data type (Rule 77)
+# input tensor is 2-dimensional (Rule 77)
 
 rule_77 = lambda s, v, n=False: (
-    s.add(Not(v["arg1_dtype"] != 11) if n else
-          v["arg1_dtype"] != 11)
+    s.add(Not(v["arg1_ndim"] == 2) if n else
+          v["arg1_ndim"] == 2)
 )
 
 def rule_77_func(arg1, solver=None, neg=False):
@@ -24,15 +24,15 @@ def rule_77_func(arg1, solver=None, neg=False):
 
         # Variable declarations
         solver = Solver()
-        arg1_dtype = Int('arg1_dtype')
+        arg1_ndim = Int('arg1_ndim')
 
         # Value assignments
-        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg1_ndim == arg1.ndim)
 
         # Constraints for rule 77
-        rule_77(solver, {'arg1_dtype': arg1_dtype})
+        rule_77(solver, {'arg1_ndim': arg1_ndim})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_77(solver, {'arg1_dtype': arg1['dtype']}, neg)
+        rule_77(solver, {'arg1_ndim': arg1['ndim']}, neg)

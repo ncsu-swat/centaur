@@ -4,43 +4,62 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def abs_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D array of integers
-    list_of_inputs.append({"x": np.array([-1, 2, -3, 0, 4], dtype=np.int32)})
+    # Input 1: 1D array of integers with negative values
+    x = np.array([-1, -2, 3, -4, 5], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 2: 1D array of floats
-    list_of_inputs.append({"x": np.array([-1.5, 2.7, -3.14, 0.0, 5.5], dtype=np.float32)})
+    # Input 2: 1D array of floats with negative values
+    x = np.array([-1.5, 2.5, -3.5, 4.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 3: 2D array of integers
-    list_of_inputs.append({"x": np.array([[-1, -2, -3], [4, 5, 6]], dtype=np.int64)})
+    x = np.array([[-1, 2], [-3, -4]], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 4: 2D array of floats
-    list_of_inputs.append({"x": np.array([[-1.1, 2.2], [-3.3, 4.4]], dtype=np.float64)})
+    x = np.array([[-1.0, -2.0, 3.0], [4.0, -5.0, -6.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 1D array of complex numbers
-    list_of_inputs.append({"x": np.array([1 + 1j, -2 - 2j, 3j, -4j], dtype=np.complex64)})
+    # Input 5: 1D array of alternating large integers
+    x = np.array([0, -100, 200, -300, 400, -500], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D array of single float (replacing 0D scalar array)
-    list_of_inputs.append({"x": np.array([-9.9], dtype=np.float32)})
+    # Input 6: 3D array of integers
+    x = np.array([[[-1, 2], [-3, 4]], [[-5, -6], [7, 8]]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 1D Boolean array
-    list_of_inputs.append({"x": np.array([True, False, True], dtype=bool)})
+    # Input 7: Single-element 1D array with negative float
+    x = np.array([-42.0], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 3D random array of floats
-    list_of_inputs.append({"x": np.random.randn(2, 3, 4).astype(np.float32)})
+    # Input 8: 1D array with varied float values
+    x = np.array([100.5, -200.25, 300.125, -400.0625], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D array with infinity and nan values
-    list_of_inputs.append({"x": np.array([float('-inf'), float('inf'), float('nan')], dtype=np.float32)})
+    # Input 9: 2D array of shape (3, 2)
+    x = np.array([[-10, -20], [30, 40], [-50, 60]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: 1D array of int8 containing negative boundaries
-    list_of_inputs.append({"x": np.array([-128, -1, 0, 127], dtype=np.int8)})
+    # Input 10: 1D array with large integers
+    x = np.array([-1000000, 2000000, -3000000, 0], dtype=np.int64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D array of floats
+    x = np.array(
+        [[[-1.1, 2.2], [-3.3, 4.4]], [[-5.5, -6.6], [7.7, -8.8]]],
+        dtype=np.float32,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.abs_5"] = abs_inputs()
 

@@ -4,54 +4,67 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def conjugate_inputs():
     list_of_inputs = []
 
     # Input 1: 1D complex64 array
-    x = np.array([2 - 1j, 3 + 5j, 7], dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.array([1.0 + 2.0j, -3.0 - 4.0j, 5.0 + 0.0j], dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     # Input 2: 2D complex128 array
-    x = np.array([[1 + 2j, -3 - 4j], [5j, -6j]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    x = np.array(
+        [[1.5 - 2.5j, -0.5 + 4.2j], [3.1 + 0.0j, -2.2 - 1.1j]],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 3: 1D float32 array with positive and negative numbers
-    x = np.array([-1.5, 0.0, 2.3], dtype=np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 3: 0D scalar tensor (complex64)
+    x = np.array(2.0 - 7.0j, dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 4: 3D int32 array
-    x = np.array([[[1, -2], [3, 4]], [[-5, 6], [7, -8]]], dtype=np.int32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 4: 1D float32 array (real values)
+    x = np.array([-1.0, 0.0, 2.5, -3.7], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 5: 4D complex64 array generated randomly
-    x = (np.random.randn(2, 2, 2, 2).astype(np.float32) + 
-         1j * np.random.randn(2, 2, 2, 2).astype(np.float32))
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 5: 3D float64 array
+    x = np.random.randn(2, 3, 4).astype(np.float64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 6: 1D float64 with negative numbers and zeros
-    x = np.array([-10.0, -5.5, 0.0, 5.5, 10.0], dtype=np.float64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 6: 2D integer array (int32)
+    x = np.array([[-5, 0, 3], [12, -8, 7]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 7: 2D complex128 purely imaginary array
-    x = np.array([[1j, -2j, 3j], [-4j, 5j, -6j]], dtype=np.complex128)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 7: 4D complex64 array
+    real_part = np.random.randn(2, 2, 3, 2).astype(np.float32)
+    imag_part = np.random.randn(2, 2, 3, 2).astype(np.float32)
+    x = (real_part + 1j * imag_part).astype(np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 8: 0D array (scalar tensor) complex64
-    x = np.array(1.5 - 2.5j, dtype=np.complex64)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 8: 1D boolean array
+    x = np.array([True, False, True, True], dtype=np.bool_)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 9: 1D boolean array
-    x = np.array([True, False, True], dtype=bool)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 9: Empty array
+    x = np.empty((0, 3), dtype=np.complex64)
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
-    # Input 10: Large 2D float32 array
-    x = np.random.randn(100, 100).astype(np.float32)
-    list_of_inputs.append({"x": copy.deepcopy(x)})
+    # Input 10: Array with special values (inf, nan)
+    x = np.array(
+        [complex(np.nan, 1.0), complex(np.inf, -2.0), complex(-np.inf, np.nan)],
+        dtype=np.complex128,
+    )
+    list_of_inputs.append(copy.deepcopy({"x": x}))
+
+    # Input 11: 3D int64 array
+    x = np.arange(24, dtype=np.int64).reshape((2, 3, 4)) - 10
+    list_of_inputs.append(copy.deepcopy({"x": x}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.conjugate_1"] = conjugate_inputs()
 

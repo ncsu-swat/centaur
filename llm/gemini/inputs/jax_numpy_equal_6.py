@@ -4,48 +4,51 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
-def jax_numpy_equal_6_inputs():
+def equal_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic equality with positive zero
-    list_of_inputs.append(copy.deepcopy({"x": 0.0, "y": 0.0}))
+    # Input 1: Identical positive floats
+    list_of_inputs.append({"x": 1.0, "y": 1.0})
 
-    # Input 2: Positive float equality
-    list_of_inputs.append(copy.deepcopy({"x": 1.5, "y": 1.5}))
+    # Input 2: Different positive floats
+    list_of_inputs.append({"x": 2.5, "y": 3.75})
 
-    # Input 3: Negative float equality
-    list_of_inputs.append(copy.deepcopy({"x": -2.5, "y": -2.5}))
+    # Input 3: Positive zero and negative zero
+    list_of_inputs.append({"x": 0.0, "y": -0.0})
 
-    # Input 4: Positive and negative zero comparison
-    list_of_inputs.append(copy.deepcopy({"x": 0.0, "y": -0.0}))
+    # Input 4: Identical negative floats
+    list_of_inputs.append({"x": -4.2, "y": -4.2})
 
-    # Input 5: Inequality with positive floats
-    list_of_inputs.append(copy.deepcopy({"x": 1.23e-4, "y": 1.24e-4}))
+    # Input 5: Positive and negative floats of same magnitude
+    list_of_inputs.append({"x": 10.0, "y": -10.0})
 
-    # Input 6: Large absolute value comparison (different signs)
-    list_of_inputs.append(copy.deepcopy({"x": 9.87e6, "y": -9.87e6}))
+    # Input 6: Large float values equal
+    list_of_inputs.append({"x": 1e20, "y": 1e20})
 
-    # Input 7: Infinity equality comparison
-    list_of_inputs.append(copy.deepcopy({"x": float('inf'), "y": float('inf')}))
+    # Input 7: Small float values unequal
+    list_of_inputs.append({"x": 1e-12, "y": 2e-12})
 
-    # Input 8: Positive and negative infinity comparison
-    list_of_inputs.append(copy.deepcopy({"x": float('-inf'), "y": float('inf')}))
+    # Input 8: Infinities of same sign
+    list_of_inputs.append({"x": float("inf"), "y": float("inf")})
 
-    # Input 9: NaN comparison (NaN != NaN in standard IEEE 754)
-    list_of_inputs.append(copy.deepcopy({"x": float('nan'), "y": float('nan')}))
+    # Input 9: Infinities of opposite signs
+    list_of_inputs.append({"x": float("-inf"), "y": float("inf")})
 
-    # Input 10: Comparison involving NaN and a regular float
-    list_of_inputs.append(copy.deepcopy({"x": float('nan'), "y": 0.0}))
+    # Input 10: NaN values
+    list_of_inputs.append({"x": float("nan"), "y": float("nan")})
 
-    # Input 11: Very small floating point values
-    list_of_inputs.append(copy.deepcopy({"x": 1e-30, "y": 1e-30}))
+    # Input 11: Subnormal-like small floats
+    list_of_inputs.append({"x": 5e-324, "y": 5e-324})
+
+    # Input 12: High precision floats
+    list_of_inputs.append({"x": 3.141592653589793, "y": 3.141592653589793})
 
     return list_of_inputs
 
-generated_inputs["jax.numpy.equal_6"] = jax_numpy_equal_6_inputs()
+generated_inputs["jax.numpy.equal_6"] = equal_inputs()
 
 def check_valid(api, list_of_inputs, lib="jax", suffix=0):
     for idx, input_dict in enumerate(list_of_inputs):

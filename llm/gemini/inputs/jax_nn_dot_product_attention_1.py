@@ -4,183 +4,205 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def dot_product_attention_inputs():
     list_of_inputs = []
 
-    # Input 1: Standard Multi-Head Attention (MHA) with float32
-    input_dict_1 = {
-        'query': np.random.randn(2, 8, 4, 16).astype(np.float32),
-        'key': np.random.randn(2, 8, 4, 16).astype(np.float32),
-        'value': np.random.randn(2, 8, 4, 16).astype(np.float32),
-        'bias': np.random.randn(2, 4, 8, 8).astype(np.float32),
-        'mask': np.ones((2, 4, 8, 8), dtype=np.bool_),
-        'scale': 0.25,
-        'is_causal': False,
-        'query_seq_lengths': np.array([8, 8], dtype=np.int32),
-        'key_value_seq_lengths': np.array([8, 8], dtype=np.int32),
-        'local_window_size': 4,
-        'implementation': 'xla',
-        'return_residual': False
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict_1))
+    # Signature:
+    # {'query': 'tensor', 'key': 'tensor', 'value': 'tensor', 'bias': 'tensor', 'mask': 'tensor',
+    #  'scale': 'float', 'is_causal': 'boolean', 'query_seq_lengths': 'tensor',
+    #  'key_value_seq_lengths': 'tensor', 'local_window_size': 'integer', 'implementation': 'string',
+    #  'return_residual': 'boolean'}
 
-    # Input 2: Multi-Query Attention (MQA) with float16 and causal masking
-    input_dict_2 = {
-        'query': np.random.randn(1, 16, 8, 32).astype(np.float16),
-        'key': np.random.randn(1, 16, 1, 32).astype(np.float16),
-        'value': np.random.randn(1, 16, 1, 32).astype(np.float16),
-        'bias': np.zeros((1, 8, 16, 16), dtype=np.float16),
-        'mask': np.random.choice([True, False], size=(1, 8, 16, 16)).astype(np.bool_),
-        'scale': 0.176,
-        'is_causal': True,
-        'query_seq_lengths': np.array([16], dtype=np.int32),
-        'key_value_seq_lengths': np.array([16], dtype=np.int32),
-        'local_window_size': 8,
-        'implementation': 'xla',
-        'return_residual': True
+    # Case 1: Standard 4D input (B, T, N, H) with B=2, T=4, S=4, N=2, K=2, H=8
+    B, T, S, N, K, H = 2, 4, 4, 2, 2, 8
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.zeros((B, N, T, S), dtype=np.float32),
+        "mask": np.ones((B, N, T, S), dtype=bool),
+        "scale": float(1.0 / np.sqrt(H)),
+        "is_causal": False,
+        "query_seq_lengths": np.array([4, 4], dtype=np.int32),
+        "key_value_seq_lengths": np.array([4, 4], dtype=np.int32),
+        "local_window_size": 2,
+        "implementation": "xla",
+        "return_residual": False,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_2))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 3: Grouped Query Attention (GQA) with float64
-    input_dict_3 = {
-        'query': np.random.randn(3, 12, 8, 16).astype(np.float64),
-        'key': np.random.randn(3, 12, 2, 16).astype(np.float64),
-        'value': np.random.randn(3, 12, 2, 16).astype(np.float64),
-        'bias': np.random.randn(3, 8, 12, 12).astype(np.float64),
-        'mask': np.ones((3, 8, 12, 12), dtype=np.bool_),
-        'scale': 0.25,
-        'is_causal': False,
-        'query_seq_lengths': np.array([12, 10, 8], dtype=np.int32),
-        'key_value_seq_lengths': np.array([12, 11, 9], dtype=np.int32),
-        'local_window_size': 6,
-        'implementation': 'xla',
-        'return_residual': False
+    # Case 2: 4D input with causal=True, return_residual=True
+    B, T, S, N, K, H = 1, 8, 8, 4, 4, 16
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.random.randn(B, N, T, S).astype(np.float32),
+        "mask": np.ones((B, N, T, S), dtype=bool),
+        "scale": 0.25,
+        "is_causal": True,
+        "query_seq_lengths": np.array([8], dtype=np.int32),
+        "key_value_seq_lengths": np.array([8], dtype=np.int32),
+        "local_window_size": 4,
+        "implementation": "xla",
+        "return_residual": True,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_3))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 4: Standard MHA with high head-dimension and return_residual
-    input_dict_4 = {
-        'query': np.random.randn(1, 4, 2, 64).astype(np.float32),
-        'key': np.random.randn(1, 4, 2, 64).astype(np.float32),
-        'value': np.random.randn(1, 4, 2, 64).astype(np.float32),
-        'bias': np.random.randn(1, 2, 4, 4).astype(np.float32),
-        'mask': np.ones((1, 2, 4, 4), dtype=np.bool_),
-        'scale': 0.125,
-        'is_causal': True,
-        'query_seq_lengths': np.array([4], dtype=np.int32),
-        'key_value_seq_lengths': np.array([4], dtype=np.int32),
-        'local_window_size': 2,
-        'implementation': 'xla',
-        'return_residual': True
+    # Case 3: Grouped Query Attention (GQA), N=4, K=2 (G=2)
+    B, T, S, N, K, H = 2, 6, 6, 4, 2, 16
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.zeros((B, N, T, S), dtype=np.float32),
+        "mask": np.ones((B, 1, T, S), dtype=bool),
+        "scale": 0.5,
+        "is_causal": False,
+        "query_seq_lengths": np.array([6, 6], dtype=np.int32),
+        "key_value_seq_lengths": np.array([6, 6], dtype=np.int32),
+        "local_window_size": 3,
+        "implementation": "xla",
+        "return_residual": False,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_4))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 5: MHA with negative bias values and smaller window size
-    input_dict_5 = {
-        'query': np.random.randn(1, 2, 1, 8).astype(np.float32),
-        'key': np.random.randn(1, 2, 1, 8).astype(np.float32),
-        'value': np.random.randn(1, 2, 1, 8).astype(np.float32),
-        'bias': np.full((1, 1, 2, 2), -10.0, dtype=np.float32),
-        'mask': np.ones((1, 1, 2, 2), dtype=np.bool_),
-        'scale': 0.353,
-        'is_causal': False,
-        'query_seq_lengths': np.array([2], dtype=np.int32),
-        'key_value_seq_lengths': np.array([2], dtype=np.int32),
-        'local_window_size': 1,
-        'implementation': 'xla',
-        'return_residual': False
+    # Case 4: Multi-Query Attention (MQA), N=4, K=1
+    B, T, S, N, K, H = 3, 5, 5, 4, 1, 8
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.zeros((1, 1, T, S), dtype=np.float32),
+        "mask": np.ones((1, 1, T, S), dtype=bool),
+        "scale": float(1.0 / np.sqrt(H)),
+        "is_causal": False,
+        "query_seq_lengths": np.array([5, 5, 5], dtype=np.int32),
+        "key_value_seq_lengths": np.array([5, 5, 5], dtype=np.int32),
+        "local_window_size": 1,
+        "implementation": "xla",
+        "return_residual": True,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_5))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 6: Large batch with sequence length masking
-    input_dict_6 = {
-        'query': np.random.randn(4, 6, 4, 16).astype(np.float32),
-        'key': np.random.randn(4, 6, 4, 16).astype(np.float32),
-        'value': np.random.randn(4, 6, 4, 16).astype(np.float32),
-        'bias': np.zeros((4, 4, 6, 6), dtype=np.float32),
-        'mask': np.random.choice([True, False], size=(4, 4, 6, 6), p=[0.9, 0.1]).astype(np.bool_),
-        'scale': 0.25,
-        'is_causal': False,
-        'query_seq_lengths': np.array([6, 5, 4, 6], dtype=np.int32),
-        'key_value_seq_lengths': np.array([6, 6, 5, 5], dtype=np.int32),
-        'local_window_size': 3,
-        'implementation': 'xla',
-        'return_residual': False
+    # Case 5: Float64 dtype
+    B, T, S, N, K, H = 1, 4, 4, 2, 2, 8
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float64),
+        "key": np.random.randn(B, S, K, H).astype(np.float64),
+        "value": np.random.randn(B, S, K, H).astype(np.float64),
+        "bias": np.random.randn(B, N, T, S).astype(np.float64),
+        "mask": np.ones((B, N, T, S), dtype=bool),
+        "scale": 0.125,
+        "is_causal": False,
+        "query_seq_lengths": np.array([4], dtype=np.int32),
+        "key_value_seq_lengths": np.array([4], dtype=np.int32),
+        "local_window_size": 2,
+        "implementation": "xla",
+        "return_residual": False,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_6))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 7: Large sequence size with GQA
-    input_dict_7 = {
-        'query': np.random.randn(2, 32, 4, 32).astype(np.float32),
-        'key': np.random.randn(2, 32, 2, 32).astype(np.float32),
-        'value': np.random.randn(2, 32, 2, 32).astype(np.float32),
-        'bias': np.zeros((2, 4, 32, 32), dtype=np.float32),
-        'mask': np.ones((2, 4, 32, 32), dtype=np.bool_),
-        'scale': 0.176,
-        'is_causal': True,
-        'query_seq_lengths': np.array([32, 24], dtype=np.int32),
-        'key_value_seq_lengths': np.array([32, 28], dtype=np.int32),
-        'local_window_size': 16,
-        'implementation': 'xla',
-        'return_residual': False
+    # Case 6: Unequal query and key/value sequence lengths (T != S)
+    B, T, S, N, K, H = 2, 3, 7, 2, 2, 16
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.zeros((B, N, T, S), dtype=np.float32),
+        "mask": np.ones((B, N, T, S), dtype=bool),
+        "scale": 0.25,
+        "is_causal": False,
+        "query_seq_lengths": np.array([3, 2], dtype=np.int32),
+        "key_value_seq_lengths": np.array([7, 5], dtype=np.int32),
+        "local_window_size": 5,
+        "implementation": "xla",
+        "return_residual": False,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_7))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 8: Single head large sequence MQA
-    input_dict_8 = {
-        'query': np.random.randn(1, 64, 1, 16).astype(np.float32),
-        'key': np.random.randn(1, 64, 1, 16).astype(np.float32),
-        'value': np.random.randn(1, 64, 1, 16).astype(np.float32),
-        'bias': np.zeros((1, 1, 64, 64), dtype=np.float32),
-        'mask': np.ones((1, 1, 64, 64), dtype=np.bool_),
-        'scale': 0.25,
-        'is_causal': False,
-        'query_seq_lengths': np.array([64], dtype=np.int32),
-        'key_value_seq_lengths': np.array([64], dtype=np.int32),
-        'local_window_size': 32,
-        'implementation': 'xla',
-        'return_residual': True
+    # Case 7: Non-trivial boolean mask with masked elements
+    B, T, S, N, K, H = 1, 4, 4, 1, 1, 8
+    mask = np.array([[[[True, True, False, False],
+                       [True, True, True, False],
+                       [True, True, True, True],
+                       [True, True, True, True]]]], dtype=bool)
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.zeros((B, N, T, S), dtype=np.float32),
+        "mask": mask,
+        "scale": 0.35,
+        "is_causal": False,
+        "query_seq_lengths": np.array([4], dtype=np.int32),
+        "key_value_seq_lengths": np.array([4], dtype=np.int32),
+        "local_window_size": 2,
+        "implementation": "xla",
+        "return_residual": False,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_8))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 9: Standard MHA with float16 and non-trivial local_window_size
-    input_dict_9 = {
-        'query': np.random.randn(2, 10, 6, 16).astype(np.float16),
-        'key': np.random.randn(2, 10, 6, 16).astype(np.float16),
-        'value': np.random.randn(2, 10, 6, 16).astype(np.float16),
-        'bias': np.random.randn(2, 6, 10, 10).astype(np.float16),
-        'mask': np.ones((2, 6, 10, 10), dtype=np.bool_),
-        'scale': 0.25,
-        'is_causal': True,
-        'query_seq_lengths': np.array([10, 9], dtype=np.int32),
-        'key_value_seq_lengths': np.array([10, 10], dtype=np.int32),
-        'local_window_size': 5,
-        'implementation': 'xla',
-        'return_residual': False
+    # Case 8: Broadcastable bias of shape (1, 1, T, S)
+    B, T, S, N, K, H = 2, 4, 4, 4, 4, 8
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.random.randn(1, 1, T, S).astype(np.float32),
+        "mask": np.ones((1, 1, T, S), dtype=bool),
+        "scale": 0.5,
+        "is_causal": True,
+        "query_seq_lengths": np.array([4, 3], dtype=np.int32),
+        "key_value_seq_lengths": np.array([4, 3], dtype=np.int32),
+        "local_window_size": 3,
+        "implementation": "xla",
+        "return_residual": True,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_9))
+    list_of_inputs.append(copy.deepcopy(inp))
 
-    # Input 10: Standard MHA with float32, active mask and custom scale
-    input_dict_10 = {
-        'query': np.random.randn(2, 8, 4, 16).astype(np.float32),
-        'key': np.random.randn(2, 8, 4, 16).astype(np.float32),
-        'value': np.random.randn(2, 8, 4, 16).astype(np.float32),
-        'bias': np.random.uniform(-1.0, 1.0, (2, 4, 8, 8)).astype(np.float32),
-        'mask': np.random.choice([True, False], size=(2, 4, 8, 8)).astype(np.bool_),
-        'scale': 0.3,
-        'is_causal': False,
-        'query_seq_lengths': np.array([8, 6], dtype=np.int32),
-        'key_value_seq_lengths': np.array([8, 7], dtype=np.int32),
-        'local_window_size': 3,
-        'implementation': 'xla',
-        'return_residual': True
+    # Case 9: Larger dimensions and window size
+    B, T, S, N, K, H = 2, 16, 16, 8, 4, 32
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": np.zeros((B, N, T, S), dtype=np.float32),
+        "mask": np.ones((B, N, T, S), dtype=bool),
+        "scale": float(1.0 / np.sqrt(H)),
+        "is_causal": False,
+        "query_seq_lengths": np.array([16, 16], dtype=np.int32),
+        "key_value_seq_lengths": np.array([16, 16], dtype=np.int32),
+        "local_window_size": 8,
+        "implementation": "xla",
+        "return_residual": False,
     }
-    list_of_inputs.append(copy.deepcopy(input_dict_10))
+    list_of_inputs.append(copy.deepcopy(inp))
+
+    # Case 10: Negative bias values and smaller window size
+    B, T, S, N, K, H = 2, 5, 5, 2, 2, 4
+    inp = {
+        "query": np.random.randn(B, T, N, H).astype(np.float32),
+        "key": np.random.randn(B, S, K, H).astype(np.float32),
+        "value": np.random.randn(B, S, K, H).astype(np.float32),
+        "bias": -100.0 * np.random.rand(B, N, T, S).astype(np.float32),
+        "mask": np.ones((B, N, T, S), dtype=bool),
+        "scale": 1.0,
+        "is_causal": False,
+        "query_seq_lengths": np.array([5, 5], dtype=np.int32),
+        "key_value_seq_lengths": np.array([5, 5], dtype=np.int32),
+        "local_window_size": 1,
+        "implementation": "xla",
+        "return_residual": True,
+    }
+    list_of_inputs.append(copy.deepcopy(inp))
 
     return list_of_inputs
+
 
 generated_inputs["jax.nn.dot_product_attention_1"] = dot_product_attention_inputs()
 

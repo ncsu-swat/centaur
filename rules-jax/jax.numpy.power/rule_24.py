@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if base tensor has negative values, exponent tensor must have an integer dtype (Rule 24)
+# non-negative float exponent when base tensor has negative elements (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(If(Select(v["arg1_range"], 0) < 0, And(v["arg2_dtype"] >= 1, v["arg2_dtype"] <= 5), True)) if n else
-          If(Select(v["arg1_range"], 0) < 0, And(v["arg2_dtype"] >= 1, v["arg2_dtype"] <= 5), True))
+    s.add(Not(If(Select(v["arg1_range"], 0) < 0, v["arg2_value"] >= 0, True)) if n else
+          If(Select(v["arg1_range"], 0) < 0, v["arg2_value"] >= 0, True))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -22,23 +22,23 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not isinstance(arg2, np.ndarray):
+        if not isinstance(arg2, (float, np.floating)):
             return False
 
         # Variable declarations
         solver = Solver()
         arg1_range = Array('arg1_range', IntSort(), IntSort())
-        arg2_dtype = Int('arg2_dtype')
+        arg2_value = Real('arg2_value')
 
         # Value assignments
         arg1_range = Store(arg1_range, 0, int(np.min(arg1)))
         arg1_range = Store(arg1_range, 1, int(np.max(arg1)))
-        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
+        solver.add(arg2_value == arg2)
 
         # Constraints for rule 24
-        rule_24(solver, {'arg1_range': arg1_range, 'arg2_dtype': arg2_dtype})
+        rule_24(solver, {'arg1_range': arg1_range, 'arg2_value': arg2_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_24(solver, {'arg1_range': arg1['range'], 'arg2_dtype': arg2['dtype']}, neg)
+        rule_24(solver, {'arg1_range': arg1['range'], 'arg2_value': arg2['value']}, neg)

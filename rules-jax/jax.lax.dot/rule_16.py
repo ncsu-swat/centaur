@@ -7,32 +7,43 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# precision string parameter must be a valid precision algorithm or preset (Rule 16)
+# dimension_numbers must be specified when not performing simple un-batched dot products (Rule 16)
 
 rule_16 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(v["arg1_value"] == 37, v["arg1_value"] == 38), v["arg1_value"] == 39)) if n else
-          Or(Or(v["arg1_value"] == 37, v["arg1_value"] == 38), v["arg1_value"] == 39))
+    s.add(Not(And(And(And(And(And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 2), 1 <= v["arg2_ndim"]), v["arg2_ndim"] <= 2), (Or(v["arg1_ndim"] == 2, v["arg2_ndim"] == 1))), Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg2_shape"], 0))) if n else
+          And(And(And(And(And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 2), 1 <= v["arg2_ndim"]), v["arg2_ndim"] <= 2), (Or(v["arg1_ndim"] == 2, v["arg2_ndim"] == 1))), Select(v["arg1_shape"], v["arg1_ndim"] - 1) == Select(v["arg2_shape"], 0)))
 )
 
-def rule_16_func(arg1, solver=None, neg=False):
+def rule_16_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not isinstance(arg1, np.ndarray):
+            return False
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_ndim = Int('arg1_ndim')
+        arg1_shape = Array('arg1_shape', IntSort(), IntSort())
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_ndim == arg1.ndim)
+        for i in range(arg1.ndim):
+            arg1_shape = Store(arg1_shape, i, arg1.shape[i])
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 16
-        rule_16(solver, {'arg1_value': arg1_value})
+        rule_16(solver, {'arg1_ndim': arg1_ndim, 'arg1_shape': arg1_shape, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_16(solver, {'arg1_value': arg1['value']}, neg)
+        rule_16(solver, {'arg1_ndim': arg1['ndim'], 'arg1_shape': arg1['shape'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

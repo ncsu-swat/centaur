@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# When the first argument is a string and the second is a dtype, they must represent compatible types in the hierarchy (Rule 24)
+# boolean dtype hierarchy constraint (Rule 24)
 
 rule_24 = lambda s, v, n=False: (
-    s.add(Not(If((Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), Or((And(v["arg2_value"] >= 6, v["arg2_value"] <= 8)), v["arg2_value"] == 12), And(v["arg2_value"] >= 0, v["arg2_value"] <= 12))) if n else
-          If((Or(v["arg1_value"] == 38, v["arg1_value"] == 39)), Or((And(v["arg2_value"] >= 6, v["arg2_value"] <= 8)), v["arg2_value"] == 12), And(v["arg2_value"] >= 0, v["arg2_value"] <= 12)))
+    s.add(Not(If(v["arg1_value"] == 0, Or(v["arg2_value"] == 0, v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 10))) if n else
+          If(v["arg1_value"] == 0, Or(v["arg2_value"] == 0, v["arg2_value"] == 12), And(0 <= v["arg2_value"], v["arg2_value"] <= 10)))
 )
 
 def rule_24_func(arg1, arg2, solver=None, neg=False):
@@ -20,18 +20,18 @@ def rule_24_func(arg1, arg2, solver=None, neg=False):
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, torch.dtype) or isinstance(arg1, tf.dtypes.DType) or isinstance(arg1, np.dtype)):
             return False
         if not (isinstance(arg2, torch.dtype) or isinstance(arg2, tf.dtypes.DType) or isinstance(arg2, np.dtype)):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_value = Int('arg1_value')
         arg2_value = Int('arg2_value')
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_value == list_of_available_dtypes.index(np_dtype(arg1)))
         solver.add(arg2_value == list_of_available_dtypes.index(np_dtype(arg2)))
 
         # Constraints for rule 24

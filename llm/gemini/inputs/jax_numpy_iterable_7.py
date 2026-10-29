@@ -4,13 +4,12 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def iterable_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple alphabetic string
+    # Input 1: Standard ASCII string
     input_dict = {"y": "hello"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
@@ -18,36 +17,40 @@ def iterable_inputs():
     input_dict = {"y": ""}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Single character string
+    # Input 3: Single character
     input_dict = {"y": "a"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     # Input 4: Numeric string
-    input_dict = {"y": "12345"}
+    input_dict = {"y": "1234567890"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: String representing a library name
-    input_dict = {"y": "numpy"}
+    # Input 5: String with spaces and punctuation
+    input_dict = {"y": "Hello, World! Testing jax.numpy.iterable."}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: Short string
-    input_dict = {"y": "jax"}
+    # Input 6: Multiline string
+    input_dict = {"y": "line1\nline2\nline3"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: String representation of function name
-    input_dict = {"y": "iterable"}
+    # Input 7: Special characters and symbols
+    input_dict = {"y": "!@#$%^&*()_+-=[]{}|;':\",.<>?/`~"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Long alphabetical string
-    input_dict = {"y": "abcdefghijklmnopqrstuvwxyz"}
+    # Input 8: Unicode string
+    input_dict = {"y": "こんにちは世界 / 🌍🚀"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: String with special characters and spaces
-    input_dict = {"y": "hello world! 123"}
+    # Input 9: Whitespace and escape characters
+    input_dict = {"y": "\t\r\n\v\f"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: String with underscores
-    input_dict = {"y": "test_input_string"}
+    # Input 10: Long repeated string
+    input_dict = {"y": "numpy_and_jax_" * 100}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: Formatted scientific notation string
+    input_dict = {"y": "-3.1415926535e-10"}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

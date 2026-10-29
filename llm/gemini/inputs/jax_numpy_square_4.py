@@ -4,8 +4,9 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def square_inputs():
     list_of_inputs = []
@@ -14,43 +15,62 @@ def square_inputs():
     input_dict = {"x": np.array([1, 2, 3, 4, 5], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 1D array of negative integers
-    input_dict = {"x": np.array([-1, -5, -10, -100], dtype=np.int32)}
+    # Input 2: 1D array of mixed negative and positive floats
+    input_dict = {"x": np.array([-3.5, 0.0, 2.1, -1.0, 4.4], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array of floats
-    input_dict = {"x": np.array([0.5, -1.5, 2.25, -3.75], dtype=np.float32)}
+    # Input 3: 2D array of integers
+    input_dict = {"x": np.array([[1, -2], [3, -4]], dtype=np.int64)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array of complex numbers
-    input_dict = {"x": np.array([1+3j, -1j, 2+0j], dtype=np.complex64)}
+    # Input 4: 2D array of floats
+    input_dict = {
+        "x": np.array([[0.5, -1.5, 2.5], [-3.5, 4.5, -5.5]], dtype=np.float64)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D array of integers
-    input_dict = {"x": np.array([[1, 2], [3, 4]], dtype=np.int32)}
+    # Input 5: 3D array of floats
+    input_dict = {
+        "x": np.array(
+            [
+                [[1.0, 2.0], [3.0, 4.0]],
+                [[-1.0, -2.0], [-3.0, -4.0]],
+            ],
+            dtype=np.float32,
+        )
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array of floats
-    input_dict = {"x": np.array([[-0.5, 1.5], [2.5, -3.5]], dtype=np.float32)}
+    # Input 6: 1D array of complex numbers
+    input_dict = {
+        "x": np.array([1 + 2j, -3j, 4 - 1j, 0j], dtype=np.complex128)
+    }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D array of integers
-    input_dict = {"x": np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32)}
+    # Input 7: 1D array of booleans
+    input_dict = {"x": np.array([True, False, True, True], dtype=bool)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Array containing zeros
-    input_dict = {"x": np.array([0.0, -0.0, 0.0], dtype=np.float32)}
+    # Input 8: Empty 1D array
+    input_dict = {"x": np.array([], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: Array of booleans
-    input_dict = {"x": np.array([True, False, True, True], dtype=np.bool_)}
+    # Input 9: 1D array with scientific notation floats
+    input_dict = {"x": np.array([1e2, -1e3, 1e-4, 0.0], dtype=np.float32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array of single elements
-    input_dict = {"x": np.array([[1], [-2], [3], [-4]], dtype=np.int32)}
+    # Input 10: 2D array of complex numbers
+    input_dict = {
+        "x": np.array([[1 + 1j, -2j], [3.0 + 0j, 0 - 4j]], dtype=np.complex64)
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: 4D array of integers
+    input_dict = {"x": np.array([[[[1, -2]], [[3, -4]]]], dtype=np.int32)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.square_4"] = square_inputs()
 

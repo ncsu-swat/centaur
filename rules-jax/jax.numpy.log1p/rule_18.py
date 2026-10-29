@@ -7,7 +7,7 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# scalar input should be strictly greater than -1 to avoid complex or undefined results in the real domain (Rule 18)
+# scalar input should be strictly greater than -1 (Rule 18)
 
 rule_18 = lambda s, v, n=False: (
     s.add(Not(v["arg1_value"] > -1) if n else

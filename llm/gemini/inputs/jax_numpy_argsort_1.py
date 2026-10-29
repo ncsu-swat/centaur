@@ -7,120 +7,138 @@ generated_inputs = dict()
 import numpy as np
 import copy
 
+
 def argsort_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, standard sort
-    a = np.array([3.14, -1.5, 0.0, 2.5, -2.5], dtype=np.float32)
+    # Input 1: 1D array of integers, default-like settings
+    a = np.array([5, 2, -1, 3, 0, 7], dtype=np.int32)
     input_dict = {
         "a": a,
         "axis": -1,
         "stable": True,
         "descending": False,
-        "dtype": np.int32
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: 2D int32 array, sorting along axis 0, descending
-    a = np.array([[10, 2, 5], [1, 8, 3]], dtype=np.int32)
+    # Input 2: 2D float32 array, sorting along axis 0
+    a = np.array(
+        [[1.5, -2.3, 0.0], [4.1, -0.5, 3.2], [-1.2, 2.8, -4.0]],
+        dtype=np.float32,
+    )
+    input_dict = {
+        "a": a,
+        "axis": 0,
+        "stable": False,
+        "descending": False,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 3: 2D float64 array, descending along axis 1, int64 output dtype
+    a = np.random.randn(4, 5).astype(np.float64)
+    input_dict = {
+        "a": a,
+        "axis": 1,
+        "stable": True,
+        "descending": True,
+        "dtype": np.dtype(np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 4: 3D int64 array with duplicate elements to test stability
+    a = np.array(
+        [[[3, 1, 3], [2, 2, 1]], [[0, -1, 0], [4, 5, 4]]], dtype=np.int64
+    )
+    input_dict = {
+        "a": a,
+        "axis": -1,
+        "stable": True,
+        "descending": True,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 5: 1D array of negative floats, descending order
+    a = np.array([-10.5, -3.2, -0.1, -25.8, -7.0], dtype=np.float32)
     input_dict = {
         "a": a,
         "axis": 0,
         "stable": False,
         "descending": True,
-        "dtype": np.int64
+        "dtype": np.dtype(np.int64),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 3D float64 array, stable sort along axis 2, descending
-    a = np.random.randn(2, 3, 4).astype(np.float64)
+    # Input 6: 3D float32 array sorting along middle axis (axis=1)
+    a = np.random.uniform(-10.0, 10.0, size=(2, 4, 3)).astype(np.float32)
+    input_dict = {
+        "a": a,
+        "axis": 1,
+        "stable": True,
+        "descending": False,
+        "dtype": np.dtype(np.int32),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 7: 4D int16 array sorting along axis 2
+    a = np.random.randint(-100, 100, size=(2, 3, 4, 2), dtype=np.int16)
     input_dict = {
         "a": a,
         "axis": 2,
-        "stable": True,
-        "descending": True,
-        "dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: 1D array with duplicate values to highlight stable sorting
-    a = np.array([2, 1, 2, 1, 3], dtype=np.int32)
-    input_dict = {
-        "a": a,
-        "axis": 0,
-        "stable": True,
+        "stable": False,
         "descending": False,
-        "dtype": np.int16
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 4D float32 array, sorting along axis -2
-    a = np.random.rand(2, 2, 3, 3).astype(np.float32)
+    # Input 8: 2D uint8 array, descending order along negative axis
+    a = np.array([[255, 0, 128], [64, 32, 200]], dtype=np.uint8)
     input_dict = {
         "a": a,
         "axis": -2,
-        "stable": False,
-        "descending": False,
-        "dtype": np.int64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: 2D array, sorting along axis 1, descending
-    a = np.array([[1.5, 2.5], [0.5, -0.5], [3.0, 1.0]], dtype=np.float32)
-    input_dict = {
-        "a": a,
-        "axis": 1,
         "stable": True,
         "descending": True,
-        "dtype": np.int32
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 1D float16 array, descending unstable sort
-    a = np.array([-10.0, 20.0, 0.0, -5.0], dtype=np.float16)
+    # Input 9: 1D boolean array
+    a = np.array([True, False, True, False, False, True], dtype=np.bool_)
+    input_dict = {
+        "a": a,
+        "axis": 0,
+        "stable": True,
+        "descending": False,
+        "dtype": np.dtype(np.int64),
+    }
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 10: 3D float64 array sorting along axis 0, unstable sort
+    a = np.random.randn(3, 2, 4).astype(np.float64)
     input_dict = {
         "a": a,
         "axis": 0,
         "stable": False,
-        "descending": True,
-        "dtype": np.int32
+        "descending": False,
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 3D uint8 array, sorting along axis 1
-    a = np.array([[[1, 5], [3, 2]], [[4, 0], [6, 7]]], dtype=np.uint8)
+    # Input 11: 2D integer array with single element per axis
+    a = np.array([[42]], dtype=np.int32)
     input_dict = {
         "a": a,
-        "axis": 1,
+        "axis": 0,
         "stable": True,
         "descending": False,
-        "dtype": np.int64
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: 2D float64 array, last axis, standard sort
-    a = np.array([[10.5, -3.2, 8.8], [0.0, -1.1, 5.5]], dtype=np.float64)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "stable": True,
-        "descending": False,
-        "dtype": np.int32
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: 1D int64 array with wide range of values
-    a = np.array([100000, -500000, 0, 300000, -100000], dtype=np.int64)
-    input_dict = {
-        "a": a,
-        "axis": -1,
-        "stable": False,
-        "descending": True,
-        "dtype": np.int64
+        "dtype": np.dtype(np.int32),
     }
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.argsort_1"] = argsort_inputs()
 

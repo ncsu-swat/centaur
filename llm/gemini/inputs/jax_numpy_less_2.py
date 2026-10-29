@@ -4,63 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def less_inputs():
     list_of_inputs = []
 
-    # Input 1: 1D float32 array, positive float
-    x = np.array([1.0, 2.0, 3.0, 4.0], dtype=np.float32)
-    y = 2.5
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 2: 2D float32 array with negative values, negative float
-    x = np.array([[-1.0, -2.0], [-3.0, -4.0]], dtype=np.float32)
-    y = -2.5
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 3: 3D int32 array, float representing integer
-    x = np.array([[[1, 2], [3, 4]], [[5, 6], [7, 8]]], dtype=np.int32)
-    y = 5.0
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 4: 1D float64 array, zero float
-    x = np.array([-1.5, 0.0, 1.5], dtype=np.float64)
-    y = 0.0
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 5: 4D float32 array, positive float
-    x = np.random.randn(2, 2, 2, 2).astype(np.float32)
-    y = 0.5
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 6: 2D int16 array, float
-    x = np.array([[10, 20, 30], [40, 50, 60]], dtype=np.int16)
-    y = 35.2
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
-
-    # Input 7: 1D float32 array with inf and nan (though nan comparisons are False), float
-    x = np.array([-np.inf, np.inf, np.nan, 0.0], dtype=np.float32)
+    # Input 1: 1D float32 array and positive float
+    x = np.array([-2.5, 0.0, 1.5, 3.2], dtype=np.float32)
     y = 1.0
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 8: Large 2D float32 array, float
-    x = np.random.uniform(-100.0, 100.0, size=(50, 50)).astype(np.float32)
-    y = 10.0
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 2: 2D float64 array and negative float
+    x = np.array([[-10.0, -5.0], [0.0, 5.0]], dtype=np.float64)
+    y = -2.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 9: 0D array (scalar array) of float32, float
-    x = np.array(5.5, dtype=np.float32)
-    y = 6.0
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 3: 1D int32 array and zero float
+    x = np.array([-5, -1, 0, 1, 5], dtype=np.int32)
+    y = 0.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
-    # Input 10: 5D float32 array, negative float
-    x = np.random.randn(1, 2, 1, 3, 2).astype(np.float32)
-    y = -1.2
-    list_of_inputs.append({"x": copy.deepcopy(x), "y": y})
+    # Input 4: 3D int64 array and float
+    x = np.arange(12, dtype=np.int64).reshape((2, 2, 3)) - 6
+    y = 2.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 5: 0D scalar array and float
+    x = np.array(4.2, dtype=np.float32)
+    y = 4.2
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 6: 4D float32 array and float
+    x = np.random.randn(2, 3, 4, 5).astype(np.float32)
+    y = 0.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 7: Array with inf and nan values
+    x = np.array([-np.inf, -1.0, 0.0, 1.0, np.inf, np.nan], dtype=np.float64)
+    y = 0.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 8: 1D uint8 array and float
+    x = np.array([0, 50, 100, 150, 200, 255], dtype=np.uint8)
+    y = 127.5
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 9: Empty array
+    x = np.empty((0, 5), dtype=np.float32)
+    y = 1.0
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 10: 2D float16 array and large float
+    x = np.array([[-100.0, 200.0], [50.0, -50.0]], dtype=np.float16)
+    y = 1e4
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
+
+    # Input 11: 5D array
+    x = np.zeros((1, 2, 1, 3, 1), dtype=np.float32)
+    y = -0.1
+    list_of_inputs.append(copy.deepcopy({"x": x, "y": y}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.less_2"] = less_inputs()
 

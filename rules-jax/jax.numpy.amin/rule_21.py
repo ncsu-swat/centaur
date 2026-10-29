@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# if axis tuple is non-empty, input tensor must have a dimensionality of at least 1 (Rule 21)
+# mask tensor 'where' and scalar 'initial' tensor type consistency (Rule 21)
 
 rule_21 = lambda s, v, n=False: (
-    s.add(Not(If(v["arg2_length"] > 0, v["arg1_ndim"] >= 1, True)) if n else
-          If(v["arg2_length"] > 0, v["arg1_ndim"] >= 1, True))
+    s.add(Not(And(And(And(v["arg1_dtype"] == 0, v["arg2_ndim"] == 0), v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 8)) if n else
+          And(And(And(v["arg1_dtype"] == 0, v["arg2_ndim"] == 0), v["arg2_dtype"] >= 1), v["arg2_dtype"] <= 8))
 )
 
 def rule_21_func(arg1, arg2, solver=None, neg=False):
@@ -22,22 +22,24 @@ def rule_21_func(arg1, arg2, solver=None, neg=False):
     if not solver:
         if not isinstance(arg1, np.ndarray):
             return False
-        if not (isinstance(arg2, tuple) and all((isinstance(e, (int, np.integer)) and not isinstance(e, bool)) for e in arg2)):
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        arg1_ndim = Int('arg1_ndim')
-        arg2_length = Int('arg2_length')
+        arg1_dtype = Int('arg1_dtype')
+        arg2_ndim = Int('arg2_ndim')
+        arg2_dtype = Int('arg2_dtype')
 
         # Value assignments
-        solver.add(arg1_ndim == arg1.ndim)
-        solver.add(arg2_length == len(arg2))
+        solver.add(arg1_dtype == list_of_available_dtypes.index(arg1.dtype))
+        solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg2_dtype == list_of_available_dtypes.index(arg2.dtype))
 
         # Constraints for rule 21
-        rule_21(solver, {'arg1_ndim': arg1_ndim, 'arg2_length': arg2_length})
+        rule_21(solver, {'arg1_dtype': arg1_dtype, 'arg2_ndim': arg2_ndim, 'arg2_dtype': arg2_dtype})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_21(solver, {'arg1_ndim': arg1['ndim'], 'arg2_length': arg2['length']}, neg)
+        rule_21(solver, {'arg1_dtype': arg1['dtype'], 'arg2_ndim': arg2['ndim'], 'arg2_dtype': arg2['dtype']}, neg)

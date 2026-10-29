@@ -4,50 +4,50 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
 
 def digamma_inputs():
     list_of_inputs = []
 
-    # Input 1: Scalar float32 representing integer 5
-    input_dict = {"x": np.float32(5.0)}
+    # Input 1: Float scalar representing integer 1
+    input_dict = {"x": 1.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Scalar float64 representing integer 10
-    input_dict = {"x": np.float64(10.0)}
+    # Input 2: Float scalar representing integer 2
+    input_dict = {"x": 2.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: 1D array of float32 representing integers
-    input_dict = {"x": np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float32)}
+    # Input 3: Float scalar representing integer 3
+    input_dict = {"x": 3.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: 1D array of float64 representing integers
-    input_dict = {"x": np.array([10.0, 20.0, 30.0], dtype=np.float64)}
+    # Input 4: Float scalar representing integer 5
+    input_dict = {"x": 5.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: 2D array of float32 representing integers
-    input_dict = {"x": np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)}
+    # Input 5: Float scalar representing integer 10
+    input_dict = {"x": 10.0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 2D array of float64 representing integers
-    input_dict = {"x": np.array([[100.0, 200.0], [300.0, 400.0]], dtype=np.float64)}
+    # Input 6: numpy float32 scalar representing integer 4
+    input_dict = {"x": np.float32(4.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 3D array of float32 representing integers
-    input_dict = {"x": np.array([[[1.0, 2.0], [3.0, 4.0]], [[5.0, 6.0], [7.0, 8.0]]], dtype=np.float32)}
+    # Input 7: numpy float32 scalar representing integer 8
+    input_dict = {"x": np.float32(8.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: 1D array of float32 representing a single integer
-    input_dict = {"x": np.array([42.0], dtype=np.float32)}
+    # Input 8: numpy float64 scalar representing integer 20
+    input_dict = {"x": np.float64(20.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 4D array of float32 representing integers
-    input_dict = {"x": (np.ones((2, 2, 2, 2), dtype=np.float32) * 5.0)}
+    # Input 9: numpy float64 scalar representing integer 50
+    input_dict = {"x": np.float64(50.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 2D array of float32 representing integers
-    input_dict = {"x": np.array([[2.0, 4.0], [6.0, 8.0]], dtype=np.float32)}
+    # Input 10: numpy float32 scalar representing integer 100
+    input_dict = {"x": np.float32(100.0)}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs

@@ -4,68 +4,70 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
+import numpy as np
+
 
 def logaddexp2_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic 1D arrays, float32, positive values
+    # Input 1: 1D float32 arrays of same shape
     x1 = np.array([1.0, 2.0, 3.0], dtype=np.float32)
     x2 = np.array([3.0, 2.0, 1.0], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 2: 2D arrays, float32, positive and negative values
-    x1 = np.array([[1.5, -2.3], [0.0, 4.1]], dtype=np.float32)
-    x2 = np.array([[-0.5, 2.3], [1.1, -3.2]], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 2: 2D float64 arrays with negative values
+    x1 = np.array([[-1.5, -2.5], [-0.5, 3.0]], dtype=np.float64)
+    x2 = np.array([[2.0, -1.0], [-4.0, 0.0]], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 3: float64 precision for high accuracy
-    x1 = np.random.uniform(-10.0, 10.0, size=(3, 3)).astype(np.float64)
-    x2 = np.random.uniform(-10.0, 10.0, size=(3, 3)).astype(np.float64)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 3: Broadcasting 1D to 2D
+    x1 = np.random.randn(3, 4).astype(np.float32)
+    x2 = np.random.randn(4).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 4: Broadcasting (1D to 2D)
-    x1 = np.array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], dtype=np.float32)
-    x2 = np.array([1.0, 0.0, -1.0], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 4: 0D scalar arrays
+    x1 = np.array(5.0, dtype=np.float32)
+    x2 = np.array(-2.0, dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 5: Broadcasting (scalar-like 1x1 to 3x3)
-    x1 = np.random.randn(3, 3).astype(np.float32)
-    x2 = np.array([[2.0]], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 5: 3D float32 arrays
+    x1 = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    x2 = np.random.uniform(-10.0, 10.0, size=(2, 3, 4)).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 6: Large positive values to test overflow avoidance
-    x1 = np.array([1000.0, 2000.0, 3000.0], dtype=np.float32)
-    x2 = np.array([1001.0, 1999.0, 3000.0], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 6: Integer types
+    x1 = np.array([[1, -2, 3], [4, 5, -6]], dtype=np.int32)
+    x2 = np.array([[-3, 2, -1], [0, 4, 2]], dtype=np.int32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 7: Large negative values to test underflow avoidance
-    x1 = np.array([-1000.0, -2000.0, -3000.0], dtype=np.float32)
-    x2 = np.array([-1001.0, -1999.0, -3000.0], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 7: Broadcasting with singleton dimensions
+    x1 = np.random.randn(4, 1, 5).astype(np.float32)
+    x2 = np.random.randn(1, 3, 5).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 8: Float16 arrays
-    x1 = np.array([[0.1, 0.2], [0.3, 0.4]], dtype=np.float16)
-    x2 = np.array([[0.5, 0.6], [0.7, 0.8]], dtype=np.float16)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 8: 4D float32 arrays
+    x1 = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    x2 = np.random.randn(2, 2, 2, 2).astype(np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 9: 3D arrays with mixed signs
-    x1 = np.random.uniform(-50.0, 50.0, size=(2, 2, 2)).astype(np.float32)
-    x2 = np.random.uniform(-50.0, 50.0, size=(2, 2, 2)).astype(np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 9: Large and small values to test numerical stability (avoiding overflow)
+    x1 = np.array([1000.0, -1000.0, 50.0], dtype=np.float64)
+    x2 = np.array([1000.0, -1000.0, -50.0], dtype=np.float64)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 10: Broadcasting with incompatible-looking but valid shapes (e.g., (3, 1) and (1, 4))
-    x1 = np.array([[1.0], [2.0], [3.0]], dtype=np.float32)
-    x2 = np.array([[1.0, 2.0, 3.0, 4.0]], dtype=np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 10: Special float values like inf and -inf
+    x1 = np.array([-np.inf, np.inf, 0.0], dtype=np.float32)
+    x2 = np.array([0.0, -np.inf, np.inf], dtype=np.float32)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
-    # Input 11: Higher dimensional array (4D)
-    x1 = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    x2 = np.random.randn(2, 2, 3, 3).astype(np.float32)
-    list_of_inputs.append({"x1": copy.deepcopy(x1), "x2": copy.deepcopy(x2)})
+    # Input 11: Float16 precision
+    x1 = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float16)
+    x2 = np.array([[0.5, 1.5], [2.5, 3.5]], dtype=np.float16)
+    list_of_inputs.append(copy.deepcopy({"x1": x1, "x2": x2}))
 
     return list_of_inputs
+
 
 generated_inputs["jax.numpy.logaddexp2_1"] = logaddexp2_inputs()
 

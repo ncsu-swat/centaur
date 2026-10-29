@@ -7,16 +7,17 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the dimension of the fill_value tensor must be less than the input tensor's dimension (Rule 13)
+# condition must be 1D and axis must be within valid range for array a (Rule 13)
 
 rule_13 = lambda s, v, n=False: (
-    s.add(Not(v["arg2_ndim"] < v["arg1_ndim"]) if n else
-          v["arg2_ndim"] < v["arg1_ndim"])
+    s.add(Not(And(And(v["arg1_ndim"] == 1, -1 * v["arg2_ndim"] <= v["arg3_value"]), v["arg3_value"] < v["arg2_ndim"])) if n else
+          And(And(v["arg1_ndim"] == 1, -1 * v["arg2_ndim"] <= v["arg3_value"]), v["arg3_value"] < v["arg2_ndim"]))
 )
 
-def rule_13_func(arg1, arg2, solver=None, neg=False):
+def rule_13_func(arg1, arg2, arg3, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
     arg2 = next(iter(arg2.values()))
+    arg3 = next(iter(arg3.values()))
 
     # Invariant learning phase
     if not solver:
@@ -24,20 +25,24 @@ def rule_13_func(arg1, arg2, solver=None, neg=False):
             return False
         if not isinstance(arg2, np.ndarray):
             return False
+        if not (isinstance(arg3, (int, np.integer)) and not isinstance(arg3, bool)):
+            return False
 
         # Variable declarations
         solver = Solver()
         arg1_ndim = Int('arg1_ndim')
         arg2_ndim = Int('arg2_ndim')
+        arg3_value = Int('arg3_value')
 
         # Value assignments
         solver.add(arg1_ndim == arg1.ndim)
         solver.add(arg2_ndim == arg2.ndim)
+        solver.add(arg3_value == int(arg3))
 
         # Constraints for rule 13
-        rule_13(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim})
+        rule_13(solver, {'arg1_ndim': arg1_ndim, 'arg2_ndim': arg2_ndim, 'arg3_value': arg3_value})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_13(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim']}, neg)
+        rule_13(solver, {'arg1_ndim': arg1['ndim'], 'arg2_ndim': arg2['ndim'], 'arg3_value': arg3['value']}, neg)

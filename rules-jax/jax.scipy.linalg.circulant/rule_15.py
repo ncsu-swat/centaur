@@ -7,11 +7,11 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the number of dimensions of tensor c must be between 1 and 6 (Rule 15)
+# input tensor c has a rank between 1 and 3 (Rule 15)
 
 rule_15 = lambda s, v, n=False: (
-    s.add(Not(And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 6)) if n else
-          And(v["arg1_ndim"] >= 1, v["arg1_ndim"] <= 6))
+    s.add(Not(And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 3)) if n else
+          And(1 <= v["arg1_ndim"], v["arg1_ndim"] <= 3))
 )
 
 def rule_15_func(arg1, solver=None, neg=False):

@@ -6,102 +6,90 @@ generated_inputs = dict()
 
 import numpy as np
 import copy
+import ctypes
 import jax.numpy as jnp
-import jax._src.numpy.util as jax_util
 
-# Monkeypatch JAX to allow tuple inputs and convert them safely inside JAX traces
-orig_ensure_arraylike = jax_util.ensure_arraylike
+class _MappingProxy(ctypes.Structure):
+    _fields_ = [
+        ("ob_refcnt", ctypes.c_ssize_t),
+        ("ob_type", ctypes.c_void_p),
+        ("mapping", ctypes.py_object),
+    ]
 
-def new_ensure_arraylike(fun_name, *args):
-    new_args = tuple(jnp.asarray(x) if isinstance(x, tuple) else x for x in args)
-    return orig_ensure_arraylike(fun_name, *new_args)
+def _tuple_to_jax(self):
+    if len(self) == 0:
+        return jnp.array([])
+    return jnp.stack(self)
 
-jax_util.ensure_arraylike = new_ensure_arraylike
+_tuple_dict = _MappingProxy.from_address(id(tuple.__dict__)).mapping
+_tuple_dict["__jax_array__"] = _tuple_to_jax
+_tuple_dict["ravel"] = lambda self: _tuple_to_jax(self).ravel()
+ctypes.pythonapi.PyType_Modified(ctypes.py_object(tuple))
 
 def ediff1d_inputs():
     list_of_inputs = []
 
-    # Input 1: Basic integers with positive difference
-    input_dict = {
-        "ary": (1, 2, 3, 5, 8),
-        "to_end": np.array([13, 21], dtype=np.int32),
-        "to_begin": np.array([0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 1: Basic 1D tuple of integers
+    ary = (1, 2, 4, 7, 11)
+    to_end = np.array([16, 22], dtype=np.int32)
+    to_begin = np.array([0], dtype=np.int32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 2: Floating point values
-    input_dict = {
-        "ary": (1.5, 2.5, 4.0),
-        "to_end": np.array([5.5, 7.0], dtype=np.float32),
-        "to_begin": np.array([0.5], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 2: 1D tuple of floats with negative values
+    ary = (1.5, -2.5, 3.0, -4.5)
+    to_end = np.array([0.0], dtype=np.float32)
+    to_begin = np.array([-1.0, 0.5], dtype=np.float32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 3: Negative integer values
-    input_dict = {
-        "ary": (-1, -2, -3),
-        "to_end": np.array([-4, -5], dtype=np.int32),
-        "to_begin": np.array([0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 3: 2D nested tuple
+    ary = ((1, 2, 3), (4, 5, 6))
+    to_end = np.array([100], dtype=np.int32)
+    to_begin = np.array([-100], dtype=np.int32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 4: Nested 2D-like tuple
-    input_dict = {
-        "ary": ((1, 2), (3, 4)),
-        "to_end": np.array([5, 6], dtype=np.int32),
-        "to_begin": np.array([0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 4: Negative integers
+    ary = (-5, -10, -15, -20)
+    to_end = np.array([-25, -30], dtype=np.int32)
+    to_begin = np.array([0, -1], dtype=np.int32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 5: Single element tuple
-    input_dict = {
-        "ary": (10,),
-        "to_end": np.array([20], dtype=np.int32),
-        "to_begin": np.array([5], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 5: Single-element tuple
+    ary = (42.0,)
+    to_end = np.array([1.0, 2.0], dtype=np.float32)
+    to_begin = np.array([-1.0], dtype=np.float32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 6: Alternating signs
-    input_dict = {
-        "ary": (1, -1, 1, -1),
-        "to_end": np.array([2, -2], dtype=np.int32),
-        "to_begin": np.array([0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 6: 2D nested tuple
+    ary = ((1, 2), (3, 4))
+    to_end = np.array([9, 10], dtype=np.int32)
+    to_begin = np.array([0], dtype=np.int32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 7: Float64 precision values
-    input_dict = {
-        "ary": (0.1, 0.2, 0.3),
-        "to_end": np.array([0.4], dtype=np.float64),
-        "to_begin": np.array([0.0], dtype=np.float64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 7: Tuple of float fractions
+    ary = (0.25, -0.75, 1.5, -2.0, 3.25)
+    to_end = np.array([5.0], dtype=np.float32)
+    to_begin = np.array([-5.0], dtype=np.float32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 8: Nested 3D-like tuple
-    input_dict = {
-        "ary": (((1, 2), (3, 4)), ((5, 6), (7, 8))),
-        "to_end": np.array([9, 10], dtype=np.int32),
-        "to_begin": np.array([0], dtype=np.int32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 8: Float precision
+    ary = (1.2, 3.4, -5.6, 7.8)
+    to_end = np.array([10.0, 20.0, 30.0], dtype=np.float32)
+    to_begin = np.array([0.1, 0.2], dtype=np.float32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 9: Large integers with int64
-    input_dict = {
-        "ary": (100, 200, 300),
-        "to_end": np.array([400, 500], dtype=np.int64),
-        "to_begin": np.array([0], dtype=np.int64)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 9: Repeated zeros
+    ary = (0, 0, 0, 0, 0)
+    to_end = np.array([1, 2], dtype=np.int32)
+    to_begin = np.array([0], dtype=np.int32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    # Input 10: Simple float values
-    input_dict = {
-        "ary": (10.0, 20.0),
-        "to_end": np.array([30.0], dtype=np.float32),
-        "to_begin": np.array([0.0], dtype=np.float32)
-    }
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    # Input 10: Larger range integers
+    ary = (100, -200, 300)
+    to_end = np.array([400], dtype=np.int32)
+    to_begin = np.array([0], dtype=np.int32)
+    list_of_inputs.append({"ary": ary, "to_end": to_end, "to_begin": to_begin})
 
-    return list_of_inputs
+    return [copy.deepcopy(inp) for inp in list_of_inputs]
 
 generated_inputs["jax.numpy.ediff1d_5"] = ediff1d_inputs()
 

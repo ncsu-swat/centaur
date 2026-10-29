@@ -4,51 +4,29 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def result_type_inputs():
     list_of_inputs = []
 
-    # Input 1: Simple positive integer
-    input_dict = {"args": 1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    integers = [
+        0,
+        1,
+        -1,
+        42,
+        -100,
+        255,
+        -128,
+        32767,
+        -32768,
+        2147483647,
+        -2147483648,
+        1000000,
+    ]
 
-    # Input 2: Zero
-    input_dict = {"args": 0}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 3: Simple negative integer
-    input_dict = {"args": -1}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 4: Large positive integer
-    input_dict = {"args": 100000}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 5: Large negative integer
-    input_dict = {"args": -100000}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 6: Integer value 42
-    input_dict = {"args": 42}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 7: Integer value -42
-    input_dict = {"args": -42}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 8: Integer value 256
-    input_dict = {"args": 256}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 9: Integer value -256
-    input_dict = {"args": -256}
-    list_of_inputs.append(copy.deepcopy(input_dict))
-
-    # Input 10: Maximum 16-bit integer representation
-    input_dict = {"args": 65535}
-    list_of_inputs.append(copy.deepcopy(input_dict))
+    for val in integers:
+        input_dict = {"args": val}
+        list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
 

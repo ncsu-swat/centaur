@@ -7,32 +7,40 @@ import jax.numpy as jnp
 from utils.defaults import MAX_N_DIM, MAX_SZ_DIM, MAX_SZ_NUM, list_of_available_dtypes, list_of_string_values_jax, np_dtype
 from z3 import *
 
-# the string representing func1d should be one of the activation functions (Rule 25)
+# last axis slice requires positive size in the final dimension (Rule 25)
 
 rule_25 = lambda s, v, n=False: (
-    s.add(Not(Or(Or(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 11), v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14)) if n else
-          Or(Or(Or(Or(v["arg1_value"] == 10, v["arg1_value"] == 11), v["arg1_value"] == 12), v["arg1_value"] == 13), v["arg1_value"] == 14))
+    s.add(Not(If(v["arg1_value"] == -1, And(v["arg2_ndim"] >= 1, Select(v["arg2_shape"], v["arg2_ndim"] - 1) > 0), True)) if n else
+          If(v["arg1_value"] == -1, And(v["arg2_ndim"] >= 1, Select(v["arg2_shape"], v["arg2_ndim"] - 1) > 0), True))
 )
 
-def rule_25_func(arg1, solver=None, neg=False):
+def rule_25_func(arg1, arg2, solver=None, neg=False):
     arg1 = next(iter(arg1.values()))
+    arg2 = next(iter(arg2.values()))
 
     # Invariant learning phase
     if not solver:
-        if not isinstance(arg1, str):
+        if not (isinstance(arg1, (int, np.integer)) and not isinstance(arg1, bool)):
+            return False
+        if not isinstance(arg2, np.ndarray):
             return False
 
         # Variable declarations
         solver = Solver()
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        arg1_value = Int('arg1_value')
+        arg2_ndim = Int('arg2_ndim')
+        arg2_shape = Array('arg2_shape', IntSort(), IntSort())
 
         # Value assignments
-        solver.add(arg1_value == list_of_string_values_jax.index(arg1))
+        solver.add(arg1_value == int(arg1))
+        solver.add(arg2_ndim == arg2.ndim)
+        for i in range(arg2.ndim):
+            arg2_shape = Store(arg2_shape, i, arg2.shape[i])
 
         # Constraints for rule 25
-        rule_25(solver, {'arg1_value': arg1_value})
+        rule_25(solver, {'arg1_value': arg1_value, 'arg2_ndim': arg2_ndim, 'arg2_shape': arg2_shape})
         return solver.check() == sat
 
     # Fuzz input generation phase
     else:
-        rule_25(solver, {'arg1_value': arg1['value']}, neg)
+        rule_25(solver, {'arg1_value': arg1['value'], 'arg2_ndim': arg2['ndim'], 'arg2_shape': arg2['shape']}, neg)

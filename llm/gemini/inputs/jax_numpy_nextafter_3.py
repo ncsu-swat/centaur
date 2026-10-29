@@ -4,65 +4,53 @@ from generator.input_generators import get_abstract_input
 
 generated_inputs = dict()
 
-import numpy as np
 import copy
 
 def nextafter_inputs():
     list_of_inputs = []
 
-    # Input 1: Positive python integers
-    input_dict = {"x": 1, "y": 2}
+    # Input 1: positive towards smaller positive
+    input_dict = {"x": 2, "y": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 2: Negative python integers
-    input_dict = {"x": -5, "y": -10}
+    # Input 2: zero towards positive
+    input_dict = {"x": 0, "y": 1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 3: Zero and negative python integers
+    # Input 3: zero towards negative
     input_dict = {"x": 0, "y": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 4: Numpy int32 scalars
-    input_dict = {"x": np.int32(10), "y": np.int32(5)}
+    # Input 4: negative towards smaller magnitude negative
+    input_dict = {"x": -2, "y": -1}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 5: Numpy int64 scalars
-    input_dict = {"x": np.int64(-100), "y": np.int64(100)}
+    # Input 5: positive towards larger positive
+    input_dict = {"x": 1, "y": 2}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 6: 1D numpy integer arrays (int32)
-    input_dict = {
-        "x": np.array([1, -2, 3], dtype=np.int32),
-        "y": np.array([2, -1, 2], dtype=np.int32)
-    }
+    # Input 6: identical values
+    input_dict = {"x": 10, "y": 10}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 7: 2D numpy integer arrays (int64)
-    input_dict = {
-        "x": np.array([[1, 2], [3, 4]], dtype=np.int64),
-        "y": np.array([[2, 1], [4, 3]], dtype=np.int64)
-    }
+    # Input 7: negative towards positive
+    input_dict = {"x": -5, "y": 5}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 8: Scalar and 1D array broadcasting
-    input_dict = {
-        "x": np.array([10, 20, 30], dtype=np.int32),
-        "y": np.int32(15)
-    }
+    # Input 8: large positive towards zero
+    input_dict = {"x": 1000, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 9: 3D numpy integer arrays (int32)
-    input_dict = {
-        "x": np.ones((2, 2, 2), dtype=np.int32),
-        "y": np.zeros((2, 2, 2), dtype=np.int32)
-    }
+    # Input 9: negative towards larger magnitude negative
+    input_dict = {"x": -100, "y": -200}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
-    # Input 10: 4D numpy integer arrays with broadcasting
-    input_dict = {
-        "x": np.random.randint(-10, 10, size=(1, 3, 1, 2), dtype=np.int32),
-        "y": np.random.randint(-10, 10, size=(2, 3, 4, 2), dtype=np.int32)
-    }
+    # Input 10: positive towards negative
+    input_dict = {"x": 42, "y": -42}
+    list_of_inputs.append(copy.deepcopy(input_dict))
+
+    # Input 11: both zero
+    input_dict = {"x": 0, "y": 0}
     list_of_inputs.append(copy.deepcopy(input_dict))
 
     return list_of_inputs
